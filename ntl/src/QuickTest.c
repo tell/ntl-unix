@@ -1,4 +1,5 @@
 
+#include <NTL/ZZX.h>
 #include <NTL/ZZ_pX.h>
 #include <NTL/lzz_pX.h>
 #include <NTL/GF2X.h>
@@ -97,6 +98,14 @@ void GF2X_time()
    cerr << "   **** using old code: "  << (t/iter) << "s\n";
 #endif
 
+}
+
+
+ZZX SSMul(const ZZX& a, const ZZX& b)
+{
+   ZZX res;
+   SSMul(res, a, b);
+   return res;
 }
 
 
@@ -247,54 +256,26 @@ cerr << "Performance Options:\n";
 
    long n, k;
 
-   n = 200;
-   k = 10*NTL_ZZ_NBITS;
+   n = 5000;
+   k = 200;
 
    ZZ p;
 
-   GenPrime(p, k);
+   RandomLen(p, k);
 
 
    ZZ_p::init(p);         // initialization
 
-   ZZ_pX f, g, h, r1, r2, r3;
+   ZZ_pX a, b, c, c1;
+   random(a, n);
+   random(b, n);
 
-   random(g, n);    // g = random polynomial of degree < n
-   random(h, n);    // h =             "   "
-   random(f, n);    // f =             "   "
+   FFTMul(c, a, b);
 
-   // SetCoeff(f, n);  // Sets coefficient of X^n to 1
-   
-   ZZ_p lc;
+   c1 = conv<ZZ_pX>( SSMul( conv<ZZX>(a), conv<ZZX>(b) ) );
 
-   do {
-      random(lc);
-   } while (IsZero(lc));
-
-   SetCoeff(f, n, lc);
-
-
-   // For doing arithmetic mod f quickly, one must pre-compute
-   // some information.
-
-   ZZ_pXModulus F;
-   build(F, f);
-
-   PlainMul(r1, g, h);  // this uses classical arithmetic
-   PlainRem(r1, r1, f);
-
-   MulMod(r2, g, h, F);  // this uses the FFT
-
-   MulMod(r3, g, h, f);  // uses FFT, but slower
-
-   // compare the results...
-
-   if (r1 != r2) {
-      cerr << "r1 != r2!!\n";
-      return 1;
-   }
-   else if (r1 != r3) {
-      cerr << "r1 != r3!!\n";
+   if (c1 != c) {
+      cerr << "ZZ_pX mul failed!\n";
       return 1;
    }
 

@@ -311,7 +311,7 @@ void BitReverseCopy(unsigned long * NTL_RESTRICT A, const long * NTL_RESTRICT a,
 #else
 
 // A more cache-friendly bit-reverse copy algorithm.
-// The "COBRA" algorithm from Cater and Gatlin, "Towards an
+// The "COBRA" algorithm from Carter and Gatlin, "Towards an
 // optimal bit-reversal permutation algorithm", FOCS 1998.
 
 // NOTE: for basic poly mul, we could consider not doing any
@@ -390,8 +390,8 @@ void COBRA(long * NTL_RESTRICT B, const long * NTL_RESTRICT A, long k)
 
       for (c = 0; c < (1L << q); c++) {
          c1 = rev_q[c];
-         for (a = 0; a < (1L << q); a++) 
-            B[(c1 << (k1+q)) + (b1 << q) + a] = T[(a << q) + c1];
+         for (a1 = 0; a1 < (1L << q); a1++) 
+            B[(c1 << (k1+q)) + (b1 << q) + a1] = T[(a1 << q) + c];
       }
    }
 }
@@ -457,8 +457,8 @@ void COBRA(unsigned long * NTL_RESTRICT B, const long * NTL_RESTRICT A, long k)
 
       for (c = 0; c < (1L << q); c++) {
          c1 = rev_q[c];
-         for (a = 0; a < (1L << q); a++) 
-            B[(c1 << (k1+q)) + (b1 << q) + a] = T[(a << q) + c1];
+         for (a1 = 0; a1 < (1L << q); a1++) 
+            B[(c1 << (k1+q)) + (b1 << q) + a1] = T[(a1 << q) + c];
       }
    }
 }
