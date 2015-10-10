@@ -9,8 +9,6 @@
 NTL_START_IMPL
 
 
-
-
 static void RowTransform(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1)
 // x = x - y*MU
 {
@@ -48,10 +46,21 @@ static void RowTransform(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1)
       long mu1;
       conv(mu1, MU);
 
-      for (i = 1; i <= n; i++) {
-         mul(T, B(i), mu1);
-         if (k > 0) LeftShift(T, T, k);
-         sub(A(i), A(i), T);
+      if (k > 0) {
+
+         for (i = 1; i <= n; i++) {
+            mul(T, B(i), mu1);
+            LeftShift(T, T, k);
+            sub(A(i), A(i), T);
+         }
+
+      }
+      else {
+
+         for (i = 1; i <= n; i++) {
+            MulSubFrom(A(i), B(i), mu1);
+         }
+
       }
    }
    else {
@@ -62,6 +71,7 @@ static void RowTransform(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1)
       }
    }
 }
+
 
 static void RowTransform2(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1)
 // x = x + y*MU

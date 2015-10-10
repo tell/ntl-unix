@@ -8077,3 +8077,79 @@ void _ntl_rem_struct_eval(void *rem_struct, long *x, _ntl_verylong a)
    } /* end switch */
 }
 
+
+
+void
+_ntl_zaorsmul_1(_ntl_verylong x, long y, long sub,  _ntl_verylong *ww)
+{
+   static _ntl_verylong tmp = 0;
+
+   if (y == 0) return;
+
+   if (y == 1) {
+      if (sub)
+         _ntl_zsub(*ww, x, ww);
+      else
+         _ntl_zadd(*ww, x, ww);
+      return;
+   }
+
+   if (y == -1) {
+      if (!sub)
+         _ntl_zsub(*ww, x, ww);
+      else
+         _ntl_zadd(*ww, x, ww);
+      return;
+   }
+
+   _ntl_zsmul(x, y, &tmp);
+   if (sub)
+      _ntl_zsub(*ww, tmp, ww);
+   else
+      _ntl_zadd(*ww, tmp, ww);
+}
+
+
+void
+_ntl_zsaddmul(_ntl_verylong x, long y,  _ntl_verylong *ww)
+{
+  _ntl_zaorsmul_1(x, y, 0, ww);
+}
+
+void
+_ntl_zssubmul(_ntl_verylong x, long y,  _ntl_verylong *ww)
+{
+  _ntl_zaorsmul_1(x, y, 1, ww);
+}
+
+
+
+
+
+
+void
+_ntl_zaorsmul(_ntl_verylong x, _ntl_verylong y, long sub,  _ntl_verylong *ww)
+{
+   static _ntl_verylong tmp = 0;
+
+   _ntl_zmul(x, y, &tmp);
+   if (sub)
+      _ntl_zsub(*ww, tmp, ww);
+   else
+      _ntl_zadd(*ww, tmp, ww);
+}
+
+
+void
+_ntl_zaddmul(_ntl_verylong x, _ntl_verylong y,  _ntl_verylong *ww)
+{
+  _ntl_zaorsmul(x, y, 0, ww);
+}
+
+void
+_ntl_zsubmul(_ntl_verylong x, _ntl_verylong y,  _ntl_verylong *ww)
+{
+  _ntl_zaorsmul(x, y, 1, ww);
+}
+
+

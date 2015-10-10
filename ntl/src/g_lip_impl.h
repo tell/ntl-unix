@@ -5068,3 +5068,289 @@ void _ntl_grem_struct_eval(void *rem_struct, long *x, _ntl_gbigint a)
 }
 
 
+
+/* routines for x += a*b for single-precision b 
+ * DIRT: relies crucially on mp_limb_t being at least as
+ * wide as a long.
+ * Lightly massaged code taken from GMP's mpz routines */
+
+
+
+#define _ntl_mpn_com_n(d,s,n)                                \
+  do {                                                  \
+    mp_limb_t *  __d = (d);                               \
+    mp_limb_t *  __s = (s);                               \
+    long  __n = (n);                               \
+    do                                                  \
+      *__d++ = (~ *__s++);              \
+    while (--__n);                                      \
+  } while (0)
+
+
+#define _ntl_MPN_MUL_1C(cout, dst, src, size, n, cin)        \
+  do {                                                  \
+    mp_limb_t __cy;                                     \
+    __cy = mpn_mul_1 (dst, src, size, n);               \
+    (cout) = __cy + mpn_add_1 (dst, dst, size, cin);    \
+  } while (0)
+
+#define _ntl_g_inc(p, n)   \
+  do {   \
+    mp_limb_t * __p = (p);  \
+    long __n = (n);  \
+    while (__n > 0) {  \
+       (*__p)++;  \
+       if (*__p != 0) break;  \
+       __p++;  \
+       __n--;  \
+    }  \
+  } while (0);
+
+#define _ntl_g_inc_carry(c, p, n)   \
+  do {   \
+    mp_limb_t * __p = (p);  \
+    long __n = (n);  \
+    long __addc = 1; \
+    while (__n > 0) {  \
+       (*__p)++;  \
+       if (*__p != 0) { __addc = 0; break; }  \
+       __p++;  \
+       __n--;  \
+    }  \
+    c += __addc; \
+  } while (0);
+
+#define _ntl_g_dec(p, n)   \
+  do {   \
+    mp_limb_t * __p = (p);  \
+    mp_limb_t __tmp; \
+    long __n = (n);  \
+    while (__n > 0) {  \
+       __tmp = *__p; \
+       (*__p)--;  \
+       if (__tmp != 0) break;  \
+       __p++;  \
+       __n--;  \
+    }  \
+  } while (0);
+  
+
+
+/* sub==0 means an addmul w += x*y, sub==1 means a submul w -= x*y. */
+void
+_ntl_gaorsmul_1(_ntl_gbigint x, long yy, long sub, _ntl_gbigint *ww)
+{
+  long  xsize, wsize, wsize_signed, new_wsize, min_size, dsize;
+  _ntl_gbigint w;
+  mp_limb_t *xp;
+  mp_limb_t *wp;
+  mp_limb_t  cy;
+  mp_limb_t  y;
+
+  if (ZEROP(x) || yy == 0)
+    return;
+
+  if (ZEROP(*ww)) {
+    _ntl_gsmul(x, yy, ww);
+    if (sub) SIZE(*ww) = -SIZE(*ww);
+    return;
+  }
+
+  if (yy == 1) {
+    if (sub)
+      _ntl_gsub(*ww, x, ww);
+    else
+      _ntl_gadd(*ww, x, ww);
+    return;
+  }
+
+  if (yy == -1) {
+    if (sub)
+      _ntl_gadd(*ww, x, ww);
+    else
+      _ntl_gsub(*ww, x, ww);
+    return;
+  }
+
+  if (*ww == x) {
+    static _ntl_gbigint tmp = 0;
+    _ntl_gsmul(x, yy, &tmp);
+    if (sub)
+       _ntl_gsub(*ww, tmp, ww);
+    else
+       _ntl_gadd(*ww, tmp, ww);
+    return;
+  }
+
+  xsize = SIZE(x);
+  if (xsize < 0) {
+    xsize = -xsize;
+    sub = 1-sub;
+  }
+
+  if (yy < 0) {
+    y = - ((mp_limb_t) yy); /* careful! */
+    sub = 1-sub;
+  }
+  else {
+    y = (mp_limb_t) yy;
+  }
+    
+
+  w = *ww;
+
+  wsize_signed = SIZE(w);
+  if (wsize_signed < 0) {
+    sub = 1-sub;
+    wsize = -wsize_signed;
+  }
+  else {
+    wsize = wsize_signed;
+  }
+
+
+  if (wsize > xsize) {
+    new_wsize = wsize;
+    min_size = xsize;
+  }
+  else {
+    new_wsize = xsize;
+    min_size = wsize;
+  }
+
+  if (MustAlloc(w, new_wsize+1)) {
+    _ntl_gsetlength(&w, new_wsize+1);
+    *ww = w;
+  }
+
+  wp = DATA(w);
+  xp = DATA(x);
+
+  if (sub == 0)
+    {
+      /* addmul of absolute values */
+
+      cy = mpn_addmul_1 (wp, xp, min_size, y);
+      wp += min_size;
+      xp += min_size;
+
+      dsize = xsize - wsize;
+      if (dsize != 0)
+        {
+          mp_limb_t  cy2;
+          if (dsize > 0) {
+            cy2 = mpn_mul_1 (wp, xp, dsize, y);
+          }
+          else
+            {
+              dsize = -dsize;
+              cy2 = 0;
+            }
+          cy = cy2 + mpn_add_1 (wp, wp, dsize, cy);
+        }
+
+      wp[dsize] = cy;
+      new_wsize += (cy != 0);
+    }
+  else
+    {
+      /* submul of absolute values */
+
+      cy = mpn_submul_1 (wp, xp, min_size, y);
+      if (wsize >= xsize)
+        {
+          /* if w bigger than x, then propagate borrow through it */
+          if (wsize != xsize) {
+            cy = mpn_sub_1 (wp+xsize, wp+xsize, wsize-xsize, cy);
+          }
+
+          if (cy != 0)
+            {
+              /* Borrow out of w, take twos complement negative to get
+                 absolute value, flip sign of w.  */
+              wp[new_wsize] = ~-cy;  /* extra limb is 0-cy */
+              _ntl_mpn_com_n (wp, wp, new_wsize);
+              new_wsize++;
+              _ntl_g_inc(wp, new_wsize);
+              wsize_signed = -wsize_signed;
+            }
+        }
+      else /* wsize < xsize */
+        {
+          /* x bigger than w, so want x*y-w.  Submul has given w-x*y, so
+             take twos complement and use an mpn_mul_1 for the rest.  */
+
+          mp_limb_t  cy2;
+
+          /* -(-cy*b^n + w-x*y) = (cy-1)*b^n + ~(w-x*y) + 1 */
+          _ntl_mpn_com_n (wp, wp, wsize);
+          _ntl_g_inc_carry(cy, wp, wsize);
+          cy -= 1;
+
+          /* If cy-1 == -1 then hold that -1 for latter.  mpn_submul_1 never
+             returns cy==MP_LIMB_T_MAX so that value always indicates a -1. */
+          cy2 = (cy == ((mp_limb_t) -1));
+          cy += cy2;
+          _ntl_MPN_MUL_1C (cy, wp+wsize, xp+wsize, xsize-wsize, y, cy);
+          wp[new_wsize] = cy;
+          new_wsize += (cy != 0);
+
+          /* Apply any -1 from above.  The value at wp+wsize is non-zero
+             because y!=0 and the high limb of x will be non-zero.  */
+          if (cy2) {
+            _ntl_g_dec(wp+wsize, new_wsize-wsize);
+          }
+
+          wsize_signed = -wsize_signed;
+        }
+
+      /* submul can produce high zero limbs due to cancellation, both when w
+         has more limbs or x has more  */
+      STRIP(new_wsize, wp);
+    }
+
+  SIZE(w) = (wsize_signed >= 0 ? new_wsize : -new_wsize);
+}
+
+
+void
+_ntl_gsaddmul(_ntl_gbigint x, long yy,  _ntl_gbigint *ww)
+{
+  _ntl_gaorsmul_1(x, yy, 0, ww);
+}
+
+void
+_ntl_gssubmul(_ntl_gbigint x, long yy,  _ntl_gbigint *ww)
+{
+  _ntl_gaorsmul_1(x, yy, 1, ww);
+}
+
+
+void
+_ntl_gaorsmul(_ntl_gbigint x, _ntl_gbigint y, long sub,  _ntl_gbigint *ww)
+{
+   static _ntl_gbigint tmp = 0;
+
+   _ntl_gmul(x, y, &tmp);
+   if (sub)
+      _ntl_gsub(*ww, tmp, ww);
+   else
+      _ntl_gadd(*ww, tmp, ww);
+}
+
+
+void
+_ntl_gaddmul(_ntl_gbigint x, _ntl_gbigint y,  _ntl_gbigint *ww)
+{
+  _ntl_gaorsmul(x, y, 0, ww);
+}
+
+void
+_ntl_gsubmul(_ntl_gbigint x, _ntl_gbigint y,  _ntl_gbigint *ww)
+{
+  _ntl_gaorsmul(x, y, 1, ww);
+}
+
+
+
+
