@@ -80,6 +80,17 @@ int main()
 #endif
 
 
+#ifdef NTL_LEGACY_SP_MULMOD
+   cout << "NTL_LEGACY_SP_MULMOD\n";
+#endif
+
+
+#ifdef NTL_DISABLE_LONGDOUBLE
+   cout << "NTL_DISABLE_LONGDOUBLE\n";
+#endif
+
+
+
 cout << "\n";
 cout << "Resolution of double-word types:\n";
 cout << make_string(NTL_LL_TYPE) << "\n";

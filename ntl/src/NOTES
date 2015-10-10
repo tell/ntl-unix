@@ -1,5 +1,4 @@
 
-
 FIXME: maybe it would make more sense to take the +1/-1 logic
 out of [cg]_lip_impl block_construct routines and just put it in
 the caller: the ZZ_p and ZZVec BlockConstruct stuff: add 1 there...
@@ -13,7 +12,6 @@ with STL vectors.
 TODO list:
      * speed up ZZX mul: faster HomMul and faster SSMul
      * speed up GF2X mul using new x86 instructions
-     * Allow 60-bit primes by using long double's
      * allow 32-bit SP MulMod...this would allow GPU/SSE 
        support...both this and previous would require
        a complete scan to introduce new, special types
@@ -29,6 +27,8 @@ distribution of NTL.
 -----------------------------
 
 
+- update ../README and ../doc/copying.txt
+
 - change version numbers in ../include/NTL/version.h, DIRNAME, and WINDIR
 
 - change the libtool soname in VERSION_INFO. See:
@@ -39,21 +39,22 @@ http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
   make sure these changes are implemented in the template files 
   mfile and cfile, and then run:
 
-./configure
-cp makefile def_makefile
-cp ../include/NTL/config.h ../include/NTL/def_config.h
-
-- update ../README and ../doc/copying.txt
+./configure --nowrite
+cp mfileout def_makefile
+cp cfileout ../include/NTL/def_config.h
 
 - run:  
+
+NOTE: try executing 
+export COPYFILE_DISABLE=1
+beforehand
+
 
 make ppdoc
 make ppclean
 make package
 make winpack
 
-NOTE: try executing export COPYFILE_DISABLE=1
-beforehand
 
 
 

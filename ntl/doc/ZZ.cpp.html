@@ -343,6 +343,10 @@ ZZ PowerMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font colo
 <font color="#0000ed"><i>// forms) support promotions from long to ZZ on (a, b).</i></font><br>
 <br>
 <br>
+<br>
+<br>
+<a name="modarith"></a>
+<br>
 <font color="#0000ed"><i>/*</i></font><font color="#0000ed"><i>*************************************************************************\</i></font><br>
 <br>
 <font color="#0000ed"><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Single-precision modular arithmetic</i></font><br>
@@ -353,6 +357,7 @@ ZZ PowerMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font colo
 <br>
 <font color="#0000ed"><i>Most of these routines are, of course, implemented as fast inline</i></font><br>
 <font color="#0000ed"><i>functions.&nbsp;&nbsp;No checking is done that inputs are in range.</i></font><br>
+<br>
 <br>
 <font color="#0000ed"><i>\*************************************************************************</i></font><font color="#0000ed"><i>*/</i></font><br>
 <br>
@@ -367,20 +372,32 @@ ZZ PowerMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font colo
 <br>
 <font color="#008b00"><b>long</b></font>&nbsp;MulMod(<font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n); <font color="#0000ed"><i>// return (a*b)%n</i></font><br>
 <br>
-<font color="#008b00"><b>long</b></font>&nbsp;MulMod(<font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, <font color="#008b00"><b>double</b></font>&nbsp;ninv);<br>
-<font color="#0000ed"><i>// return (a*b)%n.&nbsp;&nbsp;ninv = 1/((double) n).&nbsp;&nbsp;This is faster if n is</i></font><br>
-<font color="#0000ed"><i>// fixed for many multiplications.</i></font><br>
+<font color="#008b00"><b>long</b></font>&nbsp;MulMod(<font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, mulmod_t ninv); <br>
+<font color="#0000ed"><i>// return (a*b)%n.&nbsp;&nbsp;</i></font><br>
+<font color="#0000ed"><i>//</i></font><br>
+<font color="#0000ed"><i>// Usually faster than plain MulMod when n is fixed for many</i></font><br>
+<font color="#0000ed"><i>// invocations. The value ninv should be precomputed as </i></font><br>
+<font color="#0000ed"><i>//&nbsp;&nbsp; mulmod_t ninv = PrepMulMod(n);</i></font><br>
+<br>
+mulmod_t PrepMulMod(<font color="#008b00"><b>long</b></font>&nbsp;n);<br>
+<font color="#0000ed"><i>// Prepare auxilliary data for MulMod.</i></font><br>
+<br>
+<font color="#008b00"><b>long</b></font>&nbsp;MulModPrecon(<font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, mulmod_precon_t bninv);<br>
+<font color="#0000ed"><i>// return (a*b)%n.&nbsp;&nbsp;</i></font><br>
+<font color="#0000ed"><i>//</i></font><br>
+<font color="#0000ed"><i>// Usually much faster than MulMod when both b and n are fixed for </i></font><br>
+<font color="#0000ed"><i>// many invocations.&nbsp;&nbsp;The value bninv should be precomputed as</i></font><br>
+<font color="#0000ed"><i>//&nbsp;&nbsp; mulmod_precon_t bninv = PrepMulModPrecon(b, n);</i></font><br>
+<font color="#0000ed"><i>// or as</i></font><br>
+<font color="#0000ed"><i>//&nbsp;&nbsp; mulmod_precon_t bninv = PrepMulModPrecon(b, n, ninv);</i></font><br>
+<font color="#0000ed"><i>// where ninv = PrepMulMod(n).</i></font><br>
+<br>
+mulmod_precon_t PrepMulModPrecon(<font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n);<br>
+mulmod_precon_t PrepMulModPrecon(<font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, mulmod_t ninv);<br>
+<font color="#0000ed"><i>// Prepare auxilliary data for MulModPrecon.</i></font><br>
+<font color="#0000ed"><i>// In the second version, ninv = PrepMulMod(n).</i></font><br>
 <br>
 <br>
-<font color="#008b00"><b>long</b></font>&nbsp;MulMod2(<font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, <font color="#008b00"><b>double</b></font>&nbsp;bninv);<br>
-<font color="#0000ed"><i>// return (a*b)%n.&nbsp;&nbsp;bninv = ((double) b)/((double) n).&nbsp;&nbsp;This is faster</i></font><br>
-<font color="#0000ed"><i>// if both n and b are fixed for many multiplications.</i></font><br>
-<font color="#0000ed"><i>// Note: This is OBSOLETE -- use MulModPrecon (see below) for </i></font><br>
-<font color="#0000ed"><i>// better performance.</i></font><br>
-<br>
-<br>
-<font color="#008b00"><b>long</b></font>&nbsp;MulDivRem(<font color="#008b00"><b>long</b></font>&amp; q, <font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, <font color="#008b00"><b>double</b></font>&nbsp;bninv);<br>
-<font color="#0000ed"><i>// return (a*b)%n, set q = (a*b)/n.&nbsp;&nbsp;bninv = ((double) b)/((double) n)</i></font><br>
 <br>
 <font color="#008b00"><b>long</b></font>&nbsp;InvMod(<font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;n);<br>
 <font color="#0000ed"><i>// computes a^{-1} mod n.&nbsp;&nbsp;Error is raised if undefined.</i></font><br>
@@ -388,44 +405,111 @@ ZZ PowerMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font colo
 <font color="#008b00"><b>long</b></font>&nbsp;PowerMod(<font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;e, <font color="#008b00"><b>long</b></font>&nbsp;n);<br>
 <font color="#0000ed"><i>// computes a^e mod n (e may be negative)</i></font><br>
 <br>
-<br>
-<br>
-<font color="#0000ed"><i>// The following are variants of MulMod2 above that may be significantly </i></font><br>
-<font color="#0000ed"><i>// faster on certain machines.&nbsp;&nbsp;The implmentation varies depending</i></font><br>
-<font color="#0000ed"><i>// on the settings of the flags NTL_SPMM_ULL and NTL_SPMM_UL.</i></font><br>
-<font color="#0000ed"><i>// By default (no flags), the implementation is the same as MulMod2 above.</i></font><br>
-<font color="#0000ed"><i>// It is best to let the Wizard script select the optimal flag.</i></font><br>
-<br>
-<font color="#008b00"><b>typedef</b></font>&nbsp;mulmod_precon_t&nbsp;&nbsp;<font color="#0000ed"><i>/*</i></font><font color="#0000ed"><i>&nbsp;&nbsp;depends on implementation </i></font><font color="#0000ed"><i>*/</i></font>&nbsp;;<br>
-<br>
-mulmod_precon_t PrepMulModPrecon(<font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, <font color="#008b00"><b>double</b></font>&nbsp;ninv);<br>
-<font color="#0000ed"><i>// Prepares preconditioning. ninv = 1/((double) n)</i></font><br>
-<br>
-<font color="#008b00"><b>long</b></font>&nbsp;MulModPrecon(<font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, mulmod_precon_t bninv);<br>
-<font color="#0000ed"><i>// return (a*b)%n.&nbsp;&nbsp;bninv = MulModPrecon(b, n, ninv).</i></font><br>
-<br>
-<font color="#0000ed"><i>// Example of use:</i></font><br>
-<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;long a, b, n, c;</i></font><br>
-<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...</i></font><br>
-<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;double ninv = 1/((double) n);</i></font><br>
-<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;mulmod_precon_t bninv = PrepMulModPrecon(b, n, ninv);</i></font><br>
-<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp; ...</i></font><br>
-<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;c = MulModPrecon(a, b, n, bninv);&nbsp;&nbsp;// c = (a*b) % n</i></font><br>
-<br>
-<br>
-<br>
 <font color="#0000ed"><i>// The following are vector versions of the MulMod routines</i></font><br>
-<font color="#0000ed"><i>// They each compute x[i] = (a[i] * b[i])% n&nbsp;&nbsp; i = 0..k-1 </i></font><br>
+<font color="#0000ed"><i>// They each compute x[i] = (a[i] * b)% n&nbsp;&nbsp; i = 0..k-1 </i></font><br>
 <br>
 <font color="#008b00"><b>void</b></font>&nbsp;VectorMulMod(<font color="#008b00"><b>long</b></font>&nbsp;k, <font color="#008b00"><b>long</b></font>&nbsp;*x, <font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;*a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n);<br>
 <br>
 <font color="#008b00"><b>void</b></font>&nbsp;VectorMulMod(<font color="#008b00"><b>long</b></font>&nbsp;k, <font color="#008b00"><b>long</b></font>&nbsp;*x, <font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;*a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;ninv);<br>
-<font color="#0000ed"><i>// ninv == 1/((double) n)</i></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mulmod_t ninv);<br>
+<font color="#0000ed"><i>// ninv = PrepMulMod(n)</i></font><br>
 <br>
 <font color="#008b00"><b>void</b></font>&nbsp;VectorMulModPrecon(<font color="#008b00"><b>long</b></font>&nbsp;k, <font color="#008b00"><b>long</b></font>&nbsp;*x, <font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;*a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mulmod_precon_t bninv);<br>
-<font color="#0000ed"><i>// bninv == MulModPrecon(b, n, ninv)</i></font><br>
+<font color="#0000ed"><i>// bninv = MulModPrecon(b, n)</i></font><br>
+<br>
+<br>
+<br>
+<font color="#008b00"><b>long</b></font>&nbsp;MulDivRem(<font color="#008b00"><b>long</b></font>&amp; q, <font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, muldivrem_t bninv);<br>
+<font color="#0000ed"><i>// return (a*b)%n, set q = (a*b)/n.&nbsp;&nbsp;</i></font><br>
+<font color="#0000ed"><i>// The value bninv should be precomputed as </i></font><br>
+<font color="#0000ed"><i>//&nbsp;&nbsp; muldivrem_t bninv = PrepMulDivRem(b, n);</i></font><br>
+<font color="#0000ed"><i>// or as</i></font><br>
+<font color="#0000ed"><i>//&nbsp;&nbsp; muldivrem_t bninv = PrepMulDivRem(b, n, ninv);</i></font><br>
+<font color="#0000ed"><i>// where ninv = PrepMod(n).</i></font><br>
+<br>
+&nbsp;muldivrem_t PrepMulDivRem(<font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n);<br>
+&nbsp;muldivrem_t PrepMulDivRem(<font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, mulmod_t ninv);<br>
+<font color="#0000ed"><i>// Prepare auxilliary data for MulDivRem.</i></font><br>
+<font color="#0000ed"><i>// In the second version, ninv = PrepMulMod(n).</i></font><br>
+<br>
+<font color="#0000ed"><i>// NOTE: despite the similarity in the interface to MulModPrecon,</i></font><br>
+<font color="#0000ed"><i>// this routine is typically implemented in a very different way,</i></font><br>
+<font color="#0000ed"><i>// and usually much less efficient.</i></font><br>
+<font color="#0000ed"><i>// It was initially designed for specialized, internal use</i></font><br>
+<font color="#0000ed"><i>// within NTL, but has been a part of the documented NTL</i></font><br>
+<font color="#0000ed"><i>// interface for some time, and remains so even after the</i></font><br>
+<font color="#0000ed"><i>// v9.0 upgrade.</i></font><br>
+<br>
+<br>
+<br>
+<font color="#0000ed"><i>//</i></font><br>
+<font color="#0000ed"><i>// Compatibility notes:</i></font><br>
+<font color="#0000ed"><i>//</i></font><br>
+<font color="#0000ed"><i>// The types mulmod_t and muldivrem_t were introduced in NTL v9.0,</i></font><br>
+<font color="#0000ed"><i>// as were the functions PrepMulMod and PrepMulDivRem.</i></font><br>
+<font color="#0000ed"><i>// Prior to this, the built-in type &quot;double&quot; played the role of these</i></font><br>
+<font color="#0000ed"><i>// types, and the user was expected to compute PrepMulMod(n) as 1/double(n)</i></font><br>
+<font color="#0000ed"><i>// and PrepMulDivRem(b, n) as double(b)/double(n).</i></font><br>
+<font color="#0000ed"><i>// </i></font><br>
+<font color="#0000ed"><i>// By abstracting these types, NTL is able to exploit a wider variety of</i></font><br>
+<font color="#0000ed"><i>// implementation strategies.&nbsp;&nbsp;Some old client code may break, but the</i></font><br>
+<font color="#0000ed"><i>// compiler will easily find the code that needs to be updated,</i></font><br>
+<font color="#0000ed"><i>// and the updates are quite mechanical (unless the old code implicitly</i></font><br>
+<font color="#0000ed"><i>// made use of the assumption that NTL_SP_NBITS &lt;= NTL_DOUBLE_PRECISION-3).</i></font><br>
+<font color="#0000ed"><i>//</i></font><br>
+<font color="#0000ed"><i>// It is highly recommended that old client codes be updated.</i></font><br>
+<font color="#0000ed"><i>// However, one may build NTL with the configuration option </i></font><br>
+<font color="#0000ed"><i>// NTL_LEGACY_SP_MULMOD=on, which will cause the interfaces and </i></font><br>
+<font color="#0000ed"><i>// implementations to revert to their pre-v9.0 definitions.&nbsp;&nbsp;</i></font><br>
+<font color="#0000ed"><i>// This option will also make the following</i></font><br>
+<font color="#0000ed"><i>// (obslete) function visible:</i></font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;MulMod2(<font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, <font color="#008b00"><b>double</b></font>&nbsp;bninv);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ed"><i>// return (a*b)%n.&nbsp;&nbsp;bninv = ((double) b)/((double) n).&nbsp;&nbsp;This is faster</i></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ed"><i>// if both n and b are fixed for many multiplications.</i></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ed"><i>// Note: This is OBSOLETE -- use MulModPrecon.</i></font><br>
+<br>
+<font color="#0000ed"><i>// Currently, this new interface allows 64-bit x86/GCC platforms to use 64-bit</i></font><br>
+<font color="#0000ed"><i>// floating point precision instead of 53-bit precision (using the x87 FPU</i></font><br>
+<font color="#0000ed"><i>// instructions).&nbsp;&nbsp;This allows single precision moduli to be 60 bits, rather</i></font><br>
+<font color="#0000ed"><i>// than 50 bits.&nbsp;&nbsp;While some operations may, in fact, be a bit slower, the most</i></font><br>
+<font color="#0000ed"><i>// important ones, like MulModPrecon, are not, and allowing larger moduli helps</i></font><br>
+<font color="#0000ed"><i>// speed up various Chinese-Remainder-based algorithms.&nbsp;&nbsp;Also, this strategy is</i></font><br>
+<font color="#0000ed"><i>// currently only employed when NTL is built using GMP.</i></font><br>
+<font color="#0000ed"><i>//</i></font><br>
+<font color="#0000ed"><i>// If you find long doubles problematic, then you may build NTL with the</i></font><br>
+<font color="#0000ed"><i>// configuration option NTL_DISABLE_LONGDOUBLE=on, which will revert to the old</i></font><br>
+<font color="#0000ed"><i>// 50-bit regime, while still maintaining the new, abstract interfaces. </i></font><br>
+<br>
+<font color="#0000ed"><i>// Future versions of NTL may implement yet other strategies for modular</i></font><br>
+<font color="#0000ed"><i>// arithmetic.&nbsp;&nbsp;Clients that use the new, abstract interface will automatically</i></font><br>
+<font color="#0000ed"><i>// beneifit from any such improvements to NTL.</i></font><br>
+<br>
+<font color="#0000ed"><i>// One can detect the new interface by testing if the macro NTL_HAVE_MULMOD_T</i></font><br>
+<font color="#0000ed"><i>// is defined.&nbsp;&nbsp;The following code can be used to make new-style NTL clients</i></font><br>
+<font color="#0000ed"><i>// work with either older (pre-9.0) versions of NTL or newer versions</i></font><br>
+<font color="#0000ed"><i>// (post-9.0):</i></font><br>
+<br>
+<br>
+<font color="#1773cc">&nbsp;&nbsp; #ifndef NTL_HAVE_MULMOD_T</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008b00"><b>typedef</b></font>&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;mulmod_t;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008b00"><b>typedef</b></font>&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;muldivrem_t;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008b00"><b>static</b></font>&nbsp;<font color="#008b00"><b>inline</b></font>&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;PrepMulMod(<font color="#008b00"><b>long</b></font>&nbsp;n) <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; { <font color="#b02f60"><b>return</b></font>&nbsp;<font color="#008b00"><b>double</b></font>(<font color="#ff8b00">1L</font>)/<font color="#008b00"><b>double</b></font>(n); }<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008b00"><b>static</b></font>&nbsp;<font color="#008b00"><b>inline</b></font>&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;PrepMulDivRem(<font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n, <font color="#008b00"><b>double</b></font>&nbsp;ninv) <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; { <font color="#b02f60"><b>return</b></font>&nbsp;<font color="#008b00"><b>double</b></font>(b)*ninv; }<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008b00"><b>static</b></font>&nbsp;<font color="#008b00"><b>inline</b></font>&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;PrepMulDivRem(<font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n) <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; { <font color="#b02f60"><b>return</b></font>&nbsp;<font color="#008b00"><b>double</b></font>(b)/<font color="#008b00"><b>double</b></font>(n); }<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008b00"><b>static</b></font>&nbsp;<font color="#008b00"><b>inline</b></font>&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;PrepMulModPrecon(<font color="#008b00"><b>long</b></font>&nbsp;b, <font color="#008b00"><b>long</b></font>&nbsp;n) <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; { <font color="#b02f60"><b>return</b></font>&nbsp;PrepMulModPrecon(b, n, PrepMulMod(n)); }<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<font color="#1773cc">&nbsp;&nbsp; #endif</font><br>
 <br>
 <br>
 <br>
@@ -801,10 +885,9 @@ ostream&amp; <font color="#b02f60"><b>operator</b></font>&lt;&lt;(ostream&amp; s
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#0000ed"><i>// number</i></font><br>
 <br>
 <font color="#0000ed"><i>// The following relations hold:</i></font><br>
-<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;NTL_SP_NBITS &lt;= NTL_WSP_NBITS &lt;= NTL_ZZ_NBITS</i></font><br>
-<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;26 &lt;= NTL_SP_NBITS &lt;= min(NTL_BITS_PER_LONG-2, NTL_DOUBLE_PRECISION-3)</i></font><br>
-<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;NTL_WSP_NBITS &lt;= NTL_BITS_PER_LONG-2</i></font><br>
-<font color="#0000ed"><i>//</i></font><br>
+<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;30 &lt;= NTL_SP_NBITS &lt;= NTL_WSP_NBITS </i></font><br>
+<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;= min(NTL_ZZ_NBITS, NTL_BITS_PER_LONG-2)</i></font><br>
+<br>
 <font color="#0000ed"><i>// Note that NTL_ZZ_NBITS may be less than, equal to, or greater than</i></font><br>
 <font color="#0000ed"><i>// NTL_BITS_PER_LONG&nbsp;&nbsp;-- no particular relationship should be assumed to hold.</i></font><br>
 <font color="#0000ed"><i>// In particular, expressions like (1L &lt;&lt; NTL_ZZ_BITS) might overflow.</i></font><br>
@@ -823,7 +906,8 @@ ostream&amp; <font color="#b02f60"><b>operator</b></font>&lt;&lt;(ostream&amp; s
 <font color="#1773cc">#define NTL_WSP_BOUND (</font><font color="#ff8b00">1L</font><font color="#1773cc">&nbsp;&lt;&lt; NTL_WSP_NBITS)</font><br>
 <br>
 <br>
-<font color="#0000ed"><i>// Backward compatability note:</i></font><br>
+<font color="#0000ed"><i>// Backward compatability notes:</i></font><br>
+<font color="#0000ed"><i>//</i></font><br>
 <font color="#0000ed"><i>// Prior to version 5.0, the macro NTL_NBITS was defined,</i></font><br>
 <font color="#0000ed"><i>// along with the macro NTL_RADIX defined to be (1L &lt;&lt; NTL_NBITS).</i></font><br>
 <font color="#0000ed"><i>// While these macros are still available when using NTL's traditional </i></font><br>
@@ -833,6 +917,11 @@ ostream&amp; <font color="#b02f60"><b>operator</b></font>&lt;&lt;(ostream&amp; s
 <font color="#0000ed"><i>// Furthermore, when writing portable programs, one should avoid these macros.</i></font><br>
 <font color="#0000ed"><i>// Note that when using traditional long integer arithmetic, we have</i></font><br>
 <font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;NTL_ZZ_NBITS = NTL_SP_NBITS = NTL_WSP_NBITS = NTL_NBITS.</i></font><br>
+<font color="#0000ed"><i>//</i></font><br>
+<font color="#0000ed"><i>// Prior to version 9.0, one could also assume that </i></font><br>
+<font color="#0000ed"><i>//&nbsp;&nbsp; NTL_SP_NBITS &lt;= NTL_DOUBLE_PRECISION-3;</i></font><br>
+<font color="#0000ed"><i>// however, this is no longer the case (unless NTL is build with he NTL_LEGACY_SP_MULMOD</i></font><br>
+<font color="#0000ed"><i>// flag turned on).</i></font><br>
 <br>
 <br>
 <font color="#0000ed"><i>// Here are some additional functions.</i></font><br>

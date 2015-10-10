@@ -35,6 +35,22 @@ int main()
    cout << "NTL_EXCEPTIONS=0\n";
 #endif
 
+
+#ifdef NTL_LEGACY_SP_MULMOD
+   cout << "NTL_LEGACY_SP_MULMOD=1\n";
+#else
+   cout << "NTL_LEGACY_SP_MULMOD=0\n";
+#endif
+
+
+#ifdef NTL_DISABLE_LONGDOUBLE
+   cout << "NTL_DISABLE_LONGDOUBLE=1\n";
+#else
+   cout << "NTL_DISABLE_LONGDOUBLE=0\n";
+#endif
+
+
+
 #ifdef NTL_GMP_LIP
    cout << "NTL_GMP_LIP=1\n";
 #else

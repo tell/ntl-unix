@@ -111,9 +111,16 @@ ZZX SSMul(const ZZX& a, const ZZX& b)
 
 int main()
 {
+   SetSeed(ZZ(0));
 
 
    cerr << "This is NTL version " << NTL_VERSION << "\n"; 
+
+   cerr << "Hardware charactersitics:\n";
+   cerr << "NTL_BITS_PER_LONG = " << NTL_BITS_PER_LONG << "\n";
+   cerr << "NTL_ZZ_NBITS = " << NTL_ZZ_NBITS << "\n";
+   cerr << "NTL_SP_NBITS = " << NTL_SP_NBITS << "\n";
+   cerr << "\n";
 
    cerr << "Basic Configuration Options:\n";
 
@@ -137,6 +144,18 @@ int main()
 #ifdef NTL_EXCEPTIONS
    cerr << "NTL_EXCEPTIONS\n";
 #endif
+
+
+#ifdef NTL_LEGACY_SP_MULMOD
+   cout << "NTL_LEGACY_SP_MULMOD\n";
+#endif
+
+
+#ifdef NTL_DISABLE_LONGDOUBLE
+   cout << "NTL_DISABLE_LONGDOUBLE\n";
+#endif
+
+
 
 
 #ifdef NTL_GMP_LIP

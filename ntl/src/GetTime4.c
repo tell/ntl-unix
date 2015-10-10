@@ -1,7 +1,9 @@
 #include <NTL/config.h>
 
-#include <time.h>
+#include <ctime>
 #include <NTL/ctools.h>
+
+using namespace std;
 
 // FIXME: this is the GetTime that ends up getting used
 // on Windows. However, it returns the wall time, not CPU time.

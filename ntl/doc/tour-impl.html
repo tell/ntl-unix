@@ -60,7 +60,7 @@ it is assumed that the <tt>C++</tt> compiler conforms to the 1998 standard,
 including the basic of templates;
 <li>
 it does not assume any features not in the 1998 standard,
-unless compiled with the <tt>NTL_THREADS</tt> flag.
+unless compiled with the <tt>NTL_THREADS</tt>  or <tt>NTL_EXCEPTIONS</tt> flags.
 </ul>
 
 
@@ -75,13 +75,18 @@ is currently <i>off</i> by default.
 
 <p>
 When this flag is off, NTL makes another requirement of its platform;
-namely, that arithmetic operations on the type <tt>long</tt>
-do not overflow, but simply "wrap around" modulo the word size.
-This behavior is <i>not</i> guaranteed by the <tt>C++</tt> standard,
-and yet it is essentially universally implemented.
-In fact, most compilers will go out of their way to ensure this behavior,
-since it is a very reasonable behavior, and since many programs 
-implicitly rely on this behavior.
+namely, that conversions from <tt>unsigned long</tt> to <tt>long</tt> 
+convert the bit pattern without change to the corresponding 2's complement 
+signed integer.
+Note that the <tt>C++</tt> standard defines the behavior of 
+converting unsigned
+to signed values as <i>implementation defined</i> when the value
+cannot be represented in the range of nonnegative signed values.
+Nevertheless, this behavior is essentially universal, and more importantly,
+is is not <i>undefined behavior</i>: implementation-defined behavior must be
+documented and respected by the compiler, while undefined behavior can
+be exploited by the compiler in some surprising ways.
+
 
 <p>
 Actually, with <tt>NTL_CLEAN_INT</tt> off, it is also assumed
@@ -90,11 +95,11 @@ in the sense that if it is sometimes an arithmetic shift,
 then it is always an arithmetic shift (the installation
 scripts check if right shift appears to be arithmetic, and if so,
 this assumption is made elsewhere). 
+Arithmetic right shift is also <i>implementation defined</i> behavior
+that is essentially universal.
 
 
 <p>
-Making this "wrap around" assumption can lead to slightly more efficient code
-on some platforms.
 It seems fairly unlikely that one would ever have to turn the
 <tt>NTL_CLEAN_INT</tt> flag <i>on</i>, but it seems a good idea
 to make this possible, and at the very least 
@@ -103,36 +108,25 @@ relies on this assumption.
 The only code affected by this flag
 is the traditional LIP long integer package (which, if you use
 GMP as the long integer package, is not involved),
-and the single-precision modular multiplication routines
-defined in <tt>ZZ.h</tt>.
-
-
-
+and the single-precision modular multiplication routines.
 
 <p>
-Note that more recent versions of GCC do more aggressive
-optimizations that tend to violate the "wraparound assumption".
-However, it is very doubtful that these optimizations 
-will effect on NTL's correctness.
-If in doubt, turn on the <tt>NTL_CLEAN_INT</tt> flag. 
-It might 
-cost you 5-10% in performance when using the traditional LIP 
-long integer package, and even
-less, when using GMP.
-
-<p>
-Alternatively, with GCC, you can use the <tt>-fwrapv</tt>
-flag which will ensure "wraparound arithmetic";
-however, because of some inline functions in the NTL interface,
-you will have to use this flag in all client code as well.
-Using <tt>-fwrapv</tt> may also incur a performance cost, as well.
-It seems doubtful that this flag is all that useful,
-especially if using GMP.
+Note that prior to NTL 9.0, the default compilation mode required
+that in a few critical places, <i>signed</i> integer arithmetic quietly wraps around
+on overflow; however, signed integer overflow is <i>undefined behavior</i>,
+and it seems that in recent years compilers have been getting
+more aggressive in exploiting such undefined behavior in their optimizations.
+Moreover, recent versions of GCC now come with a "sanitizer" that checks
+for undefined behavior.
+So, both to avoid potentially dangerous optimizations and to allow
+NTL to pass such sanitzer checks, it seemed safer to move to this
+more conservative approach.
+There should, in fact, be zero performance penalty in doing so.
+Also note that I was never aware of any compiler that generated incorrect
+code in the pre-9.0 code: this new approach is just to be on the safe side
+in the future.
 
 
-
-
-<p>
 
 <h3>The <tt>NTL_CLEAN_PTR</tt> flag</h3>
 
@@ -153,11 +147,10 @@ is to iteratively test if <tt>p == v</tt>, <tt>p == v+1</tt>, etc.
 
 <p>
 This assumption of a "flat" address space is essentially universally 
-valid, and making this assumption leads to some more efficient code.
+valid, and making this assumption leads to more efficicient code.
 For this reason, the <tt>NTL_CLEAN_PTR</tt> is <i>off</i> by default,
 but one can always turn it on, and in fact, the overall performance
 penalty should be negligible for most applications.
-
 
 
 <h3>Some floating point issues</h3>
@@ -230,15 +223,17 @@ some other assumptions as well).
 One big problem with the IEEE standard is that it allows intermediate
 quantities to be computed in a higher precision than the standard
 double precision.
-This "looseness" in the standard is a substantial impediment to
-creating portable software.
 Most platforms today implement the "strict" IEEE standard, with no
 excess precision.
-One notable exception -- the 800 pound gorilla, so to speak -- 
-is the Intel x86.
+Up until recently, the Intel x86 machine with the GCC compiler
+was a notable exception to this: on older x86 machines, floating point
+was performed using the x87 FPU instructions, which operate on 80-bit,
+extended precision numbers; nowadays, most compilers use the SSE instructions,
+which operate on the standard, 64-bit numbers.
 
 <p>
-NTL goes out of its way to ensure that its code is correct with
+Historically,
+NTL went out of its way to ensure that its code is correct with
 both "strict" and "loose" IEEE floating point.
 This is achieved in a portable fashion throughout NTL, except
 for the <tt>quad_float</tt> module, where some desperate hacks,
@@ -249,12 +244,14 @@ But note that even if the <tt>quad_float</tt> package does not work correctly
 because of these problems, the only other routines that are affected
 are the <tt>LLL_QP</tt> routines in the <tt>LLL</tt> module -- the
 rest of NTL should work fine.
+Hopefully, because of the newer SSE instructions, this whole strict/loose
+issue is a thing of the past.
 
 
 
 <p>
 Mostly, NTL does not 
- require that the IEEE floating point 
+require that the IEEE floating point 
 special quantities "infinity"
 and "not a number" are implemented correctly.
 This is certainly the case for core code where
@@ -341,13 +338,17 @@ in the configuration script.
 Also, you will need a compiler and runtime library that 
 implements several key <tt>C++11</tt> features,
 including <tt>thread_local</tt> storage.
-As I write this in Nov. 2014, there are very few compilers
+
+<p>
+<i>
+As I wrote this in Nov. 2014, there were very few compilers
 that satisfy the requirements.
 I was successfully able to build and test NTL with threads
 using gcc 4.9.2 on a Linux system.
 I have not been able to do so on any current Mac OSX system:
 in fact, no compiler on current Mac systems (gcc or clang)
 yet have proper support for <tt>thread_local</tt> storage.
+</i>
 </ul>
 
 To obtain thread safety, I used the following strategies:
@@ -365,7 +366,7 @@ moduli, and it all just works, with no changes to NTL's interface.
 <p>
 <li>
 In places where NTL used static variables to hold on to space
-for scratch variables, I make these variables thread local,
+for scratch variables, I make these variables <i>thread local</i>,
 and I also make sure the storage used by these variables
 get released when the thread terminates.
 In all NTL builds (thread safe or not), 
@@ -374,7 +375,7 @@ I try to make sure that fairly large chunks of memory get released immediately.
 <p>
 <li>
 In places where NTL uses a lazy strategy to build various tables
-(such as FFT times), I uses a "double checked locking" strategy
+(such as FFT primes), I uses a "double checked locking" strategy
 to grow these tables in a way that (a) the tables can be
 shared among different threads, and (b) taking a lock
 on a <tt>mutex</tt> is very rare.
@@ -394,7 +395,7 @@ is thread local,
 and the default initial seed is guaranteed to be unique
 among all threads in a given process (and an attempt is made to
 make the seed globally unique among all processes and threads,
-but this is hard to do in a portable way).
+but this is hard to do in a completely portable way).
 
 
 </ul>

@@ -1,6 +1,5 @@
 
 #include <NTL/lzz_pX.h>
-#include <NTL/vec_double.h>
 
 #include <NTL/new.h>
 
@@ -353,11 +352,11 @@ void PlainMul(zz_p *xp, const zz_p *ap, long sa, const zz_p *bp, long sb)
       clear(xp[i]);
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
 
    for (i = 0; i < sb; i++) {
       long t1 = rep(bp[i]);
-      mulmod_precon_t bpinv = PrepMulModPrecon(t1, p, pinv); // ((double) t1)*pinv;
+      mulmod_precon_t bpinv = PrepMulModPrecon(t1, p, pinv); 
       zz_p *xp1 = xp+i;
       for (j = 0; j < sa; j++) {
          long t2;
@@ -367,43 +366,32 @@ void PlainMul(zz_p *xp, const zz_p *ap, long sa, const zz_p *bp, long sb)
    }
 }
 
-NTL_THREAD_LOCAL static vec_double a_buf, b_buf;
-
 static inline 
-void reduce(zz_p& r, double x, long p, double pinv)
+void reduce(zz_p& r, long a, long p, wide_double pinv)
 {
-   long rr = long(x - double(p)*double(long(x*pinv)));
-   if (rr < 0) rr += p;
-   if (rr >= p) rr -= p;
-
-   r.LoopHole() = rr;
+   // DIRT: uses undocumented MulMod feature (see sp_arith.h)
+   r.LoopHole() = MulMod(a, 1L, p, pinv);
 }
 
-void PlainMul_FP(zz_p *xp, const zz_p *aap, long sa, const zz_p *bbp, long sb)
+void PlainMul_long(zz_p *xp, const zz_p *ap, long sa, const zz_p *bp, long sb)
 {
    if (sa == 0 || sb == 0) return;
-
-   double *ap = a_buf.elts();
-   double *bp = b_buf.elts();
 
    long d = sa+sb-2;
 
    long i, j, jmin, jmax;
 
-   for (i = 0; i < sa; i++) ap[i] = double(rep(aap[i]));
-   for (i = 0; i < sb; i++) bp[i] = double(rep(bbp[i]));
-
-   double accum;
+   long accum;
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
 
    for (i = 0; i <= d; i++) {
       jmin = max(0, i-(sb-1));
       jmax = min((sa-1), i);
       accum = 0;
       for (j = jmin; j <= jmax; j++) {
-         accum += ap[j]*bp[i-j];
+         accum += rep(ap[j])*rep(bp[i-j]);
       }
       reduce(xp[i], accum, p, pinv);
    }
@@ -526,7 +514,7 @@ void KarMul(zz_p *c, const zz_p *a, long sa, const zz_p *b, long sb, zz_p *stk)
    }
 }
 
-void KarMul_FP(zz_p *c, const zz_p *a, long sa, const zz_p *b, long sb, zz_p *stk)
+void KarMul_long(zz_p *c, const zz_p *a, long sa, const zz_p *b, long sb, zz_p *stk)
 {
    if (sa < sb) {
       { long t = sa; sa = sb; sb = t; }
@@ -534,7 +522,7 @@ void KarMul_FP(zz_p *c, const zz_p *a, long sa, const zz_p *b, long sb, zz_p *st
    }
 
    if (sb < KARX) {
-      PlainMul_FP(c, a, sa, b, sb);
+      PlainMul_long(c, a, sa, b, sb);
       return;
    }
 
@@ -561,19 +549,19 @@ void KarMul_FP(zz_p *c, const zz_p *a, long sa, const zz_p *b, long sb, zz_p *st
 
       /* recursively compute T3 = T1 * T2 */
 
-      KarMul_FP(T3, T1, hsa, T2, hsa, stk);
+      KarMul_long(T3, T1, hsa, T2, hsa, stk);
 
       /* recursively compute a_hi * b_hi into high part of c */
       /* and subtract from T3 */
 
-      KarMul_FP(c + hsa2, a+hsa, sa-hsa, b+hsa, sb-hsa, stk);
+      KarMul_long(c + hsa2, a+hsa, sa-hsa, b+hsa, sb-hsa, stk);
       KarSub(T3, c + hsa2, sa + sb - hsa2 - 1);
 
 
       /* recursively compute a_lo*b_lo into low part of c */
       /* and subtract from T3 */
 
-      KarMul_FP(c, a, hsa, b, hsa, stk);
+      KarMul_long(c, a, hsa, b, hsa, stk);
       KarSub(T3, c, hsa2 - 1);
 
       clear(c[hsa2 - 1]);
@@ -591,11 +579,11 @@ void KarMul_FP(zz_p *c, const zz_p *a, long sa, const zz_p *b, long sb, zz_p *st
 
       /* recursively compute b*a_hi into high part of c */
 
-      KarMul_FP(c + hsa, a + hsa, sa - hsa, b, sb, stk);
+      KarMul_long(c + hsa, a + hsa, sa - hsa, b, sb, stk);
 
       /* recursively compute b*a_lo into T */
 
-      KarMul_FP(T, a, hsa, b, sb, stk);
+      KarMul_long(T, a, hsa, b, sb, stk);
 
       KarFix(c, T, hsa + sb - 1, hsa);
    }
@@ -650,16 +638,11 @@ void PlainMul(zz_pX& c, const zz_pX& a, const zz_pX& b)
    cp = c.rep.elts();
 
    long p = zz_p::modulus();
-   long use_FP = ((p < NTL_SP_BOUND/KARX) && 
-                 (double(p)*double(p) < NTL_FDOUBLE_PRECISION/KARX));
+   long use_long = (p < NTL_SP_BOUND/KARX && p*KARX < NTL_SP_BOUND/p);
 
    if (sa < KARX || sb < KARX) {
-      if (use_FP) {
-         a_buf.SetLength(max(sa, sb));
-         b_buf.SetLength(max(sa, sb));
-
-         PlainMul_FP(cp, ap, sa, bp, sb);
-      }
+      if (use_long) 
+         PlainMul_long(cp, ap, sa, bp, sb);
       else
          PlainMul(cp, ap, sa, bp, sb);
    }
@@ -679,11 +662,8 @@ void PlainMul(zz_pX& c, const zz_pX& a, const zz_pX& b)
       vec_zz_p stk;
       stk.SetLength(sp);
 
-      if (use_FP) {
-         a_buf.SetLength(max(sa, sb));
-         b_buf.SetLength(max(sa, sb));
-         KarMul_FP(cp, ap, sa, bp, sb, stk.elts());
-      }
+      if (use_long) 
+         KarMul_long(cp, ap, sa, bp, sb, stk.elts());
       else
          KarMul(cp, ap, sa, bp, sb, stk.elts());
    }
@@ -691,7 +671,7 @@ void PlainMul(zz_pX& c, const zz_pX& a, const zz_pX& b)
    c.normalize();
 }
 
-void PlainSqr_FP(zz_p *xp, const zz_p *aap, long sa)
+void PlainSqr_long(zz_p *xp, const zz_p *ap, long sa)
 {
    if (sa == 0) return;
 
@@ -700,13 +680,9 @@ void PlainSqr_FP(zz_p *xp, const zz_p *aap, long sa)
 
    long i, j, jmin, jmax, m, m2;
 
-   double *ap = a_buf.elts();
-
-   for (i = 0; i < sa; i++) ap[i] = double(rep(aap[i]));
-
-   double accum;
+   long accum;
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
 
    for (i = 0; i <= d; i++) {
       jmin = max(0, i-da);
@@ -716,11 +692,11 @@ void PlainSqr_FP(zz_p *xp, const zz_p *aap, long sa)
       jmax = jmin + m2 - 1;
       accum = 0;
       for (j = jmin; j <= jmax; j++) {
-         accum += ap[j]*ap[i-j];
+         accum += rep(ap[j])*rep(ap[i-j]);
       }
       accum += accum;
       if (m & 1) {
-         accum += ap[jmax + 1]*ap[jmax + 1];
+         accum += rep(ap[jmax + 1])*rep(ap[jmax + 1]);
       }
 
       reduce(xp[i], accum, p, pinv);
@@ -739,7 +715,7 @@ void PlainSqr(zz_p *xp, const zz_p *ap, long sa)
       clear(xp[i]);
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
    long t1, t2;
 
    i = -1;
@@ -756,7 +732,7 @@ void PlainSqr(zz_p *xp, const zz_p *ap, long sa)
       const zz_p *ap1 = ap+(j+1);
       zz_p *xp1 = xp+i;
       t1 = rep(ap[j]);
-      mulmod_precon_t tpinv = PrepMulModPrecon(t1, p, pinv); // ((double) t1)*pinv;
+      mulmod_precon_t tpinv = PrepMulModPrecon(t1, p, pinv); 
 
       for (k = 0; k < cnt; k++) {
          t2 = MulModPrecon(rep(ap1[k]), t1, p, tpinv);
@@ -807,10 +783,10 @@ void KarSqr(zz_p *c, const zz_p *a, long sa, zz_p *stk)
    KarAdd(c+hsa, T2, hsa2-1);
 }
 
-void KarSqr_FP(zz_p *c, const zz_p *a, long sa, zz_p *stk)
+void KarSqr_long(zz_p *c, const zz_p *a, long sa, zz_p *stk)
 {
    if (sa < KARSX) {
-      PlainSqr_FP(c, a, sa);
+      PlainSqr_long(c, a, sa);
       return;
    }
 
@@ -823,14 +799,14 @@ void KarSqr_FP(zz_p *c, const zz_p *a, long sa, zz_p *stk)
    T2 = stk; stk += hsa2-1;
 
    KarFold(T1, a, sa, hsa);
-   KarSqr_FP(T2, T1, hsa, stk);
+   KarSqr_long(T2, T1, hsa, stk);
 
 
-   KarSqr_FP(c + hsa2, a+hsa, sa-hsa, stk);
+   KarSqr_long(c + hsa2, a+hsa, sa-hsa, stk);
    KarSub(T2, c + hsa2, sa + sa - hsa2 - 1);
 
 
-   KarSqr_FP(c, a, hsa, stk);
+   KarSqr_long(c, a, hsa, stk);
    KarSub(T2, c, hsa2 - 1);
 
    clear(c[hsa2 - 1]);
@@ -863,14 +839,11 @@ void PlainSqr(zz_pX& c, const zz_pX& a)
    cp = c.rep.elts();
 
    long p = zz_p::modulus();
-   long use_FP = ((p < NTL_SP_BOUND/KARSX) && 
-                 (double(p)*double(p) < NTL_FDOUBLE_PRECISION/KARSX));
+   long use_long = (p < NTL_SP_BOUND/KARSX && p*KARSX < NTL_SP_BOUND/p);
 
    if (sa < KARSX) {
-      if (use_FP) {
-         a_buf.SetLength(sa);
-         PlainSqr_FP(cp, ap, sa);
-      }
+      if (use_long) 
+         PlainSqr_long(cp, ap, sa);
       else
          PlainSqr(cp, ap, sa);
    }
@@ -890,10 +863,8 @@ void PlainSqr(zz_pX& c, const zz_pX& a)
       vec_zz_p stk;
       stk.SetLength(sp);
 
-      if (use_FP) {
-         a_buf.SetLength(sa);
-         KarSqr_FP(cp, ap, sa, stk.elts());
-      }
+      if (use_long) 
+         KarSqr_long(cp, ap, sa, stk.elts());
       else
          KarSqr(cp, ap, sa, stk.elts());
    }
@@ -953,7 +924,7 @@ void PlainDivRem(zz_pX& q, zz_pX& r, const zz_pX& a, const zz_pX& b)
    qp = q.rep.elts();
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
 
    for (i = dq; i >= 0; i--) {
       t = xp[i+db];
@@ -963,7 +934,7 @@ void PlainDivRem(zz_pX& q, zz_pX& r, const zz_pX& a, const zz_pX& b)
       negate(t, t);
 
       long T = rep(t);
-      mulmod_precon_t Tpinv = PrepMulModPrecon(T, p, pinv); // ((double) T)*pinv;
+      mulmod_precon_t Tpinv = PrepMulModPrecon(T, p, pinv); 
 
       for (j = db-1; j >= 0; j--) {
          long S = MulModPrecon(rep(bp[j]), T, p, Tpinv);
@@ -1031,7 +1002,7 @@ void PlainDiv(zz_pX& q, const zz_pX& a, const zz_pX& b)
    qp = q.rep.elts();
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
 
    for (i = dq; i >= 0; i--) {
       t = xp[i];
@@ -1041,7 +1012,7 @@ void PlainDiv(zz_pX& q, const zz_pX& a, const zz_pX& b)
       negate(t, t);
 
       long T = rep(t);
-      mulmod_precon_t Tpinv = PrepMulModPrecon(T, p, pinv); // ((double) T)*pinv;
+      mulmod_precon_t Tpinv = PrepMulModPrecon(T, p, pinv); 
 
       long lastj = max(0, db-i);
 
@@ -1095,7 +1066,7 @@ void PlainRem(zz_pX& r, const zz_pX& a, const zz_pX& b)
    dq = da - db;
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
 
    for (i = dq; i >= 0; i--) {
       t = xp[i+db];
@@ -1104,7 +1075,7 @@ void PlainRem(zz_pX& r, const zz_pX& a, const zz_pX& b)
       negate(t, t);
 
       long T = rep(t);
-      mulmod_precon_t Tpinv = PrepMulModPrecon(T, p, pinv); // ((double) T)*pinv;
+      mulmod_precon_t Tpinv = PrepMulModPrecon(T, p, pinv); 
 
       for (j = db-1; j >= 0; j--) {
          long S = MulModPrecon(rep(bp[j]), T, p, Tpinv);
@@ -1142,8 +1113,8 @@ void mul(zz_pX& x, const zz_pX& a, zz_p b)
    long t;
    t = rep(b);
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
-   mulmod_precon_t bpinv = PrepMulModPrecon(t, p, pinv); // t*pinv;
+   wide_double pinv = zz_p::ModulusInverse();
+   mulmod_precon_t bpinv = PrepMulModPrecon(t, p, pinv); 
 
    da = deg(a);
    x.rep.SetLength(da+1);
@@ -1447,15 +1418,15 @@ void FromModularRep(zz_p& res, long *a)
 {
    long n = zz_pInfo->NumPrimes;
    long p = zz_pInfo->p;
-   double pinv = zz_pInfo->pinv;
+   wide_double pinv = zz_pInfo->pinv;
    long *CoeffModP = zz_pInfo->CoeffModP.elts();
-   double *x = zz_pInfo->x.elts();
+   wide_double *x = zz_pInfo->x.elts();
    long *u = zz_pInfo->u.elts();
    long MinusMModP = zz_pInfo->MinusMModP;
 
    long q, s, t;
    long i;
-   double y;
+   wide_double y;
 
 
 
@@ -1463,20 +1434,20 @@ void FromModularRep(zz_p& res, long *a)
 // a bit more robust.  
 
 #if (NTL_zz_p_QUICK_CRT)
-   y = 0;
+   y = wide_double(0L);
    for (i = 0; i < n; i++)
-      y = y + ((double) a[i])*x[i];
+      y = y + ((wide_double) a[i])*x[i];
 
-   y = floor(y + 0.5);
-   y = y - floor(y*pinv)*double(p);
-   while (y >= p) y -= p;
-   while (y < 0) y += p;
+   y = floor(y + wide_double(1L)/wide_double(2L));
+   y = y - floor(y*pinv)*wide_double(p);
+   while (y >= p) y -= wide_double(p);
+   while (y < 0) y += wide_double(p);
    q = long(y);
 
    t = 0;
    for (i = 0; i < n; i++) {
 
-      // DIRT: uses undocumented MulMod feature (see ZZ.h)
+      // DIRT: uses undocumented MulMod feature (see sp_arith.h)
       // a[i] is not reduced mod p
       s = MulMod(a[i], CoeffModP[i], p, pinv);
 
@@ -1489,15 +1460,15 @@ void FromModularRep(zz_p& res, long *a)
    res.LoopHole() = t;
 #else
 
-   y = 0;
+   y = wide_double(0L);
    t = 0;
 
    for (i = 0; i < n; i++) {
-      s = MulMod2(a[i], u[i], GetFFTPrime(i), x[i]);
-      y = y + double(s)*GetFFTPrimeInv(i);
+      s = MulMod2_legacy(a[i], u[i], GetFFTPrime(i), x[i]);
+      y = y + wide_double(s)*GetFFTPrimeInv(i);
 
 
-      // DIRT: uses undocumented MulMod feature (see ZZ.h)
+      // DIRT: uses undocumented MulMod feature (see sp_arith.h)
       // a[i] is not reduced mod p
       s = MulMod(s, CoeffModP[i], p, pinv);
 
@@ -1506,7 +1477,7 @@ void FromModularRep(zz_p& res, long *a)
 
    q = (long) (y + 0.5);
 
-   // DIRT: uses undocumented MulMod feature (see ZZ.h)
+   // DIRT: uses undocumented MulMod feature (see sp_arith.h)
    // q may not be reduced mod p
    s = MulMod(q, MinusMModP, p, pinv);
 
@@ -1895,7 +1866,7 @@ void mul(fftRep& z, const fftRep& x, const fftRep& y)
       const long *xp = &x.tbl[0][0];
       const long *yp = &y.tbl[0][0];
       long q = p_info->q;
-      double qinv = p_info->qinv;
+      wide_double qinv = p_info->qinv;
 
       for (j = 0; j < n; j++)
          zp[j] = MulMod(xp[j], yp[j], q, qinv);
@@ -1906,7 +1877,7 @@ void mul(fftRep& z, const fftRep& x, const fftRep& y)
          const long *xp = &x.tbl[i][0];
          const long *yp = &y.tbl[i][0];
          long q = GetFFTPrime(i);
-         double qinv = GetFFTPrimeInv(i);
+         wide_double qinv = GetFFTPrimeInv(i);
    
          for (j = 0; j < n; j++)
             zp[j] = MulMod(xp[j], yp[j], q, qinv);

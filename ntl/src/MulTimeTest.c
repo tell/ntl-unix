@@ -1,7 +1,7 @@
 
 #include <NTL/ZZ_pX.h>
 
-#include <stdio.h>
+#include <cstdio>
 
 NTL_CLIENT
 

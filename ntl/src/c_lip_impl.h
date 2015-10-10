@@ -45,35 +45,39 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
 
 
 
-#define MulLo(rres,a,b) rres = (a)*(b)
+#define MulLo(rres,a,b) rres = S(U(a)*U(b))
 
+#define S cast_signed
+#define U cast_unsigned
 
 /*
  * definitions of zaddmulp, zxmulp, zaddmulpsq for the various
  * long integer arithmentic implementation options.
  */
 
-
 #if (defined(NTL_LONG_LONG))
 
 
 #if (!defined(NTL_CLEAN_INT))
 
+
 /*
  * One might get slightly better code with this version.
  */
 
+// NOTE: this zaddmulp may get called with negative d
+
 #define zaddmulp(a, b, d, t) { \
    NTL_LL_TYPE _pp = ((NTL_LL_TYPE) (b)) * ((NTL_LL_TYPE) (d)) + ((t)+(a)); \
-   (a) = ((long)(_pp)) & NTL_RADIXM; \
-   (t) = (long) (_pp >> NTL_NBITS); \
+   (a) = S(((unsigned long)(_pp)) & U(NTL_RADIXM)); \
+   (t) = S((unsigned long) (((NTL_ULL_TYPE)_pp) >> NTL_NBITS)); \
 } 
 
 
 #define zxmulp(a, b, d, t) { \
    NTL_LL_TYPE _pp = ((NTL_LL_TYPE) (b)) * ((NTL_LL_TYPE) (d)) + (t); \
-   (a) = ((long)(_pp)) & NTL_RADIXM; \
-   (t) = (long) (_pp >> NTL_NBITS); \
+   (a) = S(((unsigned long)(_pp)) & U(NTL_RADIXM)); \
+   (t) = S((unsigned long) (((NTL_ULL_TYPE)_pp) >> NTL_NBITS)); \
 } 
 
 #define zaddmulpsq(a,b,t) { \
@@ -198,35 +202,36 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
 #define zaddmulp(a, b, d, t) \
 { \
    long _a = (a), _b = (b), _d = (d), _t = (t); \
-   long _t1 =  _b*_d; \
+   long _t1 =  S(U(_b)*U(_d)); \
    long _t2 = (long) ( ((double) _b)*(((double) _d)*NTL_FRADIX_INV) ); \
-   _t2 = _t2 + ((_t1 - (_t2 << NTL_NBITS)) >> NTL_NBITS); \
-   _t1 = (_t1 & NTL_RADIXM) + _a +_t; \
-   (t) = _t2 + (((unsigned long)_t1) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   _t2 = S(U(_t2) + U(S(U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS)); \
+   _t1 = S((U(_t1) & U(NTL_RADIXM)) + U(_a) + U(_t)); \
+   (t) = S(U(_t2) + (U(_t1) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
 
 
 #define zxmulp(a, b, d, t) \
 { \
    long _b = (b), _d = (d), _t = (t); \
-   long _t1 =  _b*_d + _t; \
+   long _t1 =  S(U(_b)*U(_d) + U(_t)); \
    long _t2 = (long) ( ((double) _b)*(((double) _d)*NTL_FRADIX_INV) ) - 1; \
-   (t) = _t2 + (((unsigned long)(_t1 - (_t2 << NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   (t) = S(U(_t2) + ((U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
 
 /* value shifted is -1..1 */
 #define zaddmulpsq(a, b, t) \
 { \
    long _a = (a), _b = (b); \
-   long _t1 = _b*_b; \
+   long _t1 = S(U(_b)*U(_b)); \
    long _t2 = (long) ( ((double) _b)*(((double) _b)*NTL_FRADIX_INV) ); \
-   _t2 = _t2 + ((_t1 - (_t2 << NTL_NBITS)) >> NTL_NBITS); \
-   _t1 = (_t1 & NTL_RADIXM) + _a; \
-   (t) = _t2 + (((unsigned long)_t1) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   _t2 = S(U(_t2) + U(S(U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS)); \
+   _t1 = S((U(_t1) & U(NTL_RADIXM)) + U(_a)); \
+   (t) = S(U(_t2) + (U(_t1) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
+
 
 /*
  * In the following definition of zam_init, the value _ds is computed so that
@@ -242,12 +247,13 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
 
 #define zam_decl double _ds; long _hi, _lo, _s;
 
+
 #define zam_init(b,s) \
 { \
    long _b = (b); \
    _s = (s); \
    _ds = ((_s << 1)+1)*(NTL_FRADIX_INV/2.0); \
-   _lo = _b*_s; \
+   _lo = S(U(_b)*U(_s)); \
    _hi = (long) (((double) _b)*_ds); \
 }
 
@@ -257,12 +263,12 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _a = (a), _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
-   _lo = _lo + _a + _t; \
+   _lo = S(U(_lo) + U(_a) + U(_t)); \
    _hi--; \
-   (t) = _hi + (((unsigned long)(_lo - (_hi<<NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   (t) = S(U(_hi) + ((U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
@@ -273,11 +279,11 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long  _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
-   _lo = _lo + _t; \
-   (t) = _hi + ((_lo - (_hi<<NTL_NBITS)) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_lo) + U(_t)); \
+   (t) = S(U(_hi) + U(S(U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
@@ -289,44 +295,47 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _a = (a), _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
-   _lo = _a + _t - _lo; \
-   (t) = ((_lo + (_hi<<NTL_NBITS)) >> NTL_NBITS) - _hi; \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_a) + U(_t) - U(_lo)); \
+   (t) = S(U(S(U(_lo) + (U(_hi)<<NTL_NBITS)) >> NTL_NBITS) - U(_hi)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
+
 
 /* value shifted is 0..3 */
 #define zam_finish(a,t) \
 { \
    long _a = (a), _t = (t); \
-   _lo = _lo + _a + _t; \
+   _lo = S(U(_lo) + U(_a) + U(_t)); \
    _hi--; \
-   (t) = _hi + (((unsigned long)(_lo - (_hi<<NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   (t) = S(U(_hi) + ((U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 
 /* value shifted is -1..+1 */
 #define zsx_finish(a,t) \
 { \
    long _t = (t); \
-   _lo = _lo + _t; \
-   (t) = _hi + ((_lo - (_hi<<NTL_NBITS)) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_lo) + U(_t)); \
+   (t) = S(U(_hi) + U(S(U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 
 /* value shifted is -2..+1 */
 #define zam_subfinish(a,t) \
 { \
    long _a = (a), _t = (t); \
-   _lo = _a + _t - _lo; \
-   (t) = ((_lo + (_hi<<NTL_NBITS)) >> NTL_NBITS) - _hi; \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_a) + U(_t) - U(_lo)); \
+   (t) = S(U(S(U(_lo) + (U(_hi)<<NTL_NBITS)) >> NTL_NBITS) - U(_hi)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 
+
 #elif (!defined(NTL_CLEAN_INT))
+
 
 /* right shift is not arithmetic */
 
@@ -334,35 +343,36 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
 #define zaddmulp(a, b, d, t) \
 { \
    long _a = (a), _b = (b), _d = (d), _t = (t); \
-   long _t1 =  _b*_d; \
+   long _t1 =  S(U(_b)*U(_d)); \
    long _t2 = (long) ( ((double) _b)*(((double) _d)*NTL_FRADIX_INV) ) - 1; \
-   _t2 = _t2 + ( ((unsigned long) (_t1 - (_t2 << NTL_NBITS))) >> NTL_NBITS ); \
-   _t1 = (_t1 & NTL_RADIXM) + _a +_t; \
-   (t) = _t2 + (((unsigned long)_t1) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   _t2 = U(_t2) + ((U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS); \
+   _t1 = S((U(_t1) & U(NTL_RADIXM)) + U(_a) + U(_t)); \
+   (t) = S(U(_t2) + (U(_t1) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
 
 
 #define zxmulp(a, b, d, t) \
 { \
    long _b = (b), _d = (d), _t = (t); \
-   long _t1 =  _b*_d + _t; \
+   long _t1 =  S(U(_b)*U(_d) + U(_t)); \
    long _t2 = (long) ( ((double) _b)*(((double) _d)*NTL_FRADIX_INV) ) - 1; \
-   (t) = _t2 + (((unsigned long)(_t1 - (_t2 << NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   (t) = S(U(_t2) + ((U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
 
 /* value shifted is 0..2 */
 #define zaddmulpsq(a, b, t) \
 { \
    long _a = (a), _b = (b); \
-   long _t1 = _b*_b; \
+   long _t1 = S(U(_b)*U(_b)); \
    long _t2 = (long) ( ((double) _b)*(((double) _b)*NTL_FRADIX_INV) ) - 1; \
-   _t2 = _t2 + ( ((unsigned long) (_t1 - (_t2 << NTL_NBITS))) >> NTL_NBITS ); \
-   _t1 = (_t1 & NTL_RADIXM) + _a; \
-   (t) = _t2 + (((unsigned long)_t1) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   _t2 = S(U(_t2) + ((U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS)); \
+   _t1 = S((U(_t1) & U(NTL_RADIXM)) + U(_a)); \
+   (t) = S(U(_t2) + (U(_t1) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
+
 
 #define zam_decl double _ds; long _hi, _lo, _s;
 
@@ -371,7 +381,7 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _b = (b); \
    _s = (s); \
    _ds = ((_s << 1)+1)*(NTL_FRADIX_INV/2.0); \
-   _lo = _b*_s; \
+   _lo = S(U(_b)*U(_s)); \
    _hi = (long) (((double) _b)*_ds); \
 }
 
@@ -381,12 +391,12 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _a = (a), _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
-   _lo = _lo + _a + _t; \
+   _lo = S(U(_lo) + U(_a) + U(_t)); \
    _hi--; \
-   (t) = _hi + (((unsigned long)(_lo - (_hi<<NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   (t) = S( U(_hi) + ((U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS) ); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
@@ -397,12 +407,12 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
-   _lo = _lo + _t; \
+   _lo = S(U(_lo) + U(_t)); \
    _hi--; \
-   (t) = _hi + (((unsigned long)(_lo - (_hi<<NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   (t) = S(U(_hi) + ((U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
@@ -413,12 +423,12 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _a = (a), _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
    _hi += 2; \
-   _lo = _a + _t - _lo; \
-   (t) = (((unsigned long)(_lo + (_hi<<NTL_NBITS))) >> NTL_NBITS) - _hi; \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_a) + U(_t) - U(_lo)); \
+   (t) = S(((U(_lo) + (U(_hi)<<NTL_NBITS)) >> NTL_NBITS) - U(_hi)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
@@ -427,20 +437,20 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
 #define zam_finish(a,t) \
 { \
    long _a = (a), _t = (t); \
-   _lo = _lo + _a + _t; \
+   _lo = S(U(_lo) + U(_a) + U(_t)); \
    _hi--; \
-   (t) = _hi + (((unsigned long)(_lo - (_hi<<NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   (t) = S(U(_hi) + (((U(_lo) - (U(_hi)<<NTL_NBITS))) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 
 /* value shifted is 0..2 */
 #define zsx_finish(a,t) \
 { \
    long _a = (a), _t = (t); \
-   _lo = _lo + _t; \
+   _lo = S(U(_lo) + U(_t)); \
    _hi--; \
-   (t) = _hi + (((unsigned long)(_lo - (_hi<<NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   (t) = S(U(_hi) + (((U(_lo) - (U(_hi)<<NTL_NBITS))) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 
 /* value shifted is 0..3 */
@@ -448,9 +458,9 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
 { \
    long _a = (a), _t = (t); \
    _hi += 2; \
-   _lo = _a + _t - _lo; \
-   (t) = (((unsigned long)(_lo + (_hi<<NTL_NBITS))) >> NTL_NBITS) - _hi; \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_a) + U(_t) - U(_lo)); \
+   (t) = S(((U(_lo) + (U(_hi)<<NTL_NBITS)) >> NTL_NBITS) - U(_hi)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 
 #else
@@ -588,33 +598,36 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
     made.  Useful on 64-bit machines.  */
 
 #if (NTL_ARITH_RIGHT_SHIFT && !defined(NTL_CLEAN_INT))
+
+
+
 /* shift is -1..+3 */
 #define zaddmulp(a, b, d, t) \
 { \
    long _a = (a), _b = (b), _d = (d), _t = (t); \
-   long _t1 =  _b*_d + _a + _t; \
+   long _t1 =  S(U(_b)*U(_d) + U(_a) + U(_t)); \
    long _t2 = (long) ( ((double) _b)*(((double) _d)*NTL_FRADIX_INV) ); \
-   (t) = _t2 + ((_t1 - (_t2 << NTL_NBITS)) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   (t) = S(U(_t2) + U(S(U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
 
 #define zxmulp(a, b, d, t) \
 { \
    long _b = (b), _d = (d), _t = (t); \
-   long _t1 =  _b*_d + _t; \
+   long _t1 =  S(U(_b)*U(_d) + U(_t)); \
    long _t2 = (long) ( ((double) _b)*(((double) _d)*NTL_FRADIX_INV) ); \
-   (t) = _t2 + ((_t1 - (_t2 << NTL_NBITS)) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   (t) = S(U(_t2) + U(S(U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
 
 /* shift is -1..+2 */
 #define zaddmulpsq(a, b, t) \
 { \
    long _a = (a), _b = (b), _t = (t); \
-   long _t1 = _b*_b + _a; \
+   long _t1 = S(U(_b)*U(_b) + U(_a)); \
    long _t2 = (long) ( ((double) _b)*(((double) _b)*NTL_FRADIX_INV) ); \
-   (t) = _t2 + ((_t1 - (_t2 << NTL_NBITS)) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   (t) = S(U(_t2) + U(S(U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
 
 #define zam_decl double _ds; long _hi, _lo, _s;
@@ -624,7 +637,7 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _b = (b); \
    _s = (s); \
    _ds = _s*NTL_FRADIX_INV; \
-   _lo = _b*_s; \
+   _lo = S(U(_b)*U(_s)); \
    _hi = (long) (((double) _b)*_ds); \
 }
 
@@ -634,11 +647,11 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _a = (a), _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
-   _lo = _lo + _a + _t; \
-   (t) = _hi + ((_lo - (_hi<<NTL_NBITS)) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_lo) + U(_a) + U(_t)); \
+   (t) = S(U(_hi) + U(S(U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
@@ -649,11 +662,11 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
-   _lo = _lo + _t; \
-   (t) = _hi + ((_lo - (_hi<<NTL_NBITS)) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_lo) + U(_t)); \
+   (t) = S(U(_hi) + U(S(U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
@@ -664,11 +677,11 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _a = (a), _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
-   _lo = _a + _t - _lo; \
-   (t) = ((_lo + (_hi<<NTL_NBITS)) >> NTL_NBITS) - _hi; \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_a) + U(_t) - U(_lo)); \
+   (t) = S(U(S(U(_lo) + (U(_hi)<<NTL_NBITS)) >> NTL_NBITS) - U(_hi)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
@@ -677,59 +690,60 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
 #define zam_finish(a,t) \
 { \
    long _a = (a), _t = (t); \
-   _lo = _lo + _a + _t; \
-   (t) = _hi + ((_lo - (_hi<<NTL_NBITS)) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_lo) + U(_a) + U(_t)); \
+   (t) = S(U(_hi) + U(S(U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 
 /* shift is -1..+2 */
 #define zsx_finish(a,t) \
 { \
    long _t = (t); \
-   _lo = _lo + _t; \
-   (t) = _hi + ((_lo - (_hi<<NTL_NBITS)) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_lo) + U(_t)); \
+   (t) = S(U(_hi) + U(S(U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 
 /* shift is -3..+1 */
 #define zam_subfinish(a,t) \
 { \
    long _a = (a), _t = (t); \
-   _lo = _a + _t - _lo; \
-   (t) = ((_lo + (_hi<<NTL_NBITS)) >> NTL_NBITS) - _hi; \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_a) + U(_t) - U(_lo)); \
+   (t) = S(U(S(U(_lo) + (U(_hi)<<NTL_NBITS)) >> NTL_NBITS) - U(_hi)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 
 #elif (!defined(NTL_CLEAN_INT))
 /* right shift is not arithmetic */
 
+
 /* shift is 0..4 */
 #define zaddmulp(a, b, d, t) \
 { \
    long _a = (a), _b = (b), _d = (d), _t = (t); \
-   long _t1 =  _b*_d + _a + _t; \
+   long _t1 =  S(U(_b)*U(_d) + U(_a) + U(_t)); \
    long _t2 = (long) ( ((double) _b)*(((double) _d)*NTL_FRADIX_INV) ) - 1; \
-   (t) = _t2 + (((unsigned long)(_t1 - (_t2 << NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   (t) = S(U(_t2) + ((U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
 
 #define zxmulp(a, b, d, t) \
 { \
    long _b = (b), _d = (d), _t = (t); \
-   long _t1 =  _b*_d + _t; \
+   long _t1 =  S(U(_b)*U(_d) + U(_t)); \
    long _t2 = (long) ( ((double) _b)*(((double) _d)*NTL_FRADIX_INV) ) - 1; \
-   (t) = _t2 + (((unsigned long)(_t1 - (_t2 << NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   (t) = S(U(_t2) + ((U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
 
 /* shift is 0..3 */
 #define zaddmulpsq(a, b, t) \
 { \
    long _a = (a), _b = (b), _t = (t); \
-   long _t1 = _b*_b + _a; \
+   long _t1 = S(U(_b)*U(_b) + U(_a)); \
    long _t2 = (long) ( ((double) _b)*(((double) _b)*NTL_FRADIX_INV) ) - 1; \
-   (t) = _t2 + (((unsigned long)(_t1 - (_t2 << NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _t1 & NTL_RADIXM; \
+   (t) = S(U(_t2) + ((U(_t1) - (U(_t2) << NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_t1) & U(NTL_RADIXM)); \
 }
 
 #define zam_decl double _ds; long _hi, _lo, _s;
@@ -739,7 +753,7 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _b = (b); \
    _s = (s); \
    _ds = _s*NTL_FRADIX_INV; \
-   _lo = _b*_s; \
+   _lo = S(U(_b)*U(_s)); \
    _hi = (long) (((double) _b)*_ds); \
 }
 
@@ -749,12 +763,12 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _a = (a), _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
    _hi--; \
-   _lo = _lo + _a + _t; \
-   (t) = _hi + (((unsigned long)(_lo - (_hi<<NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_lo) + U(_a) + U(_t)); \
+   (t) = S(U(_hi) + ((U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
@@ -765,12 +779,12 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
    _hi--; \
-   _lo = _lo + _t; \
-   (t) = _hi + (((unsigned long)(_lo - (_hi<<NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_lo) + U(_t)); \
+   (t) = S(U(_hi) + ((U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
@@ -781,12 +795,12 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
    long _a = (a), _t = (t), _nb = (nb); \
    long _vv; \
    double _yy; \
-   _vv = _nb*_s; \
+   _vv = S(U(_nb)*U(_s)); \
    _yy = ((double) _nb)*_ds; \
    _hi += 3; \
-   _lo = _a + _t - _lo; \
-   (t) = (((unsigned long)(_lo + (_hi<<NTL_NBITS))) >> NTL_NBITS) - _hi; \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_a) + U(_t) - U(_lo)); \
+   (t) = S(((U(_lo) + (U(_hi)<<NTL_NBITS)) >> NTL_NBITS) - U(_hi)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
    _lo = _vv; \
    _hi = (long) _yy; \
 }
@@ -795,20 +809,20 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
 #define zam_finish(a,t) \
 { \
    long _a = (a), _t = (t); \
-   _lo = _lo + _a + _t; \
+   _lo = S(U(_lo) + U(_a) + U(_t)); \
    _hi--; \
-   (t) = _hi + (((unsigned long)(_lo - (_hi<<NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   (t) = S(U(_hi) + ((U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 
 /* shift is 0..3 */
 #define zsx_finish(a,t) \
 { \
    long _t = (t); \
-   _lo = _lo + _t; \
+   _lo = S(U(_lo) + U(_t)); \
    _hi--; \
-   (t) = _hi + (((unsigned long)(_lo - (_hi<<NTL_NBITS))) >> NTL_NBITS); \
-   (a) = _lo & NTL_RADIXM; \
+   (t) = S(U(_hi) + ((U(_lo) - (U(_hi)<<NTL_NBITS)) >> NTL_NBITS)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 
 /* shift is 0..4 */
@@ -816,9 +830,9 @@ typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
 { \
    long _a = (a), _t = (t); \
    _hi += 3; \
-   _lo = _a + _t - _lo; \
-   (t) = (((unsigned long)(_lo + (_hi<<NTL_NBITS))) >> NTL_NBITS) - _hi; \
-   (a) = _lo & NTL_RADIXM; \
+   _lo = S(U(_a) + U(_t) - U(_lo)); \
+   (t) = S(((U(_lo) + (U(_hi)<<NTL_NBITS)) >> NTL_NBITS) - U(_hi)); \
+   (a) = S(U(_lo) & U(NTL_RADIXM)); \
 }
 #else
 
@@ -1281,6 +1295,7 @@ void zsubmul(long lams, long *lama, long *lamb)
  * signed integer arithmetic.
  */
 
+
 #define zdiv21(numhigh, numlow, denom, deninv, quot) \
 { \
    long lr21; \
@@ -1288,7 +1303,7 @@ void zsubmul(long lams, long *lama, long *lamb)
           + (double) (numlow)) * (deninv)); \
    long lp21; \
    MulLo(lp21, lq21, denom); \
-   lr21 = (numhigh << NTL_NBITS) + numlow - lp21; \
+   lr21 = S((U(numhigh) << NTL_NBITS) + U(numlow) - U(lp21)); \
    if (lr21 < 0) { \
       lq21--; \
       lr21 += denom; \
@@ -1352,6 +1367,7 @@ void zsubmul(long lams, long *lama, long *lamb)
 
 #elif (NTL_ARITH_RIGHT_SHIFT && defined(NTL_AVOID_BRANCHING))
 
+
 #define zrem21(numhigh, numlow, denom, deninv) \
 { \
    long lr21; \
@@ -1359,14 +1375,15 @@ void zsubmul(long lams, long *lama, long *lamb)
           + (double) (numlow)) * (deninv)); \
    long lp21; \
    MulLo(lp21, lq21, denom); \
-   lr21 = (numhigh << NTL_NBITS) + numlow - lp21; \
-   lr21 += (lr21 >> (NTL_BITS_PER_LONG-1)) & denom; \
+   lr21 = S((U(numhigh) << NTL_NBITS) + U(numlow) - U(lp21)); \
+   lr21 += S(U(lr21 >> (NTL_BITS_PER_LONG-1)) & U(denom)); \
    lr21 -= denom; \
-   lr21 += (lr21 >> (NTL_BITS_PER_LONG-1)) & denom; \
+   lr21 += S(U(lr21 >> (NTL_BITS_PER_LONG-1)) & U(denom)); \
    numhigh = lr21; \
 }
 
 #else
+
 
 #define zrem21(numhigh, numlow, denom, deninv) \
 { \
@@ -1375,7 +1392,7 @@ void zsubmul(long lams, long *lama, long *lamb)
       + (double) (numlow)) * (deninv)); \
    long lp21; \
    MulLo(lp21, lq21, denom); \
-   lr21 = (numhigh << NTL_NBITS) + numlow - lp21; \
+   lr21 = S((U(numhigh) << NTL_NBITS) + U(numlow) - U(lp21)); \
    if (lr21 < 0) lr21 += denom; \
    else if (lr21 >= denom) lr21 -= denom; \
    numhigh = lr21; \

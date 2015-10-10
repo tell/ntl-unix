@@ -81,7 +81,7 @@ void NullSpace(long& r, vec_long& D, vec_vec_zz_p& M, long verbose)
    for (j = 0; j < n; j++) D[j] = -1;
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
    long T1, T2;
    mulmod_precon_t T1pinv;
 
@@ -117,7 +117,7 @@ void NullSpace(long& r, vec_long& D, vec_vec_zz_p& M, long verbose)
             t1 = M[i][k];
 
             T1 = rep(t1);
-            T1pinv = PrepMulModPrecon(T1, p, pinv); // ((double) T1)*pinv;
+            T1pinv = PrepMulModPrecon(T1, p, pinv); 
 
             x = M[i].elts() + (k+1);
             y = M[l].elts() + (k+1);

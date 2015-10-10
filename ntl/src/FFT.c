@@ -78,10 +78,13 @@ long IsFFTPrime(long n, long& w)
 
    /* n is an FFT prime */
 
-   for (j = NTL_FFTMaxRoot; j < k; j++)
+
+   for (j = NTL_FFTMaxRoot; j < k; j++) {
       x = MulMod(x, x, n);
+   }
 
    w = x;
+
    return 1;
 }
 
@@ -153,7 +156,7 @@ long CalcMaxRoot(long p)
 
 void InitFFTPrimeInfo(FFTPrimeInfo& info, long q, long w, bool bigtab)
 {
-   double qinv = 1/((double) q);
+   wide_double qinv = PrepMulMod(q);
 
    long mr = CalcMaxRoot(q);
 
@@ -537,7 +540,7 @@ void FFT(long* A, const long* a, long k, long q, const long* root)
    mulmod_precon_t * NTL_RESTRICT wqinvtab = wqinvtab_store.elts();
    long *AA = AA_store.elts();
 
-   double qinv = 1/((double) q);
+   wide_double qinv = PrepMulMod(q);
 
    wtab[0] = 1;
    wqinvtab[0] = PrepMulModPrecon(1, q, qinv);
@@ -740,7 +743,7 @@ void PrecompFFTMultipliers(long k, long q, const long *root, const FFTMultiplier
       // initialize entries first..k
 
 
-      double qinv = 1/((double) q);
+      wide_double qinv = PrepMulMod(q);
 
       for (long s = first; s <= k; s++) {
          UniquePtr<FFTVectorPair> item;
@@ -1058,11 +1061,11 @@ void FFT(long* A, const long* a, long k, long q, const long* root, const FFTMult
 
 
 static inline 
-unsigned long LazyPrepMulModPrecon(long b, long n, double ninv)
+unsigned long LazyPrepMulModPrecon(long b, long n, wide_double ninv)
 {
    unsigned long q, r;
 
-   q = (long) ( (((double) b) * NTL_SP_FBOUND) * ninv ); 
+   q = (long) ( (((wide_double) b) * wide_double(NTL_SP_BOUND)) * ninv ); 
    r = (((unsigned long) b) << NTL_SP_NBITS ) - q * ((unsigned long) n);
 
    if (r >> (NTL_BITS_PER_LONG-1)) {
@@ -1077,7 +1080,7 @@ unsigned long LazyPrepMulModPrecon(long b, long n, double ninv)
    unsigned long res = q << (NTL_BITS_PER_LONG - NTL_SP_NBITS);
    long qq, rr;
 
-   rr = MulDivRem(qq, (long) r, 4, n, 4*ninv);
+   rr = MulDivRem(qq, (long) r, 4, n, wide_double(4L)*ninv);
 
    res = res + (qq << (NTL_BITS_PER_LONG - NTL_SP_NBITS-2));
 
@@ -1099,8 +1102,9 @@ unsigned long LazyReduce(unsigned long a, unsigned long q)
 {
   unsigned long res;
 #if (NTL_ARITH_RIGHT_SHIFT && defined(NTL_AVOID_BRANCHING) && !defined(NTL_CLEAN_INT))
+  // IMPL-DEF: arithmetic right shift
   res = a - q;
-  res  += (((long) res) >> (NTL_BITS_PER_LONG-1)) & q; 
+  res  += cast_unsigned(cast_signed(res)  >> (NTL_BITS_PER_LONG-1)) & q; 
 #elif (defined(NTL_AVOID_BRANCHING))
   res = a - q;
   res  += (-(res >> (NTL_BITS_PER_LONG-1))) & q; 
@@ -1129,7 +1133,7 @@ void LazyPrecompFFTMultipliers(long k, long q, const long *root, const FFTMultip
       // initialize entries first..k
 
 
-      double qinv = 1/((double) q);
+      wide_double qinv = PrepMulMod(q);
 
       for (long s = first; s <= k; s++) {
          UniquePtr<FFTVectorPair> item;

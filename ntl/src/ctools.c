@@ -2,8 +2,10 @@
 #include <NTL/ctools.h>
 
 
-#include <stdlib.h>
-#include <math.h>
+#include <cstdlib>
+#include <cmath>
+
+using namespace std;
 
 
 /*

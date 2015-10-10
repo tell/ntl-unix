@@ -47,6 +47,8 @@
 
 'NTL_LEGACY_NO_NAMESPACE'  => 'off',
 'NTL_LEGACY_INPUT_ERROR'   => 'off',
+'NTL_DISABLE_LONGDOUBLE'  => 'off',
+'NTL_LEGACY_SP_MULMOD'  => 'off',
 'NTL_THREADS'           => 'off',
 'NTL_EXCEPTIONS'        => 'off',
 'NTL_GMP_LIP'           => 'off',
@@ -84,6 +86,7 @@
 
 %Variable = ();
 
+$nowrite = 0;
 
 foreach $arg (@ARGV) {
 
@@ -91,6 +94,12 @@ foreach $arg (@ARGV) {
       system("more ../doc/config.txt");
       exit;
    }
+
+   if ($arg =~ '^--nowrite$') {
+      $nowrite = 1;
+      next;
+   }
+
 
    if (($name, $val) = ($arg =~ /(.*?)=(.*)/)) {
 
@@ -330,9 +339,12 @@ while ($line = <CFILE>) {
 close(CFILE);
 close(CFILEOUT);
 
-print("writing makefile\n");
-system("cp mfileout makefile");
+if ($nowrite == 0) {
 
-print("writing ../include/NTL/config.h\n");
-system("cp cfileout ../include/NTL/config.h");
+   print("writing makefile\n");
+   system("cp mfileout makefile");
+
+   print("writing ../include/NTL/config.h\n");
+   system("cp cfileout ../include/NTL/config.h");
+}
 

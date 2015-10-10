@@ -1,7 +1,7 @@
 
 #include <NTL/GF2X.h>
 
-#include <stdio.h>
+#include <cstdio>
 
 NTL_CLIENT
 

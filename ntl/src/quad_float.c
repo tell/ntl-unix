@@ -47,13 +47,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <NTL/quad_float.h>
 #include <NTL/RR.h>
 
-#include <float.h>
+#include <cfloat>
 
 #include <NTL/new.h>
 
 NTL_START_IMPL
 
-#if (defined(__GNUC__) && NTL_EXT_DOUBLE && (defined(__i386__) || defined(__i486__) || defined(__i586__)))
+#if (NTL_EXT_DOUBLE && defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)))
 
 #if (!defined(NTL_X86_FIX) && !defined(NTL_NO_X86_FIX))
 

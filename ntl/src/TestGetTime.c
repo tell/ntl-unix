@@ -2,8 +2,10 @@
 
 #include <NTL/config.h>
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
+
+using namespace std;
 
 double _ntl_GetTime();
 

@@ -335,6 +335,10 @@ ZZ PowerMod(const ZZ& a, long e, const ZZ& n);
 // forms) support promotions from long to ZZ on (a, b).
 
 
+
+
+// @anchor{modarith}
+
 /**************************************************************************\
 
                         Single-precision modular arithmetic
@@ -345,6 +349,7 @@ itself should be in the range 2..NTL_SP_BOUND-1.
 
 Most of these routines are, of course, implemented as fast inline
 functions.  No checking is done that inputs are in range.
+
 
 \**************************************************************************/
 
@@ -359,20 +364,32 @@ long NegateMod(long a, long n); // return (-a)%n
 
 long MulMod(long a, long b, long n); // return (a*b)%n
 
-long MulMod(long a, long b, long n, double ninv);
-// return (a*b)%n.  ninv = 1/((double) n).  This is faster if n is
-// fixed for many multiplications.
+long MulMod(long a, long b, long n, mulmod_t ninv); 
+// return (a*b)%n.  
+//
+// Usually faster than plain MulMod when n is fixed for many
+// invocations. The value ninv should be precomputed as 
+//   mulmod_t ninv = PrepMulMod(n);
+
+mulmod_t PrepMulMod(long n);
+// Prepare auxilliary data for MulMod.
+
+long MulModPrecon(long a, long b, long n, mulmod_precon_t bninv);
+// return (a*b)%n.  
+//
+// Usually much faster than MulMod when both b and n are fixed for 
+// many invocations.  The value bninv should be precomputed as
+//   mulmod_precon_t bninv = PrepMulModPrecon(b, n);
+// or as
+//   mulmod_precon_t bninv = PrepMulModPrecon(b, n, ninv);
+// where ninv = PrepMulMod(n).
+
+mulmod_precon_t PrepMulModPrecon(long b, long n);
+mulmod_precon_t PrepMulModPrecon(long b, long n, mulmod_t ninv);
+// Prepare auxilliary data for MulModPrecon.
+// In the second version, ninv = PrepMulMod(n).
 
 
-long MulMod2(long a, long b, long n, double bninv);
-// return (a*b)%n.  bninv = ((double) b)/((double) n).  This is faster
-// if both n and b are fixed for many multiplications.
-// Note: This is OBSOLETE -- use MulModPrecon (see below) for 
-// better performance.
-
-
-long MulDivRem(long& q, long a, long b, long n, double bninv);
-// return (a*b)%n, set q = (a*b)/n.  bninv = ((double) b)/((double) n)
 
 long InvMod(long a, long n);
 // computes a^{-1} mod n.  Error is raised if undefined.
@@ -380,44 +397,111 @@ long InvMod(long a, long n);
 long PowerMod(long a, long e, long n);
 // computes a^e mod n (e may be negative)
 
-
-
-// The following are variants of MulMod2 above that may be significantly 
-// faster on certain machines.  The implmentation varies depending
-// on the settings of the flags NTL_SPMM_ULL and NTL_SPMM_UL.
-// By default (no flags), the implementation is the same as MulMod2 above.
-// It is best to let the Wizard script select the optimal flag.
-
-typedef mulmod_precon_t  /*  depends on implementation */ ;
-
-mulmod_precon_t PrepMulModPrecon(long b, long n, double ninv);
-// Prepares preconditioning. ninv = 1/((double) n)
-
-long MulModPrecon(long a, long b, long n, mulmod_precon_t bninv);
-// return (a*b)%n.  bninv = MulModPrecon(b, n, ninv).
-
-// Example of use:
-//    long a, b, n, c;
-//      ...
-//    double ninv = 1/((double) n);
-//    mulmod_precon_t bninv = PrepMulModPrecon(b, n, ninv);
-//     ...
-//    c = MulModPrecon(a, b, n, bninv);  // c = (a*b) % n
-
-
-
 // The following are vector versions of the MulMod routines
-// They each compute x[i] = (a[i] * b[i])% n   i = 0..k-1 
+// They each compute x[i] = (a[i] * b)% n   i = 0..k-1 
 
 void VectorMulMod(long k, long *x, const long *a, long b, long n);
 
 void VectorMulMod(long k, long *x, const long *a, long b, long n, 
-                  double ninv);
-// ninv == 1/((double) n)
+                  mulmod_t ninv);
+// ninv = PrepMulMod(n)
 
 void VectorMulModPrecon(long k, long *x, const long *a, long b, long n, 
                         mulmod_precon_t bninv);
-// bninv == MulModPrecon(b, n, ninv)
+// bninv = MulModPrecon(b, n)
+
+
+
+long MulDivRem(long& q, long a, long b, long n, muldivrem_t bninv);
+// return (a*b)%n, set q = (a*b)/n.  
+// The value bninv should be precomputed as 
+//   muldivrem_t bninv = PrepMulDivRem(b, n);
+// or as
+//   muldivrem_t bninv = PrepMulDivRem(b, n, ninv);
+// where ninv = PrepMod(n).
+
+ muldivrem_t PrepMulDivRem(long b, long n);
+ muldivrem_t PrepMulDivRem(long b, long n, mulmod_t ninv);
+// Prepare auxilliary data for MulDivRem.
+// In the second version, ninv = PrepMulMod(n).
+
+// NOTE: despite the similarity in the interface to MulModPrecon,
+// this routine is typically implemented in a very different way,
+// and usually much less efficient.
+// It was initially designed for specialized, internal use
+// within NTL, but has been a part of the documented NTL
+// interface for some time, and remains so even after the
+// v9.0 upgrade.
+
+
+
+//
+// Compatibility notes:
+//
+// The types mulmod_t and muldivrem_t were introduced in NTL v9.0,
+// as were the functions PrepMulMod and PrepMulDivRem.
+// Prior to this, the built-in type "double" played the role of these
+// types, and the user was expected to compute PrepMulMod(n) as 1/double(n)
+// and PrepMulDivRem(b, n) as double(b)/double(n).
+// 
+// By abstracting these types, NTL is able to exploit a wider variety of
+// implementation strategies.  Some old client code may break, but the
+// compiler will easily find the code that needs to be updated,
+// and the updates are quite mechanical (unless the old code implicitly
+// made use of the assumption that NTL_SP_NBITS <= NTL_DOUBLE_PRECISION-3).
+//
+// It is highly recommended that old client codes be updated.
+// However, one may build NTL with the configuration option 
+// NTL_LEGACY_SP_MULMOD=on, which will cause the interfaces and 
+// implementations to revert to their pre-v9.0 definitions.  
+// This option will also make the following
+// (obslete) function visible:
+
+    long MulMod2(long a, long b, long n, double bninv);
+    // return (a*b)%n.  bninv = ((double) b)/((double) n).  This is faster
+    // if both n and b are fixed for many multiplications.
+    // Note: This is OBSOLETE -- use MulModPrecon.
+
+// Currently, this new interface allows 64-bit x86/GCC platforms to use 64-bit
+// floating point precision instead of 53-bit precision (using the x87 FPU
+// instructions).  This allows single precision moduli to be 60 bits, rather
+// than 50 bits.  While some operations may, in fact, be a bit slower, the most
+// important ones, like MulModPrecon, are not, and allowing larger moduli helps
+// speed up various Chinese-Remainder-based algorithms.  Also, this strategy is
+// currently only employed when NTL is built using GMP.
+//
+// If you find long doubles problematic, then you may build NTL with the
+// configuration option NTL_DISABLE_LONGDOUBLE=on, which will revert to the old
+// 50-bit regime, while still maintaining the new, abstract interfaces. 
+
+// Future versions of NTL may implement yet other strategies for modular
+// arithmetic.  Clients that use the new, abstract interface will automatically
+// beneifit from any such improvements to NTL.
+
+// One can detect the new interface by testing if the macro NTL_HAVE_MULMOD_T
+// is defined.  The following code can be used to make new-style NTL clients
+// work with either older (pre-9.0) versions of NTL or newer versions
+// (post-9.0):
+
+
+   #ifndef NTL_HAVE_MULMOD_T
+      namespace NTL {
+         typedef double mulmod_t;
+         typedef double muldivrem_t;
+
+         static inline double PrepMulMod(long n) 
+         { return double(1L)/double(n); }
+
+         static inline double PrepMulDivRem(long b, long n, double ninv) 
+         { return double(b)*ninv; }
+
+         static inline double PrepMulDivRem(long b, long n) 
+         { return double(b)/double(n); }
+
+         static inline double PrepMulModPrecon(long b, long n) 
+         { return PrepMulModPrecon(b, n, PrepMulMod(n)); }
+      }
+   #endif
 
 
 
@@ -793,10 +877,9 @@ ostream& operator<<(ostream& s, const ZZ& a);
                              // number
 
 // The following relations hold:
-//    NTL_SP_NBITS <= NTL_WSP_NBITS <= NTL_ZZ_NBITS
-//    26 <= NTL_SP_NBITS <= min(NTL_BITS_PER_LONG-2, NTL_DOUBLE_PRECISION-3)
-//    NTL_WSP_NBITS <= NTL_BITS_PER_LONG-2
-//
+//    30 <= NTL_SP_NBITS <= NTL_WSP_NBITS 
+//       <= min(NTL_ZZ_NBITS, NTL_BITS_PER_LONG-2)
+
 // Note that NTL_ZZ_NBITS may be less than, equal to, or greater than
 // NTL_BITS_PER_LONG  -- no particular relationship should be assumed to hold.
 // In particular, expressions like (1L << NTL_ZZ_BITS) might overflow.
@@ -815,7 +898,8 @@ ostream& operator<<(ostream& s, const ZZ& a);
 #define NTL_WSP_BOUND (1L << NTL_WSP_NBITS)
 
 
-// Backward compatability note:
+// Backward compatability notes:
+//
 // Prior to version 5.0, the macro NTL_NBITS was defined,
 // along with the macro NTL_RADIX defined to be (1L << NTL_NBITS).
 // While these macros are still available when using NTL's traditional 
@@ -825,6 +909,11 @@ ostream& operator<<(ostream& s, const ZZ& a);
 // Furthermore, when writing portable programs, one should avoid these macros.
 // Note that when using traditional long integer arithmetic, we have
 //    NTL_ZZ_NBITS = NTL_SP_NBITS = NTL_WSP_NBITS = NTL_NBITS.
+//
+// Prior to version 9.0, one could also assume that 
+//   NTL_SP_NBITS <= NTL_DOUBLE_PRECISION-3;
+// however, this is no longer the case (unless NTL is build with he NTL_LEGACY_SP_MULMOD
+// flag turned on).
 
 
 // Here are some additional functions.

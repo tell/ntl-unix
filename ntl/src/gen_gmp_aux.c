@@ -1,9 +1,11 @@
 
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cmath>
+#include <cstdio>
 
 #include <NTL/config.h>
+
+using namespace std;
 
 
 #ifndef NTL_GMP_LIP
@@ -59,6 +61,43 @@ void print2k(FILE *f, long k, long bpl)
    fprintf(f, ")");
 }
 
+
+void print2k_WD(FILE *f, long k, long bpl)
+{
+   long m, l;
+   long first;
+
+   if (k <= 0) {
+      fprintf(f, "(wide_double(1L))");
+      return;
+   }
+
+   m = bpl - 2;
+   first = 1;
+
+   fprintf(f, "(");
+
+   while (k > 0) {
+      if (k > m)
+         l = m;
+      else
+         l = k;
+
+      k = k - l;
+
+
+      if (first)
+         first = 0;
+      else
+         fprintf(f, "*");
+
+      fprintf(f, "(wide_double(1L<<%ld))", l);
+   }
+
+   fprintf(f, ")");
+}
+
+
 void Error(const char *s)
 {
    fprintf(stderr, "%s\n", s);
@@ -99,7 +138,11 @@ int main()
 
    ntl_wsp_nbits = bpl - 2;
 
+#if (NTL_LONGDOUBLE_OK && !defined(NTL_LEGACY_SP_MULMOD) && !defined(NTL_DISABLE_LONGDOUBLE))
+   ntl_sp_nbits = NTL_WNBITS_MAX;
+#else
    ntl_sp_nbits = NTL_NBITS_MAX;
+#endif
 
    if (sizeof(mp_size_t) < sizeof(long)) {
       printf("#define NTL_SMALL_MP_SIZE_T\n");
@@ -114,6 +157,10 @@ int main()
 
    printf("#define NTL_ZZ_FRADIX ");
    print2k(stdout, ntl_zz_nbits, bpl);
+   printf("\n");
+
+   printf("#define NTL_ZZ_WIDE_FRADIX ");
+   print2k_WD(stdout, ntl_zz_nbits, bpl);
    printf("\n");
 
    return 0;

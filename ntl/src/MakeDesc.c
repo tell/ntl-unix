@@ -1,23 +1,26 @@
 
 
-#include <stdio.h>
-#include <limits.h>
-#include <float.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdio>
+#include <climits>
+#include <cfloat>
+#include <cstdlib>
+#include <cmath>
+#include <limits>
 
 
 #include <NTL/version.h>
 
+using namespace std;
 
-#if (defined(__GNUC__) && (defined(__i386__) || defined(__i486__) || defined(__i586__)))
+
+#if (defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)))
 
 
-#define AutoFix (1)
+#define GNUC_INTEL (1)
 
 #else
 
-#define AutoFix (0)
+#define GNUC_INTEL (0)
 
 #endif
 
@@ -31,6 +34,7 @@ unsigned long val_ulong(unsigned long x);
 size_t val_size_t(size_t x);
 
 double val_double(double x);
+long double val_ldouble(double x);
 
 void touch_int(int* x);
 void touch_uint(unsigned int* x);
@@ -41,6 +45,7 @@ void touch_ulong(unsigned long* x);
 void touch_size_t(size_t* x);
 
 void touch_double(double* x);
+void touch_ldouble(long double* x);
 
 
 
@@ -121,6 +126,33 @@ long DoublePrecision1()
    return k;
 }
 
+long LongDoublePrecision()
+{
+   long double eps, one, res;
+   long k;
+
+   one = val_ldouble(1.0);
+   eps = val_ldouble(1.0);
+
+   k = 0;
+
+   do {
+      long double tmp;
+
+      k++;
+      eps *= 1.0/2.0;
+      tmp = 1.0 + eps;
+      touch_ldouble(&tmp);
+      res = tmp - one;
+   } while (res == eps && k < 500);
+
+   // if k >= 500, then most likely this is some
+   // weird double/double implementation.
+   // We also check what numeric_limits says about long doubles.
+
+   if (k >= 500 || !numeric_limits<long double>::is_iec559) k = 0;
+   return k;
+}
 
 void print2k(FILE *f, long k, long bpl)
 {
@@ -155,6 +187,43 @@ void print2k(FILE *f, long k, long bpl)
 
    fprintf(f, ")");
 }
+
+
+void print2k_WD(FILE *f, long k, long bpl)
+{
+   long m, l;
+   long first;
+
+   if (k <= 0) {
+      fprintf(f, "(wide_double(1L))");
+      return;
+   }
+
+   m = bpl - 2;
+   first = 1;
+
+   fprintf(f, "(");
+
+   while (k > 0) {
+      if (k > m)
+         l = m;
+      else
+         l = k;
+
+      k = k - l;
+
+      if (first)
+         first = 0;
+      else 
+         fprintf(f, "*");
+
+      fprintf(f, "(wide_double(1L<<%ld))", l);
+   }
+
+   fprintf(f, ")");
+}
+
+
 
 
 
@@ -694,8 +763,9 @@ const char *yn_vec[2] = { "no", "yes" };
 
 int main()
 {
-   long bpl, bpi, bpt, rs_arith, nbits, single_mul_ok;
+   long bpl, bpi, bpt, rs_arith, nbits, wnbits;
    long dp, dp1, dr;
+   long ldp;
    FILE *f;
    long warnings = 0;
 
@@ -845,6 +915,9 @@ int main()
       return 1;
    }
 
+ 
+
+
 
 
    /*
@@ -933,10 +1006,24 @@ int main()
    dr = DoubleRounding(dp);
 
 
+   /* 
+    * Next, we test the precision of long doubles.
+    * If long doubles don't look good or useful, ldp == 0.
+    * Right now, we ony enable long double usage on Intel/gcc
+    * platforms.
+    */
+
+   ldp = LongDoublePrecision(); 
+   if (ldp <= dp || !GNUC_INTEL) ldp = 0;
+
+   // Disable if it looks like rounding doesn't work right
+   if (((long) val_ldouble(1.75)) != 1L) ldp = 0;
+   if (((long) val_ldouble(-1.75)) != -1L) ldp = 0;
+
+
    /*
-    * Set nbits --- the default radix size for NTL's "built in"
-    * long integer arithmetic.
-    *
+    * Set nbits = min(bpl-2, dp-3) [and even]
+
     *  Given the minimum size of blp and dp, the smallest possible
     *  value of nbits is 30.
     */
@@ -949,6 +1036,35 @@ int main()
 
    if (nbits % 2 != 0) nbits--;
 
+   /*
+    * Set wnbits = min(bpl-2, ldp-3) [and even]
+    */
+
+   if (ldp) {
+      if (bpl-2 < ldp-3)
+         wnbits = bpl-2;
+      else
+         wnbits = ldp-3;
+
+      if (wnbits % 2 != 0) wnbits--;
+   }
+   else {
+      wnbits = nbits;
+   }
+
+   if (wnbits <= nbits) ldp = 0;
+   // disable long doubles if it doesn't increase nbits...
+   // (for example, on 32-bit machines)
+
+   // NOTE:  on x86-64 platforms, the above logic will yield
+   // 60-bit single-precision arithmetic.
+   // We could have set wnbit = min(bpl-2, ldp-2), which
+   // would work assuming long doubles have correct rounding.
+   // On x86-64 platforms, this would yield 62-bit single-precision
+   // arithmetic.  I found experimentally that 62-bit 
+   // arithmetic does indeed work, but makes certain operations slower:
+   // ZZ_pX arithmetic in particular seems slower, probably due to 
+   // slower TBL_REM in g_lip_impl.h.
 
    /*
     * That's it!  All tests have passed.
@@ -961,11 +1077,13 @@ int main()
    fprintf(stderr, "bits per size_t = %ld\n", bpt);
    fprintf(stderr, "arith right shift = %s\n", yn_vec[rs_arith]);
    fprintf(stderr, "double precision = %ld\n", dp);
+   fprintf(stderr, "long double precision = %ld\n", ldp);
    fprintf(stderr, "NBITS (maximum) = %ld\n", nbits);
+   fprintf(stderr, "WNBITS (maximum) = %ld\n", wnbits);
    fprintf(stderr, "register double precision = %ld\n", dp1);
    fprintf(stderr, "double rounding detected = %s\n", yn_vec[dr]);  
 
-   if (((dp1 > dp) || dr) && AutoFix)
+   if (((dp1 > dp) || dr) && GNUC_INTEL)
       fprintf(stderr, "-- auto x86 fix\n");
 
    if (dp != 53) {
@@ -989,7 +1107,7 @@ int main()
 
 #endif
 
-   if (((dp1 > dp) || dr) && !AutoFix) {
+   if (((dp1 > dp) || dr) && !GNUC_INTEL) {
       warnings = 1;
       fprintf(stderr, "\n\nWARNING:\n\n");
       fprintf(stderr, "This platform has extended double precision registers.\n");
@@ -1036,16 +1154,35 @@ int main()
    fprintf(f, "#define NTL_BITS_PER_SIZE_T (%ld)\n", bpt);
    fprintf(f, "#define NTL_ARITH_RIGHT_SHIFT (%ld)\n", rs_arith);
    fprintf(f, "#define NTL_NBITS_MAX (%ld)\n", nbits);
+   fprintf(f, "#define NTL_WNBITS_MAX (%ld)\n", wnbits);
    fprintf(f, "#define NTL_DOUBLE_PRECISION (%ld)\n", dp);
    fprintf(f, "#define NTL_FDOUBLE_PRECISION ");
    print2k(f, dp-1, bpl);
    fprintf(f, "\n");
+
+
+   if (ldp) {
+      fprintf(f, "#define NTL_LONGDOUBLE_OK (1)\n"); 
+      fprintf(f, "#define NTL_LONGDOUBLE_PRECISION (%ld)\n", ldp); 
+      fprintf(f, "#define NTL_WIDE_DOUBLE_LDP ");
+      print2k_WD(f, ldp-1, bpl);
+      fprintf(f, "\n");
+      fprintf(f, "#define NTL_WIDE_DOUBLE_DP ");
+      print2k_WD(f, dp-1, bpl);
+      fprintf(f, "\n");
+   }
+   else {
+      fprintf(f, "#define NTL_LONGDOUBLE_OK (0)\n"); 
+      fprintf(f, "#define NTL_WIDE_DOUBLE_DP ");
+      print2k_WD(f, dp-1, bpl);
+      fprintf(f, "\n");
+   }
+
+
    fprintf(f, "#define NTL_QUAD_FLOAT_SPLIT (");
    print2k(f, dp - (dp/2), bpl);
    fprintf(f, "+1.0)\n");
    fprintf(f, "#define NTL_EXT_DOUBLE (%d)\n", ((dp1 > dp) || dr));
-   fprintf(f, "#define NTL_SINGLE_MUL_OK (%d)\n", single_mul_ok != 0);
-   fprintf(f, "#define NTL_DOUBLES_LOW_HIGH (%d)\n\n\n", single_mul_ok < 0);
    print_BB_mul_code(f, bpl);
    print_BB_sqr_code(f, bpl);
    print_BB_rev_code(f, bpl);

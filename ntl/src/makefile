@@ -178,7 +178,7 @@ SINC = c_lip_impl.h g_lip_impl.h
 
 IN01= FFT.h FacVec.h GF2.h GF2E.h GF2EX.h GF2EXFactoring.h GF2X.h
 IN02=$(IN01) GF2XFactoring.h GF2XVec.h HNF.h ctools.h LLL.h 
-IN03=$(IN02) RR.h SPMM_ASM.h WordVector.h ZZ.h ZZVec.h ZZX.h ZZXFactoring.h 
+IN03=$(IN02) RR.h SPMM_ASM.h WordVector.h ZZ.h sp_arith.h ZZVec.h ZZX.h ZZXFactoring.h 
 IN04=$(IN03) ZZ_p.h ZZ_pE.h ZZ_pEX.h ZZ_pEXFactoring.h ZZ_pX.h ZZ_pXFactoring.h
 IN05=$(IN04) fileio.h lip.h lzz_p.h lzz_pE.h lzz_pEX.h lzz_pEXFactoring.h
 IN06=$(IN05) lzz_pX.h lzz_pXFactoring.h mat_GF2.h mat_GF2E.h mat_RR.h

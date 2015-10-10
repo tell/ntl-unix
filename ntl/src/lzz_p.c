@@ -24,7 +24,7 @@ zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
 
    p = NewP;
 
-   pinv = 1/double(p);
+   pinv = PrepMulMod(p);
 
    p_info = 0;
 
@@ -66,7 +66,7 @@ zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
       t = InvMod(t, q);
       if (NTL_zz_p_QUICK_CRT) mul(M1, M1, t);
       CoeffModP[i] = rem(M1, p);
-      x[i] = ((double) t)/((double) q);
+      x[i] = ((wide_double) t)/((wide_double) q);
       u[i] = t;
    }
 }
@@ -92,7 +92,7 @@ zz_pInfoT::zz_pInfoT(INIT_USER_FFT_TYPE, long q)
    if (!IsFFTPrime(q, w)) LogicError("invalid user supplied prime");
 
    p = q;
-   pinv = 1/((double) q);
+   pinv = PrepMulMod(q);
 
    p_info_owner.make();
    p_info = p_info_owner.get();

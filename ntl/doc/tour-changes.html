@@ -16,6 +16,77 @@ A Tour of NTL: Summary of Changes
 </p>
 </h1>
 
+<p><hr><p>
+<h3>
+2015.3.27:
+Changed between NTL 8.1.2 and 9.0.0
+</h3>
+
+<ul>
+<li>
+With much trepidation, I have introduced a (hopefully minor)
+backward incompatibility into NTL.  
+
+The interface to the single-precision modular arithmetic 
+routines has been modified slightly.
+This interface change allows for more flexible and more
+efficient implementation of these routines,
+which play a crucial role at many levels in NTL.
+<p>
+Basically, these changes to the interface abstract away
+some implementation details that arguably should never been there
+in the first place.
+By coding to the new interface, NTL clients will be able to 
+benefit from
+the current and future improvements.
+<p>
+In particular, on 64-bit x86/GCC platforms, single precision
+moduli can now be up to <i>60 bits</i>, rather than <i>50 bits</i>.
+While some operations may in fact be a little slower, the most important
+ones (like <tt>MulModPrecon</tt>) should not be.
+Using larger moduli speeds up a number of things, like <tt>ZZ_pX</tt>
+arithmetic, as fewer primes need to be used in Chinese Remaindering steps.
+Other applications benefit from larger moduli as well.
+
+<p>
+It is expected that most NTL clients will not be affected at all.
+Moreover, any code that needs to be updated will be detected
+by the compiler, and the updates should be simple and mechanical.
+There is also a configuration flag that will enable the legacy
+interface (although this is not recommended practice).
+
+<p>
+For details, look <a href="ZZ.cpp.html#modarith">here</a>,
+including the comments entitled "Compatibility notes".
+
+<p>
+<li>
+Other changes:
+<ul>
+<li>
+Previous versions of NTL relied (at least by default) on some
+<i>undefined behavior</i> regarding integer arithemtic
+(namely, that in a few key code sequences, signed integer
+overflow just "wraps around").
+All of this undefined behavior has been replaced by 
+(much more desirable) <i>implementation-defined behavior</i>
+(namely, that conversion from unsigned to signed works as expected).
+As in the past, the <tt>NTL_CLEAN_INT</tt> can be used to 
+avoid all of these issues (but with the new code, this should
+truly be academic).
+For details, look <a href="tour-impl.html">here</a>.
+<li>
+By request, added a function <tt>xdouble exp(const xdouble&amp; x)</tt>,
+which is equivalent to <tt>xexp(to_double(x))</tt>.
+For details, look <a href="xdouble.cpp.html">here</a>.
+</ul>
+</ul>
+
+
+
+
+
+
 
 <p><hr><p>
 <h3>

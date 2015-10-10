@@ -89,17 +89,18 @@ void ZZ_p::DoInstall()
       FFTInfo->MaxRoot = CalcMaxRoot(q);
 
 
-      double fn = double(n);
+      wide_double fn = wide_double(n);
 
-      if (8.0*fn*(fn+32) > NTL_FDOUBLE_PRECISION)
+      if (8.0*fn*(fn+32) > NTL_WIDE_FDOUBLE_PRECISION)
          ResourceError("modulus too big");
 
 
-      if (8.0*fn*(fn+32) > NTL_FDOUBLE_PRECISION/double(NTL_SP_BOUND))
-         FFTInfo->QuickCRT = false;
-      else
+#ifndef NTL_USE_LONGDOUBLE
+      if (8.0*fn*(fn+32) <= NTL_WIDE_FDOUBLE_PRECISION/wide_double(NTL_SP_BOUND))
          FFTInfo->QuickCRT = true;
-
+      else
+#endif
+         FFTInfo->QuickCRT = false;
 
       FFTInfo->x.SetLength(n);
       FFTInfo->u.SetLength(n);
@@ -135,7 +136,7 @@ void ZZ_p::DoInstall()
             FFTInfo->crt_struct.insert(i, M3);
 
 
-            FFTInfo->x[i] = ((double) t)/((double) q);
+            FFTInfo->x[i] = ((wide_double) t)/((wide_double) q);
             FFTInfo->u[i] = t;
          }
       }

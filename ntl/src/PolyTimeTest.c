@@ -1,7 +1,7 @@
 
 #include <NTL/ZZ_pX.h>
 
-#include <stdio.h>
+#include <cstdio>
 
 NTL_CLIENT
 
@@ -59,8 +59,7 @@ int main()
 #if (defined(NTL_TBL_REM) && defined(NTL_GMP_LIP))
 
    if (sizeof(NTL_ULL_TYPE) != 2*sizeof(long) ||
-       NTL_ZZ_NBITS != NTL_BITS_PER_LONG ||
-       (1L << (NTL_ZZ_NBITS-NTL_SP_NBITS)) < 800)  {
+       NTL_ZZ_NBITS != NTL_BITS_PER_LONG) {
       printf("999999999999999 ");
       print_flag();
       return 0;

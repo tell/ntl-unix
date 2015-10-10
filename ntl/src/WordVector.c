@@ -2,7 +2,7 @@
 #include <NTL/WordVector.h>
 
 #include <NTL/new.h>
-#include <stdio.h>
+#include <cstdio>
 
 NTL_START_IMPL
 

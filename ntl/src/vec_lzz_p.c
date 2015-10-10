@@ -141,7 +141,7 @@ void mul(vec_zz_p& x, const vec_zz_p& a, zz_p b)
    else {
  
       long p = zz_p::modulus();
-      double pinv = zz_p::ModulusInverse();
+      wide_double pinv = zz_p::ModulusInverse();
       long bb = rep(b);
       mulmod_precon_t bpinv = PrepMulModPrecon(bb, p, pinv);
       

@@ -1,11 +1,9 @@
 
 #include <NTL/mat_lzz_p.h>
-
 #include <NTL/new.h>
-
 #include <NTL/vec_long.h>
-#include <NTL/vec_ulong.h>
-#include <NTL/vec_double.h>
+
+
 
 NTL_START_IMPL
 
@@ -46,7 +44,7 @@ void sub(mat_zz_p& X, const mat_zz_p& A, const mat_zz_p& B)
 // some local buffers
 
 NTL_THREAD_LOCAL static vec_long mul_aux_vec;
-NTL_THREAD_LOCAL static NTL_SPMM_VEC_T precon_vec;
+NTL_THREAD_LOCAL static Vec<mulmod_precon_t> precon_vec;
 
 
 
@@ -65,7 +63,7 @@ void mul_aux(mat_zz_p& X, const mat_zz_p& A, const mat_zz_p& B)
    if (m > 1) {  // new preconditioning code
 
       long p = zz_p::modulus();
-      double pinv = zz_p::ModulusInverse();
+      wide_double pinv = zz_p::ModulusInverse();
 
       
       vec_long::Watcher watch_mul_aux_vec(mul_aux_vec);
@@ -101,7 +99,7 @@ void mul_aux(mat_zz_p& X, const mat_zz_p& A, const mat_zz_p& B)
    else {  // just use the old code, w/o preconditioning
 
       long p = zz_p::modulus();
-      double pinv = zz_p::ModulusInverse();
+      wide_double pinv = zz_p::ModulusInverse();
 
       long i, j, k;  
       long acc, tmp;  
@@ -148,7 +146,7 @@ void mul(vec_zz_p& x, const vec_zz_p& a, const mat_zz_p& B)
    else if (m == 1) {
 
       long p = zz_p::modulus();
-      double pinv = zz_p::ModulusInverse();
+      wide_double pinv = zz_p::ModulusInverse();
 
       long acc, tmp;
       long k;
@@ -167,7 +165,7 @@ void mul(vec_zz_p& x, const vec_zz_p& a, const mat_zz_p& B)
 
 
       long p = zz_p::modulus();
-      double pinv = zz_p::ModulusInverse();
+      wide_double pinv = zz_p::ModulusInverse();
 
       vec_long::Watcher watch_mul_aux_vec(mul_aux_vec);
       mul_aux_vec.SetLength(m);
@@ -214,7 +212,7 @@ void mul_aux(vec_zz_p& x, const mat_zz_p& A, const vec_zz_p& b)
    zz_p* xp = x.elts();
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
 
    long i, k;
    long acc, tmp;
@@ -238,7 +236,7 @@ void mul_aux(vec_zz_p& x, const mat_zz_p& A, const vec_zz_p& b)
    }
    else {
 
-      NTL_SPMM_VEC_T::Watcher watch_precon_vec(precon_vec);
+      Vec<mulmod_precon_t>::Watcher watch_precon_vec(precon_vec);
       precon_vec.SetLength(l);
       mulmod_precon_t *bpinv = precon_vec.elts();
 
@@ -291,7 +289,7 @@ void mul(mat_zz_p& X, const mat_zz_p& A, zz_p b)
    else {
       
       long p = zz_p::modulus();
-      double pinv = zz_p::ModulusInverse();
+      wide_double pinv = zz_p::ModulusInverse();
       long bb = rep(b);
       mulmod_precon_t bpinv = PrepMulModPrecon(bb, p, pinv);
       
@@ -359,7 +357,7 @@ void determinant(zz_p& d, const mat_zz_p& M_in)
    set(det);
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
 
    for (k = 0; k < n; k++) {
       pos = -1;
@@ -499,7 +497,7 @@ void solve(zz_p& d, vec_zz_p& X,
    set(det);
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
 
    for (k = 0; k < n; k++) {
       pos = -1;
@@ -593,7 +591,7 @@ void inv(zz_p& d, mat_zz_p& X, const mat_zz_p& A)
    set(det);
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
 
    for (k = 0; k < n; k++) {
       pos = -1;
@@ -673,7 +671,7 @@ long gauss(mat_zz_p& M, long w)
       LogicError("gauss: bad args");
 
    long p = zz_p::modulus();
-   double pinv = zz_p::ModulusInverse();
+   wide_double pinv = zz_p::ModulusInverse();
    long T1, T2;
 
    l = 0;
@@ -699,7 +697,7 @@ long gauss(mat_zz_p& M, long w)
             mul(t1, M[i][k], t3);
 
             T1 = rep(t1);
-            mulmod_precon_t T1pinv = PrepMulModPrecon(T1, p, pinv); // ((double) T1)*pinv;
+            mulmod_precon_t T1pinv = PrepMulModPrecon(T1, p, pinv); 
 
             clear(M[i][k]);
 

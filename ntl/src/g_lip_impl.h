@@ -31,6 +31,8 @@
 #include <NTL/vector.h>
 #include <NTL/SmartPtr.h>
 
+#include <NTL/sp_arith.h>
+
 
 //#include <cstdlib>
 //#include <cstdio>
@@ -2215,14 +2217,14 @@ gxxeucl(
    long got12;
    long got21;
    long got22;
-   double hi;
-   double lo;
-   double dt;
-   double fhi, fhi1;
-   double flo, flo1;
-   double num;
-   double den;
-   double dirt;
+   wide_double hi;
+   wide_double lo;
+   wide_double dt;
+   wide_double fhi, fhi1;
+   wide_double flo, flo1;
+   wide_double num;
+   wide_double den;
+   wide_double dirt;
 
    _ntl_gsetlength(&a, (e = (SIZE(ain) > SIZE(nin) ? SIZE(ain) : SIZE(nin))));
    _ntl_gsetlength(&n, e);
@@ -2236,11 +2238,11 @@ gxxeucl(
    _ntl_gsetlength(&u, e);
    *uu = u;
 
-   fhi1 = 1.0 + ((double) 32.0)/NTL_FDOUBLE_PRECISION;
-   flo1 = 1.0 - ((double) 32.0)/NTL_FDOUBLE_PRECISION;
+   fhi1 = wide_double(1L) + wide_double(32L)/NTL_WIDE_FDOUBLE_PRECISION;
+   flo1 = wide_double(1L) - wide_double(32L)/NTL_WIDE_FDOUBLE_PRECISION;
 
-   fhi = 1.0 + ((double) 8.0)/NTL_FDOUBLE_PRECISION;
-   flo = 1.0 - ((double) 8.0)/NTL_FDOUBLE_PRECISION;
+   fhi = wide_double(1L) + wide_double(8L)/NTL_WIDE_FDOUBLE_PRECISION;
+   flo = wide_double(1L) - wide_double(8L)/NTL_WIDE_FDOUBLE_PRECISION;
 
    _ntl_gcopy(ain, &a);
    _ntl_gcopy(nin, &n);
@@ -2258,28 +2260,28 @@ gxxeucl(
       {
          sa = SIZE(a);
          p = DATA(a) + (sa-1);
-         num = (double) (*p) * NTL_ZZ_FRADIX;
+         num = wide_double(*p) * NTL_ZZ_WIDE_FRADIX;
          if (sa > 1)
-            num += (*(--p));
-         num *= NTL_ZZ_FRADIX;
+            num += wide_double(*(--p));
+         num *= NTL_ZZ_WIDE_FRADIX;
          if (sa > 2)
-            num += (*(p - 1));
+            num += wide_double(*(p - 1));
 
          sn = SIZE(n);
          p = DATA(n) + (sn-1);
-         den = (double) (*p) * NTL_ZZ_FRADIX;
+         den = wide_double(*p) * NTL_ZZ_WIDE_FRADIX;
          if (sn > 1)
-            den += (*(--p));
-         den *= NTL_ZZ_FRADIX;
+            den += wide_double(*(--p));
+         den *= NTL_ZZ_WIDE_FRADIX;
          if (sn > 2)
-            den += (*(p - 1));
+            den += wide_double(*(p - 1));
 
-         hi = fhi1 * (num + 1.0) / den;
-         lo = flo1 * num / (den + 1.0);
+         hi = fhi1 * (num + wide_double(1L)) / den;
+         lo = flo1 * num / (den + wide_double(1L));
          if (diff > 0)
          {
-            hi *= NTL_ZZ_FRADIX;
-            lo *= NTL_ZZ_FRADIX;
+            hi *= NTL_ZZ_WIDE_FRADIX;
+            lo *= NTL_ZZ_WIDE_FRADIX;
          }
          try11 = 1;
          try12 = 0;
@@ -2295,17 +2297,17 @@ gxxeucl(
             else
             {
                ilo = (long)lo;
-               dirt = hi - ilo;
-               if (dirt < 1.0/NTL_FDOUBLE_PRECISION || !ilo || ilo < (long)hi)
+               dirt = hi - wide_double(ilo);
+               if (dirt < 1.0/NTL_WIDE_FDOUBLE_PRECISION || !ilo || ilo < (long)hi)
                   fast = 0;
                else
                {
-                  dt = lo-ilo;
+                  dt = lo-wide_double(ilo);
                   lo = flo / dirt;
-                  if (dt > 1.0/NTL_FDOUBLE_PRECISION)
+                  if (dt > 1.0/NTL_WIDE_FDOUBLE_PRECISION)
                      hi = fhi / dt;
                   else
-                     hi = NTL_SP_BOUND;
+                     hi = wide_double(NTL_SP_BOUND);
                   temp = try11;
                   try11 = try21;
                   if ((NTL_WSP_BOUND - temp) / ilo < try21)
@@ -2948,7 +2950,7 @@ double _ntl_glog(_ntl_gbigint n)
 
 /* To implement _ntl_gdoubtoz, I've implemented essentially the
  * same algorithm as in LIP, processing in blocks of
- * NTL_SP_NBITS bits, rather than NTL_ZZ_NBITS.
+ * NTL_NSP_NBITS bits, rather than NTL_ZZ_NBITS.
  * This is conversion is rather delicate, and I don't want to
  * make any new assumptions about the underlying arithmetic.
  * This implementation should be quite portable. */
@@ -2978,7 +2980,7 @@ void _ntl_gdoubtoz(double a, _ntl_gbigint *xx)
 
    sz = 0;
    while (a >= 1) {
-      a = a*(1.0/NTL_SP_FBOUND);
+      a = a*(1.0/double(NTL_NSP_BOUND));
       sz++;
    }
 
@@ -2987,7 +2989,7 @@ void _ntl_gdoubtoz(double a, _ntl_gbigint *xx)
 
    while (a != 0) {
       i++;
-      a = a*NTL_SP_FBOUND;
+      a = a*double(NTL_NSP_BOUND);
       t = (long) a;
       a = a - t;
 
@@ -2995,14 +2997,14 @@ void _ntl_gdoubtoz(double a, _ntl_gbigint *xx)
          _ntl_gintoz(t, &x);
       }
       else {
-         _ntl_glshift(x, NTL_SP_NBITS, &x);
+         _ntl_glshift(x, NTL_NSP_NBITS, &x);
          _ntl_gsadd(x, t, &x);
       }
    }
 
    if (i > sz) TerminalError("bug in _ntl_gdoubtoz");
 
-   _ntl_glshift(x, (sz-i)*NTL_SP_NBITS, xx);
+   _ntl_glshift(x, (sz-i)*NTL_NSP_NBITS, xx);
    if (neg) _ntl_gnegate(xx);
 }
 
@@ -3059,14 +3061,14 @@ _ntl_gxxratrecon(
    long got21;
    long got22;
 
-   double hi;
-   double lo;
-   double dt;
-   double fhi, fhi1;
-   double flo, flo1;
-   double num;
-   double den;
-   double dirt;
+   wide_double hi;
+   wide_double lo;
+   wide_double dt;
+   wide_double fhi, fhi1;
+   wide_double flo, flo1;
+   wide_double num;
+   wide_double den;
+   wide_double dirt;
 
    if (_ntl_gsign(num_bound) < 0)
       LogicError("rational reconstruction: bad numerator bound");
@@ -3104,11 +3106,11 @@ _ntl_gxxratrecon(
    _ntl_gsetlength(&inv_bak, e);
    _ntl_gsetlength(&w_bak, e);
 
-   fhi1 = 1.0 + ((double) 32.0)/NTL_FDOUBLE_PRECISION;
-   flo1 = 1.0 - ((double) 32.0)/NTL_FDOUBLE_PRECISION;
+   fhi1 = wide_double(1L) + wide_double(32L)/NTL_WIDE_FDOUBLE_PRECISION;
+   flo1 = wide_double(1L) - wide_double(32L)/NTL_WIDE_FDOUBLE_PRECISION;
 
-   fhi = 1.0 + ((double) 8.0)/NTL_FDOUBLE_PRECISION;
-   flo = 1.0 - ((double) 8.0)/NTL_FDOUBLE_PRECISION;
+   fhi = wide_double(1L) + wide_double(8L)/NTL_WIDE_FDOUBLE_PRECISION;
+   flo = wide_double(1L) - wide_double(8L)/NTL_WIDE_FDOUBLE_PRECISION;
 
    _ntl_gcopy(ain, &a);
    _ntl_gcopy(nin, &n);
@@ -3134,28 +3136,28 @@ _ntl_gxxratrecon(
       {
          sa = SIZE(a);
          p = DATA(a) + (sa-1);
-         num = (double) (*p) * NTL_ZZ_FRADIX;
+         num = wide_double(*p) * NTL_ZZ_WIDE_FRADIX;
          if (sa > 1)
-            num += (*(--p));
-         num *= NTL_ZZ_FRADIX;
+            num += wide_double(*(--p));
+         num *= NTL_ZZ_WIDE_FRADIX;
          if (sa > 2)
-            num += (*(p - 1));
+            num += wide_double(*(p - 1));
 
          sn = SIZE(n);
          p = DATA(n) + (sn-1);
-         den = (double) (*p) * NTL_ZZ_FRADIX;
+         den = wide_double(*p) * NTL_ZZ_WIDE_FRADIX;
          if (sn > 1)
-            den += (*(--p));
-         den *= NTL_ZZ_FRADIX;
+            den += wide_double(*(--p));
+         den *= NTL_ZZ_WIDE_FRADIX;
          if (sn > 2)
-            den += (*(p - 1));
+            den += wide_double(*(p - 1));
 
-         hi = fhi1 * (num + 1.0) / den;
-         lo = flo1 * num / (den + 1.0);
+         hi = fhi1 * (num + wide_double(1L)) / den;
+         lo = flo1 * num / (den + wide_double(1L));
          if (diff > 0)
          {
-            hi *= NTL_ZZ_FRADIX;
-            lo *= NTL_ZZ_FRADIX;
+            hi *= NTL_ZZ_WIDE_FRADIX;
+            lo *= NTL_ZZ_WIDE_FRADIX;
          }
 
          try11 = 1;
@@ -3172,17 +3174,17 @@ _ntl_gxxratrecon(
             else
             {
                ilo = (long)lo;
-               dirt = hi - ilo;
-               if (dirt < 1.0/NTL_FDOUBLE_PRECISION || !ilo || ilo < (long)hi)
+               dirt = hi - wide_double(ilo);
+               if (dirt < 1.0/NTL_WIDE_FDOUBLE_PRECISION || !ilo || ilo < (long)hi)
                   fast = 0;
                else
                {
-                  dt = lo-ilo;
+                  dt = lo-wide_double(ilo);
                   lo = flo / dirt;
-                  if (dt > 1.0/NTL_FDOUBLE_PRECISION)
+                  if (dt > 1.0/NTL_WIDE_FDOUBLE_PRECISION)
                      hi = fhi / dt;
                   else
-                     hi = NTL_SP_BOUND;
+                     hi = wide_double(NTL_SP_BOUND);
                   temp = try11;
                   try11 = try21;
                   if ((NTL_WSP_BOUND - temp) / ilo < try21)
@@ -3264,28 +3266,28 @@ _ntl_gxxratrecon(
       {
          sa = SIZE(a);
          p = DATA(a) + (sa-1);
-         num = (double) (*p) * NTL_ZZ_FRADIX;
+         num = wide_double(*p) * NTL_ZZ_WIDE_FRADIX;
          if (sa > 1)
-            num += (*(--p));
-         num *= NTL_ZZ_FRADIX;
+            num += wide_double(*(--p));
+         num *= NTL_ZZ_WIDE_FRADIX;
          if (sa > 2)
-            num += (*(p - 1));
+            num += wide_double(*(p - 1));
 
          sn = SIZE(n);
          p = DATA(n) + (sn-1);
-         den = (double) (*p) * NTL_ZZ_FRADIX;
+         den = wide_double(*p) * NTL_ZZ_WIDE_FRADIX;
          if (sn > 1)
-            den += (*(--p));
-         den *= NTL_ZZ_FRADIX;
+            den += wide_double(*(--p));
+         den *= NTL_ZZ_WIDE_FRADIX;
          if (sn > 2)
-            den += (*(p - 1));
+            den += wide_double(*(p - 1));
 
-         hi = fhi1 * (num + 1.0) / den;
-         lo = flo1 * num / (den + 1.0);
+         hi = fhi1 * (num + wide_double(1L)) / den;
+         lo = flo1 * num / (den + wide_double(1L));
          if (diff > 0)
          {
-            hi *= NTL_ZZ_FRADIX;
-            lo *= NTL_ZZ_FRADIX;
+            hi *= NTL_ZZ_WIDE_FRADIX;
+            lo *= NTL_ZZ_WIDE_FRADIX;
          }
 
          if (hi < NTL_SP_BOUND)
@@ -4065,81 +4067,6 @@ long _ntl_gblock_storage(long d)
 }
 
 
-/*
- * This is a completely portable MulMod routine.
- */
-
-#define SP_MUL_MOD(r, a, b, n)  \
-{  \
-   long l__a = (a);  \
-   long l__b = (b);  \
-   long l__n = (n);  \
-   long l__q;  \
-   unsigned long l__res;  \
-  \
-   l__q  = (long) ((((double) l__a) * ((double) l__b)) / ((double) l__n));  \
-   l__res = ((unsigned long) l__a)*((unsigned long) l__b) - \
-            ((unsigned long) l__q)*((unsigned long) l__n);  \
-   if (l__res >> (NTL_BITS_PER_LONG-1))  \
-      l__res += l__n;  \
-   else if (((long) l__res) >= l__n)  \
-      l__res -= l__n;  \
-  \
-   r = (long) l__res;  \
-}
-
-
-
-
-#if (NTL_ARITH_RIGHT_SHIFT && defined(NTL_AVOID_BRANCHING) && !defined(NTL_CLEAN_INT))
-
-#define SP_MUL_MOD2(res, a, b, n, bninv) \
-do {  \
-   long _a = (a);  \
-   long _b = (b);  \
-   long _n = (n);  \
-   double _bninv = (bninv);  \
-   long _q, _res;  \
-  \
-   _q  = (long) (((double) _a) * _bninv);  \
-   _res = _a*_b - _q*_n;  \
-  \
-   _res += (_res >> (NTL_BITS_PER_LONG-1)) & _n;  \
-   _res -= _n;  \
-   _res += (_res >> (NTL_BITS_PER_LONG-1)) & _n;  \
-  \
-   res = _res;  \
-} while (0)  
-
-#else
-
-/*
- * This is a completely portable MulMod routine.
- */
-
-#define SP_MUL_MOD2(res, a, b, n, bninv) \
-do { \
-   long _a = (a); \
-   long _b = (b); \
-   long _n = (n); \
-   double _bninv = (bninv); \
-   long _q;  \
-   unsigned long _res; \
- \
-   _q  = (long) (((double) _a) * _bninv); \
-   _res = ((unsigned long) _a)*((unsigned long) _b)  - \
-          ((unsigned long) _q)*((unsigned long) _n); \
- \
-   if (_res >> (NTL_BITS_PER_LONG-1))  \
-      _res += _n;  \
-   else if (((long) _res) >= _n)  \
-      _res -= _n;  \
- \
-   res = (long) _res; \
-} while (0)
-
-#endif
-
 
 static
 long SpecialPower(long e, long p)
@@ -4148,14 +4075,14 @@ long SpecialPower(long e, long p)
    long x, y;
 
    a = (long) ((((mp_limb_t) 1) << (NTL_ZZ_NBITS-2)) % ((mp_limb_t) p));
-   SP_MUL_MOD(a, a, 2, p);
-   SP_MUL_MOD(a, a, 2, p);
+   a = MulMod(a, 2, p);
+   a = MulMod(a, 2, p);
 
    x = 1;
    y = a;
    while (e) {
-      if (e & 1) SP_MUL_MOD(x, x, y, p);
-      SP_MUL_MOD(y, y, y, p);
+      if (e & 1) x = MulMod(x, y, p);
+      y = MulMod(y, y, p);
       e = e >> 1;
    }
 
@@ -4354,7 +4281,7 @@ _ntl_crt_struct_build(long n, _ntl_gbigint p, long (*primes)(long))
             _ntl_gsdiv(prod_vec[i], q[j], &temps[0]);
             tt = _ntl_gsmod(temps[0], q[j]);
             tt1 = _ntl_gsmod(rem_vec[i], q[j]);
-            SP_MUL_MOD(tt2, tt, tt1, q[j]);
+            tt2 = MulMod(tt, tt1, q[j]);
             inv_vec[j] = sp_inv_mod(tt2, q[j]);
          }
       }
@@ -4541,7 +4468,7 @@ void _ntl_crt_struct_fast::eval(_ntl_gbigint *x, const long *b, _ntl_tmp_vec *ge
    long i;
 
    for (i = 0; i < n; i++) {
-      SP_MUL_MOD(val_vec[i], b[i], inv_vec[i], primes[i]);
+      val_vec[i] = MulMod(b[i], inv_vec[i], primes[i]);
    }
 
    for (i = (1L << (levels-1)) - 1; i < vec_len; i++) {
@@ -4623,7 +4550,7 @@ public:
    UniqueArray<long> len_vec;
    UniqueArray<mp_limb_t> inv_vec;
    UniqueArray<long> corr_vec;
-   UniqueArray<double> corraux_vec;
+   UniqueArray<wide_double> corraux_vec;
    UniqueArray<_ntl_gbigint_wrapped> prod_vec;
 
    void eval(long *x, _ntl_gbigint a, _ntl_tmp_vec *tmp_vec);
@@ -4656,21 +4583,8 @@ _ntl_rem_struct *_ntl_rem_struct_build(long n, _ntl_gbigint modulus, long (*p)(l
    if (n <= 800 
           && sizeof(NTL_ULL_TYPE) == 2*sizeof(long) 
           && NTL_ZZ_NBITS == NTL_BITS_PER_LONG
-          && SIZE(modulus) <= (1L << (NTL_ZZ_NBITS-NTL_SP_NBITS)) 
           && SIZE(modulus) >= 4) { 
 
-      // NOTE: the typical case here is on a 64-bit machine,
-      // where we have 64-bit limbs, 50-bit SP integers,
-      // and 128-but ULL's.  This will allow us to accumulate
-      // 2^14 products before we overflow a ULL.
-      // We restrict to n <= 800 to prevent excessive memory
-      // for tables, switching to the asymptotically fast
-      // remaindering
-
-      // FIXME: this could be extended to cases where 
-      // NTL_ZZ_NBITS - NTL_SP_NBITS is smaller, such as
-      // 32-bit machines where this difference is 2.
-      // It would mean accumulating results using 3 limbs.
 
       UniqueArray<long> q;
       Unique2DArray<mp_limb_t> tbl;
@@ -4695,7 +4609,7 @@ _ntl_rem_struct *_ntl_rem_struct_build(long n, _ntl_gbigint modulus, long (*p)(l
          t1 = 1;
          tbl[i][0] = 1;
          for (j = 1; j < sz; j++) {
-            SP_MUL_MOD(t1, t1, t, qq);
+            t1 = MulMod(t1, t, qq);
             tbl[i][j] = t1;
          }
       }
@@ -4719,7 +4633,7 @@ _ntl_rem_struct *_ntl_rem_struct_build(long n, _ntl_gbigint modulus, long (*p)(l
       long levels, vec_len;
       UniqueArray<long> index_vec;
       UniqueArray<long> len_vec, corr_vec;
-      UniqueArray<double> corraux_vec;
+      UniqueArray<wide_double> corraux_vec;
       UniqueArray<mp_limb_t> inv_vec;
       UniqueArray<_ntl_gbigint_wrapped> prod_vec;
    
@@ -4789,7 +4703,7 @@ _ntl_rem_struct *_ntl_rem_struct_build(long n, _ntl_gbigint modulus, long (*p)(l
       for (i = (1L << (levels-1)) - 1; i < vec_len; i++) {
          for (j = index_vec[i]; j < index_vec[i+1]; j++) {
             corr_vec[j] = SpecialPower(len_vec[1] - len_vec[i], q[j]);
-            corraux_vec[j] = ((double) corr_vec[j])/((double) q[j]);
+            corraux_vec[j] = ((wide_double) corr_vec[j])/((wide_double) q[j]);
          }
       }
 
@@ -4948,8 +4862,9 @@ _ntl_tmp_vec *_ntl_rem_struct_medium::fetch()
    return res.release();
 }
 
-
 #ifdef NTL_TBL_REM
+
+// DIRT: won't work if GMP has nails
 
 void _ntl_rem_struct_tbl::eval(long *x, _ntl_gbigint a, 
                                  _ntl_tmp_vec *generic_tmp_vec)
@@ -4966,20 +4881,68 @@ void _ntl_rem_struct_tbl::eval(long *x, _ntl_gbigint a,
    sa = SIZE(a);
    adata = DATA(a);
 
-   for (i = 0; i < n; i++) {
-      tp = tbl[i];
+   const long Bnd =  1L << (NTL_BITS_PER_LONG-NTL_SP_NBITS);
 
-      acc = adata[0];
+   if (sa <= Bnd) {
+      for (i = 0; i < n; i++) {
+         tp = tbl[i];
 
-      for (j = 1; j < sa; j++)
-         acc += ((NTL_ULL_TYPE) adata[j]) * ((NTL_ULL_TYPE) tp[j]);
+         acc = adata[0];
 
-      mp_limb_t accvec[2];
-      accvec[0] = acc;
-      accvec[1] = acc >> NTL_ZZ_NBITS;
-      x[i] = mpn_mod_1(accvec, 2, primes[i]);
+         for (j = 1; j < sa; j++)
+            acc += ((NTL_ULL_TYPE) adata[j]) * ((NTL_ULL_TYPE) tp[j]);
 
-      // x[i] = long(acc % ((unsigned long) primes[i]));
+         mp_limb_t accvec[2];
+         accvec[0] = acc;
+         accvec[1] = acc >> NTL_ZZ_NBITS;
+         x[i] = mpn_mod_1(accvec, 2, primes[i]);
+      }
+   }
+   else {
+      for (i = 0; i < n; i++) {
+         tp = tbl[i];
+
+         acc = adata[0];
+
+         for (j = 1; j < Bnd; j++) {
+            acc += ((NTL_ULL_TYPE) adata[j]) * ((NTL_ULL_TYPE) tp[j]);
+         }
+
+         mp_limb_t accvec[3];
+         accvec[0] = acc;
+         accvec[1] = acc >> NTL_ZZ_NBITS;
+         accvec[2] = 0;
+
+         while (j < sa) {
+            long NextStop = j + Bnd;
+            if (NextStop > sa) NextStop = sa;
+
+            acc = 0;
+            for (; j < NextStop; j++) {
+               acc += ((NTL_ULL_TYPE) adata[j]) * ((NTL_ULL_TYPE) tp[j]);
+            }
+
+            mp_limb_t accvec1[2];
+            accvec1[0] = acc;
+            accvec1[1] = acc >> NTL_ZZ_NBITS;
+
+#if 1
+            // accvec += accvec1
+            // this version seems marginally faster
+            mp_limb_t carry0, carry1;
+            accvec[0] += accvec1[0];
+            carry0 = (accvec[0] < accvec1[0]);
+            accvec[1] += accvec1[1];
+            carry1 = (accvec[1] < accvec1[1]);
+            accvec[1] += carry0;
+            accvec[2] += carry1 + (accvec[1] < carry0);
+#else
+            accvec[2] += mpn_add_n(accvec, accvec, accvec1, 2);
+#endif
+         }
+
+         x[i] = mpn_mod_1(accvec, 3, primes[i]);
+      }
    }
 }
 
@@ -5094,7 +5057,7 @@ void _ntl_rem_struct_medium::eval(long *x, _ntl_gbigint a,
       else {
          for (j = lo; j < hi; j++) {
             long t = mpn_mod_1(s1p, s1size, q[j]);
-            SP_MUL_MOD2(x[j], t, corr_vec[j], q[j], corraux_vec[j]);
+            x[j] = MulMod2_legacy(t, corr_vec[j], q[j], corraux_vec[j]);
          }
       }
    }

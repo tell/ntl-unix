@@ -1347,7 +1347,7 @@ void FromModularRep(ZZ_p& x, const vec_long& a, const ZZ_pFFTInfoT *FFTInfo,
    NTL_ZZRegister(s);
    NTL_ZZRegister(t);
    long i;
-   double y;
+   wide_double y;
 
    if (FFTInfo->crt_struct.special()) {
        FFTInfo->crt_struct.eval(t, &a[0], TmpSpace->crt_tmp_vec);
@@ -1356,27 +1356,30 @@ void FromModularRep(ZZ_p& x, const vec_long& a, const ZZ_pFFTInfoT *FFTInfo,
    }
       
 
+#ifndef NTL_USE_LONGDOUBLE
    if (FFTInfo->QuickCRT) {
-      y = 0;
+      y = wide_double(0L);
       for (i = 0; i < n; i++)
-         y += ((double) a[i])*FFTInfo->x[i];
+         y += ((wide_double) a[i])*FFTInfo->x[i];
 
       conv(q, (y + 0.5)); 
-   } else {
+   } else 
+#endif
+   {
       long Q, r;
-      NTL_ZZRegister(qq);
+      long qq;
 
-      y = 0;
+      y = wide_double(0L);
 
       clear(q);
 
       for (i = 0; i < n; i++) {
          r = MulDivRem(Q, a[i], FFTInfo->u[i], GetFFTPrime(i), FFTInfo->x[i]);
          add(q, q, Q);
-         y += r*GetFFTPrimeInv(i);
+         y += wide_double(r)*GetFFTPrimeInv(i);
       }
 
-      conv(qq, (y + 0.5));
+      qq = long(y + 0.5);
       add(q, q, qq);
    }
 
@@ -1690,7 +1693,7 @@ void mul(FFTRep& z, const FFTRep& x, const FFTRep& y)
       const long *xp = &x.tbl[i][0];
       const long *yp = &y.tbl[i][0];
       long q = GetFFTPrime(i);
-      double qinv = GetFFTPrimeInv(i);
+      wide_double qinv = GetFFTPrimeInv(i);
 
       for (j = 0; j < n; j++)
          zp[j] = MulMod(xp[j], yp[j], q, qinv);

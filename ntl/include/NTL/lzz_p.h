@@ -7,7 +7,7 @@
 #include <NTL/SmartPtr.h>
 #include <NTL/vector.h>
 
-#define NTL_zz_p_QUICK_CRT (NTL_DOUBLE_PRECISION - NTL_SP_NBITS > 12)
+#define NTL_zz_p_QUICK_CRT (NTL_WIDE_DOUBLE_PRECISION - NTL_SP_NBITS > 12)
 
 
 
@@ -25,7 +25,7 @@ public:
    zz_pInfoT(INIT_USER_FFT_TYPE, long q);
 
    long p;
-   double pinv;
+   wide_double pinv;
 
    FFTPrimeInfo* p_info; // non-null means we are directly using 
                         // an FFT prime
@@ -50,7 +50,7 @@ public:
 
    Vec<long> CoeffModP;    // coeff mod p
 
-   Vec<double> x;          // u/q, where u = (M/q)^{-1} mod q
+   Vec<wide_double> x;          // u/q, where u = (M/q)^{-1} mod q
    Vec<long> u;            // u, as above
 };
 
@@ -165,7 +165,7 @@ long& LoopHole() { return _zz_p__rep; }
 
 static long modulus() { return zz_pInfo->p; }
 static zz_p zero() { return zz_p(); }
-static double ModulusInverse() { return zz_pInfo->pinv; }
+static wide_double ModulusInverse() { return zz_pInfo->pinv; }
 static long PrimeCnt() { return zz_pInfo->PrimeCnt; }
 
 

@@ -327,7 +327,9 @@ long InvMod(long a, long n)
    long d, s, t;
 
    XGCD(d, s, t, a, n);
-   if (d != 1) InvModError("InvMod: inverse undefined");
+   if (d != 1) {
+      InvModError("InvMod: inverse undefined");
+   }
    if (s < 0)
       return s + n;
    else

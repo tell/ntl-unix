@@ -58,7 +58,7 @@ class zz_pInfoT; // forward reference, defined in lzz_p.h
 
 struct FFTPrimeInfo {
    long q;   // the prime itself
-   double qinv;   // 1/((double) q)
+   wide_double qinv;   // 1/((wide_double) q)
 
    SmartPtr<zz_pInfoT> zz_p_context; 
    // pointer to corresponding zz_p context, which points back to this 
@@ -120,7 +120,7 @@ inline long GetFFTPrime(long i)
    return FFTTables[i]->q;
 }
 
-inline double GetFFTPrimeInv(long i)
+inline wide_double GetFFTPrimeInv(long i)
 {
    return FFTTables[i]->qinv;
 }

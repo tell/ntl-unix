@@ -21,11 +21,18 @@ typedef _ntl_gbigint_is_opaque  _ntl_gbigint_body;
 
 #endif
 
+#if (NTL_LONGDOUBLE_OK && !defined(NTL_LEGACY_SP_MULMOD) && !defined(NTL_DISABLE_LONGDOUBLE))
+#define NTL_SP_NBITS NTL_WNBITS_MAX
+#define NTL_NSP_NBITS NTL_NBITS_MAX
+#else
 #define NTL_SP_NBITS NTL_NBITS_MAX
-#define NTL_SP_BOUND (1L << NTL_SP_NBITS)
-#define NTL_SP_FBOUND ((double) NTL_SP_BOUND)
+#define NTL_NSP_NBITS NTL_NBITS_MAX
+#endif
 
 #define NTL_WSP_NBITS (NTL_BITS_PER_LONG-2)
+
+#define NTL_SP_BOUND (1L << NTL_SP_NBITS)
+#define NTL_NSP_BOUND (1L << NTL_NSP_NBITS)
 #define NTL_WSP_BOUND (1L << NTL_WSP_NBITS)
 
 /* define the following so an error is raised */

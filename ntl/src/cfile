@@ -275,6 +275,23 @@ using the configure script.
 
 
 
+#if @{NTL_LEGACY_SP_MULMOD}
+#define NTL_LEGACY_SP_MULMOD
+
+/* Forces legacy single-precision MulMod implementation.
+ */
+
+#endif
+
+
+#if @{NTL_DISABLE_LONGDOUBLE}
+#define NTL_DISABLE_LONGDOUBLE
+
+/* Explicitly disables us of long double arithmetic.
+ */
+
+#endif
+
 
 /*************************************************************************
  *

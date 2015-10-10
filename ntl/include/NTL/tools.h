@@ -313,6 +313,121 @@ T conv(const S& a)
 }
 
 
+// some convenience casting routines:
+
+inline long cast_signed(unsigned long a) { return long(a); }
+inline int cast_signed(unsigned int a) { return int(a); }
+// IMPL-DEF: the behavior here is implementation defined,
+// but on a 2s compliment machine, it should always work
+
+inline unsigned long cast_unsigned(long a) { return (unsigned long) a; }
+inline unsigned int cast_unsigned(int a) { return (unsigned int) a; }
+
+
+#ifdef NTL_LEGACY_SP_MULMOD
+
+#define NTL_WIDE_DOUBLE_PRECISION NTL_DOUBLE_PRECISION
+#define NTL_WIDE_FDOUBLE_PRECISION NTL_WIDE_DOUBLE_DP
+typedef double wide_double;
+
+
+#else
+
+
+#if (NTL_LONGDOUBLE_OK && !defined(NTL_DISABLE_LONGDOUBLE) && defined(NTL_GMP_LIP))
+
+#define NTL_USE_LONGDOUBLE
+
+#define NTL_WIDE_DOUBLE_PRECISION NTL_LONGDOUBLE_PRECISION
+#define NTL_WIDE_FDOUBLE_PRECISION NTL_WIDE_DOUBLE_LDP
+typedef long double wide_double_impl_t;
+
+#else
+
+#define NTL_WIDE_DOUBLE_PRECISION NTL_DOUBLE_PRECISION
+#define NTL_WIDE_FDOUBLE_PRECISION NTL_WIDE_DOUBLE_DP
+typedef double wide_double_impl_t;
+
+#endif
+
+
+
+
+class wide_double {
+public:
+   wide_double_impl_t data;
+
+   wide_double() { }
+   explicit wide_double(long x) : data(x) { }
+   explicit wide_double(unsigned long x) : data(x) { }
+   explicit wide_double(wide_double_impl_t x) : data(x) { }
+
+   operator wide_double_impl_t() const { return data; }
+
+};
+
+inline wide_double operator+(wide_double x, wide_double y)
+{
+   return wide_double(x.data + y.data); 
+}
+
+inline wide_double operator-(wide_double x, wide_double y)
+{
+   return wide_double(x.data - y.data); 
+}
+
+
+
+inline wide_double operator*(wide_double x, wide_double y)
+{
+   return wide_double(x.data * y.data); 
+}
+
+inline wide_double operator/(wide_double x, wide_double y)
+{
+   return wide_double(x.data / y.data); 
+}
+
+inline wide_double floor(wide_double x)
+{
+   return wide_double(std::floor(x.data));
+}
+
+inline wide_double& operator+=(wide_double& x, wide_double y)
+{
+   return x = x + y;
+}
+
+inline wide_double& operator-=(wide_double& x, wide_double y)
+{
+   return x = x - y;
+}
+
+inline wide_double& operator*=(wide_double& x, wide_double y)
+{
+   return x = x * y;
+}
+
+
+inline wide_double& operator/=(wide_double& x, wide_double y)
+{
+   return x = x / y;
+}
+
+
+
+
+#endif
+
+
+
+
+
+
+
+
+
+
 long SkipWhiteSpace(NTL_SNS istream& s);
 long IsWhiteSpace(long c);
 long IsEOFChar(long c);

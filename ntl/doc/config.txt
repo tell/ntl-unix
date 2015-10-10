@@ -244,6 +244,8 @@ DOCDIR=$(PREFIX)/share/doc
 NTL_LEGACY_NO_NAMESPACE=off
 NTL_LEGACY_INPUT_ERROR=off
 
+NTL_LEGACY_SP_MULMOD=off
+
 NTL_LONG_LONG_TYPE=undefined
 NTL_UNSIGNED_LONG_LONG_TYPE=undefined
 NTL_CLEAN_INT=off
@@ -252,6 +254,7 @@ NTL_RANGE_CHECK=off
 NTL_X86_FIX=off
 NTL_NO_X86_FIX=off
 NTL_NO_INIT_TRANS=off
+NTL_DISABLE_LONGDOUBLE=off
 
 WIZARD=on
 NTL_LONG_LONG=off
@@ -365,6 +368,11 @@ NTL_LEGACY_INPUT_ERROR=off
 # abort on input errors, instead of just setting the
 # "fail bit" of the istream object
 
+NTL_LEGACY_SP_MULMOD=off
+
+# use pre-9.0 interfaces for single-precision MulMod routines.
+# See discussion in ZZ.txt for details.
+
 
 
 ########### Basic Configuration Options:
@@ -385,7 +393,7 @@ NTL_LONG_LONG_TYPE=undefined
 # to also be 64-bits wide, which is kind of useless.
 # However, GCC provides a type __int128_t which does the job.
 #
-# If left undefined, NTL will use somee "ifdef magic" to find
+# If left undefined, NTL will use some "ifdef magic" to find
 # the type most suitable for your machine (based on compiler and
 # word size).
 
@@ -393,7 +401,7 @@ NTL_UNSIGNED_LONG_LONG_TYPE=undefined
 
 # Name of double-word unsigned integer type.
 #
-# If left undefined, NTL will use somee "ifdef magic" to find
+# If left undefined, NTL will use some "ifdef magic" to find
 # the type most suitable for your machine (based on compiler and
 # word size).
 
@@ -452,6 +460,15 @@ NTL_NO_INIT_TRANS=off
 # Traditionally, however, most will only avoid copying *temporary* 
 # objects in return statements, and NTL's default code sequence 
 # exploits this fact.
+
+
+
+NTL_DISABLE_LONGDOUBLE=off
+
+# disables use of the long double data type (in single-precision
+# MulMod implementation and elsewhere).  
+
+
 
 
 
