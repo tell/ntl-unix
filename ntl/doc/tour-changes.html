@@ -16,6 +16,35 @@ A Tour of NTL: Summary of Changes
 </p>
 </h1>
 
+
+
+<p><hr><p>
+<h3>
+2015.1.9:
+Changed between NTL 8.0 and 8.1
+</h3>
+
+<ul>
+<li>
+Corrected an oversight in the matrix template class.
+With this new version, one may safely copy and assign
+objects of type <tt>Mat&lt;ZZ_p&gt;</tt>
+and <tt>Mat&lt;GF2E&gt;</tt> out of context (i.e.,
+under a different or undefined modulus).
+More generally, the copy constructor for <tt>Mat&lt;T&gt;</tt>
+now relies only on the copy constructor for <tt>Vec&lt;T&gt;</tt>
+and the assignment operator for <tt>Mat&lt;T&gt;</tt>
+relies only on the assignment operator and copy constructor
+for <tt>Vec&lt;T&gt;</tt>.
+<p>
+The goal since v6.2 has been to allow all modular types (<tt>ZZ_p</tt>, etc.)
+and all types derived from them (vectors, polynomials, matrices, etc.)
+to be safely copy constructed and assigned out of context.
+Hopefully, this goal has now been reached.
+
+</ul>
+
+
 <p><hr><p>
 <h3>
 2014.12.24:

@@ -179,13 +179,6 @@ All of these changes can be done in a perfectly backward compatible way.
 
 
 <p><li>
-Work towards exception-safety: this means slowly going over all
-of the code in NTL, modernizing some of the internals, making
-use of RAII and scope guards.
-This won't happen quickly, and it won't really happen at all unless
-something is also done about GMP's similarly draconian error handling.
-
-<p><li>
 Introduce some <tt>C++11</tt> features, like "move constructors"
 and "move assignment".
 This would have to be done with compile-time flags to support

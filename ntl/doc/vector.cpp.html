@@ -303,8 +303,18 @@
 <br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// EXCEPTIONS: may throw, strong ES</i></font><br>
 <br>
+&nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;FixAtCurrentLength();<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// fixes the length at the cuurent length and prohibits</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// all future length changes.&nbsp;&nbsp;</i></font><br>
+<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// It is required that length() == MaxLength() when called.</i></font><br>
+<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// EXCEPTIONS: if length() != MaxLength() and error is raised;</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// if length() == 0, a memory allocation error may be raised.</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// Strong ES.</i></font><br>
+<br>
 &nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;fixed() <font color="#008b00"><b>const</b></font>;<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// test if length has been fixed by FixLength().</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// test if length has been fixed by FixLength() or FixAtCurrentLength()</i></font><br>
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;MaxLength() <font color="#008b00"><b>const</b></font>;<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// maximum length, i.e., number of allocated and initialized elements</i></font><br>

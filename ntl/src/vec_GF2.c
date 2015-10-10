@@ -142,6 +142,16 @@ void vec_GF2::FixLength(long n)
    _maxlen |= 1;
 }
 
+void vec_GF2::FixAtCurrentLength()
+{
+   if (fixed()) return;
+   if (length() != MaxLength()) 
+      LogicError("FixAtCurrentLength: can't fix this vector");
+
+   _maxlen |= 1;
+}
+
+
 const GF2 vec_GF2::get(long i) const
 {
    const vec_GF2& v = *this;

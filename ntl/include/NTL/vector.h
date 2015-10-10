@@ -139,6 +139,7 @@ public:
   
    void SetMaxLength(long n); 
    void FixLength(long n); 
+   void FixAtCurrentLength();
    void QuickSetLength(long n) { NTL_VEC_HEAD(_vec__rep)->length = n; } 
 
    void SetLength(long n) {
@@ -535,6 +536,19 @@ void Vec<T>::FixLength(long n)
 
    guard.relax();
 } 
+
+template<class T>
+void Vec<T>::FixAtCurrentLength() 
+{
+   if (fixed()) return;
+   if (length() != MaxLength()) 
+      LogicError("FixAtCurrentLength: can't fix this vector");
+
+   if (_vec__rep)
+      NTL_VEC_HEAD(_vec__rep)->fixed = 1;
+   else
+      FixLength(0);
+}
   
 template<class T>
 Vec<T>& Vec<T>::operator=(const Vec<T>& a)  

@@ -84,10 +84,20 @@
 &nbsp;&nbsp; <font color="#0000ed"><i>// INVARIANT: </i></font><br>
 &nbsp;&nbsp; <font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;length() &lt;= MaxLength() &lt;= allocated() &lt; 2^(NTL_BITS_PER_LONG-4)</i></font><br>
 <br>
-&nbsp;&nbsp; <br>
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;FixLength(<font color="#008b00"><b>long</b></font>&nbsp;n); <font color="#0000ed"><i>// fix length to n bits</i></font><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ed"><i>// can only be applied after default initialization or kill</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// can only be applied after default initialization or kill</i></font><br>
+<br>
+<br>
+&nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;FixAtCurrentLength();<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// fixes the length at the cuurent length and prohibits</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// all future length changes.&nbsp;&nbsp;</i></font><br>
+<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// It is required that length() == MaxLength() when called.</i></font><br>
+<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// EXCEPTIONS: if length() != MaxLength() and error is raised;</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// Strong ES.</i></font><br>
+<br>
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;fixed() <font color="#008b00"><b>const</b></font>; <font color="#0000ed"><i>// test if length has been fixed</i></font><br>
 <br>

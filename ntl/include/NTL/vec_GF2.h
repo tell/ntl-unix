@@ -49,6 +49,7 @@ public:
 
    void SetMaxLength(long n);
    void FixLength(long n);
+   void FixAtCurrentLength();
 
    long length() const { return _len; }
    long MaxLength() const { return _maxlen >> 1; }  

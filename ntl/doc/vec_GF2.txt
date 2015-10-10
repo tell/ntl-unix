@@ -76,10 +76,20 @@ public:
    // INVARIANT: 
    //    length() <= MaxLength() <= allocated() < 2^(NTL_BITS_PER_LONG-4)
 
-   
 
    void FixLength(long n); // fix length to n bits
-      // can only be applied after default initialization or kill
+   // can only be applied after default initialization or kill
+
+
+   void FixAtCurrentLength();
+   // fixes the length at the cuurent length and prohibits
+   // all future length changes.  
+
+   // It is required that length() == MaxLength() when called.
+
+   // EXCEPTIONS: if length() != MaxLength() and error is raised;
+   // Strong ES.
+
 
    long fixed() const; // test if length has been fixed
 

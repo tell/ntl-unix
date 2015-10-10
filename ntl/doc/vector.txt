@@ -295,8 +295,18 @@ public:
 
    // EXCEPTIONS: may throw, strong ES
 
+   void FixAtCurrentLength();
+   // fixes the length at the cuurent length and prohibits
+   // all future length changes.  
+
+   // It is required that length() == MaxLength() when called.
+
+   // EXCEPTIONS: if length() != MaxLength() and error is raised;
+   // if length() == 0, a memory allocation error may be raised.
+   // Strong ES.
+
    long fixed() const;
-   // test if length has been fixed by FixLength().
+   // test if length has been fixed by FixLength() or FixAtCurrentLength()
 
    long MaxLength() const;
    // maximum length, i.e., number of allocated and initialized elements

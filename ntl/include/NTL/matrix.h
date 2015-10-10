@@ -37,8 +37,8 @@ public:
   
   
    Mat() : _mat__numcols(0) { }  
-   Mat(const Mat<T>& a);  
-   Mat& operator=(const Mat<T>& a);  
+   Mat(const Mat& a);  
+   Mat& operator=(const Mat& a);  
    ~Mat() { }  
   
    Mat(INIT_SIZE_TYPE, long n, long m);  
@@ -69,7 +69,7 @@ public:
   
    long position(const Vec<T>& a) const { return _mat__rep.position(a); } 
    long position1(const Vec<T>& a) const { return _mat__rep.position1(a); } 
-   Mat(Mat<T>& x, INIT_TRANS_TYPE) :  
+   Mat(Mat& x, INIT_TRANS_TYPE) :  
     _mat__rep(x._mat__rep, INIT_TRANS), _mat__numcols(x._mat__numcols) { }  
 
    void swap(Mat& other)
@@ -85,18 +85,40 @@ inline const Vec< Vec<T> >& rep(const Mat<T>& a)
   
 
 template<class T>
-Mat<T>::Mat(const Mat<T>& a) : _mat__numcols(0)  
+Mat<T>::Mat(const Mat& src) : 
+   _mat__rep(src._mat__rep), _mat__numcols(src._mat__numcols)
 {  
-   SetDims(a.NumRows(), a.NumCols());  
-   _mat__rep = a._mat__rep;  
+   long i, nrows;
+
+   nrows = _mat__rep.length();
+   for (i = 0; i < nrows; i++)
+      _mat__rep[i].FixAtCurrentLength();
 }  
   
 template<class T>
-Mat<T>& Mat<T>::operator=(const Mat<T>& a)  
+Mat<T>& Mat<T>::operator=(const Mat& src)  
 {  
-   SetDims(a.NumRows(), a.NumCols());  
-   _mat__rep = a._mat__rep;  
-   return *this;  
+   if (this == &src) return *this;
+
+   if (src.NumCols() == 0)
+      SetDims(src.NumRows(), src.NumCols());
+   else if (NumCols() != src.NumCols()) {
+      Mat<T> tmp(src);
+      this->swap(tmp);
+   }
+   else {
+      long i, init, len;
+
+      init = _mat__rep.MaxLength();
+      len = src._mat__rep.length();
+
+      _mat__rep = src._mat__rep;
+
+      for (i = init; i < len; i++)
+         _mat__rep[i].FixAtCurrentLength();
+   }
+
+   return *this;
 }  
   
 template<class T>
