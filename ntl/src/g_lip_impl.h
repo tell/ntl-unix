@@ -336,7 +336,7 @@ void ghalt(char *c)
 {
    fprintf(stderr,"fatal error:\n   %s\nexit...\n",c);
    fflush(stderr);
-   abort();
+   _ntl_abort();
 }
 
 

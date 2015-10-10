@@ -1,11 +1,12 @@
 # This is a perl script, invoked from a shell
 
-# use warnings;  # this doesn't work on older versions of perl
+use warnings;  # this doesn't work on older versions of perl
 
 
 %MakeFlag = (
 
 'WIZARD'  => 'on',
+'SHARED'  => 'off',
 
 );
 
@@ -18,6 +19,8 @@
 'AR'	      => 'ar',
 'ARFLAGS'     => 'ruv',
 'RANLIB'      => 'ranlib',
+'LIBTOOL'     => 'libtool',
+
 'LDFLAGS'     => '',
 'LDFLAGS_CXX' => '$(LDFLAGS)',
 'LDLIBS'      => '-lm',
@@ -26,11 +29,15 @@
 'PREFIX'      => '/usr/local',
 'LIBDIR'      => '$(PREFIX)/lib',
 'INCLUDEDIR'  => '$(PREFIX)/include',
-'DOCDIR'      => '$(PREFIX)/doc',
+'DOCDIR'      => '$(PREFIX)/share/doc',
 
 'GMP_PREFIX'  => undef,
 'GMP_INCDIR'  => undef,
 'GMP_LIBDIR'  => undef,
+
+'GF2X_PREFIX'  => undef,
+'GF2X_INCDIR'  => undef,
+'GF2X_LIBDIR'  => undef,
 
 );
 
@@ -45,6 +52,7 @@
 'NTL_PSTD_NTN'          => 'off',
 'NTL_GMP_LIP'           => 'off',
 'NTL_GMP_HACK'          => 'off',
+'NTL_GF2X_LIB'          => 'off',
 'NTL_CXX_ONLY'          => 'off',
 'NTL_X86_FIX'           => 'off',
 'NTL_NO_X86_FIX'        => 'off',
@@ -105,6 +113,31 @@ foreach $arg (@ARGV) {
 
 }
 
+# some special MakeVal values that are determined by SHARED
+
+if ($MakeFlag{'SHARED'} eq 'off') {
+
+   $MakeVal{'LSTAT'} = '';
+   $MakeVal{'LSHAR'} = '# ';
+
+} else {
+
+   # sanity check for libtool
+
+   print("***** checking for libtool *****\n");
+   if (system("$MakeVal{'LIBTOOL'} --version")) {
+      die "Error: bad libtool ($MakeVal{'LIBTOOL'}) -- try glibtool?";
+   }
+   print("***** libtool OK *****\n\n");
+
+   $MakeVal{'LSTAT'} = '# ';
+   $MakeVal{'LSHAR'} = '';
+
+}
+
+
+
+
 
 
 # some special logic to set GMP_INCDIR, GMP_LIBDIR, and GMP_LIB.
@@ -140,6 +173,43 @@ else {
    $MakeVal{'GMP_LIB'} = '';
 
 }
+
+# some special logic to set GF2X_INCDIR, GF2X_LIBDIR, and GF2X_LIB.
+# note that GF2X_PREFIX is not really a variable in the makefile template
+
+if ($ConfigFlag{'NTL_GF2X_LIB'} eq 'on') {
+
+   if (defined($MakeVal{'GF2X_PREFIX'})) {
+      if (!defined($MakeVal{'GF2X_INCDIR'})) {
+         $MakeVal{'GF2X_INCDIR'} = "-I$MakeVal{'GF2X_PREFIX'}/include";
+      }
+
+      if (!defined($MakeVal{'GF2X_LIBDIR'})) {
+         $MakeVal{'GF2X_LIBDIR'} = "-L$MakeVal{'GF2X_PREFIX'}/lib";
+      }
+   }
+   else {
+      if (!defined($MakeVal{'GF2X_INCDIR'})) {
+         $MakeVal{'GF2X_INCDIR'} = '';
+      }
+
+      if (!defined($MakeVal{'GF2X_LIBDIR'})) {
+         $MakeVal{'GF2X_LIBDIR'} = '';
+      }
+   }
+
+   $MakeVal{'GF2X_LIB'} = '-lgf2x';
+
+}
+else {
+
+   $MakeVal{'GF2X_INCDIR'} = '';
+   $MakeVal{'GF2X_LIBDIR'} = '';
+   $MakeVal{'GF2X_LIB'} = '';
+
+}
+
+
 
 
 

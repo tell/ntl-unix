@@ -165,6 +165,26 @@ using the configure script.
 
 #endif
 
+#if @{NTL_GF2X_LIB}
+#define NTL_GF2X_LIB
+
+/* 
+ * Use this flag if you want to use the gf2x library for
+ * faster GF2X arithmetic.
+ * This can result in significantly faster code, especially
+ * when working with polynomials of huge degree.
+ * You will also have to set the variables GF2X_INCDIR,
+ * GF2X_LIBDIR, and GF2X_LIB in the makefile (these are set automatically
+ * by the confiuration script when you pass the flag NTL_GF2X_LIB=on
+ * to that script.
+ *
+ * To re-build after changing this flag:
+ *   rm GF2X.o; GF2X1.o; make ntl.a
+ * You may also have to edit the makefile to modify the variables
+ * GF2X_INCDIR, GF2X_LIBDIR, and GF2X_LIB.
+ */
+
+#endif
 
 #if @{FLAG_LONG_LONG_TYPE}
 #define NTL_LONG_LONG_TYPE @{NTL_LONG_LONG_TYPE}
