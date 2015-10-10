@@ -22,5 +22,5 @@ config.done:
 	touch $@
 
 compile.done:
-	cd ntl/src && $(MAKE)
+	$(MAKE) -C ntl/src
 	touch $@
