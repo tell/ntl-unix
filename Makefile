@@ -1,18 +1,26 @@
+PREFIX = $(shell pwd)/prefix
 CXXFLAGS = -std=c++11 -O4 -g3 -Wall -Wextra
+CONFIG.cmd = ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)"
 
-.PHONY: all clean config compile check
+.PHONY: all clean check install
 
-all: config compile check
+all: config.done compile.done
 
 clean:
-	git clean -fd ntl
-	git checkout ntl
-
-config:
-	cd ntl/src && ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"
-
-compile:
-	cd ntl/src && make
+	$(RM) *.done
+	$(MAKE) -C ntl/src clean
+	$(RM) ntl/src/all
 
 check:
-	cd ntl/src && make check
+	$(MAKE) -C ntl/src check
+
+install:
+	$(MAKE) -C ntl/src install
+
+config.done:
+	cd ntl/src && $(CONFIG.cmd)
+	touch $@
+
+compile.done:
+	cd ntl/src && $(MAKE)
+	touch $@

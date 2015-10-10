@@ -1,0 +1,5 @@
+*.done
+ntl/**/*.o
+ntl/**/*.a
+ntl/**/*.dSYM/
+prefix/
