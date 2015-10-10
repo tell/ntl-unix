@@ -2909,8 +2909,8 @@ double _ntl_glog(_ntl_gbigint n)
 {
    GRegister(tmp);
 
-   static double log_2;
-   static long init = 0;
+   NTL_THREAD_LOCAL static double log_2;
+   NTL_THREAD_LOCAL static long init = 0;
 
    long s;
    long shamt;
