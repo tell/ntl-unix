@@ -5,7 +5,7 @@ A Tour of NTL: Obtaining and Installing NTL for UNIX  </title>
 </head>
 
 <center>
-<a href="tour-stdcxx.html"><img src="arrow1.gif" alt="[Previous]" align=bottom></a>
+<a href="tour-modules.html"><img src="arrow1.gif" alt="[Previous]" align=bottom></a>
  <a href="tour.html"><img src="arrow2.gif" alt="[Up]" align=bottom></a> 
 <a href="tour-win.html"> <img src="arrow3.gif" alt="[Next]" align=bottom></a>
 </center>
@@ -172,14 +172,15 @@ Here are the most important variables, and their default values.
 
 <p>
 <pre>
+
 CXX=g++              # The C++ compiler
-CXXFLAGS=-O2         # C++ complilation flags
+CXXFLAGS=-g -O2      # C++ complilation flags
 
 DEF_PREFIX=/usr/local # Default software directory
 PREFIX=$(DEF_PREFIX) # Directory in which to install NTL library components
 SHARED=off           # Generate a shared library (as well as static)
 
-NTL_STD_CXX=on       # ISO Mode switch
+NTL_THREADS=off      # compile in thread-safe mode
 
 NTL_GMP_LIP=off      # Switch to enable the use of GMP as primary 
                      #   long integer package
@@ -190,6 +191,8 @@ NTL_GF2X_LIB=off     # Switch to enable the use of the gf2x package
                      #   for faster arithmetic over GF(2)[X]
 
 GF2X_PREFIX=$(DEF_PREFIX) # Directory in which gf2x components are installed
+
+
 </pre>
 
 <p>
@@ -255,14 +258,6 @@ run:
    % ./configure NTL_GF2X_LIB=on GF2X_PREFIX=$HOME/sw
 </pre>
 Go <a href="tour-gf2x.html">here</a> for complete details.
-
-<p>
-<li>
-If you want to use 
-<a href="tour-stdcxx.html">traditional rather than ISO mode</a>, run:
-<pre>
-   % ./configure NTL_STD_CXX=off
-</pre>
 
 <p>
 <li>
@@ -570,7 +565,7 @@ to the compiler.
 <p> <p>
 
 <center>
-<a href="tour-stdcxx.html"><img src="arrow1.gif" alt="[Previous]" align=bottom></a>
+<a href="tour-modules.html"><img src="arrow1.gif" alt="[Previous]" align=bottom></a>
  <a href="tour.html"><img src="arrow2.gif" alt="[Up]" align=bottom></a> 
 <a href="tour-win.html"> <img src="arrow3.gif" alt="[Next]" align=bottom></a>
 </center>

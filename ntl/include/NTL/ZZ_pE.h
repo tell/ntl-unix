@@ -12,60 +12,53 @@ NTL_OPEN_NNS
 
 class ZZ_pEInfoT {
 private:
+
    ZZ_pEInfoT();                       // disabled
    ZZ_pEInfoT(const ZZ_pEInfoT&);   // disabled
    void operator=(const ZZ_pEInfoT&);  // disabled
 public:
-   long ref_count;
 
    ZZ_pEInfoT(const ZZ_pX&);
    ~ZZ_pEInfoT() { }
 
    ZZ_pXModulus p;
 
-   ZZ   _card;
-   long _card_init;
    ZZ   _card_base;
    long _card_exp;
+
+   Lazy<ZZ>  _card;
 
 
 };
 
-NTL_THREAD_LOCAL extern ZZ_pEInfoT *ZZ_pEInfo; // info for current modulus, initially null
+NTL_THREAD_LOCAL 
+extern SmartPtr<ZZ_pEInfoT> ZZ_pEInfo; // info for current modulus, initially null
 
 
-// FIXME: in a thread-safe impl, we will need to use shared_ptr's 
-// for reference counted pointers
 
 
 
 class ZZ_pEContext {
 private:
-ZZ_pEInfoT *ptr;
+SmartPtr<ZZ_pEInfoT> ptr;
 
 public:
+
+ZZ_pEContext() { }
+explicit ZZ_pEContext(const ZZ_pX& p) : ptr(MakeSmart<ZZ_pEInfoT>(p)) { }
+
+// copy constructor, assignment, destructor: default
+
 void save();
 void restore() const;
-
-ZZ_pEContext() { ptr = 0; }
-explicit ZZ_pEContext(const ZZ_pX& p);
-
-ZZ_pEContext(const ZZ_pEContext&); 
-
-
-ZZ_pEContext& operator=(const ZZ_pEContext&); 
-
-
-~ZZ_pEContext();
-
 
 };
 
 
 class ZZ_pEBak {
 private:
-long MustRestore;
-ZZ_pEInfoT *ptr;
+ZZ_pEContext c;
+bool MustRestore;
 
 ZZ_pEBak(const ZZ_pEBak&); // disabled
 void operator=(const ZZ_pEBak&); // disabled
@@ -74,12 +67,14 @@ public:
 void save();
 void restore();
 
-ZZ_pEBak() { MustRestore = 0; ptr = 0; }
+ZZ_pEBak() : MustRestore(false) {  }
 
 ~ZZ_pEBak();
 
 
 };
+
+
 
 
 

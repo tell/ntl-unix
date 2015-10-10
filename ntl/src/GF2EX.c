@@ -20,7 +20,7 @@ const GF2EX& GF2EX::zero()
 
 istream& operator>>(istream& s, GF2EX& x)
 {
-   s >> x.rep;
+   NTL_INPUT_CHECK_RET(s, s >> x.rep);
    x.normalize();
    return s;
 }
@@ -1536,7 +1536,7 @@ void build(GF2EXModulus& F, const GF2EX& f)
    if (NTL_OVERFLOW(n, GF2E::degree(), 0))
       Error("build(GF2EXModulus,GF2EX): overflow");
 
-   F.tracevec.SetLength(0);
+   F.tracevec.kill();
 
    F.f = f;
    F.n = n;
@@ -3036,13 +3036,8 @@ void TraceVec(vec_GF2E& S, const GF2EX& f)
 }
 
 static
-void ComputeTraceVec(const GF2EXModulus& F)
+void ComputeTraceVec(vec_GF2E& S, const GF2EXModulus& F)
 {
-   vec_GF2E& S = *((vec_GF2E *) &F.tracevec);
-
-   if (S.length() > 0)
-      return;
-
    if (F.method == GF2EX_MOD_PLAIN) {
       PlainTraceVec(S, F.f);
    }
@@ -3058,13 +3053,13 @@ void TraceMod(GF2E& x, const GF2EX& a, const GF2EXModulus& F)
    if (deg(a) >= n)
       Error("trace: bad args");
 
-   // FIXME: in a thread safe version, we should use
-   // some kind of mutex
+   do { // NOTE: thread safe lazy init
+      Lazy<vec_GF2E>::Builder builder(F.tracevec);
+      if (!builder) break;
+      ComputeTraceVec(*builder, F);
+   } while (0);
 
-   if (F.tracevec.length() == 0) 
-      ComputeTraceVec(F);
-
-   InnerProduct(x, a.rep, F.tracevec);
+   InnerProduct(x, a.rep, F.tracevec.value());
 }
 
 void TraceMod(GF2E& x, const GF2EX& a, const GF2EX& f)

@@ -351,7 +351,7 @@ void IterHalfGCD(ZZ_pXMatrix& M_out, ZZ_pX& U, ZZ_pX& V, long d_red)
    if (deg(V) <= goal)
       return;
 
-   ZZVec tmp(deg(U)+1, ZZ_pInfo->ExtendedModulusSize);
+   ZZVec tmp(deg(U)+1, ZZ_p::ExtendedModulusSize());
    ZZ_pX Q, t(INIT_SIZE, d_red);
 
    while (deg(V) > goal) {
@@ -937,7 +937,7 @@ void CompMod(ZZ_pX& x, const ZZ_pX& g, const ZZ_pXArgument& A,
 
 
    ZZ_pX s, t;
-   ZZVec scratch(F.n, ZZ_pInfo->ExtendedModulusSize);
+   ZZVec scratch(F.n, ZZ_p::ExtendedModulusSize());
 
    long m = A.H.length() - 1;
    long l = ((g.rep.length()+m-1)/m) - 1;
@@ -1576,13 +1576,9 @@ void TraceVec(vec_ZZ_p& S, const ZZ_pX& f)
       FastTraceVec(S, f);
 }
 
-void ComputeTraceVec(const ZZ_pXModulus& F)
+static
+void ComputeTraceVec(vec_ZZ_p& S, const ZZ_pXModulus& F)
 {
-   vec_ZZ_p& S = *((vec_ZZ_p *) &F.tracevec);
-
-   if (S.length() > 0)
-      return;
-
    if (!F.UseFFT) {
       PlainTraceVec(S, F.f);
       return;
@@ -1617,13 +1613,13 @@ void TraceMod(ZZ_p& x, const ZZ_pX& a, const ZZ_pXModulus& F)
    if (deg(a) >= n)
       Error("trace: bad args");
 
-   // FIXME: in a thread safe version, we should use
-   // some kind of mutex
-
-   if (F.tracevec.length() == 0) 
-      ComputeTraceVec(F);
-
-   InnerProduct(x, a.rep, F.tracevec);
+   do { // NOTE: thread safe lazy init
+      Lazy<vec_ZZ_p>::Builder builder(F.tracevec);
+      if (!builder) break;
+      ComputeTraceVec(*builder, F);
+   } while (0);
+      
+   InnerProduct(x, a.rep, F.tracevec.value());
 }
 
 void TraceMod(ZZ_p& x, const ZZ_pX& a, const ZZ_pX& f)
@@ -1649,7 +1645,7 @@ void PlainResultant(ZZ_p& rres, const ZZ_pX& a, const ZZ_pX& b)
 
       long n = max(deg(a),deg(b)) + 1;
       ZZ_pX u(INIT_SIZE, n), v(INIT_SIZE, n);
-      ZZVec tmp(n, ZZ_pInfo->ExtendedModulusSize);
+      ZZVec tmp(n, ZZ_p::ExtendedModulusSize());
 
       u = a;
       v = b;
@@ -1701,7 +1697,7 @@ void ResIterHalfGCD(ZZ_pXMatrix& M_out, ZZ_pX& U, ZZ_pX& V, long d_red,
    if (deg(V) <= goal)
       return;
 
-   ZZVec tmp(deg(U)+1, ZZ_pInfo->ExtendedModulusSize);
+   ZZVec tmp(deg(U)+1, ZZ_p::ExtendedModulusSize());
    ZZ_pX Q, t(INIT_SIZE, d_red);
 
 

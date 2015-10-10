@@ -32,7 +32,8 @@ istream& operator>>(istream& s, ref_GF2 x)
 {
    NTL_ZZRegister(a);
 
-   s >> a;
+   NTL_INPUT_CHECK_RET(s, s >> a);
+
    conv(x, a);
    return s;
 }

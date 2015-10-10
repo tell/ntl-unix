@@ -39,9 +39,6 @@ inline ZZ_pE FindRoot(const ZZ_pEX& f)
 NTL_THREAD_LOCAL extern long ZZ_pEX_GCDTableSize; /* = 4 */
 // Controls GCD blocking for NewDDF
 
-NTL_THREAD_LOCAL extern char ZZ_pEX_stem[]; 
-// Determines filename stem for external storage in NewDDF.
-
 NTL_THREAD_LOCAL extern double ZZ_pEXFileThresh; 
 // of these tables exceeds ZZ_pEXFileThresh KB.
 

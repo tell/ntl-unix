@@ -179,7 +179,7 @@ istream & operator>>(istream& s, WordVector& a)
    WordVector ibuf;  
    long c;   
    long n;   
-   if (!s) Error("bad vector input"); 
+   if (!s) NTL_INPUT_ERROR(s, "bad vector input"); 
    
    c = s.peek();  
    while (IsWhiteSpace(c)) {  
@@ -187,7 +187,7 @@ istream & operator>>(istream& s, WordVector& a)
       c = s.peek();  
    }  
    if (c != '[') {  
-      Error("bad vector input");  
+      NTL_INPUT_ERROR(s, "bad vector input");  
    }  
  
    n = 0;   
@@ -203,14 +203,14 @@ istream & operator>>(istream& s, WordVector& a)
       if (n % NTL_WordVectorInputBlock == 0) ibuf.SetMaxLength(n + NTL_WordVectorInputBlock); 
       n++;   
       ibuf.SetLength(n);   
-      if (!(s >> ibuf[n-1])) Error("bad vector input");   
+      if (!(s >> ibuf[n-1])) NTL_INPUT_ERROR(s, "bad vector input");   
       c = s.peek();  
       while (IsWhiteSpace(c)) {  
          s.get();  
          c = s.peek();  
       }  
    }   
-   if (c == EOF) Error("bad vector input");  
+   if (c == EOF) NTL_INPUT_ERROR(s, "bad vector input");  
    s.get(); 
    
    a = ibuf; 

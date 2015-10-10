@@ -1,12 +1,8 @@
 
 #include <NTL/ctools.h>
 
-#if (defined(NTL_STD_CXX) || defined(NTL_PSTD_NHF))
 #include <iostream>
 using namespace std;
-#else
-#include <iostream.h>
-#endif
 
 
 #define make_string_aux(x) #x
@@ -20,21 +16,20 @@ int main()
    cout << "Basic Configuration Options:\n";
 
 
-#ifdef NTL_STD_CXX
-   cout << "NTL_STD_CXX\n";
+#ifdef NTL_LEGACY_NO_NAMESPACE
+   cout << "NTL_LEGACY_NO_NAMESPACE\n";
 #endif
 
-#ifdef NTL_PSTD_NNS
-   cout << "NTL_PSTD_NNS\n";
+
+#ifdef NTL_LEGACY_INPUT_ERROR
+   cout << "NTL_LEGACY_INPUT_ERROR\n";
 #endif
 
-#ifdef NTL_PSTD_NHF
-   cout << "NTL_PSTD_NHF\n";
+
+#ifdef NTL_THREADS
+   cout << "NTL_THREADS\n";
 #endif
 
-#ifdef NTL_PSTD_NTN
-   cout << "NTL_PSTD_NTN\n";
-#endif
 
 #ifdef NTL_GMP_LIP
    cout << "NTL_GMP_LIP\n";

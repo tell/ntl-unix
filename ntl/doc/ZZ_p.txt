@@ -21,6 +21,7 @@ for saving and restoring a modulus (see classes ZZ_pPush and ZZ_pContext below).
 
 #include <NTL/ZZ.h>
 #include <NTL/ZZVec.h>
+#include <NTL/SmartPtr.h>
 
 class ZZ_p {
 public:

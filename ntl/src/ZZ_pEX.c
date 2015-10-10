@@ -19,7 +19,7 @@ const ZZ_pEX& ZZ_pEX::zero()
 
 istream& operator>>(istream& s, ZZ_pEX& x)
 {
-   s >> x.rep;
+   NTL_INPUT_CHECK_RET(s, s >> x.rep);
    x.normalize();
    return s;
 }
@@ -1480,7 +1480,7 @@ void build(ZZ_pEXModulus& F, const ZZ_pEX& f)
       Error("build(ZZ_pEXModulus,ZZ_pEX): overflow");
    
 
-   F.tracevec.SetLength(0);
+   F.tracevec.kill();
 
    F.f = f;
    F.n = n;
@@ -3012,13 +3012,9 @@ void TraceVec(vec_ZZ_pE& S, const ZZ_pEX& f)
 }
 
 static
-void ComputeTraceVec(const ZZ_pEXModulus& F)
+
+void ComputeTraceVec(vec_ZZ_pE& S, const ZZ_pEXModulus& F)
 {
-   vec_ZZ_pE& S = *((vec_ZZ_pE *) &F.tracevec);
-
-   if (S.length() > 0)
-      return;
-
    if (F.method == ZZ_pEX_MOD_PLAIN) {
       PlainTraceVec(S, F.f);
    }
@@ -3034,12 +3030,13 @@ void TraceMod(ZZ_pE& x, const ZZ_pEX& a, const ZZ_pEXModulus& F)
    if (deg(a) >= n)
       Error("trace: bad args");
 
-  // FIXME: in a thread-safe version, this needs to be mutexed
+   do { // NOTE: thread safe lazy init
+      Lazy<vec_ZZ_pE>::Builder builder(F.tracevec);
+      if (!builder) break;
+      ComputeTraceVec(*builder, F);
+   } while (0);
 
-   if (F.tracevec.length() == 0) 
-      ComputeTraceVec(F);
-
-   InnerProduct(x, a.rep, F.tracevec);
+   InnerProduct(x, a.rep, F.tracevec.value());
 }
 
 void TraceMod(ZZ_pE& x, const ZZ_pEX& a, const ZZ_pEX& f)

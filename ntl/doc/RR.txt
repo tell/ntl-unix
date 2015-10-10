@@ -504,8 +504,11 @@ RR ConvPrec(const quad_float& a, long p);
 void ConvPrec(RR& z, const char *s, long p); // read z from s
 RR ConvPrec(const char *s, long p);
 
-void InputPrec(RR& z, istream& s, long p); // read z from s
+istream& InputPrec(RR& z, istream& s, long p);  // read z from s
 RR InputPrec(istream& s, long p);
+// The functional variant raises an error if input
+// is missing or ill-formed, while procedural form
+// does not.
 
 void MakeRRPrec(RR& z, const ZZ& a, long e, long p); // z = a*2^e
 RR MakeRRPrec(const ZZ& a, long e, long p);

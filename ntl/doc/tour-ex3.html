@@ -51,12 +51,11 @@ int main()
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZXFactoring.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZXFactoring.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
 <font color="#008b00"><b>int</b></font>&nbsp;main()<br>
 {<br>
@@ -64,16 +63,15 @@ using namespace NTL;<br>
 <br>
 &nbsp;&nbsp; cin &gt;&gt; f;<br>
 <br>
-&nbsp;&nbsp; Vec&lt; Pair&lt; ZZX,&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;&gt; &gt; factors;<br>
+&nbsp;&nbsp; Vec&lt; Pair&lt; ZZX, <font color="#008b00"><b>long</b></font>&nbsp;&gt; &gt; factors;<br>
 &nbsp;&nbsp; ZZ c;<br>
 <br>
 &nbsp;&nbsp; factor(c, factors, f);<br>
 <br>
-&nbsp;&nbsp; cout &lt;&lt; c &lt;&lt;&nbsp;<font color="#4a708b">&quot;</font><font color="#8a2be2">\n</font><font color="#4a708b">&quot;</font>;<br>
-&nbsp;&nbsp; cout &lt;&lt; factors &lt;&lt;&nbsp;<font color="#4a708b">&quot;</font><font color="#8a2be2">\n</font><font color="#4a708b">&quot;</font>;<br>
+&nbsp;&nbsp; cout &lt;&lt; c &lt;&lt; <font color="#4a6f8b">&quot;</font><font color="#8a2ae2">\n</font><font color="#4a6f8b">&quot;</font>;<br>
+&nbsp;&nbsp; cout &lt;&lt; factors &lt;&lt; <font color="#4a6f8b">&quot;</font><font color="#8a2ae2">\n</font><font color="#4a6f8b">&quot;</font>;<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
@@ -148,33 +146,31 @@ int main()
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
 <br>
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZX.h&gt;</font><br>
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZX.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
 <font color="#008b00"><b>int</b></font>&nbsp;main()<br>
 {<br>
-&nbsp;&nbsp; Vec&lt;ZZX&gt; phi(INIT_SIZE,&nbsp;<font color="#ff8c00">100</font>);&nbsp;&nbsp;<br>
+&nbsp;&nbsp; Vec&lt;ZZX&gt; phi(INIT_SIZE, <font color="#ff8b00">100</font>);&nbsp;&nbsp;<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>&nbsp;(<font color="#008b00"><b>long</b></font>&nbsp;i =&nbsp;<font color="#ff8c00">1</font>; i &lt;=&nbsp;<font color="#ff8c00">100</font>; i++) {<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>for</b></font>&nbsp;(<font color="#008b00"><b>long</b></font>&nbsp;i = <font color="#ff8b00">1</font>; i &lt;= <font color="#ff8b00">100</font>; i++) {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ZZX t;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;t =&nbsp;<font color="#ff8c00">1</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;t = <font color="#ff8b00">1</font>;<br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>&nbsp;(<font color="#008b00"><b>long</b></font>&nbsp;j =&nbsp;<font color="#ff8c00">1</font>; j &lt;= i-<font color="#ff8c00">1</font>; j++)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(i % j ==&nbsp;<font color="#ff8c00">0</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>for</b></font>&nbsp;(<font color="#008b00"><b>long</b></font>&nbsp;j = <font color="#ff8b00">1</font>; j &lt;= i-<font color="#ff8b00">1</font>; j++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#b02f60"><b>if</b></font>&nbsp;(i % j == <font color="#ff8b00">0</font>)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;t *= phi(j);<br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;phi(i) = (ZZX(INIT_MONO, i) -&nbsp;<font color="#ff8c00">1</font>)/t;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;phi(i) = (ZZX(INIT_MONO, i) - <font color="#ff8b00">1</font>)/t;&nbsp;&nbsp;<br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cout &lt;&lt; phi(i) &lt;&lt;&nbsp;<font color="#4a708b">&quot;</font><font color="#8a2be2">\n</font><font color="#4a708b">&quot;</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cout &lt;&lt; phi(i) &lt;&lt; <font color="#4a6f8b">&quot;</font><font color="#8a2ae2">\n</font><font color="#4a6f8b">&quot;</font>;<br>
 &nbsp;&nbsp; }<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 

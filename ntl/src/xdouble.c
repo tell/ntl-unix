@@ -9,6 +9,7 @@ NTL_START_IMPL
 
 
 
+NTL_THREAD_LOCAL
 long xdouble::oprec = 10;
 
 void xdouble::SetOutputPrecision(long p)
@@ -748,7 +749,7 @@ istream& operator>>(istream& s, xdouble& x)
    long sign;
    ZZ a, b;
 
-   if (!s) Error("bad xdouble input");
+   if (!s) NTL_INPUT_ERROR(s, "bad xdouble input");
 
    c = s.peek();
    while (IsWhiteSpace(c)) {
@@ -806,7 +807,7 @@ istream& operator>>(istream& s, xdouble& x)
       }
    }
 
-   if (got_dot && !got1 && !got2)  Error("bad xdouble input");
+   if (got_dot && !got1 && !got2)  NTL_INPUT_ERROR(s, "bad xdouble input");
 
    ZZ e;
 
@@ -834,7 +835,7 @@ istream& operator>>(istream& s, xdouble& x)
 
       cval = CharToIntVal(c);
 
-      if (cval < 0 || cval > 9) Error("bad xdouble input");
+      if (cval < 0 || cval > 9) NTL_INPUT_ERROR(s, "bad xdouble input");
 
       e = 0;
       while (cval >= 0 && cval <= 9) {
@@ -846,7 +847,7 @@ istream& operator>>(istream& s, xdouble& x)
       }
    }
 
-   if (!got1 && !got2 && !got_e) Error("bad xdouble input");
+   if (!got1 && !got2 && !got_e) NTL_INPUT_ERROR(s, "bad xdouble input");
 
    xdouble t1, t2, v;
 

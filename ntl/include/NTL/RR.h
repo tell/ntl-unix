@@ -62,6 +62,23 @@ RR(const RR&);
 };
 
 
+// RAII for saving/restoring precision
+// FIXME: document. Also, add a RRBak class
+// for finer control
+
+class RRPush {
+private: 
+   long old_p;
+
+   RRPush(const RRPush&); // disable
+   void operator=(const RRPush&); // disable
+
+public:
+   RRPush() : old_p(RR::prec) { }
+   ~RRPush() { RR::prec = old_p; } 
+
+};
+
 long IsZero(const RR& a);
 long IsOne(const RR& a);
 long sign(const RR& a);
@@ -329,9 +346,9 @@ void ConvPrec(RR& z, const char *s, long p);
 inline RR ConvPrec(const char *s, long p)
    { RR z; ConvPrec(z, s, p); NTL_OPT_RETURN(RR, z); }
 
-void InputPrec(RR& z, NTL_SNS istream& s, long p);
+NTL_SNS istream& InputPrec(RR& z, NTL_SNS istream& s, long p);
 inline RR InputPrec(NTL_SNS istream& s, long p)
-   { RR z; InputPrec(z, s, p); NTL_OPT_RETURN(RR, z); }
+   { RR z; NTL_INPUT_CHECK_ERR(InputPrec(z, s, p)); NTL_OPT_RETURN(RR, z); }
 
 void MakeRRPrec(RR& z, const ZZ& a, long e, long p);
 inline RR MakeRRPrec(const ZZ& a, long e, long p)

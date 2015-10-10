@@ -4,42 +4,19 @@
 
 #include <NTL/ctools.h>
 
-#if (defined(NTL_STD_CXX) || defined(NTL_PSTD_NHF))
-
-// new header files
 
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
 
-#else
-
-// old header files
-
-#include <stdlib.h>
-#include <math.h>
-#include <iostream.h>
-
-#endif
-
-#if (defined(NTL_STD_CXX) || defined(NTL_PSTD_NHF))
 
 #define NTL_SNS std ::
 #define NTL_USE_SNS using namespace std;
 
-#elif (defined(NTL_PSTD_NNS))
+#ifndef NTL_LEGACY_NO_NAMESPACE
 
-#define NTL_SNS ::
-#define NTL_USE_SNS 
-
-#else
-
-#define NTL_SNS 
-#define NTL_USE_SNS 
-
-#endif
-
-#if (defined(NTL_STD_CXX) || defined(NTL_PSTD_NNS))
+// This wraps NTL in the NTL namespace.
+// This is the current default.
 
 #define NTL_NAMESPACE NTL
 #define NTL_OPEN_NNS namespace NTL_NAMESPACE {
@@ -65,6 +42,9 @@
 
 #else
 
+// This puts NTL in the global namespace.
+// Provided only for backward compatibility.
+
 #define NTL_NAMESPACE 
 #define NTL_OPEN_NNS 
 #define NTL_CLOSE_NNS 
@@ -80,25 +60,6 @@
 
 
 
-#if 0
-
-// This is for debugging purposes only.
-
-namespace foo_bar {
-
-class ostream;
-class istream;
-
-typedef unsigned int size_t;
-
-double floor(double);
-float floor(float);
-
-}
-#endif
-
-
-
 double _ntl_GetTime();
 
 typedef unsigned long _ntl_ulong;
@@ -107,6 +68,45 @@ typedef _ntl_ulong *_ntl_ulong_ptr;
 // (non-standard but common) definitions in standard headers.
 // Putting u_long inside namespace NTL only tends to creates ambiguities,
 // for no good reason.
+
+#ifndef NTL_LEGACY_INPUT_ERROR
+
+// this newer version is more in line with wider C++
+// practice, setting the "fail bit" of an input stream
+// when an error is encounted.  This is now the default in NTL
+
+#define NTL_INPUT_ERROR(s, msg) \
+   do {\
+      s.setstate(NTL_SNS ios::failbit);\
+      return s;\
+   } while (0)\
+
+
+#else
+
+// this version provides full backward compatibility,
+// raising an error on ill-formed or missing input
+
+#define NTL_INPUT_ERROR(s, msg) \
+   do {\
+      Error(msg);\
+   } while (0)\
+
+
+#endif
+
+
+#define NTL_INPUT_CHECK_ERR(stmt) \
+   do {\
+      if (!(stmt)) Error("bad input\n");\
+   } while (0)\
+
+
+
+#define NTL_INPUT_CHECK_RET(s, stmt) \
+   do {\
+      if (!(stmt)) { s.setstate(NTL_SNS ios::failbit); return s; }\
+   } while (0)\
 
 
 

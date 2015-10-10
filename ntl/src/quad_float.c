@@ -168,6 +168,7 @@ END_FIX
 #endif
 
 
+NTL_THREAD_LOCAL
 long quad_float::oprec = 10;
 
 void quad_float::SetOutputPrecision(long p)
@@ -707,14 +708,14 @@ ostream& operator<<(ostream& s, const quad_float& a)
 
 istream& operator>>(istream& s, quad_float& x)
 {
-   long old_p = RR::precision();
+   RRPush push();
+
    RR::SetPrecision(4*NTL_DOUBLE_PRECISION);
 
    NTL_THREAD_LOCAL static RR t;
-   s >> t;
+   NTL_INPUT_CHECK_RET(s, s >> t);
    conv(x, t);
 
-   RR::SetPrecision(old_p);
    return s;
 }
 

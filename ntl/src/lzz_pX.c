@@ -31,7 +31,7 @@ const zz_pX& zz_pX::zero()
 
 istream& operator>>(istream& s, zz_pX& x)
 {
-   s >> x.rep;
+   NTL_INPUT_CHECK_RET(s, s >> x.rep);
    x.normalize();
    return s;
 }
@@ -1537,8 +1537,8 @@ void FromModularRep(zz_p& res, long *a)
    t = 0;
 
    for (i = 0; i < n; i++) {
-      s = MulMod2(a[i], u[i], FFTPrime[i], x[i]);
-      y = y + double(s)*FFTPrimeInv[i];
+      s = MulMod2(a[i], u[i], GetFFTPrime(i), x[i]);
+      y = y + double(s)*GetFFTPrimeInv(i);
 
 
       // DIRT: uses undocumented MulMod feature (see ZZ.h)
@@ -1613,7 +1613,7 @@ void TofftRep(fftRep& y, const zz_pX& x, long k, long lo, long hi)
             for (j1 = j + n; j1 < m; j1 += n)
                add(accum, accum, xx[j1+lo]);
             for (i = 0; i < NumPrimes; i++) {
-               long q = FFTPrime[i];
+               long q = GetFFTPrime(i);
                long t = rep(accum);
                if (t >= q) t -= q;
                y.tbl[i][j] = t;
@@ -1692,7 +1692,7 @@ void RevTofftRep(fftRep& y, const vec_zz_p& x,
             for (j1 = j + n; j1 < m; j1 += n)
                add(accum, accum, xx[j1+lo]);
             for (i = 0; i < NumPrimes; i++) {
-               long q = FFTPrime[i];
+               long q = GetFFTPrime(i);
                long t = rep(accum);
                if (t >= q) t -= q;
                y.tbl[i][offset] = t;
@@ -1949,8 +1949,8 @@ void mul(fftRep& z, const fftRep& x, const fftRep& y)
          long *zp = &z.tbl[i][0];
          const long *xp = &x.tbl[i][0];
          const long *yp = &y.tbl[i][0];
-         long q = FFTPrime[i];
-         double qinv = FFTPrimeInv[i];
+         long q = GetFFTPrime(i);
+         double qinv = GetFFTPrimeInv(i);
    
          for (j = 0; j < n; j++)
             zp[j] = MulMod(xp[j], yp[j], q, qinv);
@@ -1985,7 +1985,7 @@ void sub(fftRep& z, const fftRep& x, const fftRep& y)
          long *zp = &z.tbl[i][0];
          const long *xp = &x.tbl[i][0];
          const long *yp = &y.tbl[i][0];
-         long q = FFTPrime[i];
+         long q = GetFFTPrime(i);
    
          for (j = 0; j < n; j++)
             zp[j] = SubMod(xp[j], yp[j], q);
@@ -2020,7 +2020,7 @@ void add(fftRep& z, const fftRep& x, const fftRep& y)
          long *zp = &z.tbl[i][0];
          const long *xp = &x.tbl[i][0];
          const long *yp = &y.tbl[i][0];
-         long q = FFTPrime[i];
+         long q = GetFFTPrime(i);
    
          for (j = 0; j < n; j++)
             zp[j] = AddMod(xp[j], yp[j], q);
@@ -2076,7 +2076,7 @@ void AddExpand(fftRep& x, const fftRep& a)
    }
    else {
       for (i = 0; i < zz_pInfo->NumPrimes; i++) {
-         long q = FFTPrime[i];
+         long q = GetFFTPrime(i);
          const long *ap = &a.tbl[i][0];
          long *xp = &x.tbl[i][0];
          for (j = 0; j < n; j++) {
@@ -2725,7 +2725,7 @@ void build(zz_pXModulus& x, const zz_pX& f)
    x.f = f;
    x.n = deg(f);
 
-   x.tracevec.SetLength(0);
+   x.tracevec.kill();
 
    if (x.n <= 0)
       Error("build: deg(f) must be at least 1");

@@ -51,7 +51,7 @@ ZZ_pX& ZZ_pX::operator=(const ZZ_p& a)
 
 istream& operator>>(istream& s, ZZ_pX& x)
 {
-   s >> x.rep;
+   NTL_INPUT_CHECK_RET(s, s >> x.rep);
    x.normalize();
    return s;
 }
@@ -711,7 +711,7 @@ void PlainDivRem(ZZ_pX& q, ZZ_pX& r, const ZZ_pX& a, const ZZ_pX& b)
       inv(LCInv, bp[db]);
    }
 
-   ZZVec x(da + 1, ZZ_pInfo->ExtendedModulusSize);
+   ZZVec x(da + 1, ZZ_p::ExtendedModulusSize());
 
    for (i = 0; i <= da; i++)
       x[i] = rep(a.rep[i]);
@@ -901,7 +901,7 @@ void PlainDiv(ZZ_pX& q, const ZZ_pX& a, const ZZ_pX& b)
       inv(LCInv, bp[db]);
    }
 
-   ZZVec x(da + 1 - db, ZZ_pInfo->ExtendedModulusSize);
+   ZZVec x(da + 1 - db, ZZ_p::ExtendedModulusSize());
 
    for (i = db; i <= da; i++)
       x[i-db] = rep(a.rep[i]);
@@ -957,7 +957,7 @@ void PlainRem(ZZ_pX& r, const ZZ_pX& a, const ZZ_pX& b)
       inv(LCInv, bp[db]);
    }
 
-   ZZVec x(da + 1, ZZ_pInfo->ExtendedModulusSize);
+   ZZVec x(da + 1, ZZ_p::ExtendedModulusSize());
 
    for (i = 0; i <= da; i++)
       x[i] = rep(a.rep[i]);
@@ -1036,7 +1036,7 @@ void PlainGCD(ZZ_pX& x, const ZZ_pX& a, const ZZ_pX& b)
    else {
       long n = max(deg(a),deg(b)) + 1;
       ZZ_pX u(INIT_SIZE, n), v(INIT_SIZE, n);
-      ZZVec tmp(n, ZZ_pInfo->ExtendedModulusSize);
+      ZZVec tmp(n, ZZ_p::ExtendedModulusSize());
 
       u = a;
       v = b;
@@ -1252,12 +1252,12 @@ void FFTRep::SetSize(long NewK)
       return;
    }
 
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
    if (MaxK == -1)
-      NumPrimes = ZZ_pInfo->NumPrimes;
+      NumPrimes = FFTInfo->NumPrimes;
    else {
-      if (NumPrimes != ZZ_pInfo->NumPrimes)
+      if (NumPrimes != FFTInfo->NumPrimes)
          Error("FFTRep: inconsistent use");
    }
 
@@ -1376,9 +1376,9 @@ FFTRep::~FFTRep()
 
 void ZZ_pXModRep::SetSize(long NewN)
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
-   NumPrimes = ZZ_pInfo->NumPrimes;
+   NumPrimes = FFTInfo->NumPrimes;
 
    if (NewN < 0)
       Error("bad arg to ZZ_pXModRep::SetSize()");
@@ -1392,16 +1392,16 @@ void ZZ_pXModRep::SetSize(long NewN)
  
 
    if (MaxN == 0) {
-      tbl = (long **) NTL_MALLOC(ZZ_pInfo->NumPrimes, sizeof(long *), 0);
+      tbl = (long **) NTL_MALLOC(FFTInfo->NumPrimes, sizeof(long *), 0);
       if (!tbl)
          Error("out of space in ZZ_pXModRep::SetSize()");
    }
    else {
-      for (i = 0; i < ZZ_pInfo->NumPrimes; i++) 
+      for (i = 0; i < FFTInfo->NumPrimes; i++) 
          free(tbl[i]);
    }
 
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
       if ( !(tbl[i] = (long *) NTL_MALLOC(NewN, sizeof(long), 0)) )
          Error("out of space in ZZ_pXModRep::SetSize()");
    }
@@ -1423,44 +1423,41 @@ ZZ_pXModRep::~ZZ_pXModRep()
 
 
 NTL_THREAD_LOCAL static vec_long ModularRepBuf;
-// FIXME: I may want to consider putting this in 
-// the thread local scratch space associated with ZZ_p contexts.
+// FIXME: maybe I could put this is scratch space associated
+// with the current modulus
 
 
-void ToModularRep(vec_long& x, const ZZ_p& a)
+void ToModularRep(vec_long& x, const ZZ_p& a, const ZZ_pFFTInfoT *FFTInfo,
+                  ZZ_pTmpSpaceT *TmpSpace)
 {
-   ZZ_pInfo->check();
-   ZZ_p_rem_struct_eval(ZZ_pInfo->rem_struct, &x[0], rep(a));
+   FFTInfo->rem_struct.eval(&x[0], rep(a),  TmpSpace->rem_tmp_vec);
 }
 
 
 // NOTE: earlier versions used Kahan summation...
 // we no longer do this, as it is less portable than I thought.
 
-
-
-void FromModularRep(ZZ_p& x, const vec_long& a)
+void FromModularRep(ZZ_p& x, const vec_long& a, const ZZ_pFFTInfoT *FFTInfo,
+                    ZZ_pTmpSpaceT *TmpSpace)
 {
-   ZZ_pInfo->check();
-
-   long n = ZZ_pInfo->NumPrimes;
+   long n = FFTInfo->NumPrimes;
    NTL_ZZRegister(q);
    NTL_ZZRegister(s);
    NTL_ZZRegister(t);
    long i;
    double y;
 
-   if (ZZ_p_crt_struct_special(ZZ_pInfo->crt_struct)) {
-      ZZ_p_crt_struct_eval(ZZ_pInfo->crt_struct, t, &a[0]);
+   if (FFTInfo->crt_struct.special()) {
+       FFTInfo->crt_struct.eval(t, &a[0], TmpSpace->crt_tmp_vec);
       x.LoopHole() = t;
       return;
    }
       
 
-   if (ZZ_pInfo->QuickCRT) {
+   if (FFTInfo->QuickCRT) {
       y = 0;
       for (i = 0; i < n; i++)
-         y += ((double) a[i])*ZZ_pInfo->x[i];
+         y += ((double) a[i])*FFTInfo->x[i];
 
       conv(q, (y + 0.5)); 
    } else {
@@ -1472,18 +1469,18 @@ void FromModularRep(ZZ_p& x, const vec_long& a)
       clear(q);
 
       for (i = 0; i < n; i++) {
-         r = MulDivRem(Q, a[i], ZZ_pInfo->u[i], FFTPrime[i], ZZ_pInfo->x[i]);
+         r = MulDivRem(Q, a[i], FFTInfo->u[i], GetFFTPrime(i), FFTInfo->x[i]);
          add(q, q, Q);
-         y += r*FFTPrimeInv[i];
+         y += r*GetFFTPrimeInv(i);
       }
 
       conv(qq, (y + 0.5));
       add(q, q, qq);
    }
 
-   ZZ_p_crt_struct_eval(ZZ_pInfo->crt_struct, t, &a[0]);
+   FFTInfo->crt_struct.eval(t, &a[0], TmpSpace->crt_tmp_vec);
 
-   mul(s, q, ZZ_pInfo->MinusMModP);
+   mul(s, q, FFTInfo->MinusMModP);
    add(t, t, s);
 
    conv(x, t);
@@ -1496,20 +1493,22 @@ void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
 // computes an n = 2^k point convolution.
 // if deg(x) >= 2^k, then x is first reduced modulo X^n-1.
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
+   ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
+   
 
    long n, i, j, m, j1;
    vec_long& t = ModularRepBuf;
    ZZ_p accum;
 
 
-   if (k > ZZ_pInfo->MaxRoot) 
+   if (k > FFTInfo->MaxRoot) 
       Error("Polynomial too big for FFT");
 
    if (lo < 0)
       Error("bad arg to ToFFTRep");
 
-   t.SetLength(ZZ_pInfo->NumPrimes);
+   t.SetLength(FFTInfo->NumPrimes);
 
    hi = min(hi, deg(x));
 
@@ -1523,15 +1522,15 @@ void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
 
    for (j = 0; j < n; j++) {
       if (j >= m) {
-         for (i = 0; i < ZZ_pInfo->NumPrimes; i++)
+         for (i = 0; i < FFTInfo->NumPrimes; i++)
             y.tbl[i][j] = 0;
       }
       else {
          accum = xx[j+lo];
          for (j1 = j + n; j1 < m; j1 += n)
             add(accum, accum, xx[j1+lo]);
-         ToModularRep(t, accum);
-         for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+         ToModularRep(t, accum, FFTInfo, TmpSpace);
+         for (i = 0; i < FFTInfo->NumPrimes; i++) {
             y.tbl[i][j] = t[i];
          }
       }
@@ -1541,10 +1540,7 @@ void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
    // is essentially a matrix transpose, which could lead to bad
    // cache performance.  I don't really know if that is an issue.
 
-   
-
-
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
       long *yp = &y.tbl[i][0];
       FFTFwd(yp, yp, k, i);
    }
@@ -1558,19 +1554,21 @@ void RevToFFTRep(FFTRep& y, const vec_ZZ_p& x,
 // using "inverted" evaluation points.
 
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
+   ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
+
 
    long n, i, j, m, j1;
    vec_long& t = ModularRepBuf;
    ZZ_p accum;
 
-   if (k > ZZ_pInfo->MaxRoot) 
+   if (k > FFTInfo->MaxRoot) 
       Error("Polynomial too big for FFT");
 
    if (lo < 0)
       Error("bad arg to ToFFTRep");
 
-   t.SetLength(ZZ_pInfo->NumPrimes);
+   t.SetLength(FFTInfo->NumPrimes);
 
    hi = min(hi, x.length()-1);
 
@@ -1586,15 +1584,15 @@ void RevToFFTRep(FFTRep& y, const vec_ZZ_p& x,
 
    for (j = 0; j < n; j++) {
       if (j >= m) {
-         for (i = 0; i < ZZ_pInfo->NumPrimes; i++)
+         for (i = 0; i < FFTInfo->NumPrimes; i++)
             y.tbl[i][offset] = 0;
       }
       else {
          accum = xx[j+lo];
          for (j1 = j + n; j1 < m; j1 += n)
             add(accum, accum, xx[j1+lo]);
-         ToModularRep(t, accum);
-         for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+         ToModularRep(t, accum, FFTInfo, TmpSpace);
+         for (i = 0; i < FFTInfo->NumPrimes; i++) {
             y.tbl[i][offset] = t[i];
 
          }
@@ -1604,7 +1602,7 @@ void RevToFFTRep(FFTRep& y, const vec_ZZ_p& x,
    }
 
 
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
       long *yp = &y.tbl[i][0];
       FFTRev1(yp, yp, k, i);
    }
@@ -1618,19 +1616,20 @@ void FromFFTRep(ZZ_pX& x, FFTRep& y, long lo, long hi)
    
 
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
+   ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
 
    long k, n, i, j, l;
 
    vec_long& t = ModularRepBuf;
 
-   t.SetLength(ZZ_pInfo->NumPrimes);
+   t.SetLength(FFTInfo->NumPrimes);
 
    k = y.k;
    n = (1L << k);
 
 
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
       long *yp = &y.tbl[i][0];
       FFTRev1(yp, yp, k, i);
    }
@@ -1641,10 +1640,10 @@ void FromFFTRep(ZZ_pX& x, FFTRep& y, long lo, long hi)
    x.rep.SetLength(l);
 
    for (j = 0; j < l; j++) {
-      for (i = 0; i < ZZ_pInfo->NumPrimes; i++) 
+      for (i = 0; i < FFTInfo->NumPrimes; i++) 
          t[i] = y.tbl[i][j+lo]; 
 
-      FromModularRep(x.rep[j], t);
+      FromModularRep(x.rep[j], t, FFTInfo, TmpSpace);
    }
 
    x.normalize();
@@ -1658,7 +1657,9 @@ void RevFromFFTRep(vec_ZZ_p& x, FFTRep& y, long lo, long hi)
    
 
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
+   ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
+
 
    long k, n, i, j, l;
 
@@ -1667,9 +1668,9 @@ void RevFromFFTRep(vec_ZZ_p& x, FFTRep& y, long lo, long hi)
    k = y.k;
    n = (1L << k);
 
-   t.SetLength(ZZ_pInfo->NumPrimes);
+   t.SetLength(FFTInfo->NumPrimes);
 
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
       long *yp = &y.tbl[i][0];
       FFTFwd(yp, yp, k, i);
    }
@@ -1680,28 +1681,30 @@ void RevFromFFTRep(vec_ZZ_p& x, FFTRep& y, long lo, long hi)
    x.SetLength(l);
 
    for (j = 0; j < l; j++) {
-      for (i = 0; i < ZZ_pInfo->NumPrimes; i++) 
+      for (i = 0; i < FFTInfo->NumPrimes; i++) 
          t[i] = y.tbl[i][j+lo]; 
 
-      FromModularRep(x[j], t);
+      FromModularRep(x[j], t, FFTInfo, TmpSpace);
    }
 }
 
 void NDFromFFTRep(ZZ_pX& x, const FFTRep& y, long lo, long hi, FFTRep& z)
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
+   ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
+
 
    long k, n, i, j, l;
 
    vec_long& t = ModularRepBuf;
 
-   t.SetLength(ZZ_pInfo->NumPrimes);
+   t.SetLength(FFTInfo->NumPrimes);
    k = y.k;
    n = (1L << k);
 
    z.SetSize(k);
 
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
       long *zp = &z.tbl[i][0];
       const long *yp = &y.tbl[i][0];
 
@@ -1714,10 +1717,10 @@ void NDFromFFTRep(ZZ_pX& x, const FFTRep& y, long lo, long hi, FFTRep& z)
    x.rep.SetLength(l);
 
    for (j = 0; j < l; j++) {
-      for (i = 0; i < ZZ_pInfo->NumPrimes; i++) 
+      for (i = 0; i < FFTInfo->NumPrimes; i++) 
          t[i] = z.tbl[i][j+lo]; 
 
-      FromModularRep(x.rep[j], t);
+      FromModularRep(x.rep[j], t, FFTInfo, TmpSpace);
    }
 
    x.normalize();
@@ -1736,7 +1739,9 @@ void FromFFTRep(ZZ_p* x, FFTRep& y, long lo, long hi)
    
 
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
+   ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
+
 
    long k, n, i, j;
 
@@ -1745,9 +1750,9 @@ void FromFFTRep(ZZ_p* x, FFTRep& y, long lo, long hi)
    k = y.k;
    n = (1L << k);
 
-   t.SetLength(ZZ_pInfo->NumPrimes);
+   t.SetLength(FFTInfo->NumPrimes);
 
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
       long *yp = &y.tbl[i][0];
       FFTRev1(yp, yp, k, i);
    }
@@ -1756,10 +1761,10 @@ void FromFFTRep(ZZ_p* x, FFTRep& y, long lo, long hi)
       if (j >= n)
          clear(x[j-lo]);
       else {
-         for (i = 0; i < ZZ_pInfo->NumPrimes; i++) 
+         for (i = 0; i < FFTInfo->NumPrimes; i++) 
             t[i] = y.tbl[i][j]; 
 
-         FromModularRep(x[j-lo], t);
+         FromModularRep(x[j-lo], t, FFTInfo, TmpSpace);
       }
    }
 }
@@ -1767,7 +1772,7 @@ void FromFFTRep(ZZ_p* x, FFTRep& y, long lo, long hi)
 
 void mul(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
    long k, n, i, j;
 
@@ -1778,12 +1783,12 @@ void mul(FFTRep& z, const FFTRep& x, const FFTRep& y)
 
    z.SetSize(k);
 
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
       long *zp = &z.tbl[i][0];
       const long *xp = &x.tbl[i][0];
       const long *yp = &y.tbl[i][0];
-      long q = FFTPrime[i];
-      double qinv = ((double) 1)/((double) q);
+      long q = GetFFTPrime(i);
+      double qinv = GetFFTPrimeInv(i);
 
       for (j = 0; j < n; j++)
          zp[j] = MulMod(xp[j], yp[j], q, qinv);
@@ -1793,7 +1798,7 @@ void mul(FFTRep& z, const FFTRep& x, const FFTRep& y)
 
 void sub(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
    long k, n, i, j;
 
@@ -1804,11 +1809,11 @@ void sub(FFTRep& z, const FFTRep& x, const FFTRep& y)
 
    z.SetSize(k);
 
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
       long *zp = &z.tbl[i][0];
       const long *xp = &x.tbl[i][0];
       const long *yp = &y.tbl[i][0];
-      long q = FFTPrime[i];
+      long q = GetFFTPrime(i);
 
       for (j = 0; j < n; j++)
          zp[j] = SubMod(xp[j], yp[j], q);
@@ -1817,7 +1822,7 @@ void sub(FFTRep& z, const FFTRep& x, const FFTRep& y)
 
 void add(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
    long k, n, i, j;
 
@@ -1828,11 +1833,11 @@ void add(FFTRep& z, const FFTRep& x, const FFTRep& y)
 
    z.SetSize(k);
 
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
       long *zp = &z.tbl[i][0];
       const long *xp = &x.tbl[i][0];
       const long *yp = &y.tbl[i][0];
-      long q = FFTPrime[i];
+      long q = GetFFTPrime(i);
 
       for (j = 0; j < n; j++)
          zp[j] = AddMod(xp[j], yp[j], q);
@@ -1844,7 +1849,7 @@ void reduce(FFTRep& x, const FFTRep& a, long k)
   // reduces a 2^l point FFT-rep to a 2^k point FFT-rep
   // input may alias output
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
    long i, j, l, n;
    long* xp;
@@ -1857,7 +1862,7 @@ void reduce(FFTRep& x, const FFTRep& a, long k)
 
    x.SetSize(k);
 
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
       ap = &a.tbl[i][0];   
       xp = &x.tbl[i][0];
       for (j = 0; j < n; j++) 
@@ -1868,7 +1873,7 @@ void reduce(FFTRep& x, const FFTRep& a, long k)
 void AddExpand(FFTRep& x, const FFTRep& a)
 //  x = x + (an "expanded" version of a)
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
    long i, j, l, k, n;
 
@@ -1878,8 +1883,8 @@ void AddExpand(FFTRep& x, const FFTRep& a)
 
    if (l < k) Error("AddExpand: bad args");
 
-   for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
-      long q = FFTPrime[i];
+   for (i = 0; i < FFTInfo->NumPrimes; i++) {
+      long q = GetFFTPrime(i);
       const long *ap = &a.tbl[i][0];
       long *xp = &x.tbl[i][0];
       for (j = 0; j < n; j++) {
@@ -1893,12 +1898,14 @@ void AddExpand(FFTRep& x, const FFTRep& a)
 
 void ToZZ_pXModRep(ZZ_pXModRep& y, const ZZ_pX& x, long lo, long hi)
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
+   ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
+
 
    long n, i, j;
    vec_long& t = ModularRepBuf;
 
-   t.SetLength(ZZ_pInfo->NumPrimes);
+   t.SetLength(FFTInfo->NumPrimes);
 
    if (lo < 0)
       Error("bad arg to ToZZ_pXModRep");
@@ -1910,8 +1917,8 @@ void ToZZ_pXModRep(ZZ_pXModRep& y, const ZZ_pX& x, long lo, long hi)
    const ZZ_p *xx = x.rep.elts();
 
    for (j = 0; j < n; j++) {
-      ToModularRep(t, xx[j+lo]);
-      for (i = 0; i < ZZ_pInfo->NumPrimes; i++)
+      ToModularRep(t, xx[j+lo], FFTInfo, TmpSpace);
+      for (i = 0; i < FFTInfo->NumPrimes; i++)
          y.tbl[i][j] = t[i];
    }
 }
@@ -1919,7 +1926,7 @@ void ToZZ_pXModRep(ZZ_pXModRep& y, const ZZ_pX& x, long lo, long hi)
 
 void ToFFTRep(FFTRep& x, const ZZ_pXModRep& a, long k, long lo, long hi)
 {
-   ZZ_pInfo->check();
+   const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
    vec_long s;
    long n, m, i, j;
@@ -1940,7 +1947,7 @@ void ToFFTRep(FFTRep& x, const ZZ_pXModRep& a, long k, long lo, long hi)
 
    x.SetSize(k);
 
-   long NumPrimes = ZZ_pInfo->NumPrimes;
+   long NumPrimes = FFTInfo->NumPrimes;
 
    for (i = 0; i < NumPrimes; i++) {
       long *xp = &x.tbl[i][0];
@@ -2595,7 +2602,7 @@ void build(ZZ_pXModulus& x, const ZZ_pX& f)
    x.f = f;
    x.n = deg(f);
 
-   x.tracevec.SetLength(0);
+   x.tracevec.kill();
 
    if (x.n <= 0)
       Error("build: deg(f) must be at least 1");

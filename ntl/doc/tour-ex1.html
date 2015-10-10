@@ -43,24 +43,22 @@ int main()
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZ.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
 <font color="#008b00"><b>int</b></font>&nbsp;main()<br>
 {<br>
-&nbsp;&nbsp; ZZ a, b, c;&nbsp;<br>
+&nbsp;&nbsp; ZZ a, b, c; <br>
 <br>
-&nbsp;&nbsp; cin &gt;&gt; a;&nbsp;<br>
-&nbsp;&nbsp; cin &gt;&gt; b;&nbsp;<br>
-&nbsp;&nbsp; c = (a+<font color="#ff8c00">1</font>)*(b+<font color="#ff8c00">1</font>);<br>
-&nbsp;&nbsp; cout &lt;&lt; c &lt;&lt;&nbsp;<font color="#4a708b">&quot;</font><font color="#8a2be2">\n</font><font color="#4a708b">&quot;</font>;<br>
+&nbsp;&nbsp; cin &gt;&gt; a; <br>
+&nbsp;&nbsp; cin &gt;&gt; b; <br>
+&nbsp;&nbsp; c = (a+<font color="#ff8b00">1</font>)*(b+<font color="#ff8b00">1</font>);<br>
+&nbsp;&nbsp; cout &lt;&lt; c &lt;&lt; <font color="#4a6f8b">&quot;</font><font color="#8a2ae2">\n</font><font color="#4a6f8b">&quot;</font>;<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
@@ -89,7 +87,6 @@ with the "using directive"
 </pre>
 in the above example, one can access
 these components directly.
-More details on namespaces and NTL <a href="tour-stdcxx.html">here</a>.
 
 <p> <hr> <p>
 
@@ -109,54 +106,40 @@ int main()
    ZZ acc, val;
 
    acc = 0;
-   while (SkipWhiteSpace(cin)) {
-      cin >> val;
+   while (cin >> val) 
       acc += val*val;
-   }
 
    cout << acc << "\n";
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZ.h&gt;</font><br>
 <br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
 <br>
 <font color="#008b00"><b>int</b></font>&nbsp;main()<br>
 {<br>
 &nbsp;&nbsp; ZZ acc, val;<br>
 <br>
-&nbsp;&nbsp; acc =&nbsp;<font color="#ff8c00">0</font>;<br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>while</b></font>&nbsp;(SkipWhiteSpace(cin)) {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cin &gt;&gt; val;<br>
+&nbsp;&nbsp; acc = <font color="#ff8b00">0</font>;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>while</b></font>&nbsp;(cin &gt;&gt; val) <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;acc += val*val;<br>
-&nbsp;&nbsp; }<br>
 <br>
-&nbsp;&nbsp; cout &lt;&lt; acc &lt;&lt;&nbsp;<font color="#4a708b">&quot;</font><font color="#8a2be2">\n</font><font color="#4a708b">&quot;</font>;<br>
+&nbsp;&nbsp; cout &lt;&lt; acc &lt;&lt; <font color="#4a6f8b">&quot;</font><font color="#8a2ae2">\n</font><font color="#4a6f8b">&quot;</font>;<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
 
-The function <tt>SkipWhiteSpace</tt> is defined by NTL.
-It skips over white space, and returns 1 if there is something
-following it.
-This function is useful, because
-NTL's input operators raise an error if an input
-is missing or ill-formed. 
-This is different from the standard I/O library,
-which does not raise an error.
-Personally, I find that not raising an error, or at least
-an exception, is a bad idea, since the caller of the I/O
-routine must constantly check the status of the input
-stream.
+Following the normal conventions for input operators,
+NTL's input operators will set the "fail bit" of the
+input stream if the input is missing or ill formed,
+and the condition in the <tt>while</tt> loop will detect this.
 
 
 
@@ -607,7 +590,7 @@ ENDPLAIN -->
 </font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
-Using the comstructor that allows one to <i>explicitly</i>
+using the constructor that allows one to <i>explicitly</i>
 construct a <tt>ZZ</tt> from a <tt>long</tt>.
 
 <p>

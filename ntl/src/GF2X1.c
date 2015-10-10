@@ -410,7 +410,7 @@ void build(GF2XModulus& F, const GF2X& f)
 
    if (n <= 0) Error("build(GF2XModulus,GF2X): deg(f) <= 0");
 
-   F.tracevec.SetLength(0);
+   F.tracevec.kill();
 
    F.f = f;
    F.n = n;
@@ -3234,13 +3234,8 @@ void TraceVec(vec_GF2& S, const GF2X& f)
 }
 
 static
-void ComputeTraceVec(const GF2XModulus& F)
+void ComputeTraceVec(vec_GF2& S, const GF2XModulus& F)
 {
-   vec_GF2& S = *((vec_GF2 *) &F.tracevec);
-
-   if (S.length() > 0)
-      return;
-
    if (F.method == GF2X_MOD_PLAIN) {
       PlainTraceVec(S, F.f);
    }
@@ -3256,12 +3251,13 @@ void TraceMod(ref_GF2 x, const GF2X& a, const GF2XModulus& F)
    if (deg(a) >= n)
       Error("trace: bad args");
 
-   // FIXME: in a thread-safe impl, this needs a mutex
+   do { // NOTE: thread safe lazy init
+      Lazy<vec_GF2>::Builder builder(F.tracevec); 
+      if (!builder) break;
+      ComputeTraceVec(*builder, F);
+   } while (0);
 
-   if (F.tracevec.length() == 0) 
-      ComputeTraceVec(F);
-
-   project(x, F.tracevec, a);
+   project(x, F.tracevec.value(), a);
 }
 
 void TraceMod(ref_GF2 x, const GF2X& a, const GF2X& f)

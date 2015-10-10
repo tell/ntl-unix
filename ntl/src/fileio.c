@@ -1,9 +1,12 @@
 
 #include <NTL/fileio.h>
+#include <NTL/thread.h>
 
-#include <string.h>
+#include <string>
+#include <sstream>
+#include <iomanip>
+#include <ctime>
 
-#include <NTL/new.h>
 
 NTL_START_IMPL
 
@@ -28,42 +31,36 @@ void OpenRead(ifstream& s, const char *name)
    }
 }
 
-#define SBUF_SZ (1024)
 
-NTL_THREAD_LOCAL static char sbuf[SBUF_SZ];
+// FIXME: The FileName function incorporate thread ID, so it should
+// generate unique prefixes across threads within a process.  
+// But it doesn't guarantee uniqueness across processes.  
+// It would be best to incorporate process ID, but there is no good, 
+// cross platform way to get that.
+// For now, I mangle the current time with some low-order digits
+// from GetTime and use that as a proxy.
 
-char *FileName(const char* stem, const char *ext)
+
+
+
+const char *FileName(const char* stem, long d)
 {
-   if (strlen(stem) + 1 + strlen(ext) >= SBUF_SZ) Error("bad file name");
+   NTL_THREAD_LOCAL static string sbuf;
+   NTL_THREAD_LOCAL static unsigned long first_time;
+   NTL_THREAD_LOCAL static bool first_time_init = false;
 
-   strcpy(sbuf, stem);
-   strcat(sbuf, "-");
-   strcat(sbuf, ext);
-
-   return sbuf;
-}
-
-char *FileName(const char* stem, const char *ext, long d)
-{
-   if (strlen(stem) + 1 + strlen(ext) + 1 + 5 >= SBUF_SZ) Error("bad file name");
-
-   strcpy(sbuf, stem);
-   strcat(sbuf, "-");
-   strcat(sbuf, ext);
-   strcat(sbuf, "-");
-
-   char dbuf[6];
-   dbuf[5] = '\0';
-   long i, dd;
-   dd = d;
-   for (i = 4; i >= 0; i--) {
-      dbuf[i] = IntValToChar(dd % 10);
-      dd = dd / 10;
+   if (!first_time_init) {
+      double t = GetTime();
+      unsigned long t1 = (unsigned long) (long( (t - long(t)) * 10000L ));
+      first_time = ((unsigned long) time(0))*10000UL + t1;
+      first_time_init = true;
    }
 
-   strcat(sbuf, dbuf);
-
-   return sbuf;
+   stringstream ss;
+   ss << "tmp-ntl" << first_time << "-" << CurrentThreadID() << stem;
+   ss << "-" << setfill('0') << setw(5) << d;
+   sbuf = ss.str();
+   return sbuf.c_str();
 }
 
 NTL_END_IMPL

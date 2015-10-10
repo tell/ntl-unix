@@ -6,6 +6,8 @@
 #include <NTL/ZZ.h>
 #include <NTL/vector.h>
 #include <NTL/vec_long.h>
+#include <NTL/SmartPtr.h>
+#include <NTL/LazyTable.h>
 
 NTL_OPEN_NNS
 
@@ -33,29 +35,32 @@ NTL_OPEN_NNS
 // This can be increased, with a slight performance penalty.
 
 
-// New interface
 
-class FFTMultipliers {
+
+class FFTVectorPair {
 public:
-   long MaxK;
-   Vec< Vec<long> > wtab_precomp;
-   Vec< Vec<mulmod_precon_t> > wqinvtab_precomp;
-
-   FFTMultipliers() : MaxK(-1) { }
+   Vec<long> wtab_precomp;
+   Vec<mulmod_precon_t> wqinvtab_precomp;
 };
 
-#ifndef NTL_WIZARD_HACK
+typedef LazyTable<FFTVectorPair, NTL_FFTMaxRoot+1> FFTMultipliers;
+
+
+class FFTMulTabs {
+public:
+
+   FFTMultipliers MulTab, InvMulTab;
+
+};
+
 class zz_pInfoT; // forward reference, defined in lzz_p.h
-#else
-typedef long zz_pInfoT;
-#endif
 
 
 struct FFTPrimeInfo {
    long q;   // the prime itself
    double qinv;   // 1/((double) q)
 
-   zz_pInfoT *zz_p_context; 
+   SmartPtr<zz_pInfoT> zz_p_context; 
    // pointer to corresponding zz_p context, which points back to this 
    // object in the case of a non-user FFT prime
 
@@ -73,34 +78,52 @@ struct FFTPrimeInfo {
    Vec<mulmod_precon_t> TwoInvPreconTable;
    // mulmod preconditioning data
 
-   long bigtab; // flag indicating if we use big tables for this prime
-   FFTMultipliers MulTab;
-   FFTMultipliers InvMulTab;
+   UniquePtr< FFTMulTabs > bigtab;
 
 };
 
-void InitFFTPrimeInfo(FFTPrimeInfo& info, long q, long w, long bigtab);
+void InitFFTPrimeInfo(FFTPrimeInfo& info, long q, long w, bool bigtab);
 
-#define NTL_FFT_BIGTAB_LIMIT (256)
+#define NTL_FFT_BIGTAB_LIMIT (350)
 // big tables are only used for the first NTL_FFT_BIGTAB_LIMIT primes
 // TODO: maybe we should have a similar limit for the degree of
 // the convolution as well.
+// FIXME: This is currently only used in FFT.c -- maybe move there?
 
 
-NTL_THREAD_LOCAL
-extern FFTPrimeInfo **FFTTables;
+
+#define NTL_MAX_FFTPRIMES (20000)
+// for a thread-safe implementation, it is most convenient to
+// impose a reasonabel upper bound on he number of FFT primes.
+// without this restriction, a growing table would have to be
+// relocated in one thread, leaving dangling pointers in 
+// another thread.  Each entry in the table is just a poiner,
+// so this does not incur too much space overhead.
+// One could alo implement a 2D-table, which would allocate
+// rows on demand, thus reducing wasted space at the price
+// of extra arithmetic to actually index into the table.
+// This may be an option to consider at some point.
+
+// At the current setting of 20000, on 64-bit machines with 50-bit
+// FFT primes, this allows for polynomials with 20*50/2 = 500K-bit 
+// coefficients, while the table itself takes 160KB.
 
 
-// legacy interface
+typedef LazyTable<UniquePtr< FFTPrimeInfo>, NTL_MAX_FFTPRIMES> FFTTablesType;
 
-NTL_THREAD_LOCAL
-extern long NumFFTPrimes;
+extern FFTTablesType FFTTables;
+// a truly GLOBAL variable, shared among all threads
 
-NTL_THREAD_LOCAL
-extern long *FFTPrime;
 
-NTL_THREAD_LOCAL
-extern double *FFTPrimeInv;
+inline long GetFFTPrime(long i)
+{
+   return FFTTables[i]->q;
+}
+
+inline double GetFFTPrimeInv(long i)
+{
+   return FFTTables[i]->qinv;
+}
 
 
 
@@ -124,7 +147,7 @@ void FFTFwd(long* A, const long *a, long k, FFTPrimeInfo& info)
 {
 #ifdef NTL_FFT_BIGTAB
    if (info.bigtab)
-      FFT(A, a, k, info.q, &info.RootTable[0], info.MulTab);
+      FFT(A, a, k, info.q, &info.RootTable[0], info.bigtab->MulTab);
    else
       FFT(A, a, k, info.q, &info.RootTable[0]);
 #else
@@ -144,7 +167,7 @@ void FFTRev(long* A, const long *a, long k, FFTPrimeInfo& info)
 {
 #ifdef NTL_FFT_BIGTAB
    if (info.bigtab)
-      FFT(A, a, k, info.q, &info.RootInvTable[0], info.InvMulTab);
+      FFT(A, a, k, info.q, &info.RootInvTable[0], info.bigtab->InvMulTab);
    else
       FFT(A, a, k, info.q, &info.RootInvTable[0]);
 #else

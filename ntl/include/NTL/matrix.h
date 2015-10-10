@@ -177,7 +177,7 @@ template<class T>
 NTL_SNS istream& operator>>(NTL_SNS istream& s, Mat<T>& x)  
 {  
    Vec< Vec<T> > buf;  
-   s >> buf;  
+   NTL_INPUT_CHECK_RET(s, s >> buf);  
    MakeMatrix(x, buf);  
    return s;  
 }  

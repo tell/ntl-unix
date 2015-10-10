@@ -13,10 +13,6 @@ CXX=@{CXX}
 
 CXXFLAGS=@{CXXFLAGS}
 # Flags for the C++ compiler
-# Some useful flags:
-#   -O2   --  recommended level of optimization
-#   -m64  --  needed to get 64-bit longs on some platforms
-#   -g    --  debugging
 
 
 AR=@{AR}
@@ -141,7 +137,7 @@ O15=$(O14) vec_lzz_p.o vec_lzz_pE.o
 O16=$(O15) 
 O17=$(O16) 
 O18=$(O17) xdouble.o
-O19=$(O18) G_LLL_FP.o G_LLL_QP.o G_LLL_XD.o G_LLL_RR.o 
+O19=$(O18) G_LLL_FP.o G_LLL_QP.o G_LLL_XD.o G_LLL_RR.o thread.o
 
 OBJ=$(O19)
 
@@ -166,7 +162,7 @@ S15=$(S14) vec_lzz_p.c vec_lzz_pE.c
 S16=$(S15) 
 S17=$(S16) 
 S18=$(S17) xdouble.c
-S19=$(S18) G_LLL_FP.c G_LLL_QP.c G_LLL_XD.c G_LLL_RR.c 
+S19=$(S18) G_LLL_FP.c G_LLL_QP.c G_LLL_XD.c G_LLL_RR.c thread.c
 
 SRC = $(S19)
 
@@ -198,8 +194,9 @@ IN15=$(IN14) vec_vec_GF2.h vec_vec_GF2E.h vec_vec_RR.h vec_vec_ZZ.h
 IN16=$(IN15) vec_vec_ZZ_p.h vec_vec_ZZ_pE.h vec_vec_long.h vec_vec_lzz_p.h
 IN17=$(IN16) vec_vec_lzz_pE.h vec_xdouble.h xdouble.h config.h version.h
 IN18=$(IN17) def_config.h new.h vec_ulong.h vec_vec_ulong.h c_lip.h g_lip.h
+IN19=$(IN18) SmartPtr.h Lazy.h LazyTable.h thread.h
 
-INCL=$(IN18)
+INCL=$(IN19)
 
 
 
@@ -217,8 +214,8 @@ TD = $(TD4)
 TS1=QuickTest.c BerlekampTest.c CanZassTest.c ZZXFacTest.c MoreFacTest.c LLLTest.c
 TS2=$(TS1) subset.c MatrixTest.c CharPolyTest.c RRTest.c QuadTest.c
 TS3=$(TS2) GF2XTest.c GF2EXTest.c BitMatTest.c ZZ_pEXTest.c lzz_pEXTest.c Timing.c
-
-TS = $(TS3)
+TS4=$(TS3) ThreadTest.c
+TS = $(TS4)
 
 # scripts
 
@@ -250,7 +247,7 @@ D10=$(D09) quad_float.txt sedscript.txt tools.txt vec_GF2.txt
 D11=$(D10) vec_GF2E.txt vec_RR.txt vec_ZZ.txt vec_ZZ_p.txt vec_ZZ_pE.txt
 D12=$(D11) vec_lzz_p.txt vec_lzz_pE.txt xdouble.txt names.txt
 D13=$(D12) tour-ack.html tour-intro.html tour-time.html tour-changes.html
-D14=$(D13) tour-modules.html tour-stdcxx.html tour-unix.html tour-examples.html
+D14=$(D13) tour-modules.html tour-unix.html tour-examples.html
 D15=$(D14) tour-roadmap.html tour-win.html tour-impl.html tour-struct.html
 D16=$(D15) tour.html tour-ex1.html tour-ex2.html tour-ex3.html tour-ex4.html
 D17=$(D16) tour-ex5.html tour-ex6.html arrow1.gif arrow2.gif arrow3.gif
@@ -289,7 +286,7 @@ DOC = $(D18) $(HTFILES)
 
 PROG1=QuickTest BerlekampTest CanZassTest ZZXFacTest MoreFacTest LLLTest  BitMatTest
 PROG2=$(PROG1) MatrixTest CharPolyTest RRTest QuadTest 
-PROG3=$(PROG2) GF2XTest GF2EXTest subset ZZ_pEXTest lzz_pEXTest Timing
+PROG3=$(PROG2) GF2XTest GF2EXTest subset ZZ_pEXTest lzz_pEXTest Timing ThreadTest
 PROGS = $(PROG3)
 
 # things to save to a tar file
@@ -514,7 +511,7 @@ winpack:
 
 WO1 = FFT.o  GetTime.o ctools.o ZZ.o ZZVec.o ZZ_p.o ZZ_pX.o
 WO2 = $(WO1) ZZ_pX1.o lip.o tools.o vec_ZZ.o vec_ZZ_p.o 
-WO3 = $(WO2) GF2.o WordVector.o vec_GF2.o GF2X.o GF2X1.o
+WO3 = $(WO2) GF2.o WordVector.o vec_GF2.o GF2X.o GF2X1.o thread.o
 
 WOBJ = $(WO3)
 

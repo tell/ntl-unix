@@ -13,7 +13,7 @@
 %MakeVal = (
 
 'CXX'	      => 'g++',
-'CXXFLAGS'    => '-O2',
+'CXXFLAGS'    => '-g -O2',
 'AR'	      => 'ar',
 'ARFLAGS'     => 'ruv',
 'RANLIB'      => 'ranlib',
@@ -45,10 +45,9 @@
 
 %ConfigFlag = (
 
-'NTL_STD_CXX'           => 'on',
-'NTL_PSTD_NNS'          => 'off',
-'NTL_PSTD_NHF'          => 'off',
-'NTL_PSTD_NTN'          => 'off',
+'NTL_LEGACY_NO_NAMESPACE'  => 'off',
+'NTL_LEGACY_INPUT_ERROR'   => 'off',
+'NTL_THREADS'           => 'off',
 'NTL_GMP_LIP'           => 'off',
 'NTL_GF2X_LIB'          => 'off',
 'NTL_X86_FIX'           => 'off',
@@ -116,6 +115,14 @@ foreach $arg (@ARGV) {
    die "Error: unrecognized option: $arg\ntype \"./configure -h\" for help\n";
 
 }
+
+# special processing for NTL_THREADS: if this is set, we override
+# the default setting for CXXFLAGS
+
+if ($ConfigFlag{'NTL_THREADS'} eq 'on' && !exists($Variable{'CXXFLAGS'})) {
+   $MakeVal{'CXXFLAGS'} = $MakeVal{'CXXFLAGS'} . ' -std=c++11 -pthread';
+}
+
 
 # some special MakeVal values that are determined by SHARED
 

@@ -1,10 +1,17 @@
 
-Temporary development notes here
---------------------------------
 
- - besides thread safety, other things I want to do:
+TODO list:
      * speed up ZZX mul: faster HomMul and faster SSMul
      * speed up GF2X mul using new x86 instructions
+     * Allow 60-bit primes by using long double's
+     * allow 32-bit SP MulMod...this would allow GPU/SSE 
+       support...both this and previous would require
+       a complete scan to introduce new, special types
+     * add template functions clear(), to clear multiple
+       entries in a Vec or Poly.  The important thing is
+       to provide specialized ones for Vec<GF2> and GF2X.
+
+
 
 -----------------------------
 These are basically notes to myself on preparing a new

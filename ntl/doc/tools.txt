@@ -40,7 +40,7 @@ extern void (*ErrorCallback)();
 // C function.
 
 long IsWhiteSpace(long c);
-// returns 1 if c is "wite space" (as defined by isspace is the
+// returns 1 if c is "white space" (as defined by isspace is the
 // standard library...usually blanks, tabs, newlines), and 0 otherwise.
 
 long SkipWhiteSpace(istream& s);
@@ -48,9 +48,6 @@ long SkipWhiteSpace(istream& s);
 // Return value is 0 if end-of-file is reached; otherwise,
 // return value is 1.
 
-// This routine is useful in conjuction with input routines,
-// like NTL's, that raise an error if an input item is
-// ill-formed or missing.  
 
 long IsEOFChar(long c);
 // test if c == EOF

@@ -1576,13 +1576,8 @@ void TraceVec(vec_zz_p& S, const zz_pX& f)
       FastTraceVec(S, f);
 }
 
-void ComputeTraceVec(const zz_pXModulus& F)
+void ComputeTraceVec(vec_zz_p& S, const zz_pXModulus& F)
 {
-   vec_zz_p& S = *((vec_zz_p *) &F.tracevec);
-
-   if (S.length() > 0)
-      return;
-
    if (!F.UseFFT) {
       PlainTraceVec(S, F.f);
       return;
@@ -1617,12 +1612,13 @@ void TraceMod(zz_p& x, const zz_pX& a, const zz_pXModulus& F)
    if (deg(a) >= n)
       Error("trace: bad args");
 
-   // FIXME: thread-safe-imple: need mutex here
+   do { // NOTE: thread safe lazy init
+      Lazy<vec_zz_p>::Builder builder(F.tracevec);
+      if (!builder) break;
+      ComputeTraceVec(*builder, F);
+   } while (0);
 
-   if (F.tracevec.length() == 0) 
-      ComputeTraceVec(F);
-
-   InnerProduct(x, a.rep, F.tracevec);
+   InnerProduct(x, a.rep, F.tracevec.value());
 }
 
 

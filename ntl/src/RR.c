@@ -14,6 +14,7 @@ NTL_START_IMPL
 // priority right now.
 
 
+NTL_THREAD_LOCAL
 long RR::prec = 150;
 
 void RR::SetPrecision(long p)
@@ -27,6 +28,7 @@ void RR::SetPrecision(long p)
    prec = p;
 }
 
+NTL_THREAD_LOCAL
 long RR::oprec = 10;
 
 void RR::SetOutputPrecision(long p)
@@ -917,146 +919,151 @@ void power(RR& z, const RR& a, long e)
 
 istream& operator>>(istream& s, RR& x)
 {
-   long c;
-   long cval;
-   long sign;
-   ZZ a, b;
+   RR v;
 
-   if (!s) Error("bad RR input");
+   {
+      RRPush push();
+
+      long c;
+      long cval;
+      long sign;
+      ZZ a, b;
+
+      if (!s) NTL_INPUT_ERROR(s, "bad RR input");
 
 
-   c = s.peek();
-   while (IsWhiteSpace(c)) {
-      s.get();
       c = s.peek();
-   }
-
-   if (c == '-') {
-      sign = -1;
-      s.get();
-      c = s.peek();
-   }
-   else
-      sign = 1;
-
-   long got1 = 0;
-   long got_dot = 0;
-   long got2 = 0;
-
-   a = 0;
-   b = 1;
-
-   cval = CharToIntVal(c);
-
-   if (cval >= 0 && cval <= 9) {
-      got1 = 1;
-
-      while (cval >= 0 && cval <= 9) {
-         mul(a, a, 10);
-         add(a, a, cval);
+      while (IsWhiteSpace(c)) {
          s.get();
          c = s.peek();
-         cval = CharToIntVal(c);
       }
-   }
 
-   if (c == '.') {
-      got_dot = 1;
+      if (c == '-') {
+         sign = -1;
+         s.get();
+         c = s.peek();
+      }
+      else
+         sign = 1;
 
-      s.get();
-      c = s.peek();
+      long got1 = 0;
+      long got_dot = 0;
+      long got2 = 0;
+
+      a = 0;
+      b = 1;
+
       cval = CharToIntVal(c);
 
       if (cval >= 0 && cval <= 9) {
-         got2 = 1;
-   
+         got1 = 1;
+
          while (cval >= 0 && cval <= 9) {
             mul(a, a, 10);
             add(a, a, cval);
-            mul(b, b, 10);
             s.get();
             c = s.peek();
             cval = CharToIntVal(c);
          }
       }
-   }
 
-   if (got_dot && !got1 && !got2)  Error("bad RR input");
+      if (c == '.') {
+         got_dot = 1;
 
-   ZZ e;
-
-   long got_e = 0;
-   long e_sign;
-
-   if (c == 'e' || c == 'E') {
-      got_e = 1;
-
-      s.get();
-      c = s.peek();
-
-      if (c == '-') {
-         e_sign = -1;
-         s.get();
-         c = s.peek();
-      }
-      else if (c == '+') {
-         e_sign = 1;
-         s.get();
-         c = s.peek();
-      }
-      else
-         e_sign = 1;
-
-      cval = CharToIntVal(c);
-
-      if (cval < 0 || cval > 9) Error("bad RR input");
-
-      e = 0;
-      while (cval >= 0 && cval <= 9) {
-         mul(e, e, 10);
-         add(e, e, cval);
          s.get();
          c = s.peek();
          cval = CharToIntVal(c);
+
+         if (cval >= 0 && cval <= 9) {
+            got2 = 1;
+      
+            while (cval >= 0 && cval <= 9) {
+               mul(a, a, 10);
+               add(a, a, cval);
+               mul(b, b, 10);
+               s.get();
+               c = s.peek();
+               cval = CharToIntVal(c);
+            }
+         }
       }
-   }
 
-   if (!got1 && !got2 && !got_e) Error("bad RR input");
+      if (got_dot && !got1 && !got2)  NTL_INPUT_ERROR(s, "bad RR input");
 
-   RR t1, t2, v;
+      ZZ e;
 
-   long old_p = RR::precision();
+      long got_e = 0;
+      long e_sign;
 
-   if (got1 || got2) {
-      ConvPrec(t1, a, max(NumBits(a), 1));
-      ConvPrec(t2, b, NumBits(b));
-      if (got_e)
+      if (c == 'e' || c == 'E') {
+         got_e = 1;
+
+         s.get();
+         c = s.peek();
+
+         if (c == '-') {
+            e_sign = -1;
+            s.get();
+            c = s.peek();
+         }
+         else if (c == '+') {
+            e_sign = 1;
+            s.get();
+            c = s.peek();
+         }
+         else
+            e_sign = 1;
+
+         cval = CharToIntVal(c);
+
+         if (cval < 0 || cval > 9) NTL_INPUT_ERROR(s, "bad RR input");
+
+         e = 0;
+         while (cval >= 0 && cval <= 9) {
+            mul(e, e, 10);
+            add(e, e, cval);
+            s.get();
+            c = s.peek();
+            cval = CharToIntVal(c);
+         }
+      }
+
+      if (!got1 && !got2 && !got_e) NTL_INPUT_ERROR(s, "bad RR input");
+
+      RR t1, t2;
+
+      long old_p = RR::precision();
+
+      if (got1 || got2) {
+         ConvPrec(t1, a, max(NumBits(a), 1));
+         ConvPrec(t2, b, NumBits(b));
+         if (got_e)
+            RR::SetPrecision(old_p + 10);
+
+         div(v, t1, t2);
+      }
+      else
+         set(v);
+
+      if (sign < 0)
+         negate(v, v);
+
+      if (got_e) {
+         if (e >= NTL_OVFBND) Error("RR input overflow");
+         long E;
+         conv(E, e);
+         if (e_sign < 0) E = -E;
          RR::SetPrecision(old_p + 10);
-
-      div(v, t1, t2);
-   }
-   else
-      set(v);
-
-   if (sign < 0)
-      negate(v, v);
-
-   if (got_e) {
-      if (e >= NTL_OVFBND) Error("RR input overflow");
-      long E;
-      conv(E, e);
-      if (e_sign < 0) E = -E;
-      RR::SetPrecision(old_p + 10);
-      power(t1, to_RR(10), E);
-      mul(v, v, t1);
-      RR::prec = old_p;
+         power(t1, to_RR(10), E);
+         mul(v, v, t1);
+      }
    }
 
    xcopy(x, v);
    return s;
 }
 
-void InputPrec(RR& x, istream& s, long p)
+istream& InputPrec(RR& x, istream& s, long p)
 {
    if (p < 1 || NTL_OVERFLOW(p, 1, 0))
       Error("ConvPrec: bad precsion");
@@ -1065,6 +1072,7 @@ void InputPrec(RR& x, istream& s, long p)
    RR::prec = p;
    s >> x;
    RR::prec = old_p;
+   return s;
 }
 
 

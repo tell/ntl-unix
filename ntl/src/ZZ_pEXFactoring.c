@@ -2,10 +2,8 @@
 #include <NTL/ZZ_pEXFactoring.h>
 #include <NTL/FacVec.h>
 #include <NTL/fileio.h>
-
-#include <stdio.h>
-
 #include <NTL/new.h>
+
 
 NTL_START_IMPL
 
@@ -1065,7 +1063,6 @@ void BuildRandomIrred(ZZ_pEX& f, const ZZ_pEX& g)
 /************* NEW DDF ****************/
 
 NTL_THREAD_LOCAL long ZZ_pEX_GCDTableSize = 4;
-NTL_THREAD_LOCAL char ZZ_pEX_stem[256] = "";
 
 NTL_THREAD_LOCAL double ZZ_pEXFileThresh = NTL_FILE_THRESH;
 
@@ -1073,9 +1070,6 @@ NTL_THREAD_LOCAL static vec_ZZ_pEX BabyStepFile;
 NTL_THREAD_LOCAL static vec_ZZ_pEX GiantStepFile;
 
 NTL_THREAD_LOCAL static long use_files;
-
-// FIXME: in a thread-safe impl, we should be careful
-// with external file names.
 
 
 static
@@ -1130,7 +1124,7 @@ void GenerateBabySteps(ZZ_pEX& h1, const ZZ_pEX& f, const ZZ_pEX& h, long k,
    for (i = 1; i <= k-1; i++) {
       if (use_files) {
          ofstream s;
-         OpenWrite(s, FileName(ZZ_pEX_stem, "baby", i));
+         OpenWrite(s, FileName("baby", i));
          s << h1 << "\n";
          s.close();
       }
@@ -1185,7 +1179,7 @@ void GenerateGiantSteps(const ZZ_pEX& f, const ZZ_pEX& h, long l, long verbose)
    for (i = 1; i <= l-1; i++) {
       if (use_files) {
          ofstream s;
-         OpenWrite(s, FileName(ZZ_pEX_stem, "giant", i));
+         OpenWrite(s, FileName("giant", i));
          s << h1 << "\n";
          s.close();
       }
@@ -1198,7 +1192,7 @@ void GenerateGiantSteps(const ZZ_pEX& f, const ZZ_pEX& h, long l, long verbose)
 
    if (use_files) {
       ofstream s;
-      OpenWrite(s, FileName(ZZ_pEX_stem, "giant", i));
+      OpenWrite(s, FileName("giant", i));
       s << h1 << "\n";
       s.close();
    }
@@ -1217,10 +1211,10 @@ void FileCleanup(long k, long l)
       long i;
    
       for (i = 1; i <= k-1; i++)
-         remove(FileName(ZZ_pEX_stem, "baby", i));
+         remove(FileName("baby", i));
    
       for (i = 1; i <= l; i++)
-         remove(FileName(ZZ_pEX_stem, "giant", i));
+         remove(FileName("giant", i));
    }
    else {
       BabyStepFile.kill();
@@ -1298,9 +1292,9 @@ void FetchGiantStep(ZZ_pEX& g, long gs, const ZZ_pEXModulus& F)
    if (use_files) {
       ifstream s;
    
-      OpenRead(s, FileName(ZZ_pEX_stem, "giant", gs));
+      OpenRead(s, FileName("giant", gs));
    
-      s >> g;
+      NTL_INPUT_CHECK_ERR(s >> g);
       s.close();
    }
    else
@@ -1322,8 +1316,8 @@ void FetchBabySteps(vec_ZZ_pEX& v, long k)
    for (i = 1; i <= k-1; i++) {
       if (use_files) {
          ifstream s;
-         OpenRead(s, FileName(ZZ_pEX_stem, "baby", i));
-         s >> v[i];
+         OpenRead(s, FileName("baby", i));
+         NTL_INPUT_CHECK_ERR(s >> v[i]);
          s.close();
       }
       else
@@ -1537,9 +1531,6 @@ void NewDDF(vec_pair_ZZ_pEX_long& factors,
       return;
    }
 
-   if (!ZZ_pEX_stem[0])
-      sprintf(ZZ_pEX_stem, "ddf-%ld", RandomBnd(10000));
-      
    long B = deg(f)/2;
    long k = SqrRoot(B);
    long l = (B+k-1)/k;

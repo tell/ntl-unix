@@ -3,6 +3,7 @@
 #define NTL_vector__H
 
 #include <NTL/tools.h>
+#include <new>
 
 struct _ntl_VectorHeader {
    long length;
@@ -16,29 +17,13 @@ union _ntl_AlignedVectorHeader {
    double x1;
    long x2;
    char *x3;
+   long double x4;
 };
 
 #define NTL_VECTOR_HEADER_SIZE (sizeof(_ntl_AlignedVectorHeader))
 
 #define NTL_VEC_HEAD(p) (& (((_ntl_AlignedVectorHeader *) p)[-1].h))
 
-struct _ntl_vector_placement {
-   void *p;
-};
-
-inline _ntl_vector_placement _ntl_vector_placement_fn(void *p)
-{
-   _ntl_vector_placement x;
-   x.p = p;
-   return x;
-}
-
-inline void *operator new(NTL_SNS size_t, _ntl_vector_placement x) { return x.p; }
-
-// All of this monkey business is to avoid possible clashes with
-// a "placement new" operator which may or may not be defined
-// in a standard header file....why wasn't this just built
-// into the language to begin with?
 
 #ifndef NTL_RANGE_CHECK
 #define NTL_RANGE_CHECK_CODE 
@@ -76,21 +61,28 @@ template<class T>
 void BlockConstruct(T* p, long n)  
 {  
    for (long i = 0; i < n; i++)  
-      (void) new(_ntl_vector_placement_fn(&p[i])) T;  
+      (void) new(&p[i]) T;  
+
+   // NOTE: we invoke T rather than T(), which would ensure
+   // POD types get zeroed out, but only in compilers that
+   // comply with C++03, which does not include MS compilers.
+   // So we just use T, which is less expensive, and it is better
+   // not to assume POD types get initialized.
+   
 }  
 
 template<class T>
 void BlockConstructFromVec(T* p, long n, const T* q)  
 {  
    for (long i = 0; i < n; i++)  
-      (void) new(_ntl_vector_placement_fn(&p[i])) T(q[i]);  
+      (void) new(&p[i]) T(q[i]);  
 }  
 
 template<class T>
 void BlockConstructFromObj(T* p, long n, const T& q)  
 {  
    for (long i = 0; i < n; i++)  
-      (void) new(_ntl_vector_placement_fn(&p[i])) T(q);  
+      (void) new(&p[i]) T(q);  
 }  
 
   
@@ -112,6 +104,8 @@ public:
   
    Vec() : _vec__rep(0) { }  
    Vec(INIT_SIZE_TYPE, long n) : _vec__rep(0) { SetLength(n); }  
+   Vec(INIT_SIZE_TYPE, long n, const T& a) : _vec__rep(0) 
+      { SetLength(n, a); }  
    Vec(const Vec<T>& a) : _vec__rep(0) { *this = a; }     
    Vec<T>& operator=(const Vec<T>& a);  
    ~Vec();  
@@ -463,7 +457,6 @@ Vec<T>& Vec<T>::operator=(const Vec<T>& a)
 {  
    if (this == &a) return *this;
 
-   long len = length();
    long init = MaxLength();
    long src_len = a.length();
    const T *src = a.elts();
@@ -617,7 +610,7 @@ NTL_SNS istream & operator>>(NTL_SNS istream& s, Vec<T>& a)
    Vec<T> ibuf;  
    long c;   
    long n;   
-   if (!s) Error("bad vector input"); 
+   if (!s) NTL_INPUT_ERROR(s, "bad vector input"); 
    
    c = s.peek();  
    while (IsWhiteSpace(c)) {  
@@ -625,7 +618,7 @@ NTL_SNS istream & operator>>(NTL_SNS istream& s, Vec<T>& a)
       c = s.peek();  
    }  
    if (c != '[') {  
-      Error("bad vector input");  
+      NTL_INPUT_ERROR(s, "bad vector input");  
    }  
    
    n = 0;   
@@ -641,14 +634,15 @@ NTL_SNS istream & operator>>(NTL_SNS istream& s, Vec<T>& a)
       if (n % NTL_VectorInputBlock == 0) ibuf.SetMaxLength(n + NTL_VectorInputBlock); 
       n++;   
       ibuf.SetLength(n);   
-      if (!(s >> ibuf[n-1])) Error("bad vector input");   
+      if (!(s >> ibuf[n-1])) NTL_INPUT_ERROR(s, "bad vector input");   
       c = s.peek();  
       while (IsWhiteSpace(c)) {  
          s.get();  
          c = s.peek();  
       }  
    }   
-   if (IsEOFChar(c)) Error("bad vector input");  
+
+   if (IsEOFChar(c)) NTL_INPUT_ERROR(s, "bad vector input");  
    s.get(); 
    
    a = ibuf; 

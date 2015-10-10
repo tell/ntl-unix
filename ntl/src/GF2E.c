@@ -9,8 +9,6 @@ NTL_START_IMPL
 
 GF2EInfoT::GF2EInfoT(const GF2X& NewP)
 {
-   ref_count = 1;
-
    build(p, NewP);
 
    if (p.size == 1) {
@@ -59,7 +57,6 @@ GF2EInfoT::GF2EInfoT(const GF2X& NewP)
    else 
       DivCross = 75;
 
-   _card_init = 0;
    _card_exp = p.n;
 }
 
@@ -68,52 +65,21 @@ const ZZ& GF2E::cardinality()
 {
    if (!GF2EInfo) Error("GF2E::cardinality: undefined modulus");
 
-   // FIXME: in a thread safe impl, this needs to be mutex'd
+   do { // NOTE: thread safe lazy init
+      Lazy<ZZ>::Builder builder(GF2EInfo->_card);
+      if (!builder) break;
+      power(*builder, 2, GF2EInfo->_card_exp);
+   } while (0);
 
-   if (!GF2EInfo->_card_init) {
-      power(GF2EInfo->_card, 2, GF2EInfo->_card_exp);
-      GF2EInfo->_card_init = 1;
-   }
-
-   return GF2EInfo->_card;
+   return GF2EInfo->_card.value();
 }
 
 
 
 
 NTL_THREAD_LOCAL
-GF2EInfoT *GF2EInfo = 0; 
+SmartPtr<GF2EInfoT> GF2EInfo = 0; 
 
-
-
-typedef GF2EInfoT *GF2EInfoPtr;
-
-
-static 
-void CopyPointer(GF2EInfoPtr& dst, GF2EInfoPtr src)
-{
-   if (src == dst) return;
-
-   if (dst) {
-      dst->ref_count--;
-
-      if (dst->ref_count < 0) 
-         Error("internal error: negative GF2EContext ref_count");
-
-      if (dst->ref_count == 0) delete dst;
-   }
-
-   if (src) {
-      if (src->ref_count == NTL_MAX_LONG) 
-         Error("internal error: GF2EContext ref_count overflow");
-
-      src->ref_count++;
-
-   }
-
-   dst = src;
-}
-   
 
 
 
@@ -124,61 +90,34 @@ void GF2E::init(const GF2X& p)
 }
 
 
-GF2EContext::GF2EContext(const GF2X& p)
-{
-   ptr = NTL_NEW_OP GF2EInfoT(p);
-}
-
-GF2EContext::GF2EContext(const GF2EContext& a)
-{
-   ptr = 0;
-   CopyPointer(ptr, a.ptr);
-}
-
-GF2EContext& GF2EContext::operator=(const GF2EContext& a)
-{
-   CopyPointer(ptr, a.ptr);
-   return *this;
-}
-
-
-GF2EContext::~GF2EContext()
-{
-   CopyPointer(ptr, 0);
-}
-
 void GF2EContext::save()
 {
-   CopyPointer(ptr, GF2EInfo);
+   ptr = GF2EInfo;
 }
 
 void GF2EContext::restore() const
 {
-   CopyPointer(GF2EInfo, ptr);
+   GF2EInfo = ptr;
 }
 
 
 
 GF2EBak::~GF2EBak()
 {
-   if (MustRestore)
-      CopyPointer(GF2EInfo, ptr);
-
-   CopyPointer(ptr, 0);
+   if (MustRestore) c.restore();
 }
 
 void GF2EBak::save()
 {
-   MustRestore = 1;
-   CopyPointer(ptr, GF2EInfo);
+   c.save();
+   MustRestore = true;
 }
-
 
 
 void GF2EBak::restore()
 {
-   MustRestore = 0;
-   CopyPointer(GF2EInfo, ptr);
+   c.restore();
+   MustRestore = false;
 }
 
 
@@ -195,7 +134,7 @@ istream& operator>>(istream& s, GF2E& x)
 {
    GF2X y;
 
-   s >> y;
+   NTL_INPUT_CHECK_RET(s, s >> y);
    conv(x, y);
 
    return s;

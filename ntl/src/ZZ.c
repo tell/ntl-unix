@@ -1,10 +1,8 @@
 
-
 #include <NTL/ZZ.h>
 #include <NTL/vec_ZZ.h>
-
-
 #include <NTL/new.h>
+#include <NTL/thread.h>
 
 
 
@@ -89,7 +87,7 @@ istream& operator>>(istream& s, ZZ& x)
    long acc;
    NTL_ZZRegister(a);
 
-   if (!s) Error("bad ZZ input");
+   if (!s) NTL_INPUT_ERROR(s, "bad ZZ input");
 
    if (!iodigits) InitZZIO();
 
@@ -108,7 +106,7 @@ istream& operator>>(istream& s, ZZ& x)
 
    cval = CharToIntVal(c);
 
-   if (cval < 0 || cval > 9) Error("bad ZZ input");
+   if (cval < 0 || cval > 9) NTL_INPUT_ERROR(s, "bad ZZ input");
 
    ndigits = 0;
    acc = 0;
@@ -143,7 +141,6 @@ istream& operator>>(istream& s, ZZ& x)
       negate(a, a);
 
    x = a;
-
    return s;
 }
 
@@ -1726,13 +1723,15 @@ void SetSeed(const ZZ& s)
 }
 
 
-// FIXME: in a thread-safe impl, we should perhaps make the default
-// seed dependent on the thread ID
-
 static 
 void ran_bytes(unsigned char *bytes, long n)
 {
-   if (!ran_initialized) SetSeed(ZZ::zero());
+   if (!ran_initialized) {
+      ZZ x;
+      const string& id = CurrentThreadID();
+      ZZFromBytes(x, (const unsigned char *) id.c_str(), id.length());
+      SetSeed(x);
+   }
    arc4(bytes, n, &ran_key);
 }
 

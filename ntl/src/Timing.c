@@ -182,12 +182,12 @@ int main()
 
 
       TIME_IT(t, GCD(a, b));
-      cout << "gcd degree-500 poly mod 500-bit prime: " << t << "\n";
+      cout << "gcd degree-500 poly mod 500-bit GF2X: " << t << "\n";
 
 
       f = f >> n/2;
       cout << "\n";
-      cout << "factoring degree-500 poly mod 500-bit prime...\n";
+      cout << "factoring degree-500 poly mod 500-bit GF2X...\n";
       TIME_IT(t, CanZass(f, _cnt == 0));
       cout << "\n...total time = " << t << "\n";
    }

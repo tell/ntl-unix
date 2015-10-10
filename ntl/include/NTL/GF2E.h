@@ -4,6 +4,8 @@
 #define NTL_GF2E__H
 
 #include <NTL/GF2X.h>
+#include <NTL/SmartPtr.h>
+#include <NTL/Lazy.h>
 
 NTL_OPEN_NNS
 
@@ -11,11 +13,11 @@ NTL_OPEN_NNS
 
 class GF2EInfoT {
 private:
+
    GF2EInfoT();                       // disabled
    GF2EInfoT(const GF2EInfoT&);   // disabled
    void operator=(const GF2EInfoT&);  // disabled
 public:
-   long ref_count;
 
    GF2EInfoT(const GF2X& NewP);
    ~GF2EInfoT() { }
@@ -26,47 +28,36 @@ public:
    long ModCross;
    long DivCross;
 
-   ZZ   _card;
-   long _card_init;
    long _card_exp;
+   Lazy<ZZ> _card;
 };
 
 NTL_THREAD_LOCAL
-extern GF2EInfoT *GF2EInfo; // info for current modulus, initially null
-
-// FIXME: in a thread safe implementation, we need to use
-// shared_ptrs for contexts
+extern SmartPtr<GF2EInfoT> GF2EInfo; // info for current modulus, initially null
 
 
 
 class GF2EContext {
 private:
-GF2EInfoT *ptr;
+SmartPtr<GF2EInfoT> ptr;
 
 public:
+
+GF2EContext() { }
+explicit GF2EContext(const GF2X& p) : ptr(MakeSmart<GF2EInfoT>(p)) { }
+
+// copy constructor, assignment, destructor: default
+
 void save();
 void restore() const;
-
-GF2EContext() { ptr = 0; }
-
-explicit GF2EContext(const GF2X& p);
-
-GF2EContext(const GF2EContext&); 
-
-
-GF2EContext& operator=(const GF2EContext&); 
-
-
-~GF2EContext();
-
 
 };
 
 
 class GF2EBak {
 private:
-long MustRestore;
-GF2EInfoT *ptr;
+GF2EContext c;
+bool MustRestore;
 
 GF2EBak(const GF2EBak&); // disabled
 void operator=(const GF2EBak&); // disabled
@@ -75,7 +66,7 @@ public:
 void save();
 void restore();
 
-GF2EBak() { MustRestore = 0; ptr = 0; }
+GF2EBak() : MustRestore(false) {  }
 
 ~GF2EBak();
 

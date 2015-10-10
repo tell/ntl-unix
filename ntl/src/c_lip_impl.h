@@ -40,7 +40,29 @@ public:
    }
 };
 
-#define CRegister(x) NTL_THREAD_LOCAL static _ntl_verylong x = 0; _ntl_verylong_watcher _WATCHER__ ## x(&x)
+
+
+class _ntl_verylong_wrapped {
+public:
+   _ntl_verylong data;
+
+   _ntl_verylong_wrapped() : data(0) { }
+   void operator=(const _ntl_verylong& _data)  { data = _data; }
+
+   ~_ntl_verylong_wrapped() { _ntl_zfree(&data); } 
+
+   operator const _ntl_verylong& () const { return data; }
+   operator _ntl_verylong& () { return data; }
+
+   const _ntl_verylong* operator&() const { return &data; }
+   _ntl_verylong* operator&() { return &data; }
+
+};
+
+
+#define CRegister(x) NTL_THREAD_LOCAL static _ntl_verylong_wrapped x; _ntl_verylong_watcher _WATCHER__ ## x(&x)
+
+// #define CRegister(x) NTL_THREAD_LOCAL static _ntl_verylong x = 0; _ntl_verylong_watcher _WATCHER__ ## x(&x)
 
 // FIXME: when we implement thread safe code, we may want to define
 // this so that we also attach a thread-local watcher that unconditionally
@@ -2384,14 +2406,37 @@ void _ntl_zsubpos(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *cc)
 }
 
 
+typedef long *_ntl_longptr;
+
+class _ntl_longptr_wrapped {
+public:
+   _ntl_longptr data;
+
+   _ntl_longptr_wrapped() : data(0) { }
+   void operator=(const _ntl_longptr& _data)  { data = _data; }
+
+   ~_ntl_longptr_wrapped() { free(data); } 
+
+   operator const _ntl_longptr& () const { return data; }
+   operator _ntl_longptr& () { return data; }
+
+   const _ntl_longptr* operator&() const { return &data; }
+   _ntl_longptr* operator&() { return &data; }
+
+};
 
 
 
-NTL_THREAD_LOCAL static long *kmem = 0;     /* globals for Karatsuba */
+
+NTL_THREAD_LOCAL static _ntl_longptr_wrapped kmem;    
+/* globals for Karatsuba */
+
 NTL_THREAD_LOCAL static long max_kmem = 0;
 
-// FIXME: in a thread-safe impl, need to attach a static, thread-local
-// watcher that will free kmem when thread exits
+// FIXME: the above makes sure we release kmem when the
+// thread terminates.  It's a quick hack on top of legacy code.
+// We should maybe consider releasing this memory if it gets
+// too big.
 
 
 /* These cross-over points were estimated using
@@ -6339,6 +6384,15 @@ long sp_inv_mod(long a, long n)
 
 /* Data structures and algorithms for fast Chinese Remaindering */
 
+/* these first few functions are just placeholders to make
+ * the interface consistent with the GMP interface.
+ */
+
+void _ntl_tmp_vec_free(void *tmp_vec) { }
+void *_ntl_crt_fetch_tmp(void *crt_struct) { return 0; }
+void *_ntl_crt_extract_tmp(void *crt_struct) { return 0; }
+void *_ntl_rem_fetch_tmp(void *rem_struct) { return 0; }
+
 
 struct crt_body_lip {
    _ntl_verylong *v;
@@ -6366,7 +6420,7 @@ long _ntl_crt_struct_special(void *crt_struct)
 
 
 void _ntl_crt_struct_init(void **crt_struct, long n, _ntl_verylong p,
-                          const long *primes)
+                          long (*primes)(long))
 {
    struct crt_body *c;
 
@@ -6413,6 +6467,7 @@ void _ntl_crt_struct_insert(void *crt_struct, long i, _ntl_verylong m)
 void _ntl_crt_struct_free(void *crt_struct)
 {
    struct crt_body *c = (struct crt_body *) crt_struct;
+   if (!c) return;
 
    switch (c->strategy) {
 
@@ -6443,7 +6498,8 @@ void _ntl_crt_struct_free(void *crt_struct)
 
 
 
-void _ntl_crt_struct_eval(void *crt_struct, _ntl_verylong *x, const long *b)
+void _ntl_crt_struct_eval(void *crt_struct, _ntl_verylong *x, const long *b,
+                          void *tmp_vec)
 {
    struct crt_body *c = (struct crt_body *) crt_struct;
 
@@ -6545,7 +6601,7 @@ struct rem_body {
 
 
 void _ntl_rem_struct_init(void **rem_struct, long n, _ntl_verylong modulus, 
-                          const long *p)
+                          long (*p)(long))
 {
    struct rem_body *r;
 
@@ -6556,7 +6612,12 @@ void _ntl_rem_struct_init(void **rem_struct, long n, _ntl_verylong modulus,
 
 #if (defined(NTL_TBL_REM))
 
-   {
+   /* we should not use this for extremely large moduli,
+      as the space is quadratic. On a 64-bit machine,
+      the bound of 1000 limits table size to about 4MB,
+      and allows moduli of up to about 25,000 bits. */
+
+   if (n < 1000) {
       struct rem_body_tbl *R = &r->U.T;
 
       long *qq;
@@ -6572,7 +6633,7 @@ void _ntl_rem_struct_init(void **rem_struct, long n, _ntl_verylong modulus,
       R->primes = qq;
    
       for (i = 0; i < n; i++)
-         qq[i] = p[i];
+         qq[i] = p(i);
 
       tbl = (long **) NTL_MALLOC(n, sizeof(long *), 0);
       if (!tbl) zhalt("out of space");
@@ -6615,7 +6676,7 @@ void _ntl_rem_struct_init(void **rem_struct, long n, _ntl_verylong modulus,
       R->primes = q;
    
       for (i = 0; i < n; i++)
-         q[i] = p[i];
+         q[i] = p(i);
    
       *rem_struct = (void *) r;
    }
@@ -6624,6 +6685,7 @@ void _ntl_rem_struct_init(void **rem_struct, long n, _ntl_verylong modulus,
 void _ntl_rem_struct_free(void *rem_struct)
 {
    struct rem_body *r = (struct rem_body *) rem_struct;
+   if (!r) return;
 
    switch (r->strategy) {
 
@@ -6667,7 +6729,8 @@ void _ntl_rem_struct_free(void *rem_struct)
 }
 
 
-void _ntl_rem_struct_eval(void *rem_struct, long *x, _ntl_verylong a)
+void _ntl_rem_struct_eval(void *rem_struct, long *x, _ntl_verylong a,
+                          void *tmp_vec)
 {
    struct rem_body *r = (struct rem_body *) rem_struct;
 

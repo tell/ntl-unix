@@ -15,6 +15,7 @@
 
 NTL_START_IMPL
 
+NTL_THREAD_LOCAL
 long GF2X::HexOutput = 0;
 
 
@@ -325,7 +326,7 @@ istream & operator>>(istream& s, GF2X& a)
    NTL_ZZRegister(ival);
 
    long c;   
-   if (!s) Error("bad GF2X input"); 
+   if (!s) NTL_INPUT_ERROR(s, "bad GF2X input"); 
    
    c = s.peek();  
    while (IsWhiteSpace(c)) {  
@@ -341,12 +342,12 @@ istream & operator>>(istream& s, GF2X& a)
          return HexInput(s, a);
       }
       else {
-         Error("bad GF2X input");
+         NTL_INPUT_ERROR(s, "bad GF2X input");
       }
    }
 
    if (c != '[') {  
-      Error("bad GF2X input");  
+      NTL_INPUT_ERROR(s, "bad GF2X input");  
    }  
 
    GF2X ibuf;  
@@ -363,7 +364,7 @@ istream & operator>>(istream& s, GF2X& a)
    }  
 
    while (c != ']' && c != EOF) {   
-      if (!(s >> ival)) Error("bad GF2X input");
+      if (!(s >> ival)) NTL_INPUT_ERROR(s, "bad GF2X input");
       SetCoeff(ibuf, n, to_GF2(ival));
       n++;
 
@@ -375,7 +376,7 @@ istream & operator>>(istream& s, GF2X& a)
       }  
    }   
 
-   if (c == EOF) Error("bad GF2X input");  
+   if (c == EOF) NTL_INPUT_ERROR(s, "bad GF2X input");  
    s.get(); 
    
    a = ibuf; 

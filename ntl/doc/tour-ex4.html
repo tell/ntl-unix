@@ -58,12 +58,11 @@ int main()
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ_pXFactoring.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZ_pXFactoring.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
 <font color="#008b00"><b>int</b></font>&nbsp;main()<br>
 {<br>
@@ -74,15 +73,14 @@ using namespace NTL;<br>
 &nbsp;&nbsp; ZZ_pX f;<br>
 &nbsp;&nbsp; cin &gt;&gt; f;<br>
 <br>
-&nbsp;&nbsp; Vec&lt; Pair&lt; ZZ_pX,&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;&gt; &gt; factors;<br>
+&nbsp;&nbsp; Vec&lt; Pair&lt; ZZ_pX, <font color="#008b00"><b>long</b></font>&nbsp;&gt; &gt; factors;<br>
 <br>
-&nbsp;&nbsp; CanZass(factors, f);&nbsp;&nbsp;<font color="#0000ee"><i>// calls &quot;Cantor/Zassenhaus&quot; algorithm</i></font><br>
+&nbsp;&nbsp; CanZass(factors, f);&nbsp;&nbsp;<font color="#0000ed"><i>// calls &quot;Cantor/Zassenhaus&quot; algorithm</i></font><br>
 <br>
-&nbsp;&nbsp; cout &lt;&lt; factors &lt;&lt;&nbsp;<font color="#4a708b">&quot;</font><font color="#8a2be2">\n</font><font color="#4a708b">&quot;</font>;<br>
+&nbsp;&nbsp; cout &lt;&lt; factors &lt;&lt; <font color="#4a6f8b">&quot;</font><font color="#8a2ae2">\n</font><font color="#4a6f8b">&quot;</font>;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
@@ -126,25 +124,23 @@ void add(Vec<ZZ_p>& x, const Vec<ZZ_p>& a, const Vec<ZZ_p>& b)
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ_p.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZ_p.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
-<font color="#008b00"><b>void</b></font>&nbsp;add(Vec&lt;ZZ_p&gt;&amp; x,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;ZZ_p&gt;&amp; a,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;ZZ_p&gt;&amp; b)<br>
+<font color="#008b00"><b>void</b></font>&nbsp;add(Vec&lt;ZZ_p&gt;&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;ZZ_p&gt;&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;ZZ_p&gt;&amp; b)<br>
 {<br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;n = a.length();<br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(b.length() != n) Error(<font color="#4a708b">&quot;vector add: dimension mismatch&quot;</font>);<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;n = a.length();<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>if</b></font>&nbsp;(b.length() != n) Error(<font color="#4a6f8b">&quot;vector add: dimension mismatch&quot;</font>);<br>
 <br>
 &nbsp;&nbsp; x.SetLength(n);<br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;i;<br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>&nbsp;(i =&nbsp;<font color="#ff8c00">0</font>; i &lt; n; i++)<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;i;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>for</b></font>&nbsp;(i = <font color="#ff8b00">0</font>; i &lt; n; i++)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add(x[i], a[i], b[i]);<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
@@ -174,29 +170,27 @@ void InnerProduct(ZZ_p& x, const Vec<ZZ_p>& a, const Vec<ZZ_p>& b)
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ_p.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZ_p.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
-<font color="#008b00"><b>void</b></font>&nbsp;InnerProduct(ZZ_p&amp; x,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;ZZ_p&gt;&amp; a,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;ZZ_p&gt;&amp; b)<br>
+<font color="#008b00"><b>void</b></font>&nbsp;InnerProduct(ZZ_p&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;ZZ_p&gt;&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;ZZ_p&gt;&amp; b)<br>
 {<br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;n = min(a.length(), b.length());<br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;i;<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;n = min(a.length(), b.length());<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;i;<br>
 &nbsp;&nbsp; ZZ accum, t;<br>
 <br>
-&nbsp;&nbsp; accum =&nbsp;<font color="#ff8c00">0</font>;<br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>&nbsp;(i =&nbsp;<font color="#ff8c00">0</font>; i &lt; n; i++) {<br>
+&nbsp;&nbsp; accum = <font color="#ff8b00">0</font>;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>for</b></font>&nbsp;(i = <font color="#ff8b00">0</font>; i &lt; n; i++) {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mul(t, rep(a[i]), rep(b[i]));<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add(accum, accum, t);<br>
 &nbsp;&nbsp; }<br>
 <br>
 &nbsp;&nbsp; conv(x, accum);<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
@@ -269,26 +263,24 @@ long IrredTestMod(const ZZX& f, const ZZ& p)
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZX.h&gt;</font><br>
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ_pXFactoring.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZX.h&gt;</font><br>
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZ_pXFactoring.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
-<font color="#008b00"><b>long</b></font>&nbsp;IrredTestMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZX&amp; f,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; p)<br>
+<font color="#008b00"><b>long</b></font>&nbsp;IrredTestMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZX&amp; f, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; p)<br>
 {<br>
-&nbsp;&nbsp; ZZ_pPush push(p);&nbsp;<font color="#0000ee"><i>// save current modulus and install p</i></font><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// as current modulus</i></font><br>
+&nbsp;&nbsp; ZZ_pPush push(p); <font color="#0000ed"><i>// save current modulus and install p</i></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#0000ed"><i>// as current modulus</i></font><br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>return</b></font>&nbsp;DetIrredTest(conv&lt;ZZ_pX&gt;(f));<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>return</b></font>&nbsp;DetIrredTest(conv&lt;ZZ_pX&gt;(f));<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// old modulus is restored automatically when push is destroyed</i></font><br>
-&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// upon return</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// old modulus is restored automatically when push is destroyed</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// upon return</i></font><br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
@@ -296,7 +288,7 @@ The modulus switching mechanism is actually quite a bit
 more general and flexible than this example illustrates.
 
 <p> 
-Noe the use of the conversion function 
+Note the use of the conversion function 
 <tt>conv&lt;ZZ_pX&gt;</tt>.
 We could also have used the equivalent procedural form:
 <!-- STARTPLAIN
@@ -347,21 +339,19 @@ long IrredTestMod(const ZZX& f, long p)
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZX.h&gt;</font><br>
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/lzz_pXFactoring.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZX.h&gt;</font><br>
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/lzz_pXFactoring.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
-<font color="#008b00"><b>long</b></font>&nbsp;IrredTestMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZX&amp; f,&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;p)<br>
+<font color="#008b00"><b>long</b></font>&nbsp;IrredTestMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZX&amp; f, <font color="#008b00"><b>long</b></font>&nbsp;p)<br>
 {<br>
 &nbsp;&nbsp; zz_pPush push(p);<br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>return</b></font>&nbsp;DetIrredTest(conv&lt;zz_pX&gt;(f));<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>return</b></font>&nbsp;DetIrredTest(conv&lt;zz_pX&gt;(f));<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
@@ -461,25 +451,24 @@ void GCD(ZZX& d, const ZZX& a, const ZZX& b)
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZX.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZX.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
-<font color="#008b00"><b>void</b></font>&nbsp;GCD(ZZX&amp; d,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;ZZX&amp; a,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;ZZX&amp; b)<br>
+<font color="#008b00"><b>void</b></font>&nbsp;GCD(ZZX&amp; d, <font color="#008b00"><b>const</b></font>&nbsp;ZZX&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;ZZX&amp; b)<br>
 {<br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(a ==&nbsp;<font color="#ff8c00">0</font>) {<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>if</b></font>&nbsp;(a == <font color="#ff8b00">0</font>) {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;d = b;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(LeadCoeff(d) &lt;&nbsp;<font color="#ff8c00">0</font>) negate(d, d);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>return</b></font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>if</b></font>&nbsp;(LeadCoeff(d) &lt; <font color="#ff8b00">0</font>) negate(d, d);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>return</b></font>;<br>
 &nbsp;&nbsp; }<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(b ==&nbsp;<font color="#ff8c00">0</font>) {<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>if</b></font>&nbsp;(b == <font color="#ff8b00">0</font>) {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;d = a;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(LeadCoeff(d) &lt;&nbsp;<font color="#ff8c00">0</font>) negate(d, d);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>return</b></font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>if</b></font>&nbsp;(LeadCoeff(d) &lt; <font color="#ff8b00">0</font>) negate(d, d);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>return</b></font>;<br>
 &nbsp;&nbsp; }<br>
 <br>
 &nbsp;&nbsp; ZZ c1, c2, c;<br>
@@ -500,16 +489,16 @@ using namespace NTL;<br>
 <br>
 &nbsp;&nbsp; ZZ prod;<br>
 <br>
-&nbsp;&nbsp; zz_pPush push();&nbsp;<font color="#0000ee"><i>// save current modulus, restore upon return</i></font><br>
+&nbsp;&nbsp; zz_pPush push(); <font color="#0000ed"><i>// save current modulus, restore upon return</i></font><br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;FirstTime =&nbsp;<font color="#ff8c00">1</font>;<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;FirstTime = <font color="#ff8b00">1</font>;<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;i;<br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>&nbsp;(i =&nbsp;<font color="#ff8c00">0</font>; ;i++) {<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;i;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>for</b></font>&nbsp;(i = <font color="#ff8b00">0</font>; ;i++) {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;zz_p::FFTInit(i);<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;p = zz_p::modulus();<br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(divide(LeadCoeff(f1), p) || divide(LeadCoeff(f2), p))&nbsp;<font color="#b03060"><b>continue</b></font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>if</b></font>&nbsp;(divide(LeadCoeff(f1), p) || divide(LeadCoeff(f2), p)) <font color="#b02f60"><b>continue</b></font>;<br>
 <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;zz_pX G, F1, F2;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;zz_p&nbsp;&nbsp;LD;<br>
@@ -522,33 +511,32 @@ using namespace NTL;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mul(G, G, LD);<br>
 <br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(deg(G) ==&nbsp;<font color="#ff8c00">0</font>) {&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; res =&nbsp;<font color="#ff8c00">1</font>;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>break</b></font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>if</b></font>&nbsp;(deg(G) == <font color="#ff8b00">0</font>) { <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; res = <font color="#ff8b00">1</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#b02f60"><b>break</b></font>;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(FirstTime || deg(G) &lt; deg(g)) {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; prod =&nbsp;<font color="#ff8c00">1</font>;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; g =&nbsp;<font color="#ff8c00">0</font>;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FirstTime =&nbsp;<font color="#ff8c00">0</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>if</b></font>&nbsp;(FirstTime || deg(G) &lt; deg(g)) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; prod = <font color="#ff8b00">1</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; g = <font color="#ff8b00">0</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FirstTime = <font color="#ff8b00">0</font>;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>else</b></font>&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(deg(G) &gt; deg(g)) {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>continue</b></font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>else</b></font>&nbsp;<font color="#b02f60"><b>if</b></font>&nbsp;(deg(G) &gt; deg(g)) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#b02f60"><b>continue</b></font>;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(!CRT(g, prod, G)) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>if</b></font>&nbsp;(!CRT(g, prod, G)) {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PrimitivePart(res, g);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(divide(f1, res) &amp;&amp; divide(f2, res))<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>break</b></font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#b02f60"><b>if</b></font>&nbsp;(divide(f1, res) &amp;&amp; divide(f2, res))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>break</b></font>;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
 <br>
 &nbsp;&nbsp; }<br>
 <br>
 &nbsp;&nbsp; mul(d, res, c);<br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(LeadCoeff(d) &lt;&nbsp;<font color="#ff8c00">0</font>) negate(d, d);<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>if</b></font>&nbsp;(LeadCoeff(d) &lt; <font color="#ff8b00">0</font>) negate(d, d);<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
@@ -644,47 +632,45 @@ long MatIrredTest(const GF2X& f)
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/GF2X.h&gt;</font><br>
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/mat_GF2.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/GF2X.h&gt;</font><br>
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/mat_GF2.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
 <font color="#008b00"><b>long</b></font>&nbsp;MatIrredTest(<font color="#008b00"><b>const</b></font>&nbsp;GF2X&amp; f)<br>
 {<br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;n = deg(f);<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;n = deg(f);<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(n &lt;=&nbsp;<font color="#ff8c00">0</font>)&nbsp;<font color="#b03060"><b>return</b></font>&nbsp;<font color="#ff8c00">0</font>;<br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(n ==&nbsp;<font color="#ff8c00">1</font>)&nbsp;<font color="#b03060"><b>return</b></font>&nbsp;<font color="#ff8c00">1</font>;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>if</b></font>&nbsp;(n &lt;= <font color="#ff8b00">0</font>) <font color="#b02f60"><b>return</b></font>&nbsp;<font color="#ff8b00">0</font>;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>if</b></font>&nbsp;(n == <font color="#ff8b00">1</font>) <font color="#b02f60"><b>return</b></font>&nbsp;<font color="#ff8b00">1</font>;<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(GCD(f, diff(f)) !=&nbsp;<font color="#ff8c00">1</font>)&nbsp;<font color="#b03060"><b>return</b></font>&nbsp;<font color="#ff8c00">0</font>;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>if</b></font>&nbsp;(GCD(f, diff(f)) != <font color="#ff8b00">1</font>) <font color="#b02f60"><b>return</b></font>&nbsp;<font color="#ff8b00">0</font>;<br>
 <br>
 &nbsp;&nbsp; Mat&lt;GF2&gt; M;<br>
 <br>
 &nbsp;&nbsp; M.SetDims(n, n);<br>
 <br>
-&nbsp;&nbsp; GF2X x_squared = GF2X(INIT_MONO,&nbsp;<font color="#ff8c00">2</font>);<br>
+&nbsp;&nbsp; GF2X x_squared = GF2X(INIT_MONO, <font color="#ff8b00">2</font>);<br>
 <br>
 &nbsp;&nbsp; GF2X g;<br>
-&nbsp;&nbsp; g =&nbsp;<font color="#ff8c00">1</font>;<br>
+&nbsp;&nbsp; g = <font color="#ff8b00">1</font>;<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>&nbsp;(<font color="#008b00"><b>long</b></font>&nbsp;i =&nbsp;<font color="#ff8c00">0</font>; i &lt; n; i++) {<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>for</b></font>&nbsp;(<font color="#008b00"><b>long</b></font>&nbsp;i = <font color="#ff8b00">0</font>; i &lt; n; i++) {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VectorCopy(M[i], g, n);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M[i][i] +=&nbsp;<font color="#ff8c00">1</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M[i][i] += <font color="#ff8b00">1</font>;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;g = (g * x_squared) % f;<br>
 &nbsp;&nbsp; }<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;rank = gauss(M);<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;rank = gauss(M);<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(rank == n-<font color="#ff8c00">1</font>)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>return</b></font>&nbsp;<font color="#ff8c00">1</font>;<br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>else</b></font><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>return</b></font>&nbsp;<font color="#ff8c00">0</font>;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>if</b></font>&nbsp;(rank == n-<font color="#ff8b00">1</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>return</b></font>&nbsp;<font color="#ff8b00">1</font>;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>else</b></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>return</b></font>&nbsp;<font color="#ff8b00">0</font>;<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 

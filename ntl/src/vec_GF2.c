@@ -259,7 +259,7 @@ istream & operator>>(istream& s, vec_GF2& a)
    NTL_ZZRegister(ival);
 
    long c;   
-   if (!s) Error("bad vec_GF2 input"); 
+   if (!s) NTL_INPUT_ERROR(s, "bad vec_GF2 input"); 
    
    c = s.peek();  
    while (IsWhiteSpace(c)) {  
@@ -268,7 +268,7 @@ istream & operator>>(istream& s, vec_GF2& a)
    }  
 
    if (c != '[') {  
-      Error("bad vec_GF2 input");  
+      NTL_INPUT_ERROR(s, "bad vec_GF2 input");  
    }  
 
    vec_GF2 ibuf;  
@@ -283,7 +283,7 @@ istream & operator>>(istream& s, vec_GF2& a)
    }  
 
    while (c != ']' && c != EOF) {   
-      if (!(s >> ival)) Error("bad vec_GF2 input");
+      if (!(s >> ival)) NTL_INPUT_ERROR(s, "bad vec_GF2 input");
       append(ibuf, to_GF2(ival));
 
       c = s.peek();  
@@ -294,7 +294,7 @@ istream & operator>>(istream& s, vec_GF2& a)
       }  
    }   
 
-   if (c == EOF) Error("bad vec_GF2 input");  
+   if (c == EOF) NTL_INPUT_ERROR(s, "bad vec_GF2 input");  
    s.get(); 
    
    a = ibuf; 

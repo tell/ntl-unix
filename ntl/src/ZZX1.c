@@ -199,7 +199,7 @@ long CRT(ZZX& gg, ZZ& a, const ZZ_pX& G)
 
 /* Compute a = b * 2^l mod p, where p = 2^n+1. 0<=l<=n and 0<b<p are
    assumed. */
-static void LeftRotate(ZZ& a, const ZZ& b, long l, const ZZ& p, long n)
+static void LeftRotate(ZZ& a, const ZZ& b, long l, const ZZ& p, long n, ZZ& scratch)
 {
   if (l == 0) {
     if (&a != &b) {
@@ -208,14 +208,13 @@ static void LeftRotate(ZZ& a, const ZZ& b, long l, const ZZ& p, long n)
     return;
   }
 
-  /* tmp := upper l bits of b */
-  NTL_ZZRegister(tmp);
-  RightShift(tmp, b, n - l);
+  /* scratch := upper l bits of b */
+  RightShift(scratch, b, n - l);
   /* a := 2^l * lower n - l bits of b */
   trunc(a, b, n - l);
   LeftShift(a, a, l);
-  /* a -= tmp */
-  sub(a, a, tmp);
+  /* a -= scratch */
+  sub(a, a, scratch);
   if (sign(a) < 0) {
     add(a, a, p);
   }
@@ -223,7 +222,7 @@ static void LeftRotate(ZZ& a, const ZZ& b, long l, const ZZ& p, long n)
 
 
 /* Compute a = b * 2^l mod p, where p = 2^n+1. 0<=p<b is assumed. */
-static void Rotate(ZZ& a, const ZZ& b, long l, const ZZ& p, long n)
+static void Rotate(ZZ& a, const ZZ& b, long l, const ZZ& p, long n, ZZ& scratch)
 {
   if (IsZero(b)) {
     clear(a);
@@ -239,9 +238,9 @@ static void Rotate(ZZ& a, const ZZ& b, long l, const ZZ& p, long n)
 
   /* a = b * 2^l mod p */
   if (l < n) {
-    LeftRotate(a, b, l, p, n);
+    LeftRotate(a, b, l, p, n, scratch);
   } else {
-    LeftRotate(a, b, l - n, p, n);
+    LeftRotate(a, b, l - n, p, n, scratch);
     SubPos(a, p, a);
   }
 }
@@ -252,12 +251,13 @@ static void Rotate(ZZ& a, const ZZ& b, long l, const ZZ& p, long n)
    p = 2^n+1, w = 2^r mod p is a primitive (2^l)th root of
    unity. Returns a(1),a(w),...,a(w^{2^l-1}) mod p in bit-reverse
    order. */
-static void fft(vec_ZZ& a, long r, long l, const ZZ& p, long n)
+static void fft(ZZVec& a, long r, long l, const ZZ& p, long n)
 {
   long round;
   long off, i, j, e;
   long halfsize;
   ZZ tmp, tmp1;
+  ZZ scratch;
 
   for (round = 0; round < l; round++, r <<= 1) {
     halfsize =  1L << (l - 1 - round);
@@ -278,7 +278,7 @@ static void fft(vec_ZZ& a, long r, long l, const ZZ& p, long n)
           a[off] = tmp1;
         }
         /* a[off + halfsize] = tmp * w^{j2^round} mod p */
-        Rotate(a[off + halfsize], tmp, e, p, n);
+        Rotate(a[off + halfsize], tmp, e, p, n, scratch);
       }
     }
   }
@@ -286,12 +286,13 @@ static void fft(vec_ZZ& a, long r, long l, const ZZ& p, long n)
 
 /* Inverse FFT. r must be the same as in the call to FFT. Result is
    by 2^l too large. */
-static void ifft(vec_ZZ& a, long r, long l, const ZZ& p, long n)
+static void ifft(ZZVec& a, long r, long l, const ZZ& p, long n)
 {
   long round;
   long off, i, j, e;
   long halfsize;
   ZZ tmp, tmp1;
+  ZZ scratch;
 
   for (round = l - 1, r <<= l - 1; round >= 0; round--, r >>= 1) {
     halfsize = 1L << (l - 1 - round);
@@ -301,7 +302,7 @@ static void ifft(vec_ZZ& a, long r, long l, const ZZ& p, long n)
          ( a[off], a[off+halfsize] ) *= ( 1               1             )
                                         ( w^{-j2^round}  -w^{-j2^round} ) */
         /* a[off + halfsize] *= w^{-j2^round} mod p */
-        Rotate(a[off + halfsize], a[off + halfsize], -e, p, n);
+        Rotate(a[off + halfsize], a[off + halfsize], -e, p, n, scratch);
         /* tmp = a[off] - a[off + halfsize] */
         sub(tmp, a[off], a[off + halfsize]);
 
@@ -364,9 +365,9 @@ void SSMul(ZZX& c, const ZZX& a, const ZZX& b)
   add(p, p, 1);
 
   /* Make coefficients of a and b positive */
-  vec_ZZ aa, bb;
-  aa.SetLength(m2);
-  bb.SetLength(m2);
+  ZZVec aa, bb;
+  aa.SetSize(m2, p.size());
+  bb.SetSize(m2, p.size());
 
   long i;
   for (i = 0; i <= deg(a); i++) {
@@ -384,6 +385,7 @@ void SSMul(ZZX& c, const ZZX& a, const ZZX& b)
       add(bb[i], b.rep[i], p);
     }
   }
+
 
   /* 2m-point FFT's mod p */
   fft(aa, r, l + 1, p, mr);
@@ -405,6 +407,7 @@ void SSMul(ZZX& c, const ZZX& a, const ZZX& b)
   }
   
   ifft(aa, r, l + 1, p, mr);
+  ZZ scratch;
 
   /* Retrieve c, dividing by 2m, and subtracting p where necessary */
   c.rep.SetLength(n + 1);
@@ -413,7 +416,7 @@ void SSMul(ZZX& c, const ZZX& a, const ZZX& b)
     ZZ& ci = c.rep[i];
     if (!IsZero(ai)) {
       /* ci = -ai * 2^{mr-l-1} = ai * 2^{-l-1} = ai / 2m mod p */
-      LeftRotate(ai, ai, mr - l - 1, p, mr);
+      LeftRotate(ai, ai, mr - l - 1, p, mr, scratch);
       sub(tmp, p, ai);
       if (NumBits(tmp) >= mr) { /* ci >= (p-1)/2 */
         negate(ci, ai); /* ci = -ai = ci - p */
@@ -473,9 +476,8 @@ void HomMul(ZZX& x, const ZZX& a, const ZZX& b)
    bak.save();
 
    for (nprimes = 0; NumBits(prod) <= bound; nprimes++) {
-      if (nprimes >= NumFFTPrimes)
-         zz_p::FFTInit(nprimes);
-      mul(prod, prod, FFTPrime[nprimes]);
+      UseFFTPrime(nprimes);
+      mul(prod, prod, GetFFTPrime(nprimes));
    }
 
 
@@ -568,6 +570,9 @@ void mul(ZZX& c, const ZZX& a, const ZZX& b)
    long k = min(maxa, maxb);
    long s = min(deg(a), deg(b)) + 1;
 
+   // FIXME: I should have a way of setting all these crossovers
+   // automatically
+
    if (s == 1 || (k == 1 && s < 40) || (k == 2 && s < 20) || 
                  (k == 3 && s < 10)) {
 
@@ -581,7 +586,7 @@ void mul(ZZX& c, const ZZX& a, const ZZX& b)
    }
 
 
-   if (maxa + maxb >= 40 && 
+   if (maxa + maxb >= 25 && 
        SSRatio(deg(a), MaxBits(a), deg(b), MaxBits(b)) < 1.75) 
       SSMul(c, a, b);
    else
@@ -612,8 +617,8 @@ void SSSqr(ZZX& c, const ZZX& a)
   LeftShift(p, p, mr);
   add(p, p, 1);
 
-  vec_ZZ aa;
-  aa.SetLength(m2);
+  ZZVec aa;
+  aa.SetSize(m2, p.size());
 
   long i;
   for (i = 0; i <= deg(a); i++) {
@@ -650,12 +655,14 @@ void SSSqr(ZZX& c, const ZZX& a)
   /* Retrieve c, dividing by 2m, and subtracting p where necessary */
   c.rep.SetLength(n + 1);
 
+  ZZ scratch;
+
   for (i = 0; i <= n; i++) {
     ai = aa[i];
     ZZ& ci = c.rep[i];
     if (!IsZero(ai)) {
       /* ci = -ai * 2^{mr-l-1} = ai * 2^{-l-1} = ai / 2m mod p */
-      LeftRotate(ai, ai, mr - l - 1, p, mr);
+      LeftRotate(ai, ai, mr - l - 1, p, mr, scratch);
       sub(tmp, p, ai);
       if (NumBits(tmp) >= mr) { /* ci >= (p-1)/2 */
         negate(ci, ai); /* ci = -ai = ci - p */
@@ -690,9 +697,8 @@ void HomSqr(ZZX& x, const ZZX& a)
    bak.save();
 
    for (nprimes = 0; NumBits(prod) <= bound; nprimes++) {
-      if (nprimes >= NumFFTPrimes)
-         zz_p::FFTInit(nprimes);
-      mul(prod, prod, FFTPrime[nprimes]);
+      UseFFTPrime(nprimes);
+      mul(prod, prod, GetFFTPrime(nprimes));
    }
 
 

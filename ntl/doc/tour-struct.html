@@ -801,6 +801,24 @@ usually, but not always, what one wants.
 <p>
 <p>
 <h3>
+Input and Output
+</h3>
+<p>
+NTL provides input and output operators for all
+types, using the usual conventions for input and output streams.
+If an input error occurs, the "fail bit" of the input stream
+is set, and the input variable remains unchanged.
+<p>
+Although conversions from <tt>C</tt>-style character strings
+to the types <tt>ZZ</tt>, <tt>xdouble</tt>, <tt>quad_float</tt>,
+and <tt>RR</tt> are provided, one can always read and write
+to <tt>C++</tt> character streams using the <tt>stringstream</tt>
+class from the standard library, in conjunction with the input
+and output operators provided by NTL.
+
+<p>
+<p>
+<h3>
 Aliasing
 </h3>
 <p>

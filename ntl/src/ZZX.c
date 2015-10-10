@@ -30,7 +30,7 @@ void conv(ZZX& x, const ZZ_pX& a)
 
 istream& operator>>(istream& s, ZZX& x)
 {
-   s >> x.rep;
+   NTL_INPUT_CHECK_RET(s, s >> x.rep);
    x.normalize();
    return s;
 }

@@ -4,10 +4,8 @@
 #include <NTL/vec_GF2XVec.h>
 #include <NTL/fileio.h>
 #include <NTL/FacVec.h>
-
-#include <stdio.h>
-
 #include <NTL/new.h>
+
 
 NTL_START_IMPL
 
@@ -1650,10 +1648,6 @@ static vec_GF2EX GiantStepFile;
 NTL_THREAD_LOCAL
 static long use_files;
 
-// FIXME: in a thread-safe implementation, we have to rethink the
-// use of external files for auxilliary storage...there could be
-// name clashes...maybe use thread IDs?
-
 
 static
 double CalcTableSize(long n, long k)
@@ -1709,7 +1703,7 @@ void GenerateBabySteps(GF2EX& h1, const GF2EX& f, const GF2EX& h, long k,
    for (i = 1; i <= k-1; i++) {
       if (use_files) {
          ofstream s;
-         OpenWrite(s, FileName(GF2EX_stem, "baby", i));
+         OpenWrite(s, FileName("baby", i));
          s << h1 << "\n";
          s.close();
       }
@@ -1768,7 +1762,7 @@ void GenerateGiantSteps(const GF2EX& f, const GF2EX& h, long l, long verbose)
    for (i = 1; i <= l-1; i++) {
       if (use_files) {
          ofstream s;
-         OpenWrite(s, FileName(GF2EX_stem, "giant", i));
+         OpenWrite(s, FileName("giant", i));
          s << h1 << "\n";
          s.close();
       }
@@ -1781,7 +1775,7 @@ void GenerateGiantSteps(const GF2EX& f, const GF2EX& h, long l, long verbose)
 
    if (use_files) {
       ofstream s;
-      OpenWrite(s, FileName(GF2EX_stem, "giant", i));
+      OpenWrite(s, FileName("giant", i));
       s << h1 << "\n";
       s.close();
    }
@@ -1801,10 +1795,10 @@ void FileCleanup(long k, long l)
       long i;
    
       for (i = 1; i <= k-1; i++)
-         remove(FileName(GF2EX_stem, "baby", i));
+         remove(FileName("baby", i));
    
       for (i = 1; i <= l; i++)
-         remove(FileName(GF2EX_stem, "giant", i));
+         remove(FileName("giant", i));
    }
    else {
       BabyStepFile.kill();
@@ -1882,9 +1876,9 @@ void FetchGiantStep(GF2EX& g, long gs, const GF2EXModulus& F)
    if (use_files) {
       ifstream s;
    
-      OpenRead(s, FileName(GF2EX_stem, "giant", gs));
+      OpenRead(s, FileName("giant", gs));
    
-      s >> g;
+      NTL_INPUT_CHECK_ERR(s >> g);
       s.close();
    }
    else
@@ -1905,8 +1899,8 @@ void FetchBabySteps(vec_GF2EX& v, long k)
    for (i = 1; i <= k-1; i++) {
       if (use_files) {
          ifstream s;
-         OpenRead(s, FileName(GF2EX_stem, "baby", i));
-         s >> v[i];
+         OpenRead(s, FileName("baby", i));
+         NTL_INPUT_CHECK_ERR(s >> v[i]);
          s.close();
       }
       else
@@ -2120,9 +2114,6 @@ void NewDDF(vec_pair_GF2EX_long& factors,
       return;
    }
 
-   if (!GF2EX_stem[0])
-      sprintf(GF2EX_stem, "ddf-%ld", RandomBnd(10000));
-      
    long B = deg(f)/2;
    long k = SqrRoot(B);
    long l = (B+k-1)/k;

@@ -3,6 +3,7 @@
 #define NTL_ZZ_pEX__H
 
 #include <NTL/vec_ZZ_pE.h>
+#include <NTL/Lazy.h>
 
 NTL_OPEN_NNS
 
@@ -669,7 +670,7 @@ public:
    ZZ_pE hlc;
    ZZ_pEX f0;
 
-   vec_ZZ_pE tracevec; // mutable
+   Lazy<vec_ZZ_pE> tracevec; 
 
 }; 
 

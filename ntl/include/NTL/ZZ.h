@@ -481,37 +481,114 @@ MulSubFrom(ZZ& x, const ZZ& a, const ZZ& b)
 
 
 // Special routines for implementing CRT in ZZ_pX arithmetic
+// These are verbose, but fairly boilerplate
 
 
-inline void ZZ_p_crt_struct_init(void **crt_struct, long n, const ZZ& p, 
-                                 const long *primes)
-    { NTL_crt_struct_init(crt_struct, n, p.rep, primes); }
+class ZZ_CRTStructAdapter;
+class ZZ_RemStructAdapter;
 
-inline void ZZ_p_crt_struct_insert(void *crt_struct, long i, const ZZ& m)
-   { NTL_crt_struct_insert(crt_struct, i, m.rep); }
+class ZZ_TmpVecAdapter {
+private:
+   ZZ_TmpVecAdapter(const ZZ_TmpVecAdapter&); // delete
+   void operator=(const ZZ_TmpVecAdapter&); // delete
 
-inline void ZZ_p_crt_struct_free(void *crt_struct)
-   { NTL_crt_struct_free(crt_struct); }
+public:
+   void *rep;
 
-inline void ZZ_p_crt_struct_eval(void *crt_struct, ZZ& t, const long *a)
-   { NTL_crt_struct_eval(crt_struct, &t.rep, a); }
+   ZZ_TmpVecAdapter() : rep(0) { }
+   
+   ~ZZ_TmpVecAdapter()
+   {
+      NTL_tmp_vec_free(rep);
+   }
 
-inline long ZZ_p_crt_struct_special(void *crt_struct)
-   { return NTL_crt_struct_special(crt_struct); }
+   inline void fetch(const ZZ_CRTStructAdapter&);
+   inline void fetch(ZZ_CRTStructAdapter&);
 
-// Special routines for fast remaindering
-
-
-inline void ZZ_p_rem_struct_init(void **rem_struct, long n, 
-                                 const ZZ& p, long *primes)
-   { NTL_rem_struct_init(rem_struct, n, p.rep, primes); }
-
-inline void ZZ_p_rem_struct_free(void *rem_struct)
-   { NTL_rem_struct_free(rem_struct); }
+   inline void fetch(const ZZ_RemStructAdapter&);
+};
 
 
-inline void ZZ_p_rem_struct_eval(void *rem_struct, long *x, const ZZ& a)
-   { NTL_rem_struct_eval(rem_struct, x, a.rep); }
+class ZZ_CRTStructAdapter {
+private:
+   ZZ_CRTStructAdapter(const ZZ_CRTStructAdapter&); // delete
+   void operator=(const ZZ_CRTStructAdapter&); // delete
+
+public:
+   void *rep;
+
+   ZZ_CRTStructAdapter() : rep(0) { }
+
+   ~ZZ_CRTStructAdapter() 
+   { 
+      NTL_crt_struct_free(rep); 
+   }
+   
+   void init(long n, const ZZ& p, long (*primes)(long))
+   {
+      NTL_crt_struct_init(&rep, n, p.rep, primes);
+   }
+
+   void insert(long i, const ZZ& m)
+   {
+       NTL_crt_struct_insert(rep, i, m.rep);
+   }
+
+   void eval(ZZ& t, const long *a, ZZ_TmpVecAdapter& tmp_vec) const
+   {
+      NTL_crt_struct_eval(rep, &t.rep, a, tmp_vec.rep);
+   }
+
+   bool special() const
+   { 
+      return NTL_crt_struct_special(rep);
+   }
+};
+
+
+class ZZ_RemStructAdapter {
+private:
+   ZZ_RemStructAdapter(const ZZ_RemStructAdapter&); // delete
+   void operator=(const ZZ_RemStructAdapter&); // delete
+
+public:
+   void *rep;
+
+   ZZ_RemStructAdapter() : rep(0) { }
+
+   ~ZZ_RemStructAdapter() 
+   { 
+      NTL_rem_struct_free(rep); 
+   }
+   
+   void init(long n, const ZZ& p, long (*primes)(long))
+   {
+      NTL_rem_struct_init(&rep, n, p.rep, primes);
+   }
+
+   void eval(long *x, const ZZ& a, ZZ_TmpVecAdapter& tmp_vec) const
+   {
+      NTL_rem_struct_eval(rep, x, a.rep, tmp_vec.rep);
+   }
+};
+
+
+inline void ZZ_TmpVecAdapter::fetch(const ZZ_CRTStructAdapter& crt_struct)
+{
+   rep = NTL_crt_fetch_tmp(crt_struct.rep); 
+}
+
+inline void ZZ_TmpVecAdapter::fetch(ZZ_CRTStructAdapter& crt_struct)
+{
+   rep = NTL_crt_extract_tmp(crt_struct.rep); 
+}
+
+
+inline void ZZ_TmpVecAdapter::fetch(const ZZ_RemStructAdapter& rem_struct)
+{
+   rep = NTL_rem_fetch_tmp(rem_struct.rep); 
+}
+
 
 
 

@@ -5,18 +5,37 @@
 
 #include <NTL/ZZ.h>
 #include <NTL/ZZVec.h>
+#include <NTL/SmartPtr.h>
+#include <NTL/Lazy.h>
 
 NTL_OPEN_NNS
 
 
 // ZZ_p representation:  each ZZ_p is represented by a ZZ in the range 0..p-1.
 
-// The constructor for a ZZ_p pre-allocates space for the underlying ZZ,
-// and initializes it to zero.
 
-const int MAX_ZZ_p_TEMPS = 16;
+class ZZ_pFFTInfoT {
+private:
+   ZZ_pFFTInfoT(const ZZ_pFFTInfoT&); // disabled
+   void operator=(const ZZ_pFFTInfoT&); // disabled
 
-class ZZ_p;
+public:
+   ZZ_pFFTInfoT() { }
+
+   long NumPrimes;
+   long MaxRoot;  
+   bool QuickCRT;
+   ZZ MinusMModP;  //  -M mod p, M = product of primes
+   ZZ_CRTStructAdapter crt_struct;
+   ZZ_RemStructAdapter rem_struct;
+
+
+   // the following arrays are indexed 0..NumPrimes-1
+   // q = FFTPrime[i]
+   Vec<double> x;          // u/q, where u = (M/q)^{-1} mod q
+   Vec<long> u;            // u, as above
+};
+
 
 class ZZ_pInfoT {
 private:
@@ -25,76 +44,65 @@ private:
    void operator=(const ZZ_pInfoT&);  // disabled
 public:
    ZZ_pInfoT(const ZZ& NewP);
-   ~ZZ_pInfoT();
-
-   long ref_count; // reference count for gargabge collection
 
    ZZ p;      // the modulus
    long size;  // p.size()
    long ExtendedModulusSize;
 
-   // FIXME: in a thread safe version, this lazy initialization
-   // needs to be in some kind of mutex
-
-   // the following implement a "lazy" initialization strategy
-   long initialized;  // flag if initialization really was done
-   void init();
-   void check() { if (!initialized) init(); }
-
-   long NumPrimes;
-
-   long MaxRoot;  
-
-   long QuickCRT;
-
-   ZZ MinusMModP;  //  -M mod p, M = product of primes
-
-   void *crt_struct;
-
-   void *rem_struct;
-
-
-   // the following arrays are indexed 0..NumPrimes-1
-   // q = FFTPrime[i]
-
-
-   double *x;          // u/q, where u = (M/q)^{-1} mod q
-   long *u;            // u, as above
+   Lazy<ZZ_pFFTInfoT> FFTInfo;
 
 };
 
+
+
+// auxilliary data structures to store space for temporaries
+// used by the crt and rem routines in the low-level lip module.
+// These used to be stored in data structures managed by the
+// lip module, but to achieve thread-safety, they have to be
+// externally on a per-thread basis.
+
+class ZZ_pTmpSpaceT {
+public:
+  ZZ_TmpVecAdapter crt_tmp_vec;
+  ZZ_TmpVecAdapter rem_tmp_vec;
+};
+
 NTL_THREAD_LOCAL
-extern ZZ_pInfoT *ZZ_pInfo; // info for current modulus, initially null
+extern SmartPtr<ZZ_pInfoT> ZZ_pInfo; 
+// info for current modulus, initially null
+
+NTL_THREAD_LOCAL
+extern SmartPtr<ZZ_pTmpSpaceT> ZZ_pTmpSpace;  
+// space for temps associated with current modulus, 
+
+NTL_THREAD_LOCAL
+extern bool ZZ_pInstalled;
+// flag indicating if current modulus is fully installed
+
 
 
 
 class ZZ_pContext {
 private:
-ZZ_pInfoT *ptr;
+SmartPtr<ZZ_pInfoT> ptr;
 
 public:
-void save();
+
+ZZ_pContext() { }
+explicit ZZ_pContext(const ZZ& p) : ptr(MakeSmart<ZZ_pInfoT>(p)) { }
+
+// copy constructor, assignment, destructor: default
+
+void save() { ptr = ZZ_pInfo; }
 void restore() const;
-
-ZZ_pContext() { ptr = 0; }
-explicit ZZ_pContext(const ZZ& p);
-
-ZZ_pContext(const ZZ_pContext&); 
-
-
-ZZ_pContext& operator=(const ZZ_pContext&); 
-
-
-~ZZ_pContext();
-
 
 };
 
 
 class ZZ_pBak {
 private:
-long MustRestore;
-ZZ_pInfoT *ptr;
+ZZ_pContext c;
+bool MustRestore;
 
 ZZ_pBak(const ZZ_pBak&); // disabled
 void operator=(const ZZ_pBak&); // disabled
@@ -103,7 +111,7 @@ public:
 void save();
 void restore();
 
-ZZ_pBak() { MustRestore = 0; ptr = 0; }
+ZZ_pBak() : MustRestore(false) { }
 
 ~ZZ_pBak();
 
@@ -180,8 +188,30 @@ ZZ_p(ZZ_p& x, INIT_TRANS_TYPE) : _ZZ_p__rep(x._ZZ_p__rep, INIT_TRANS) { }
 static const ZZ& modulus() { return ZZ_pInfo->p; }
 static long ModulusSize() { return ZZ_pInfo->size; }
 static long storage() { return ZZ_storage(ZZ_pInfo->size); }
+static long ExtendedModulusSize() { return ZZ_pInfo->ExtendedModulusSize; }
 
 static const ZZ_p& zero();
+
+static void DoInstall();
+
+static void install()
+{
+   // we test and set ZZ_pInstalled here, to allow better
+   // inlining and optimization
+   if (!ZZ_pInstalled) { DoInstall(); ZZ_pInstalled = true; } 
+}
+
+static const ZZ_pFFTInfoT* GetFFTInfo() 
+{ 
+   install();
+   return &ZZ_pInfo->FFTInfo.value();
+}
+
+static ZZ_pTmpSpaceT* GetTmpSpace()
+{
+   install();
+   return ZZ_pTmpSpace.get();
+}
 
 
 ZZ_p(INIT_VAL_TYPE, const ZZ& a);

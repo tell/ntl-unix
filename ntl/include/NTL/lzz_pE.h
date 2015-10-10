@@ -16,54 +16,46 @@ private:
    zz_pEInfoT();                       // disabled
    zz_pEInfoT(const zz_pEInfoT&);   // disabled
    void operator=(const zz_pEInfoT&);  // disabled
-public:
-   long ref_count;
 
+public:
    zz_pEInfoT(const zz_pX&);
    ~zz_pEInfoT() { }
 
    zz_pXModulus p;
 
-   ZZ   _card;
-   long _card_init;
    long _card_base;
    long _card_exp;
 
+   Lazy<ZZ>  _card;
 
 };
 
-NTL_THREAD_LOCAL extern zz_pEInfoT *zz_pEInfo; // info for current modulus, initially null
-
+NTL_THREAD_LOCAL 
+extern SmartPtr<zz_pEInfoT> zz_pEInfo; // info for current modulus, initially null
 
 
 
 class zz_pEContext {
 private:
-zz_pEInfoT *ptr;
+SmartPtr<zz_pEInfoT> ptr;
 
 public:
+
+zz_pEContext() { }
+explicit zz_pEContext(const zz_pX& p) : ptr(MakeSmart<zz_pEInfoT>(p)) { }
+
+// copy constructor, assignment, destructor: default
+
 void save();
 void restore() const;
-
-zz_pEContext() { ptr = 0; }
-explicit zz_pEContext(const zz_pX& p);
-
-zz_pEContext(const zz_pEContext&); 
-
-
-zz_pEContext& operator=(const zz_pEContext&); 
-
-
-~zz_pEContext();
-
 
 };
 
 
 class zz_pEBak {
 private:
-long MustRestore;
-zz_pEInfoT *ptr;
+zz_pEContext c;
+bool MustRestore;
 
 zz_pEBak(const zz_pEBak&); // disabled
 void operator=(const zz_pEBak&); // disabled
@@ -72,12 +64,14 @@ public:
 void save();
 void restore();
 
-zz_pEBak() { MustRestore = 0; ptr = 0; }
+zz_pEBak() : MustRestore(false) {  }
 
 ~zz_pEBak();
 
 
 };
+
+
 
 
 

@@ -18,6 +18,135 @@ A Tour of NTL: Summary of Changes
 
 <p> <hr> <p>
 <h3>
+2104.11.8:
+Changes between NTL 6.2.1 and 7.0
+</h3>
+
+<ul>
+
+<p> <li> <b>Thread safety!</b>
+<p>
+
+This is a major milestone for NTL (and hence a bump in the
+major version number).
+However, to actually use it, you will need a "bleeding edge"
+<tt>C++</tt> that supports <tt>C++11</tt> concurrency features.
+Most importantly, the <tt>C++11</tt> storage class <tt>thread_local</tt>
+needs to be fully and correctly implemented.
+Some compilers claim to support it, but are very buggy to the point of
+being useless.
+All I can say is, as of right now, I have been able to
+successfully build and test a multi-threaded NTL program
+using GCC 4.9.2 on a Red Hat Linux distribution.
+I don't think any pre-4.9.x version of GCC will work.
+And unfortunatly, I don't think any compiler (GCC or CLANG) 
+on any current Mac will work, but I haven't been able to directly
+test this.
+<p>
+As time goes on, I expect <tt>C++</tt> compilers will provide the
+necessary support.
+In the meantime, you can try it out and see if it works for you.
+Configure with the <tt>NTL_THREADS</tt> flag turned on and see 
+what happens.
+The test program <tt>ThreadTest</tt> that runs as the last step
+of <tt>make check</tt> will let you know if it works.
+If not, you can try building GCC 4.9.2 yourself.
+It is actually not that hard!
+
+<p>
+See the <a href="tour-impl.html">portability and implementation section</a>
+for more information.
+In any case, if threads don't work for you, just don't use them.
+Everything still works as before using almost any compiler.
+
+<p><li>
+I changed the stream input behavior to conform to wider
+<tt>C++</tt> practice (and with an eye towards am exception safe future).
+Previously, if an attempt to read an NTL object failed, the
+good old <tt>Error</tt> function was called, printing an error message,
+and aborting your program.
+Now, NTL just quietly sets the ``fail bit'' of the stream.
+The second example <a href="tour-ex1.html">here</a> illustrates this.
+Hopefully, this change will not cause too many problems,
+but if it does, configure NTL with the <tt>NTL_LEGACY_INPUT_ERROR</tt>
+flag on to get the old behavior back.
+
+<p><li>
+To further simplify future development, I've dropped support
+for legacy <tt>C++</tt> standard header files.
+That is, NTL always uses <tt>&lt;iostream&gt;</tt>
+rather than <tt>&lt;iostream.h&gt;</tt>.
+This shouldn't be a problem for anyone by now, as these
+lagacy header files have been gone from standard <tt>C++</tt>
+since 1998.
+Also, by default, NTL components are still wrapped in the <tt>NTL</tt>
+namespace, but for backward compatibility, you can still put 
+them in the global namespace by configuring NTL
+with the <tt>NTL_LEGACY_NO_NAMESPACE</tt> flag.
+
+
+
+<p><li>
+Implemented a cache-friendy "bit reverse copy" routine for doing
+FFT's.  This is the COBRA algorithm from Cater and Gatlin, "Towards an
+optimal bit-reversal permutation algorithm", FOCS 1998.
+This does seem to help a bit.
+Getting rid of "bit reverse copy" would be even better,
+but this would take more work and break a number of interfaces.
+
+<p><li>
+Made some minor improvements to <tt>ZZX</tt> multiplication routines
+to get better locality of reference.
+Improvement is nominal.
+
+<p><li>
+Fixed a small issue in the left-shift <tt>ZZ</tt> routine:
+it was allocating one word more than necessary in some cases.
+
+
+<p> <li>
+Added new <tt>Vec</tt> constructor, so
+<!-- STARTPLAIN
+   T a;
+   Vec<T> v(INIT_SIZE, n, a);
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+&nbsp;&nbsp; T a;<br>
+&nbsp;&nbsp; Vec&lt;T&gt; v(INIT_SIZE, n, a);<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+is equivalent to
+<!-- STARTPLAIN
+   T a;
+   Vec<T> v;
+   v.SetLength(n, a);
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+&nbsp;&nbsp; T a;<br>
+&nbsp;&nbsp; Vec&lt;T&gt; v;<br>
+&nbsp;&nbsp; v.SetLength(n, a);<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+In both cases, the copy constructor for <tt>T</tt>
+is used.
+
+<p><li>
+I've added some more documentation about what I plan on
+doing with NTL in the future, as well as a "wish list"
+of what I hope others might contribute.
+See the <a href="tour-roadmap.html">roadmap section</a> for 
+more details.
+</ul>
+
+
+<p> <hr> <p>
+<h3>
 2014.8.26: Changes between NTL 6.2 and 6.2.1
 </h3>
 
@@ -288,6 +417,8 @@ in packed structures via indexing (see the class
 Employed ideas from David Harvey to make the single-precision 
 FFT faster (about twice as fast in many cases).
 This speeds up many higher-level operations.
+See: Faster arithmetic for number-theoretic transforms.
+<i>J. Symb. Comp. 60</i> (2014) 113-119.
 
 
 <p>
@@ -683,7 +814,6 @@ I'm not sure if it will have any serious practical impact, though.
 Added some "partial ISO modes" so that one can use
 some of the features of Standard <tt>C++</tt>,
 even if ones compiler does not yet support all of the features.
-<a href="tour-stdcxx.html">[more details]</a>
 
 <p>
 <li>
@@ -887,7 +1017,6 @@ Setting this flag causes all of NTL to be "wrapped" in namespace <tt>NTL</tt>,
 and that part of the standard library used by NTL is "wrapped"
 in namespace <tt>std</tt>.
 This should greatly help with the <i>namespace pollution</i> problem.
-<a href="tour-stdcxx.html">Go here</a> for more details.
 
 </ul>
 

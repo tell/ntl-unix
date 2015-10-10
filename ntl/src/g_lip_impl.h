@@ -30,10 +30,12 @@
 #include <NTL/ctools.h>
 
 
+// FIXME: now that I'm in al all C++ environment, maybe
+// use the C++ headers 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-
 
 #include <gmp.h>
 
@@ -338,11 +340,6 @@ inline void COUNT_BITS(long& cnt, mp_limb_t a)
 
 
 
-#if 0
-#define GRegister(x) static _ntl_gbigint x = 0 
-
-#else
-
 
 class _ntl_gbigint_watcher {
 public:
@@ -358,16 +355,60 @@ public:
    }
 };
 
-#define GRegister(x) NTL_THREAD_LOCAL static _ntl_gbigint x = 0; _ntl_gbigint_watcher _WATCHER__ ## x(&x)
+class _ntl_gbigint_wrapped {
+public:
+   _ntl_gbigint data;
 
-// FIXME: when we implement thread safe code, we may want to define
-// this so that we also attach a thread-local watcher that unconditionally
-// releases memory when the thread terminates
+   _ntl_gbigint_wrapped() : data(0) { }
+   void operator=(const _ntl_gbigint& _data)  { data = _data; }
+
+   ~_ntl_gbigint_wrapped() { _ntl_gfree(&data); } 
+
+   operator const _ntl_gbigint& () const { return data; }
+   operator _ntl_gbigint& () { return data; }
+
+   const _ntl_gbigint* operator&() const { return &data; }
+   _ntl_gbigint* operator&() { return &data; }
+
+};
+
+// GRegisters are used for local "scratch" variables.
+
+// NOTE: the first implementation of GRegister below wraps a bigint in a class
+// whose destructor ensures that its space is reclaimed at program/thread termination.
+// It really only is necesary in a multi-threading environment, but it doesn't
+// seem to incurr significant cost.
+
+// The second implementation does not do this wrapping, and so should not be
+// used in a multi-threading environment.
+
+// Both versions use a local "watcher" variable, which does the following:
+// when the local scope closes (e.g., the function returns), the space
+// for the bigint is freed *unless* it is fairly small.  This balanced
+// approach leads significantly faster performance, while not holding
+// to too many resouces.
+
+// The third version releases local memory every time.  It can be significantly
+// slower.
+
+// The fourth version --- which was the original strategy --- never releases
+// memory.  It can be faster, but can become a memory hog.
+
+// All of this code is overly complicated, due to the fact that I'm "retrofitting"
+// this logic onto what was originally pure-C code.
+
+
+#define GRegister(x) NTL_THREAD_LOCAL static _ntl_gbigint_wrapped x; _ntl_gbigint_watcher _WATCHER__ ## x(&x)
+
+// #define GRegister(x) NTL_THREAD_LOCAL static _ntl_gbigint x(0); _ntl_gbigint_watcher _WATCHER__ ## x(&x)
+
+// #define GRegister(x) _ntl_gbigint_wrapper x(0);
+
+// #define GRegister(x) static _ntl_gbigint x = 0 
 
 
 
 
-#endif
 
 #define STORAGE_OVF(len) NTL_OVERFLOW(len, sizeof(mp_limb_t), 2*sizeof(long))
 
@@ -480,6 +521,7 @@ void _ntl_gsetlength(_ntl_gbigint *v, long len)
 void _ntl_gfree(_ntl_gbigint *xx)
 {
    _ntl_gbigint x = *xx;
+
 
    if (!x)
       return;
@@ -1288,7 +1330,9 @@ void _ntl_glshift(_ntl_gbigint n, long k, _ntl_gbigint *rres)
    GET_SIZE_NEG(sn, nneg, n);
 
    limb_cnt = k/NTL_ZZ_NBITS;
-   sres = sn + limb_cnt + 1; 
+   k %= NTL_ZZ_NBITS;
+   sres = sn + limb_cnt;
+   if (k != 0) sres++;
 
    if (MustAlloc(res, sres)) {
       _ntl_gsetlength(&res, sres);
@@ -1299,15 +1343,13 @@ void _ntl_glshift(_ntl_gbigint n, long k, _ntl_gbigint *rres)
    ndata = DATA(n);
    resdata = DATA(res);
    resdata1 = resdata + limb_cnt;
-   k %= NTL_ZZ_NBITS;
-   sres--;
 
    if (k != 0) {
       mp_limb_t t = mpn_lshift(resdata1, ndata, sn, k);
-      if (t != 0) {
-         resdata[sres] = t;
-         sres++;
-      }
+      if (t != 0) 
+         resdata[sres-1] = t;
+      else
+         sres--;
    }
    else {
       for (i = sn-1; i >= 0; i--)
@@ -1929,6 +1971,7 @@ void _ntl_gdiv(_ntl_gbigint a, _ntl_gbigint d,
    if (MustAlloc(r, sr))
       _ntl_gsetlength(&r, sr);
 
+
    adata = DATA(a);
    ddata = DATA(d);
    bdata = DATA(b);
@@ -1975,6 +2018,8 @@ done:
       if (rr) _ntl_gcopy(r, rr);
       rmem = r;
    }
+
+
 }
 
 
@@ -4198,32 +4243,96 @@ long sp_inv_mod(long a, long n)
       return s;
 }
 
-// FIXME: in a thread safe implementation, I have to rethink
-// this strategy, as multiple threads may be accessing the same
-// CRT structures...I may have to separate tables that are 
-// initialized once and shareable, from scratch space, which needs 
-// to be thread local
+
+struct tmp_vec_type {
+   long n; // number of tempraries
+   _ntl_gbigint *tmp;
+
+   long ni; // number of temporaries
+   long *tmpi;
+};
+
+struct tmp_vec_type *_ntl_gtmp_vec_init(long n, long ni)
+{
+   struct tmp_vec_type *res;
+
+   // fprintf(stderr, "tmp_vec init %ld %ld\n", n, ni);
+
+   res = (struct tmp_vec_type *) NTL_MALLOC(1, sizeof(struct tmp_vec_type), 0);
+   if (!res) ghalt("out of memory");
+
+   res->n = n;
+   res->ni = ni;
+
+   if (n == 0) 
+      res->tmp = 0;
+   else {
+      long i;
+
+      res->tmp = (_ntl_gbigint *) NTL_MALLOC(n, sizeof(_ntl_gbigint), 0);
+      if (!res->tmp) ghalt("out of memory");
+
+      for (i = 0; i < n; i++)
+         res->tmp[i] = 0;
+   }
+
+   if (ni == 0) 
+      res->tmpi = 0;
+   else {
+      res->tmpi = (long *) NTL_MALLOC(ni, sizeof(long), 0);
+      if (!res->tmpi) ghalt("out of memory");
+   }
+
+   return res;
+}
+
+void _ntl_gtmp_vec_free(void *generic_tmp_vec)
+{
+   struct tmp_vec_type *tmp_vec = (struct tmp_vec_type *) generic_tmp_vec;
+   long n, ni;
+
+   // if (!tmp_vec) fprintf(stderr, "tmp_vec free NULL\n");
+
+   if (!tmp_vec) return;
+
+   // fprintf(stderr, "tmp_vec free %ld %ld\n", tmp_vec->n, tmp_vec->ni);
+   
+   n = tmp_vec->n;
+   if (n > 0) {
+      long i;
+      for (i = 0; i < n; i++)
+         _ntl_gfree(&tmp_vec->tmp[i]);
+
+      free(tmp_vec->tmp);
+   }
+
+   ni = tmp_vec->ni;
+   if (ni > 0) 
+      free(tmp_vec->tmpi);
+
+   free(tmp_vec);
+} 
+
 
 
 struct crt_body_gmp {
    _ntl_gbigint *v;
    long sbuf;
    long n;
-   _ntl_gbigint buf;
 };
+
 
 struct crt_body_gmp1 {
    long n;
    long levels;
    long *primes;
    long *inv_vec;
-   long *val_vec;
    long *index_vec;
    _ntl_gbigint *prod_vec;
-   _ntl_gbigint *rem_vec;
    _ntl_gbigint *coeff_vec;
-   _ntl_gbigint temps[2];
    _ntl_gbigint modulus;
+
+   struct tmp_vec_type *tmp_vec;
 };
 
 
@@ -4237,50 +4346,53 @@ struct crt_body {
 };
 
 
+#define GCRT_TMPS (2)
 
 
 void _ntl_gcrt_struct_init(void **crt_struct, long n, _ntl_gbigint p,
-                          const long *primes)
+                          long (*primes)(long))
 {
    struct crt_body *c;
 
    c = (struct crt_body *) NTL_MALLOC(1, sizeof(struct crt_body), 0);
    if (!c) ghalt("out of memory");
 
-   if (n >= 600) { 
+   if (n >= 600 ) { // 600  
+      /* strategy == 2 */
+
+      // fprintf(stderr, "CRT 2\n");
+
       struct crt_body_gmp1 *C = &c->U.G1;
       long *q;
       long i, j;
       long levels, vec_len;
-      long *val_vec, *inv_vec;
+      long *inv_vec;
       long *index_vec;
       _ntl_gbigint *prod_vec, *rem_vec, *coeff_vec;
       _ntl_gbigint *temps;
 
+      struct tmp_vec_type *tmp_vec;
+
+      levels = 0;
+      while ((n >> levels) >= 16) levels++;
+      vec_len = (1L << levels) - 1;
+
+      tmp_vec = _ntl_gtmp_vec_init(GCRT_TMPS+vec_len, n);
+
+      temps = tmp_vec->tmp;
+      rem_vec = tmp_vec->tmp+GCRT_TMPS; 
+
       C->modulus = 0;
       _ntl_gcopy(p, &C->modulus);
 
-      temps = &C->temps[0];
-
-      temps[0] = 0;
-      temps[1] = 0;
-   
       q = (long *) NTL_MALLOC(n, sizeof(long), 0);
       if (!q) ghalt("out of memory");
-
-      val_vec = (long *) NTL_MALLOC(n, sizeof(long), 0);
-      if (!val_vec) ghalt("out of memory");
 
       inv_vec = (long *) NTL_MALLOC(n, sizeof(long), 0);
       if (!inv_vec) ghalt("out of memory");
 
       for (i = 0; i < n; i++)
-         q[i] = primes[i];
-
-      levels = 0;
-      while ((n >> levels) >= 16) levels++;
-
-      vec_len = (1L << levels) - 1;
+         q[i] = primes(i);
 
       index_vec = (long *) NTL_MALLOC((vec_len+1), sizeof(long), 0);
       if (!index_vec) ghalt("out of memory");
@@ -4288,17 +4400,12 @@ void _ntl_gcrt_struct_init(void **crt_struct, long n, _ntl_gbigint p,
       prod_vec = (_ntl_gbigint *) NTL_MALLOC(vec_len, sizeof(_ntl_gbigint), 0);
       if (!prod_vec) ghalt("out of memory");
 
-      rem_vec = (_ntl_gbigint *) NTL_MALLOC(vec_len, sizeof(_ntl_gbigint), 0);
-      if (!rem_vec) ghalt("out of memory");
 
       coeff_vec = (_ntl_gbigint *) NTL_MALLOC(n, sizeof(_ntl_gbigint), 0);
       if (!coeff_vec) ghalt("out of memory");
 
       for (i = 0; i < vec_len; i++)
          prod_vec[i] = 0;
-
-      for (i = 0; i < vec_len; i++)
-         rem_vec[i] = 0;
 
       for (i = 0; i < n; i++)
          coeff_vec[i] = 0;
@@ -4359,40 +4466,26 @@ void _ntl_gcrt_struct_init(void **crt_struct, long n, _ntl_gbigint p,
       }
 
 
-
-#if 0
-      /* the following is asymptotically the bottleneck...but it
-       * it probably doesn't matter. */
-
-      fprintf(stderr, "checking in lip\n");
-      for (i = 0; i < n; i++) {
-         long tt;
-         _ntl_gsdiv(prod_vec[0], q[i], &temps[0]);
-         tt = mpn_mod_1(DATA(temps[0]), SIZE(temps[0]), q[i]);
-         if (inv_vec[i] != sp_inv_mod(tt, q[i])) 
-            fprintf(stderr, "oops in lip\n");
-
-         /* inv_vec[i] = sp_inv_mod(tt, q[i]); */
-
-      }
-#endif
-
       c->strategy = 2;
       C->n = n;
       C->primes = q;
-      C->val_vec = val_vec;
       C->inv_vec = inv_vec;
       C->levels = levels;
       C->index_vec = index_vec;
       C->prod_vec = prod_vec;
-      C->rem_vec = rem_vec;
       C->coeff_vec = coeff_vec;
+
+      C->tmp_vec = tmp_vec;
 
       *crt_struct = (void *) c;
       return;
    }
 
    {
+      /* strategy == 1 */
+
+      // fprintf(stderr, "CRT 1\n");
+
       struct crt_body_gmp *C = &c->U.G;
       long i;
       c->strategy = 1;
@@ -4406,13 +4499,75 @@ void _ntl_gcrt_struct_init(void **crt_struct, long n, _ntl_gbigint p,
 
       C->sbuf = SIZE(p)+2;
 
-      C->buf = 0;
-      _ntl_gsetlength(&C->buf, C->sbuf);
-
       *crt_struct = (void *) c;
       return;
    }
 }
+
+/* extracts existing tmp_vec, if possible -- read/write operation */
+void *_ntl_gcrt_extract_tmp(void *crt_struct) 
+{
+   struct crt_body *c = (struct crt_body *) crt_struct;
+
+   // fprintf(stderr, "CRT extract\n");
+
+   switch (c->strategy) {
+   case 1: {
+      return 0;
+   }
+
+   case 2: {
+      struct crt_body_gmp1 *C = &c->U.G1;
+      void *res = C->tmp_vec;
+
+      if (res) 
+         C->tmp_vec = 0;
+      else {
+         long n = C->n;
+         long levels = C->levels;
+         long vec_len = (1L << levels) - 1;
+
+         res = _ntl_gtmp_vec_init(GCRT_TMPS+vec_len, n);
+      }
+
+      return res;
+   }
+
+   default:
+      ghalt("_ntl_gcrt_struct_extract_tmp: inconsistent strategy");
+      return 0;
+   }
+}
+
+
+/* read only operation */
+void *_ntl_gcrt_fetch_tmp(void *crt_struct) 
+{
+   struct crt_body *c = (struct crt_body *) crt_struct;
+
+   // fprintf(stderr, "CRT fetch\n");
+
+   switch (c->strategy) {
+   case 1: {
+      return 0;
+   }
+
+   case 2: {
+      struct crt_body_gmp1 *C = &c->U.G1;
+      long n = C->n;
+      long levels = C->levels;
+      long vec_len = (1L << levels) - 1;
+      struct tmp_vec_type *tmp_vec = _ntl_gtmp_vec_init(GCRT_TMPS+vec_len, n);
+
+      return tmp_vec;
+   }
+
+   default:
+      ghalt("_ntl_gcrt_struct_fetch_tmp: inconsistent strategy");
+      return 0;
+   }
+}
+
 
 void _ntl_gcrt_struct_insert(void *crt_struct, long i, _ntl_gbigint m)
 {
@@ -4434,6 +4589,7 @@ void _ntl_gcrt_struct_insert(void *crt_struct, long i, _ntl_gbigint m)
 void _ntl_gcrt_struct_free(void *crt_struct)
 {
    struct crt_body *c = (struct crt_body *) crt_struct;
+   if (!c) return;
 
    switch (c->strategy) {
    case 1: {
@@ -4445,10 +4601,7 @@ void _ntl_gcrt_struct_free(void *crt_struct)
       for (i = 0; i < n; i++)
          _ntl_gfree(&C->v[i]);
 
-      _ntl_gfree(&C->buf);
-
       free(C->v);
-
       free(c);
       break;
    }
@@ -4459,13 +4612,11 @@ void _ntl_gcrt_struct_free(void *crt_struct)
       long levels = C->levels;
       long *primes = C->primes;
       long *inv_vec = C->inv_vec;
-      long *val_vec = C->val_vec;
       long *index_vec = C->index_vec;
       _ntl_gbigint *prod_vec = C->prod_vec;
-      _ntl_gbigint *rem_vec = C->rem_vec;
       _ntl_gbigint *coeff_vec = C->coeff_vec;
-      _ntl_gbigint *temps = C->temps;
       _ntl_gbigint modulus = C->modulus;
+
       long vec_len = (1L << levels) - 1;
 
       long i;
@@ -4473,24 +4624,18 @@ void _ntl_gcrt_struct_free(void *crt_struct)
       for (i = 0; i < vec_len; i++)
          _ntl_gfree(&prod_vec[i]);
 
-      for (i = 0; i < vec_len; i++)
-         _ntl_gfree(&rem_vec[i]);
-
       for (i = 0; i < n; i++)
          _ntl_gfree(&coeff_vec[i]);
-
-      _ntl_gfree(&temps[0]);
-      _ntl_gfree(&temps[1]);
 
       _ntl_gfree(&modulus);
 
       free(primes);
       free(inv_vec);
-      free(val_vec);
       free(index_vec);
       free(prod_vec);
-      free(rem_vec);
       free(coeff_vec);
+
+      _ntl_gtmp_vec_free(C->tmp_vec);
 
       free(c);
       break;
@@ -4546,9 +4691,11 @@ void gadd_mul_many(_ntl_gbigint *res, _ntl_gbigint *a, long *b,
    SIZE(*res) = sx;
 }
 
-void _ntl_gcrt_struct_eval(void *crt_struct, _ntl_gbigint *x, const long *b)
+void _ntl_gcrt_struct_eval(void *crt_struct, _ntl_gbigint *x, const long *b,
+                           void *generic_tmp_vec)
 {
    struct crt_body *c = (struct crt_body *) crt_struct;
+   struct tmp_vec_type *tmp_vec = (struct tmp_vec_type *) generic_tmp_vec;
 
    switch (c->strategy) {
 
@@ -4557,14 +4704,16 @@ void _ntl_gcrt_struct_eval(void *crt_struct, _ntl_gbigint *x, const long *b)
 
       mp_limb_t *xx, *yy; 
       _ntl_gbigint *a;
+      _ntl_gbigint x1;
       long i, sx, n;
       long sy;
       mp_limb_t carry;
-   
+
       n = C->n;
       sx = C->sbuf;
-   
-      xx = DATA(C->buf);
+      _ntl_gsetlength(x, sx);
+      x1 = *x;
+      xx = DATA(x1);
 
       for (i = 0; i < sx; i++)
          xx[i] = 0;
@@ -4592,8 +4741,7 @@ void _ntl_gcrt_struct_eval(void *crt_struct, _ntl_gbigint *x, const long *b)
       }
    
       while (sx > 0 && xx[sx-1] == 0) sx--;
-      SIZE(C->buf) = sx;
-      _ntl_gcopy(C->buf, x);
+      SIZE(x1) = sx;
       break;
    }
 
@@ -4604,15 +4752,18 @@ void _ntl_gcrt_struct_eval(void *crt_struct, _ntl_gbigint *x, const long *b)
       long levels = C->levels;
       long *primes = C->primes;
       long *inv_vec = C->inv_vec;
-      long *val_vec = C->val_vec;
       long *index_vec = C->index_vec;
       _ntl_gbigint *prod_vec = C->prod_vec;
-      _ntl_gbigint *rem_vec = C->rem_vec;
       _ntl_gbigint *coeff_vec = C->coeff_vec;
-      _ntl_gbigint *temps = C->temps;
+
+
+      long *val_vec = tmp_vec->tmpi;
+      _ntl_gbigint *temps = tmp_vec->tmp;
+      _ntl_gbigint *rem_vec = tmp_vec->tmp+GCRT_TMPS;
+
       long vec_len = (1L << levels) - 1;
 
-      long i, j;
+      long i;
 
       for (i = 0; i < n; i++) {
          SP_MUL_MOD(val_vec[i], b[i], inv_vec[i], primes[i]);
@@ -4662,6 +4813,10 @@ long _ntl_gcrt_struct_special(void *crt_struct)
 }
 
 
+
+/* end crt code */
+
+
 struct rem_body_lip {
    long n;
    long *primes;
@@ -4673,7 +4828,7 @@ struct rem_body_gmp {
    long *primes;
    long *index_vec;
    _ntl_gbigint *prod_vec;
-   _ntl_gbigint *rem_vec;
+   long modulus_size;
 };
 
 
@@ -4687,7 +4842,6 @@ struct rem_body_gmp1 {
    long *corr_vec;
    double *corraux_vec;
    _ntl_gbigint *prod_vec;
-   _ntl_gbigint *rem_vec;
 };
 
 
@@ -4705,7 +4859,7 @@ struct rem_body {
 
 
 void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
-                          const long *p)
+                          long (*p)(long))
 {
    struct rem_body *r;
 
@@ -4713,6 +4867,10 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
    if (!r) ghalt("out of memory");
 
    if ( n >= 32 && n <= 256) {
+      /* strategy == 2 */
+
+      // fprintf(stderr, "REM 2\n");
+
       struct rem_body_gmp1 *R = &r->U.G1;
 
       long *q;
@@ -4722,13 +4880,13 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
       long *len_vec, *corr_vec;
       double *corraux_vec;
       mp_limb_t *inv_vec;
-      _ntl_gbigint *prod_vec, *rem_vec;
+      _ntl_gbigint *prod_vec;
    
       q = (long *) NTL_MALLOC(n, sizeof(long), 0);
       if (!q) ghalt("out of memory");
    
       for (i = 0; i < n; i++)
-         q[i] = p[i];
+         q[i] = p(i);
 
       levels = 0;
       while ((n >> levels) >= 4) levels++;
@@ -4752,15 +4910,8 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
 
       prod_vec = (_ntl_gbigint *) NTL_MALLOC(vec_len, sizeof(_ntl_gbigint), 0);
       if (!prod_vec) ghalt("out of memory");
-
-      rem_vec = (_ntl_gbigint *) NTL_MALLOC(vec_len, sizeof(_ntl_gbigint), 0);
-      if (!rem_vec) ghalt("out of memory");
-
       for (i = 0; i < vec_len; i++)
          prod_vec[i] = 0;
-
-      for (i = 0; i < vec_len; i++)
-         rem_vec[i] = 0;
 
       index_vec[0] = 0;
       index_vec[1] = n;
@@ -4815,13 +4966,6 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
       }
 
 
-      /* allocate length in advance to streamline eval code */
-
-      _ntl_gsetlength(&rem_vec[0], len_vec[1]); /* a special temp */
-
-      for (i = 1; i < vec_len; i++)
-         _ntl_gsetlength(&rem_vec[i], len_vec[i]);
-
 
 
 
@@ -4835,24 +4979,27 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
       R->corr_vec = corr_vec;
       R->corraux_vec = corraux_vec;
       R->prod_vec = prod_vec;
-      R->rem_vec = rem_vec;
 
       *rem_struct = (void *) r;
    }
    else if (n >= 32) {
+      /* strategy == 1 */
+
+      // fprintf(stderr, "REM 1\n");
+
       struct rem_body_gmp *R = &r->U.G;
 
       long *q;
       long i, j;
       long levels, vec_len;
       long *index_vec;
-      _ntl_gbigint *prod_vec, *rem_vec;
+      _ntl_gbigint *prod_vec;
    
       q = (long *) NTL_MALLOC(n, sizeof(long), 0);
       if (!q) ghalt("out of memory");
    
       for (i = 0; i < n; i++)
-         q[i] = p[i];
+         q[i] = p(i);
 
       levels = 0;
       while ((n >> levels) >= 4) levels++;
@@ -4865,14 +5012,8 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
       prod_vec = (_ntl_gbigint *) NTL_MALLOC(vec_len, sizeof(_ntl_gbigint), 0);
       if (!prod_vec) ghalt("out of memory");
 
-      rem_vec = (_ntl_gbigint *) NTL_MALLOC(vec_len, sizeof(_ntl_gbigint), 0);
-      if (!rem_vec) ghalt("out of memory");
-
       for (i = 0; i < vec_len; i++)
          prod_vec[i] = 0;
-
-      for (i = 0; i < vec_len; i++)
-         rem_vec[i] = 0;
 
       index_vec[0] = 0;
       index_vec[1] = n;
@@ -4901,28 +5042,22 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
          _ntl_gmul(prod_vec[2*i+1], prod_vec[2*i+2], &prod_vec[i]);
 
 
-      /* allocate length in advance to streamline eval code */
-
-      _ntl_gsetlength(&rem_vec[1], _ntl_gsize(modulus));
-      _ntl_gsetlength(&rem_vec[2], _ntl_gsize(modulus));
-
-      for (i = 1; i < (1L << (levels-1)) - 1; i++) {
-         _ntl_gsetlength(&rem_vec[2*i+1], _ntl_gsize(prod_vec[2*i+1]));
-         _ntl_gsetlength(&rem_vec[2*i+2], _ntl_gsize(prod_vec[2*i+2]));
-      }
-
       r->strategy = 1;
       R->n = n;
       R->primes = q;
       R->levels = levels;
       R->index_vec = index_vec;
       R->prod_vec = prod_vec;
-      R->rem_vec = rem_vec;
+      R->modulus_size = _ntl_gsize(modulus);
 
       *rem_struct = (void *) r;
    }
    else
    {
+      // fprintf(stderr, "REM 1\n");
+
+      /* strategy == 0 */
+
       struct rem_body_lip *R = &r->U.L;
 
       long *q;
@@ -4935,18 +5070,81 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
       R->primes = q;
   
       for (i = 0; i < n; i++)
-         q[i] = p[i];
+         q[i] = p(i);
   
       *rem_struct = (void *) r;
    }
 
 }
 
+void *_ntl_grem_fetch_tmp(void *rem_struct) 
+{
+   struct rem_body *r = (struct rem_body *) rem_struct;
+
+   switch (r->strategy) {
+
+   case 0: {
+      return 0;
+   }
+
+   case 1: {
+      struct rem_body_gmp *R = &r->U.G;
+      long modulus_size = R->modulus_size;
+      long levels = R->levels;
+      long vec_len = (1L << levels) - 1;
+      _ntl_gbigint *prod_vec = R->prod_vec;
+      struct tmp_vec_type *tmp_vec = _ntl_gtmp_vec_init(vec_len, 0);
+      _ntl_gbigint *rem_vec = tmp_vec->tmp;
+
+      long i;
+
+      /* allocate length in advance to streamline eval code */
+
+      _ntl_gsetlength(&rem_vec[1], modulus_size);
+      _ntl_gsetlength(&rem_vec[2], modulus_size);
+
+      for (i = 1; i < (1L << (levels-1)) - 1; i++) {
+         _ntl_gsetlength(&rem_vec[2*i+1], _ntl_gsize(prod_vec[2*i+1]));
+         _ntl_gsetlength(&rem_vec[2*i+2], _ntl_gsize(prod_vec[2*i+2]));
+      }
+
+      return tmp_vec;
+   }
+
+   case 2: {
+      struct rem_body_gmp1 *R = &r->U.G1;
+      long *len_vec = R->len_vec;
+      long levels = R->levels;
+      long vec_len = (1L << levels) - 1;
+      struct tmp_vec_type *tmp_vec = _ntl_gtmp_vec_init(vec_len, 0);
+      _ntl_gbigint *rem_vec = tmp_vec->tmp;
+
+      long i;
+
+      /* allocate length in advance to streamline eval code */
+
+      _ntl_gsetlength(&rem_vec[0], len_vec[1]); /* a special temp */
+
+      for (i = 1; i < vec_len; i++)
+         _ntl_gsetlength(&rem_vec[i], len_vec[i]);
+
+      return tmp_vec;
+   }
+
+   default: {
+      ghalt("_ntl_grem_fetch_tmp: inconsistent strategy");
+      return 0;
+   }
+
+   }
+
+}
 
 
 void _ntl_grem_struct_free(void *rem_struct)
 {
    struct rem_body *r = (struct rem_body *) rem_struct;
+   if (!r) return;
 
    switch (r->strategy) {
 
@@ -4966,13 +5164,10 @@ void _ntl_grem_struct_free(void *rem_struct)
       for (i = 0; i < vec_len; i++)
          _ntl_gfree(&R->prod_vec[i]);
 
-      for (i = 0; i < vec_len; i++)
-         _ntl_gfree(&R->rem_vec[i]);
-
       free(R->primes);
       free(R->index_vec);
       free(R->prod_vec);
-      free(R->rem_vec);
+
       free(r);
       break;
    }
@@ -4987,9 +5182,6 @@ void _ntl_grem_struct_free(void *rem_struct)
       for (i = 0; i < vec_len; i++)
          _ntl_gfree(&R->prod_vec[i]);
 
-      for (i = 0; i < vec_len; i++)
-         _ntl_gfree(&R->rem_vec[i]);
-
       free(R->primes);
       free(R->index_vec);
       free(R->len_vec);
@@ -4997,7 +5189,7 @@ void _ntl_grem_struct_free(void *rem_struct)
       free(R->inv_vec);
       free(R->corraux_vec);
       free(R->prod_vec);
-      free(R->rem_vec);
+
       free(r);
       break;
    }
@@ -5012,9 +5204,11 @@ void _ntl_grem_struct_free(void *rem_struct)
 
 
 
-void _ntl_grem_struct_eval(void *rem_struct, long *x, _ntl_gbigint a)
+void _ntl_grem_struct_eval(void *rem_struct, long *x, _ntl_gbigint a,
+                           void *generic_tmp_vec)
 {
    struct rem_body *r = (struct rem_body *) rem_struct;
+   struct tmp_vec_type * tmp_vec = (struct tmp_vec_type *) generic_tmp_vec;
 
    switch (r->strategy) {
 
@@ -5055,7 +5249,9 @@ void _ntl_grem_struct_eval(void *rem_struct, long *x, _ntl_gbigint a)
       long *q = R->primes;
       long *index_vec = R->index_vec;
       _ntl_gbigint *prod_vec = R->prod_vec;
-      _ntl_gbigint *rem_vec = R->rem_vec;
+
+      _ntl_gbigint *rem_vec = tmp_vec->tmp;
+
       long vec_len = (1L << levels) - 1;
 
       long i, j;
@@ -5105,7 +5301,9 @@ void _ntl_grem_struct_eval(void *rem_struct, long *x, _ntl_gbigint a)
       double *corraux_vec = R->corraux_vec;
       mp_limb_t *inv_vec = R->inv_vec;
       _ntl_gbigint *prod_vec = R->prod_vec;
-      _ntl_gbigint *rem_vec = R->rem_vec;
+
+      _ntl_gbigint *rem_vec = tmp_vec->tmp;
+
       long vec_len = (1L << levels) - 1;
 
       long i, j;

@@ -109,21 +109,22 @@ int main()
    cerr << "Basic Configuration Options:\n";
 
 
-#ifdef NTL_STD_CXX
-   cout << "NTL_STD_CXX\n";
+
+#ifdef NTL_LEGACY_NO_NAMESPACE
+   cerr << "NTL_LEGACY_NO_NAMESPACE\n";
 #endif
 
-#ifdef NTL_PSTD_NNS
-   cerr << "NTL_PSTD_NNS\n";
+
+#ifdef NTL_LEGACY_INPUT_ERROR
+   cerr << "NTL_LEGACY_INPUT_ERROR\n";
 #endif
 
-#ifdef NTL_PSTD_NHF
-   cerr << "NTL_PSTD_NHF\n";
+
+#ifdef NTL_THREADS
+   cerr << "NTL_THREADS\n";
 #endif
 
-#ifdef NTL_PSTD_NTN
-   cerr << "NTL_PSTD_NTN\n";
-#endif
+
 
 #ifdef NTL_GMP_LIP
    cerr << "NTL_GMP_LIP\n";
@@ -374,19 +375,20 @@ cerr << "Performance Options:\n";
    RandomLen(p, k);
 
    ZZ_p::init(p);
-   ZZ_pInfo->check();
 
    ZZ_pX j1, j2, j3;
 
    random(j1, n);
    random(j2, n);
 
+   mul(j3, j1, j2);
+
    t = GetTime();
-   for (i = 0; i < 20; i++) mul(j3, j1, j2);
+   for (i = 0; i < 100; i++) mul(j3, j1, j2);
    t = GetTime()-t;
 
    cerr << "time to multiply degree 1023 polynomials\n   modulo a 1024-bit number: ";
-   cerr << (t/20) << "s";
+   cerr << (t/100) << "s";
    cerr << "\n";
 
    GF2X_time();

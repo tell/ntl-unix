@@ -242,7 +242,15 @@
  */
 
 
+#ifdef NTL_THREADS
+
+#define NTL_THREAD_LOCAL thread_local 
+
+#else
+
 #define NTL_THREAD_LOCAL 
+
+#endif
 
 /* 
  * placeholder for now...it will eventually be defined as thread_local

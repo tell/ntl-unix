@@ -6,6 +6,7 @@
 #include <NTL/ZZ.h>
 #include <NTL/WordVector.h>
 #include <NTL/vec_GF2.h>
+#include <NTL/Lazy.h>
 
 NTL_OPEN_NNS
 
@@ -371,7 +372,7 @@ public:
 
    GF2X h0, f0;
 
-   vec_GF2 tracevec;
+   Lazy<vec_GF2> tracevec;
 
 }; 
 

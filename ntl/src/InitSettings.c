@@ -1,43 +1,32 @@
 
 #include <NTL/config.h>
 
-#if (defined(NTL_STD_CXX) || defined(NTL_PSTD_NHF))
 #include <iostream>
 using namespace std;
-#else
-#include <iostream.h>
-#endif
 
 #define make_string_aux(x) #x
 #define make_string(x) make_string_aux(x)
 
 
-
 int main()
 {
 
-#ifdef NTL_STD_CXX
-   cout << "NTL_STD_CXX=1\n";
+#ifdef NTL_LEGACY_NO_NAMESPACE
+   cout << "NTL_LEGACY_NO_NAMESPACE=1\n";
 #else
-   cout << "NTL_STD_CXX=0\n";
+   cout << "NTL_LEGACY_NO_NAMESPACE=0\n";
 #endif
 
-#ifdef NTL_PSTD_NNS
-   cout << "NTL_PSTD_NNS=1\n";
+#ifdef NTL_LEGACY_INPUT_ERROR
+   cout << "NTL_LEGACY_INPUT_ERROR=1\n";
 #else
-   cout << "NTL_PSTD_NNS=0\n";
+   cout << "NTL_LEGACY_INPUT_ERROR=0\n";
 #endif
 
-#ifdef NTL_PSTD_NHF
-   cout << "NTL_PSTD_NHF=1\n";
+#ifdef NTL_THREADS
+   cout << "NTL_THREADS=1\n";
 #else
-   cout << "NTL_PSTD_NHF=0\n";
-#endif
-
-#ifdef NTL_PSTD_NTN
-   cout << "NTL_PSTD_NTN=1\n";
-#else
-   cout << "NTL_PSTD_NTN=0\n";
+   cout << "NTL_THREADS=0\n";
 #endif
 
 #ifdef NTL_GMP_LIP

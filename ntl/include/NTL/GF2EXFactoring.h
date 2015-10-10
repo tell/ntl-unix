@@ -89,9 +89,6 @@ NTL_THREAD_LOCAL
 extern long GF2EX_GCDTableSize; /* = 4 */
 // Controls GCD blocking for NewDDF
 
-NTL_THREAD_LOCAL
-extern char GF2EX_stem[]; 
-// Determines filename stem for external storage in NewDDF.
 
 NTL_THREAD_LOCAL
 extern double GF2EXFileThresh; 

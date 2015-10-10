@@ -8,6 +8,7 @@
 #include <NTL/vec_ZZ.h>
 #include <NTL/vec_ZZ_p.h>
 #include <NTL/FFT.h>
+#include <NTL/Lazy.h>
 
 NTL_OPEN_NNS
 
@@ -864,7 +865,7 @@ public:
    FFTRep FRep; // 2^k point rep of f
                 // H = rev((rev(f))^{-1} rem X^{n-1})
    FFTRep HRep; // 2^l point rep of H
-   vec_ZZ_p tracevec;  // mutable
+   Lazy<vec_ZZ_p> tracevec;
 
    // but these will remain public
    ZZ_pXModulus(const ZZ_pX& ff);

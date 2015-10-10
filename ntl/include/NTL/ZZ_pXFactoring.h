@@ -85,8 +85,6 @@ inline vec_pair_ZZ_pX_long DDF(const ZZ_pX& f, const ZZ_pX& h,
 NTL_THREAD_LOCAL extern long ZZ_pX_GCDTableSize; /* = 4 */
 // Controls GCD blocking for NewDDF
 
-NTL_THREAD_LOCAL extern char ZZ_pX_stem[]; 
-// Determines filename stem for external storage in NewDDF.
 
 NTL_THREAD_LOCAL extern double ZZ_pXFileThresh; 
 // external files are used for baby/giant steps if size

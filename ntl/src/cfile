@@ -54,67 +54,45 @@ using the configure script.
   */
 
 
-#if @{NTL_STD_CXX}
-#define NTL_STD_CXX
+#if @{NTL_LEGACY_NO_NAMESPACE}
+#define NTL_LEGACY_NO_NAMESPACE
 
 /* 
- * Use this flag if you want to use the "Standard C++" version of NTL.
- * In this version, all of NTL is "wrapped" inside the namespace NTL,
- * and are no longer directly accessible---you must either use
- * explicit qualification, or using directives, or using declarations.
- * However, note that all names that begin with "NTL_" are macros,
- * and as such do not belong to any namespace.
- * Additionally, instead of including the standard headers
- * <stdlib.h>, <math.h>, and <iostream.h>, the standard headers
- * <cstdlib>, <cmath>, and <iostream> are included.
- * These "wrap" some (but not all) names in namespace std.
- * Also, the 'nothrow' version on the 'new' operator is used.
+ * By default, NTL components are declared inside the namespace NTL.
+ * Set this flag if you want to instead have these components
+ * declared in the global namespace.  This is for backward
+ * compatibility only -- not recommended.
  *
  * To re-build after changing this flag: rm *.o; make ntl.a
  */
 
 #endif
 
-/* The following three flags may be used if you want to use some
- * of the features of Standard C++, but your compiler is deficient.
- * Instead of setting the NTL_STD_CXX, you can set any subset 
- * of the these three.  Setting all three of these flags is equivalent
- * to setting NTL_STD_CXX.  No harm is done if NTL_STD_CXX is set
- * and some of the following three flags are set.
+
+#if @{NTL_LEGACY_INPUT_ERROR}
+#define NTL_LEGACY_INPUT_ERROR
+
+/*
+ * Also for backward compatibility.  Set if you want input 
+ * operations to abort on error, instead of just setting the
+ * "fail bit" of the input stream.
  *
- * To re-build after changing any of these flags: rm *.o; make ntl.a
+ * To re-build after changing this flag: rm *.o; make ntl.a
  */
 
-#if @{NTL_PSTD_NNS}
-#define NTL_PSTD_NNS
-
-/* Set if NTL library components are to be wrapped in namespace 'NTL'. */
 
 #endif
 
-#if @{NTL_PSTD_NHF}
-#define NTL_PSTD_NHF
+#if @{NTL_THREADS}
+#define NTL_THREADS
 
-/* Set if you want to use the new header files <cstdlib>, <cmath>, and 
- * <iostream>, instead of the traditional header files <stdlib.h>,
- * <math.h>, and <iostream.h>.
- * If new header files are used, then it is assumed that all standard 
- * library components are wrapped in namespace std; otherwise,
- * it is assumed that all standard library components are in the
- * global namespace.
+/* Set if you want to compile NTL as a thread-safe library.
  *
- * Also, when set, some internal NTL files use the header <fstream>
- * in place of <fstream.h>.                                                      
+ * To re-build after changing this flag: rm *.o; make ntl.a
  */
 
 #endif
 
-#if @{NTL_PSTD_NTN}
-#define NTL_PSTD_NTN
-
-/* Set if you want to use the 'nothrow' version of new. */
-
-#endif
 
 
 #if @{NTL_GMP_LIP}

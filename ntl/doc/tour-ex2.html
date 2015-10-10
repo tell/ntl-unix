@@ -44,27 +44,25 @@ ZZ sum(const Vec<ZZ>& v)
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ.h&gt;</font><br>
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/vector.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZ.h&gt;</font><br>
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/vector.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
 ZZ sum(<font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;ZZ&gt;&amp; v)<br>
 {<br>
 &nbsp;&nbsp; ZZ acc;<br>
 <br>
-&nbsp;&nbsp; acc =&nbsp;<font color="#ff8c00">0</font>;<br>
+&nbsp;&nbsp; acc = <font color="#ff8b00">0</font>;<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>&nbsp;(<font color="#008b00"><b>long</b></font>&nbsp;i =&nbsp;<font color="#ff8c00">0</font>; i &lt; v.length(); i++)<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>for</b></font>&nbsp;(<font color="#008b00"><b>long</b></font>&nbsp;i = <font color="#ff8b00">0</font>; i &lt; v.length(); i++)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;acc += v[i];<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>return</b></font>&nbsp;acc;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>return</b></font>&nbsp;acc;<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
@@ -111,27 +109,25 @@ ZZ sum(ZZ& s, const Vec<ZZ>& v)
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ.h&gt;</font><br>
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/vector.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZ.h&gt;</font><br>
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/vector.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
-ZZ sum(ZZ&amp; s,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;ZZ&gt;&amp; v)<br>
+ZZ sum(ZZ&amp; s, <font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;ZZ&gt;&amp; v)<br>
 {<br>
 &nbsp;&nbsp; ZZ acc;<br>
 <br>
-&nbsp;&nbsp; acc =&nbsp;<font color="#ff8c00">0</font>;<br>
+&nbsp;&nbsp; acc = <font color="#ff8b00">0</font>;<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>&nbsp;(<font color="#008b00"><b>long</b></font>&nbsp;i =&nbsp;<font color="#ff8c00">1</font>; i &lt;= v.length(); i++)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;acc += v(i);&nbsp;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>for</b></font>&nbsp;(<font color="#008b00"><b>long</b></font>&nbsp;i = <font color="#ff8b00">1</font>; i &lt;= v.length(); i++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;acc += v(i); <br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>return</b></font>&nbsp;acc;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>return</b></font>&nbsp;acc;<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
@@ -168,34 +164,32 @@ int main()
    for (i = 0 ; i < n; i++)
       v[n+i] = v[n-1-i];
 
-   cout << v <&lt "\n";
+   cout << v << "\n";
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ.h&gt;</font><br>
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/vector.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZ.h&gt;</font><br>
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/vector.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
 <font color="#008b00"><b>int</b></font>&nbsp;main()<br>
 {<br>
 &nbsp;&nbsp; Vec&lt;ZZ&gt; v;<br>
 &nbsp;&nbsp; cin &gt;&gt; v;<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;n = v.length();<br>
-&nbsp;&nbsp; v.SetLength(<font color="#ff8c00">2</font>*n);<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;n = v.length();<br>
+&nbsp;&nbsp; v.SetLength(<font color="#ff8b00">2</font>*n);<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;i;<br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>&nbsp;(i =&nbsp;<font color="#ff8c00">0</font>&nbsp;; i &lt; n; i++)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v[n+i] = v[n-<font color="#ff8c00">1</font>-i];<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;i;<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>for</b></font>&nbsp;(i = <font color="#ff8b00">0</font>&nbsp;; i &lt; n; i++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v[n+i] = v[n-<font color="#ff8b00">1</font>-i];<br>
 <br>
-&nbsp;&nbsp; cout &lt;&lt; v &lt;&amp;lt&nbsp;<font color="#4a708b">&quot;</font><font color="#8a2be2">\n</font><font color="#4a708b">&quot;</font>;<br>
+&nbsp;&nbsp; cout &lt;&lt; v &lt;&lt; <font color="#4a6f8b">&quot;</font><font color="#8a2ae2">\n</font><font color="#4a6f8b">&quot;</font>;<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
@@ -285,32 +279,31 @@ void mul(Mat<ZZ>& X, const Mat<ZZ>& A, const Mat<ZZ>& B)
 }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ.h&gt;</font><br>
-<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/matrix.h&gt;</font><br>
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/ZZ.h&gt;</font><br>
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/matrix.h&gt;</font><br>
 <br>
-using namespace std;<br>
-using namespace NTL;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;std;<br>
+<font color="#b02f60"><b>using</b></font>&nbsp;<font color="#008b00"><b>namespace</b></font>&nbsp;NTL;<br>
 <br>
-<font color="#008b00"><b>void</b></font>&nbsp;mul(Mat&lt;ZZ&gt;&amp; X,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;Mat&lt;ZZ&gt;&amp; A,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;Mat&lt;ZZ&gt;&amp; B)<br>
+<font color="#008b00"><b>void</b></font>&nbsp;mul(Mat&lt;ZZ&gt;&amp; X, <font color="#008b00"><b>const</b></font>&nbsp;Mat&lt;ZZ&gt;&amp; A, <font color="#008b00"><b>const</b></font>&nbsp;Mat&lt;ZZ&gt;&amp; B)<br>
 {<br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;n = A.NumRows();<br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;l = A.NumCols();<br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;m = B.NumCols();<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;n = A.NumRows();<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;l = A.NumCols();<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;m = B.NumCols();<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>if</b></font>&nbsp;(l != B.NumRows())<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error(<font color="#4a708b">&quot;matrix mul: dimension mismatch&quot;</font>);<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>if</b></font>&nbsp;(l != B.NumRows())<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error(<font color="#4a6f8b">&quot;matrix mul: dimension mismatch&quot;</font>);<br>
 <br>
-&nbsp;&nbsp; X.SetDims(n, m);&nbsp;<font color="#0000ee"><i>// make X have n rows and m columns</i></font><br>
+&nbsp;&nbsp; X.SetDims(n, m); <font color="#0000ed"><i>// make X have n rows and m columns</i></font><br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;i, j, k;<br>
+&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;i, j, k;<br>
 &nbsp;&nbsp; ZZ acc, tmp;<br>
 <br>
-&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>&nbsp;(i =&nbsp;<font color="#ff8c00">1</font>; i &lt;= n; i++) {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>&nbsp;(j =&nbsp;<font color="#ff8c00">1</font>; j &lt;= m; j++) {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; acc =&nbsp;<font color="#ff8c00">0</font>;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b03060"><b>for</b></font>(k =&nbsp;<font color="#ff8c00">1</font>; k &lt;= l; k++) {<br>
+&nbsp;&nbsp; <font color="#b02f60"><b>for</b></font>&nbsp;(i = <font color="#ff8b00">1</font>; i &lt;= n; i++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#b02f60"><b>for</b></font>&nbsp;(j = <font color="#ff8b00">1</font>; j &lt;= m; j++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; acc = <font color="#ff8b00">0</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#b02f60"><b>for</b></font>(k = <font color="#ff8b00">1</font>; k &lt;= l; k++) {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mul(tmp, A(i,k), B(k,j));<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add(acc, acc, tmp);<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
@@ -318,8 +311,7 @@ using namespace NTL;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
 &nbsp;&nbsp; }<br>
 }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
