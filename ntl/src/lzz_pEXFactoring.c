@@ -924,11 +924,11 @@ void MulByXPlusY(vec_zz_pEX& h, const zz_pEX& f, const zz_pEX& g)
          mul(t, b, g.rep[i]);
          MulByXMod(h[i], h[i], f);
          add(h[i], h[i], h[i-1]);
-         add(h[i], h[i], t);
+         sub(h[i], h[i], t);
       }
       mul(t, b, g.rep[0]);
       MulByXMod(h[0], h[0], f);
-      add(h[0], h[0], t);
+      sub(h[0], h[0], t);
    }
 
    // normalize

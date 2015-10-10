@@ -432,8 +432,8 @@ clean:
 #################################################################
 
 
-DIRNAME=ntl-5.3
-WINDIR=WinNTL-5_3
+DIRNAME=ntl-5.3.1
+WINDIR=WinNTL-5_3_1
 
 package:
 	sh unixify "$(SFILES)" "$(INCL)" "$(DOC)" 
