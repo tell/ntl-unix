@@ -429,6 +429,8 @@ void RandomBasisElt(GF2EX& g, const vec_long& D, const vec_GF2XVec& M)
          conv(v[j], t1);
       }
    }
+
+   g.normalize();
 }
 
 

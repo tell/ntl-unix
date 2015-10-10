@@ -265,6 +265,8 @@ void RandomBasisElt(ZZ_pX& g, const vec_long& D, const vec_ZZVec& M)
          conv(v[j], t1);
       }
    }
+
+   g.normalize();
 }
 
 

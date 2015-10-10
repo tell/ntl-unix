@@ -931,11 +931,76 @@ void SqrRootMod(ZZ& x, const ZZ& aa, const ZZ& nn)
       return;
    }
 
-   // at this point, we msut have nn >= 5
+   // at this point, we must have nn >= 5
+
+   if (trunc_long(nn, 2) == 3) {  // special case, n = 3 (mod 4)
+      ZZ n, a, e, z;
+
+      n = nn;
+      a  = aa;
+
+      add(e, n, 1);
+      RightShift(e, e, 2);
+
+      PowerMod(z, a, e, n);
+      x = z;
+
+      return;
+   }
+
+   ZZ n, m;
+   int h, nlen;
+
+   n = nn;
+   nlen = NumBits(n);
+
+   sub(m, n, 1);
+   h = MakeOdd(m);  // h >= 2
+
+
+   if (nlen > 50 && h < SqrRoot(nlen)) {
+      long i, j;
+      ZZ a, b, a_inv, c, r, m1, d;
+
+      a = aa;
+      InvMod(a_inv, a, n);
+
+      if (h == 2) 
+         b = 2;
+      else {
+         do {
+            RandomBnd(b, n);
+         } while (Jacobi(b, n) != -1);
+      }
+
+
+      PowerMod(c, b, m, n);
+      
+      add(m1, m, 1);
+      RightShift(m1, m1, 1);
+      PowerMod(r, a, m1, n);
+
+      for (i = h-2; i >= 0; i--) {
+         SqrMod(d, r, n);
+         MulMod(d, d, a_inv, n);
+         for (j = 0; j < i; j++)
+            SqrMod(d, d, n);
+         if (!IsOne(d))
+            MulMod(r, r, c, n);
+         SqrMod(c, c, n);
+      } 
+
+      x = r;
+      return;
+   } 
+
+
+
+
 
    long i, k;
-   ZZ ma, n, t, u, v, e;
-   ZZ t1, t2, t3;
+   ZZ ma, t, u, v, e;
+   ZZ t1, t2, t3, t4;
 
    n = nn;
    NegateMod(ma, aa, n);
@@ -960,15 +1025,21 @@ void SqrRootMod(ZZ& x, const ZZ& aa, const ZZ& nn)
    k = NumBits(e);
 
    for (i = k - 1; i >= 0; i--) {
-      SqrMod(t1, u, n);
-      SqrMod(t2, v, n);
-      MulMod(t3, u, v, n);
-      MulMod(t3, t3, 2, n);
-      MulMod(u, t1, t, n);
-      AddMod(u, u, t3, n);
-      MulMod(v, t1, ma, n);
-      AddMod(v, v, t2, n);
+      add(t2, u, v);
+      sqr(t3, t2);  // t3 = (u+v)^2
+      sqr(t1, u);
+      sqr(t2, v);
+      sub(t3, t3, t1);
+      sub(t3, t3, t2); // t1 = u^2, t2 = v^2, t3 = 2*u*v
+      rem(t1, t1, n);
+      mul(t4, t1, t);
+      add(t4, t4, t3);
+      rem(u, t4, n);
 
+      mul(t4, t1, ma);
+      add(t4, t4, t2);
+      rem(v, t4, n);
+      
       if (bit(e, i)) {
          MulMod(t1, u, t, n);
          AddMod(t1, t1, v, n);

@@ -385,7 +385,7 @@ void sqr(GF2EX& x, const GF2EX& a)
       return;
    }
 
-   x.rep.SetLength(2*(da+1));
+   x.rep.SetLength(2*da+1);
    long i;
 
    for (i = da; i > 0; i--) {

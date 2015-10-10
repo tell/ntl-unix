@@ -257,6 +257,8 @@ void RandomBasisElt(zz_pX& g, const vec_long& D,
          v[j] = t1;
       }
    }
+
+   g.normalize();
 }
 
 
