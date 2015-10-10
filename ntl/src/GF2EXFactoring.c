@@ -1567,7 +1567,7 @@ void BuildIrred(GF2EX& f, long n)
    if (n <= 0)
       Error("BuildIrred: n must be positive");
 
-   if (n >= (1L << (NTL_BITS_PER_LONG-4)))
+   if (NTL_OVERFLOW(n, 1, 0))
       Error("overflow in BuildIrred");
 
    if (n == 1) {
@@ -1590,7 +1590,7 @@ void BuildIrred(GF2EX& f, long n)
    if (n <= 0)
       Error("BuildIrred: n must be positive");
 
-   if (n >= (1L << (NTL_BITS_PER_LONG-4)))
+   if (NTL_OVERFLOW(n, 1, 0))
       Error("overflow in BuildIrred");
 
    if (n == 1) {
@@ -1643,8 +1643,7 @@ static long use_files;
 static
 double CalcTableSize(long n, long k)
 {
-   double sz = GF2E::WordLength()+4;
-   sz = sz * sizeof(_ntl_ulong);
+   double sz = GF2E::storage();
    sz = sz * n;
    sz = sz + NTL_VECTOR_HEADER_SIZE + sizeof(vec_GF2E);
    sz = sz * k;

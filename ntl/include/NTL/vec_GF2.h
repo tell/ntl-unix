@@ -75,6 +75,7 @@ public:
 
    long length() const { return _len; }
    long MaxLength() const { return _maxlen >> 1; }  
+   long allocated() const { return rep.MaxLength() * NTL_BITS_PER_LONG; }
    long fixed() const { return _maxlen & 1; }
 
 

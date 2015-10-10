@@ -1,9 +1,38 @@
 
 #include <NTL/ZZ_pX.h>
+#include <NTL/lzz_pX.h>
 
 #include <NTL/version.h>
 
 NTL_CLIENT
+
+
+
+int SmallModulusTest(long p, long n)
+{
+   zz_pBak bak;
+
+   bak.save();
+
+
+   zz_p::init(p);
+
+   zz_pX a, b, c, cc;
+
+   random(a, n);
+   random(b, n);
+   PlainMul(c, a, b);
+   FFTMul(cc, a, b);
+
+   int res;
+   res = (c != cc);
+
+   bak.restore();
+
+   return res;
+}
+
+
 
 
 int main()
@@ -87,6 +116,14 @@ int main()
    cerr << "NTL_NO_INIT_TRANS ";
 #endif
 
+#ifdef NTL_CLEAN_INT
+   cerr << "NTL_CLEAN_INT ";
+#endif
+
+#ifdef NTL_CLEAN_PTR
+   cerr << "NTL_CLEAN_PTR ";
+#endif
+
 #ifdef NTL_RANGE_CHECK
    cerr << "NTL_RANGE_CHECK ";
 #endif
@@ -147,6 +184,21 @@ int main()
    }
    else if (r1 != r3) {
       cerr << "r1 != r3!!\n";
+      return 1;
+   }
+
+
+   // small prime tests...I've made some changes in v5.3
+   // that should be checked on various platforms, so 
+   // we might as well check them here.
+
+   if (SmallModulusTest(17, 1000)) {
+      cerr << "first SmallModulusTest failed!!\n";
+      return 1;
+   }
+
+   if (SmallModulusTest((1L << (NTL_SP_NBITS))-1, 1000)) {
+      cerr << "second SmallModulusTest failed!!\n";
       return 1;
    }
 

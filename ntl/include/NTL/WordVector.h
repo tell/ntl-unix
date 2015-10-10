@@ -4,7 +4,7 @@
 
 /**************************************************************
 
-  A WordVector is essentially functionally similar to
+  A WordVector is functionally similar to
   a  generic NTL vector of _ntl_ulong.  
 
   Be careful! the MaxLength() function does not return 
@@ -135,6 +135,18 @@ long InnerProduct(const WordVector& a, const WordVector& b);
 
 void ShiftAdd(_ntl_ulong *cp, const _ntl_ulong* ap, long sa, long n);
 // cp = cp + (a << n)
+
+
+long WV_BlockConstructAlloc(WordVector& x, long d, long n);
+ 
+void WV_BlockConstructSet(WordVector& x, WordVector& y, long i);
+ 
+long WV_BlockDestroy(WordVector& x);
+
+long WV_storage(long d);
+
+
+
 
 
 NTL_CLOSE_NNS

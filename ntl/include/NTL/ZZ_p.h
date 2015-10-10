@@ -9,7 +9,7 @@
 NTL_OPEN_NNS
 
 
-// _ZZ_p__representation:  each ZZ_p is represented by a ZZ in the range 0..p-1.
+// ZZ_p representation:  each ZZ_p is represented by a ZZ in the range 0..p-1.
 
 // The constructor for a ZZ_p pre-allocates space for the underlying ZZ,
 // and initializes it to zero.

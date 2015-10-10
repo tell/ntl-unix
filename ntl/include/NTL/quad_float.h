@@ -242,7 +242,7 @@ inline quad_float power2_quad_float(long e)
 
 
 long to_long(const quad_float&);
-inline int to_int(const quad_float& x) { return int(to_long(x)); }
+inline int to_int(const quad_float& x) { return to_int(to_long(x)); }
 
 inline double to_double(const quad_float& x) { return x.hi; }
 

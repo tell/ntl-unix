@@ -175,7 +175,7 @@ void SetX(ZZ_pX& x);
 // x is set to the monomial X
 
 long IsX(const ZZ_pX& a);
-// test if x = X
+// test if a = X
 
 inline void clear(ZZ_pX& x) 
 // x = 0

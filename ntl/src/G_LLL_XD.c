@@ -834,8 +834,9 @@ void ComputeG_BKZThresh(xdouble *c, long beta)
 
 
 static 
-void G_BKZStatus(double tt, double enum_time, long NumIterations, 
-               long NumTrivial, long NumNonTrivial, long NumNoOps, long m, 
+void G_BKZStatus(double tt, double enum_time, unsigned long NumIterations, 
+               unsigned long NumTrivial, unsigned long NumNonTrivial, 
+               unsigned long NumNoOps, long m, 
                const mat_ZZ& B)
 {
    cerr << "---- G_BKZ_XD status ----\n";
@@ -1011,10 +1012,10 @@ long G_BKZ_XD(mat_ZZ& BB, mat_ZZ* UU, xdouble delta,
    double tt;
 
    double enum_time = 0;
-   long NumIterations = 0;
-   long NumTrivial = 0;
-   long NumNonTrivial = 0;
-   long NumNoOps = 0;
+   unsigned long NumIterations = 0;
+   unsigned long NumTrivial = 0;
+   unsigned long NumNonTrivial = 0;
+   unsigned long NumNoOps = 0;
 
    long verb = verbose;
 

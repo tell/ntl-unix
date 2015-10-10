@@ -55,10 +55,10 @@ void CopyPointer(zz_pEInfoPtr& dst, zz_pEInfoPtr src)
    }
 
    if (src) {
-      src->ref_count++;
-
-      if (src->ref_count < 0) 
+      if (src->ref_count == NTL_MAX_LONG) 
          Error("internal error: zz_pEContext ref_count overflow");
+
+      src->ref_count++;
    }
 
    dst = src;

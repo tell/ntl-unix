@@ -49,7 +49,7 @@ NTL_SNS istream& operator>>(NTL_SNS istream& l__s, pair_S_T& l__x)  \
    if (!l__s) NTL_NNS Error("bad pair input");  \
   \
    l__c = l__s.peek();  \
-   while (l__c == ' ' || l__c == '\n' || l__c == '\t') {  \
+   while (NTL_NNS IsWhiteSpace(l__c)) {  \
       l__s.get();  \
       l__c = l__s.peek();  \
    }  \
@@ -65,7 +65,7 @@ NTL_SNS istream& operator>>(NTL_SNS istream& l__s, pair_S_T& l__x)  \
       NTL_NNS Error("bad pair input");  \
   \
    l__c = l__s.peek();  \
-   while (l__c == ' ' || l__c == '\n' || l__c == '\t') {  \
+   while (NTL_NNS IsWhiteSpace(l__c)) {  \
       l__s.get();  \
       l__c = l__s.peek();  \
    }  \

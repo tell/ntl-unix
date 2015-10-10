@@ -13,7 +13,7 @@ void vec_GF2::SetLength(long n)
 
    if (n < 0) Error("negative length in vec_GF2::SetLength");
 
-   if (n >= (1L << (NTL_BITS_PER_LONG-4)))
+   if (NTL_OVERFLOW(n, 1, 0))
       Error("vec_GF2::SetLength: excessive length");
 
    if (fixed()) Error("SetLength: can't change this vector's length");
@@ -231,7 +231,7 @@ istream & operator>>(istream& s, vec_GF2& a)
    if (!s) Error("bad vec_GF2 input"); 
    
    c = s.peek();  
-   while (c == ' ' || c == '\n' || c == '\t') {  
+   while (IsWhiteSpace(c)) {  
       s.get();  
       c = s.peek();  
    }  
@@ -246,7 +246,7 @@ istream & operator>>(istream& s, vec_GF2& a)
       
    s.get();  
    c = s.peek();  
-   while (c == ' ' || c == '\n' || c == '\t') {  
+   while (IsWhiteSpace(c)) {  
       s.get();  
       c = s.peek();  
    }  
@@ -257,7 +257,7 @@ istream & operator>>(istream& s, vec_GF2& a)
 
       c = s.peek();  
 
-      while (c == ' ' || c == '\n' || c == '\t') {  
+      while (IsWhiteSpace(c)) {  
          s.get();  
          c = s.peek();  
       }  
@@ -454,7 +454,7 @@ void shift(vec_GF2& x, const vec_GF2& a, long n)
 
 
 
-// This code is simply canibalized from BB.c...
+// This code is simply canibalized from GF2X.c...
 // so much for "code re-use" and "modularity"
 
 static _ntl_ulong revtab[256] = {
@@ -486,7 +486,8 @@ static _ntl_ulong revtab[256] = {
 15UL, 143UL, 79UL, 207UL, 47UL, 175UL, 111UL, 239UL, 31UL, 159UL, 
 95UL, 223UL, 63UL, 191UL, 127UL, 255UL  }; 
 
-inline _ntl_ulong rev1(_ntl_ulong a)
+static inline 
+_ntl_ulong rev1(_ntl_ulong a)
 {
    return NTL_BB_REV_CODE;
 }
@@ -531,7 +532,8 @@ void reverse(vec_GF2& c, const vec_GF2& a)
       cp[i] = rev1(cp[i]);
 }
 
-static long weight1(_ntl_ulong a)
+static 
+long weight1(_ntl_ulong a)
 {
    long res = 0;
    while (a) {
@@ -577,7 +579,7 @@ void random(vec_GF2& x, long n)
 void VectorCopy(vec_GF2& x, const vec_GF2& a, long n)
 {
    if (n < 0) Error("VectorCopy: negative length");
-   if (n >= (1L << (NTL_BITS_PER_LONG-4))) Error("overflow in VectorCopy");
+   if (NTL_OVERFLOW(n, 1, 0)) Error("overflow in VectorCopy");
 
    long m = min(n, a.length());
 

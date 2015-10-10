@@ -115,6 +115,8 @@ GF2X& LoopHole() { return _GF2E__rep; }
 
 static long WordLength() { return GF2EInfo->p.WordLength(); }
 
+static long storage() { return WV_storage(GF2E::WordLength()); }
+
 static const GF2XModulus& modulus() { return GF2EInfo->p; }
 
 static long KarCross() { return GF2EInfo->KarCross; }
@@ -133,7 +135,7 @@ static void init(const GF2X& NewP);
 
 
 
-// read-only access to _GF2E__representation
+// read-only access to GF2E representation
 inline const GF2X& rep(const GF2E& a) { return a._GF2E__rep; }
 
 inline void clear(GF2E& x)

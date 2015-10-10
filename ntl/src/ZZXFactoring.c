@@ -390,7 +390,7 @@ void MultiLift(vec_ZZX& A, const vec_zz_pX& a, const ZZX& f, long e,
    long k = a.length();
    long i;
 
-   if (k < 2 || e < 1) Error("MultiLift: bad args");
+   if (k < 2 || e < 1 || NTL_OVERFLOW(e, 1, 0)) Error("MultiLift: bad args");
 
    if (!IsOne(LeadCoeff(f)))
       Error("MultiLift: bad args");
@@ -1508,7 +1508,8 @@ void RemoveFactors1(vec_vec_long& W, const vec_long& I, long r)
 // should this swap go in tools.h?
 // Maybe not...I don't want to pollute the interface too much more.
 
-inline void swap(unsigned long& a, unsigned long& b)  
+static inline 
+void swap(unsigned long& a, unsigned long& b)  
    { unsigned long t;  t = a; a = b; b = t; }
 
 static

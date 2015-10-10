@@ -82,6 +82,7 @@ static void InitZZIO()
 istream& operator>>(istream& s, ZZ& x)
 {
    long c;
+   long cval;
    long sign;
    long ndigits;
    long acc;
@@ -93,11 +94,8 @@ istream& operator>>(istream& s, ZZ& x)
 
    a = 0;
 
+   SkipWhiteSpace(s);
    c = s.peek();
-   while (c == ' ' || c == '\n' || c == '\t') {
-      s.get();
-      c = s.peek();
-   }
 
    if (c == '-') {
       sign = -1;
@@ -107,12 +105,14 @@ istream& operator>>(istream& s, ZZ& x)
    else
       sign = 1;
 
-   if (c < '0' || c > '9') Error("bad ZZ input");
+   cval = CharToIntVal(c);
+
+   if (cval < 0 || cval > 9) Error("bad ZZ input");
 
    ndigits = 0;
    acc = 0;
-   while (c >= '0' && c <= '9') {
-      acc = acc*10 + c - '0';
+   while (cval >= 0 && cval <= 9) {
+      acc = acc*10 + cval;
       ndigits++;
 
       if (ndigits == iodigits) {
@@ -124,6 +124,7 @@ istream& operator>>(istream& s, ZZ& x)
 
       s.get();
       c = s.peek();
+      cval = CharToIntVal(c);
    }
 
    if (ndigits != 0) {
@@ -145,31 +146,36 @@ istream& operator>>(istream& s, ZZ& x)
    return s;
 }
 
-struct lstack {
+
+// The class _ZZ_local_stack should be defined in an empty namespace,
+// but since I don't want to rely on namespaces, we just give it a funny 
+// name to avoid accidental name clashes.
+
+struct _ZZ_local_stack {
    long top;
    long alloc;
    long *elts;
 
-   lstack() { top = -1; alloc = 0; elts = 0; }
-   ~lstack() { }
+   _ZZ_local_stack() { top = -1; alloc = 0; elts = 0; }
+   ~_ZZ_local_stack() { }
 
    long pop() { return elts[top--]; }
    long empty() { return (top == -1); }
    void push(long x);
 };
 
-void lstack::push(long x)
+void _ZZ_local_stack::push(long x)
 {
    if (alloc == 0) {
       alloc = 100;
-      elts = (long *) malloc(alloc * sizeof(long));
+      elts = (long *) NTL_MALLOC(alloc, sizeof(long), 0);
    }
 
    top++;
 
    if (top + 1 > alloc) {
       alloc = 2*alloc;
-      elts = (long *) realloc(elts, alloc * sizeof(long));
+      elts = (long *) NTL_REALLOC(elts, alloc, sizeof(long), 0);
    }
 
    if (!elts) {
@@ -186,14 +192,14 @@ void PrintDigits(ostream& s, long d, long justify)
    static char *buf = 0;
 
    if (!buf) {
-      buf = (char *) malloc(iodigits);
+      buf = (char *) NTL_MALLOC(iodigits, 1, 0);
       if (!buf) Error("out of memory");
    }
 
    long i = 0;
 
    while (d) {
-      buf[i] = (d % 10) + '0';
+      buf[i] = IntValToChar(d % 10);
       d = d / 10;
       i++;
    }
@@ -218,7 +224,7 @@ void PrintDigits(ostream& s, long d, long justify)
 ostream& operator<<(ostream& s, const ZZ& a)
 {
    static ZZ b;
-   static lstack S;
+   static _ZZ_local_stack S;
    long r;
    long k;
 
@@ -260,14 +266,16 @@ long GCD(long a, long b)
 {
    long u, v, t, x;
 
-   if (a < 0)
+   if (a < 0) {
+      if (a < -NTL_MAX_LONG) Error("GCD: integer overflow");
       a = -a;
+   }
 
-   if (b < 0)
+   if (b < 0) {
+      if (b < -NTL_MAX_LONG) Error("GCD: integer overflow");
       b = -b;
+   }
 
-   if (a < 0 || b < 0)
-      Error("GCD: integer overflow");
 
    if (b==0)
       x = a;
@@ -295,17 +303,16 @@ void XGCD(long& d, long& s, long& t, long a, long b)
    long aneg = 0, bneg = 0;
 
    if (a < 0) {
+      if (a < -NTL_MAX_LONG) Error("XGCD: integer overflow");
       a = -a;
       aneg = 1;
    }
 
    if (b < 0) {
+      if (b < -NTL_MAX_LONG) Error("XGCD: integer overflow");
       b = -b;
       bneg = 1;
    }
-
-   if (a < 0 || b < 0)
-      Error("XGCD: integer overflow");
 
    u1=1; v1=0;
    u2=0; v2=1;
@@ -356,7 +363,7 @@ long PowerMod(long a, long ee, long n)
    unsigned long e;
 
    if (ee < 0)
-      e = -ee;
+      e = - ((unsigned long) ee);
    else
       e = ee;
 
@@ -596,15 +603,21 @@ long NextPrime(long m, long NumTrials)
 long NextPowerOfTwo(long m)
 {
    long k; 
-   long n;
+   unsigned long n, um;
+
+   if (m < 0) return 0;
+
+   um = m;
    n = 1;
    k = 0;
-   while (n < m && n >= 0) {
+
+   while (n < um) {
       n = n << 1;
       k++;
    }
 
-   if (n < 0) Error("NextPowerOfTwo: overflow");
+   if (k >= NTL_BITS_PER_LONG-1)
+      Error("NextPowerOfTwo: overflow");
 
    return k;
 }
@@ -812,7 +825,7 @@ void PrimeSeq::shift(long newshift)
    } 
    else {
       if (!movesieve_mem) {
-         movesieve_mem = (char *) malloc(NTL_PRIME_BND);
+         movesieve_mem = (char *) NTL_MALLOC(NTL_PRIME_BND, 1, 0);
          if (!movesieve_mem) 
             Error("out of memory in PrimeSeq");
       }
@@ -848,7 +861,7 @@ void PrimeSeq::start()
    long ibnd;
    char *p;
 
-   p = lowsieve = (char *) malloc(NTL_PRIME_BND);
+   p = lowsieve = (char *) NTL_MALLOC(NTL_PRIME_BND, 1, 0);
    if (!p)
       Error("out of memory in PrimeSeq");
 
@@ -1140,6 +1153,7 @@ void power2(ZZ& x, long e)
 void conv(ZZ& x, const char *s)
 {
    long c;
+   long cval;
    long sign;
    long ndigits;
    long acc;
@@ -1154,7 +1168,7 @@ void conv(ZZ& x, const char *s)
    a = 0;
 
    c = s[i];
-   while (c == ' ' || c == '\n' || c == '\t') {
+   while (IsWhiteSpace(c)) {
       i++;
       c = s[i];
    }
@@ -1167,12 +1181,13 @@ void conv(ZZ& x, const char *s)
    else
       sign = 1;
 
-   if (c < '0' || c > '9') Error("bad ZZ input");
+   cval = CharToIntVal(c);
+   if (cval < 0 || cval > 9) Error("bad ZZ input");
 
    ndigits = 0;
    acc = 0;
-   while (c >= '0' && c <= '9') {
-      acc = acc*10 + c - '0';
+   while (cval >= 0 && cval <= 9) {
+      acc = acc*10 + cval;
       ndigits++;
 
       if (ndigits == iodigits) {
@@ -1184,6 +1199,7 @@ void conv(ZZ& x, const char *s)
 
       i++;
       c = s[i];
+      cval = CharToIntVal(c);
    }
 
    if (ndigits != 0) {
@@ -1241,13 +1257,17 @@ long power_long(long a, long e)
          return 1;
    }
 
-   long res = 1;
+   // no overflow check --- result is computed correctly
+   // modulo word size
+
+   unsigned long res = 1;
+   unsigned long aa = a;
    long i;
 
    for (i = 0; i < e; i++)
-      res *= a;
+      res *= aa;
 
-   return res;
+   return to_long(res);
 }
 
 //  RANDOM NUMBER GENERATION
@@ -1523,7 +1543,7 @@ void MD5_compress1(unsigned long *buf, unsigned char *in, long n)
 
 // the "cipherpunk" version of arc4 
 
-struct arc4_key
+struct _ZZ_arc4_key
 {      
     unsigned char state[256];       
     unsigned char x;        
@@ -1531,7 +1551,7 @@ struct arc4_key
 };
 
 
-inline
+static inline
 void swap_byte(unsigned char *a, unsigned char *b)
 {
     unsigned char swapByte; 
@@ -1543,7 +1563,7 @@ void swap_byte(unsigned char *a, unsigned char *b)
 
 static
 void prepare_key(unsigned char *key_data_ptr, 
-                 long key_data_len, arc4_key *key)
+                 long key_data_len, _ZZ_arc4_key *key)
 {
     unsigned char index1;
     unsigned char index2;
@@ -1569,7 +1589,7 @@ void prepare_key(unsigned char *key_data_ptr,
 
 
 static
-void arc4(unsigned char *buffer_ptr, long buffer_len, arc4_key *key)
+void arc4(unsigned char *buffer_ptr, long buffer_len, _ZZ_arc4_key *key)
 { 
     unsigned char x;
     unsigned char y;
@@ -1598,7 +1618,7 @@ void arc4(unsigned char *buffer_ptr, long buffer_len, arc4_key *key)
 // global state information for PRNG
 
 static long ran_initialized = 0;
-static arc4_key ran_key;
+static _ZZ_arc4_key ran_key;
 
 static unsigned long default_md5_tab[16] = {
 744663023UL, 1011602954UL, 3163087192UL, 3383838527UL, 
@@ -1608,6 +1628,8 @@ static unsigned long default_md5_tab[16] = {
 };
 
 
+
+static
 void build_arc4_tab(unsigned char *seed_bytes, const ZZ& s)
 {
    long nb = NumBytes(s);
@@ -1615,19 +1637,22 @@ void build_arc4_tab(unsigned char *seed_bytes, const ZZ& s)
    unsigned char *txt;
 
    typedef unsigned char u_char;
-   txt = NTL_NEW_OP u_char[nb + 64];
+   txt = NTL_NEW_OP u_char[nb + 68];
    if (!txt) Error("out of memory");
 
-   BytesFromZZ(txt, s, nb);
+   BytesFromZZ(txt + 4, s, nb);
 
-   bytes_from_words(txt+nb, default_md5_tab, 16);
+   bytes_from_words(txt + nb + 4, default_md5_tab, 16);
 
    unsigned long buf[4];
-   MD5_default_IV(buf);
 
-   long i;
+   unsigned long i;
    for (i = 0; i < 16; i++) {
-      MD5_compress1(buf, txt, nb + 64);
+      MD5_default_IV(buf);
+      bytes_from_words(txt, &i, 1);
+
+      MD5_compress1(buf, txt, nb + 68);
+
       bytes_from_words(seed_bytes + 16*i, buf, 4);
    }
 
@@ -1642,7 +1667,12 @@ void SetSeed(const ZZ& s)
    build_arc4_tab(seed_bytes, s);
    prepare_key(seed_bytes, 256, &ran_key);
 
-   // it is recommended to discard the first few bytes of an arc4 stream
+   // we discard the first 1024 bytes of the arc4 stream, as this is
+   // recommended practice.
+
+   arc4(seed_bytes, 256, &ran_key);
+   arc4(seed_bytes, 256, &ran_key);
+   arc4(seed_bytes, 256, &ran_key);
    arc4(seed_bytes, 256, &ran_key);
 
    ran_initialized = 1;
@@ -1738,7 +1768,7 @@ void RandomBits(ZZ& x, long l)
       return;
    }
 
-   if (l >= (1L << (NTL_BITS_PER_LONG-4)))
+   if (NTL_OVERFLOW(l, 1, 0))
       Error("RandomBits: length too big");
 
    long nb = (l+7)/8;
@@ -1776,7 +1806,7 @@ void RandomLen(ZZ& x, long l)
       return;
    }
 
-   if (l >= (1L << (NTL_BITS_PER_LONG-4)))
+   if (NTL_OVERFLOW(l, 1, 0))
       Error("RandomLen: length too big");
 
    // pre-allocate space to avoid two allocations

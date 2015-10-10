@@ -43,6 +43,7 @@ public:  \
   \
   \
    long position(const vec_T& l__a) const { return _mat__rep.position(l__a); } \
+   long position1(const vec_T& l__a) const { return _mat__rep.position1(l__a); } \
   mat_T(mat_T& l__x, NTL_NNS INIT_TRANS_TYPE) :  \
     _mat__rep(l__x._mat__rep, NTL_NNS INIT_TRANS), _mat__numcols(l__x._mat__numcols) { }  \
 };  \

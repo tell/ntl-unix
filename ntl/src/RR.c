@@ -14,7 +14,7 @@ void RR::SetPrecision(long p)
    if (p < 53)
       p = 53;
 
-   if (p >= (1L << (NTL_BITS_PER_LONG-4)))
+   if (NTL_OVERFLOW(p, 1, 0))
       Error("RR: precision too high");
 
    prec = p;
@@ -27,7 +27,7 @@ void RR::SetOutputPrecision(long p)
    if (p < 1)
       p = 1;
 
-   if (p >= (1L << (NTL_BITS_PER_LONG-4)))
+   if (NTL_OVERFLOW(p, 1, 0))
       Error("RR: output precision too high");
 
    oprec = p;
@@ -62,10 +62,10 @@ void normalize1(RR& z, const ZZ& y_x, long y_e, long prec, long residual)
    if (!IsOdd(z.x))
       z.e += MakeOdd(z.x);
 
-   if (z.e >= (1L << (NTL_BITS_PER_LONG-4)))
+   if (z.e >= NTL_OVFBND)
       Error("RR: overflow");
 
-   if (z.e <= -(1L << (NTL_BITS_PER_LONG-4)))
+   if (z.e <= -NTL_OVFBND)
       Error("RR: underflow");
 }
 
@@ -76,13 +76,24 @@ void normalize(RR& z, const RR& y, long residual = 0)
 
 void MakeRR(RR& z, const ZZ& a,  long e)
 {
-   if (e >= (1L << (NTL_BITS_PER_LONG-4)))
+   if (e >= NTL_OVFBND)
       Error("MakeRR: e too big");
 
-   if (e <= -(1L << (NTL_BITS_PER_LONG-4)))
+   if (e <= -NTL_OVFBND)
       Error("MakeRR: e too small");
 
    normalize1(z, a, e, RR::prec, 0);
+}
+
+void MakeRRPrec(RR& x, const ZZ& a, long e, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("MakeRRPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   MakeRR(x, a, e);
+   RR::prec = old_p;
 }
 
 void random(RR& z)
@@ -94,22 +105,28 @@ void random(RR& z)
 }
 
 
-inline void xcopy(RR& x, const RR& a)
+static inline 
+void xcopy(RR& x, const RR& a)
    { normalize(x, a); }
 
 // xcopy emulates old assignment semantics...
 // many routines here implicitly assume assignment normalizes,
 // but that is no longer the case as of v3.0.
 
-void RoundToPrecision(RR& x, const RR& a, long p)
+void ConvPrec(RR& x, const RR& a, long p)
 {
-   if (p < 1 || p >= (1L << (NTL_BITS_PER_LONG-4)))
-      Error("RoundToPrecision: bad precsion");
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("ConvPrec: bad precsion");
 
    long old_p = RR::prec;
    RR::prec = p;
    normalize(x, a);
    RR::prec = old_p;
+}
+
+void RoundToPrecision(RR& x, const RR& a, long p)
+{
+   ConvPrec(x, a, p);
 }
    
 
@@ -188,6 +205,17 @@ void add(RR& z, const RR& a, const RR& b)
    }
 }
 
+void AddPrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("AddPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   add(x, a, b);
+   RR::prec = old_p;
+}
+
 void sub(RR& z, const RR& a, const RR& b)
 {
    static RR t;
@@ -231,16 +259,49 @@ void sub(RR& z, const RR& a, const RR& b)
    }
 }
 
+void SubPrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("SubPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   sub(x, a, b);
+   RR::prec = old_p;
+}
+
 void negate(RR& z, const RR& a)
 {
    xcopy(z, a);
    negate(z.x, z.x);
 }
 
+void NegatePrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("NegatePrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   negate(x, a);
+   RR::prec = old_p;
+}
+
 void abs(RR& z, const RR& a)
 {
    xcopy(z, a);
    abs(z.x, z.x);
+}
+
+void AbsPrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("AbsPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   abs(x, a);
+   RR::prec = old_p;
 }
 
 
@@ -253,6 +314,18 @@ void mul(RR& z, const RR& a, const RR& b)
    xcopy(z, t);
 }
 
+void MulPrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("MulPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   mul(x, a, b);
+   RR::prec = old_p;
+}
+
+
 void sqr(RR& z, const RR& a)
 {
    static RR t;
@@ -261,6 +334,19 @@ void sqr(RR& z, const RR& a)
    t.e = a.e + a.e;
    xcopy(z, t);
 }
+
+void SqrPrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("SqrPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   sqr(x, a);
+   RR::prec = old_p;
+}
+
+
 
 void div(RR& z, const RR& a, const RR& b)
 {
@@ -297,6 +383,17 @@ void div(RR& z, const RR& a, const RR& b)
       negate(z.x, z.x);
 }
 
+void DivPrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("DivPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   div(x, a, b);
+   RR::prec = old_p;
+}
+
 void SqrRoot(RR& z, const RR& a)
 {
    if (sign(a) < 0)
@@ -324,7 +421,17 @@ void SqrRoot(RR& z, const RR& a)
 
    normalize(z, t, T2 < T1);
 }
-   
+
+void SqrRootPrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("SqrRootPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   SqrRoot(x, a);
+   RR::prec = old_p;
+}
 
 
 
@@ -339,7 +446,7 @@ long compare(const RR& a, const RR& b)
 {
    static RR t;
 
-   sub(t, a, b);
+   SubPrec(t, a, b, 1);
    return sign(t);
 }
 
@@ -364,6 +471,17 @@ void trunc(RR& z, const RR& a)
    }
 }
 
+void TruncPrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("TruncPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   trunc(x, a);
+   RR::prec = old_p;
+}
+
 void floor(RR& z, const RR& a)
 {
    static RR t;
@@ -379,6 +497,17 @@ void floor(RR& z, const RR& a)
    }
 }
 
+void FloorPrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("FloorPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   floor(x, a);
+   RR::prec = old_p;
+}
+
 void ceil(RR& z, const RR& a)
 {
    static RR t;
@@ -392,6 +521,17 @@ void ceil(RR& z, const RR& a)
       t.e = 0;
       xcopy(z, t);
    }
+}
+
+void CeilPrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("CeilPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   ceil(x, a);
+   RR::prec = old_p;
 }
 
 void round(RR& z, const RR& a)
@@ -418,8 +558,19 @@ void round(RR& z, const RR& a)
    }
 
    static RR t;
-   RoundToPrecision(t, a, len+a.e);
+   ConvPrec(t, a, len+a.e);
    xcopy(z, t);
+}
+
+void RoundPrec(RR& x, const RR& a, const RR& b, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("RoundPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   round(x, a);
+   RR::prec = old_p;
 }
 
 
@@ -429,6 +580,18 @@ void conv(RR& z, const ZZ& a)
 {
    normalize1(z, a, 0, RR::prec, 0);
 }
+
+void ConvPrec(RR& x, const ZZ& a, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("ConvPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   conv(x, a);
+   RR::prec = old_p;
+}
+
 
 void conv(RR& z, long a)
 {
@@ -447,6 +610,17 @@ void conv(RR& z, long a)
    conv(z, t);
 }
 
+void ConvPrec(RR& x, long a, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("ConvPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   conv(x, a);
+   RR::prec = old_p;
+}
+
 void conv(RR& z, unsigned long a)
 {
    if (a == 0) {
@@ -462,6 +636,17 @@ void conv(RR& z, unsigned long a)
    static ZZ t;
    conv(t, a);
    conv(z, t);
+}
+
+void ConvPrec(RR& x, unsigned long a, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("ConvPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   conv(x, a);
+   RR::prec = old_p;
 }
 
 
@@ -493,6 +678,17 @@ void conv(RR& z, double a)
    t.e = e - (NTL_DOUBLE_PRECISION + 1);
 
    xcopy(z, t);
+}
+
+void ConvPrec(RR& x, double a, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("ConvPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   conv(x, a);
+   RR::prec = old_p;
 }
 
 
@@ -554,7 +750,7 @@ void RoundToZZ(ZZ& z, const RR& a)
 
    static RR t;
 
-   RoundToPrecision(t, a, len+a.e);
+   ConvPrec(t, a, len+a.e);
 
    LeftShift(z, t.x, t.e);
 }
@@ -562,7 +758,7 @@ void RoundToZZ(ZZ& z, const RR& a)
 
 void conv(long& z, const RR& a)
 {
-   static ZZ t;
+   ZZ t;
    conv(t, a);
    conv(z, t);
 }
@@ -570,17 +766,13 @@ void conv(long& z, const RR& a)
 void conv(double& z, const RR& aa)
 {
    double x;
-   int e;
    static RR a;
 
-   RoundToPrecision(a, aa, NTL_DOUBLE_PRECISION);
+   ConvPrec(a, aa, NTL_DOUBLE_PRECISION);
    // round to NTL_DOUBLE_PRECISION bits to avoid double overflow
 
-   e = a.e;
-   if (e != a.e) Error("RR: overflow in conversion to double");
    conv(x, a.x);
-
-   z = ldexp(x, e);
+   z = _ntl_ldexp(x, a.e);
 }
 
 
@@ -638,6 +830,17 @@ void inv(RR& z, const RR& a)
    div(z, one, a);
 }
 
+void InvPrec(RR& x, const RR& a, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("InvPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   inv(x, a);
+   RR::prec = old_p;
+}
+
 
 long compare(const RR& a, double b)
 {
@@ -663,7 +866,6 @@ long operator==(const RR& a, double b)
 void power(RR& z, const RR& a, long e)
 {
    RR b, res;
-   long neg;
 
    long n = NumBits(e);
 
@@ -671,12 +873,6 @@ void power(RR& z, const RR& a, long e)
    RR::SetPrecision(p + n + 10);
 
    xcopy(b, a);
-   if (e < 0) {
-      e = -e;
-      neg = 1;
-   }
-   else
-      neg = 0;
 
    set(res);
    long i;
@@ -687,18 +883,19 @@ void power(RR& z, const RR& a, long e)
          mul(res, res, b);
    }
 
-   if (neg) 
+   RR::SetPrecision(p);
+
+   if (e < 0) 
       inv(z, res);
    else
       xcopy(z, res);
-
-   RR::SetPrecision(p);
 }
 
 
 istream& operator>>(istream& s, RR& x)
 {
    long c;
+   long cval;
    long sign;
    ZZ a, b;
 
@@ -706,7 +903,7 @@ istream& operator>>(istream& s, RR& x)
 
 
    c = s.peek();
-   while (c == ' ' || c == '\n' || c == '\t') {
+   while (IsWhiteSpace(c)) {
       s.get();
       c = s.peek();
    }
@@ -726,14 +923,17 @@ istream& operator>>(istream& s, RR& x)
    a = 0;
    b = 1;
 
-   if (c >= '0' && c <= '9') {
+   cval = CharToIntVal(c);
+
+   if (cval >= 0 && cval <= 9) {
       got1 = 1;
 
-      while (c >= '0' && c <= '9') {
+      while (cval >= 0 && cval <= 9) {
          mul(a, a, 10);
-         add(a, a, c-'0');
+         add(a, a, cval);
          s.get();
          c = s.peek();
+         cval = CharToIntVal(c);
       }
    }
 
@@ -742,16 +942,18 @@ istream& operator>>(istream& s, RR& x)
 
       s.get();
       c = s.peek();
+      cval = CharToIntVal(c);
 
-      if (c >= '0' && c <= '9') {
+      if (cval >= 0 && cval <= 9) {
          got2 = 1;
    
-         while (c >= '0' && c <= '9') {
+         while (cval >= 0 && cval <= 9) {
             mul(a, a, 10);
-            add(a, a, c-'0');
+            add(a, a, cval);
             mul(b, b, 10);
             s.get();
             c = s.peek();
+            cval = CharToIntVal(c);
          }
       }
    }
@@ -782,14 +984,17 @@ istream& operator>>(istream& s, RR& x)
       else
          e_sign = 1;
 
-      if (c < '0' || c > '9') Error("bad RR input");
+      cval = CharToIntVal(c);
+
+      if (cval < 0 || cval > 9) Error("bad RR input");
 
       e = 0;
-      while (c >= '0' && c <= '9') {
+      while (cval >= 0 && cval <= 9) {
          mul(e, e, 10);
-         add(e, e, c-'0');
+         add(e, e, cval);
          s.get();
          c = s.peek();
+         cval = CharToIntVal(c);
       }
    }
 
@@ -800,13 +1005,11 @@ istream& operator>>(istream& s, RR& x)
    long old_p = RR::precision();
 
    if (got1 || got2) {
-      RR::SetPrecision(max(NumBits(a), NumBits(b)));
-      conv(t1, a);
-      conv(t2, b);
+      ConvPrec(t1, a, max(NumBits(a), 1));
+      ConvPrec(t2, b, NumBits(b));
       if (got_e)
          RR::SetPrecision(old_p + 10);
-      else
-         RR::prec = old_p;
+
       div(v, t1, t2);
    }
    else
@@ -816,7 +1019,7 @@ istream& operator>>(istream& s, RR& x)
       negate(v, v);
 
    if (got_e) {
-      if (e >= (1L << (NTL_BITS_PER_LONG-4))) Error("RR input overflow");
+      if (e >= NTL_OVFBND) Error("RR input overflow");
       long E;
       conv(E, e);
       if (e_sign < 0) E = -E;
@@ -830,29 +1033,48 @@ istream& operator>>(istream& s, RR& x)
    return s;
 }
 
+void InputPrec(RR& x, istream& s, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("ConvPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   s >> x;
+   RR::prec = old_p;
+}
+
 
 void conv(RR& z, const xdouble& a)
 {
    conv(z, a.mantissa());
 
-   // the correctness of the following depends critically on
-   // the invariant:
-   //    abs(z.e) < (1L << (NTL_BITS_PER_LONG-4)) 
-
-   if (a.exponent() >  ((1L << (NTL_BITS_PER_LONG-3))/(2*NTL_XD_HBOUND_LOG))) 
+   if (a.exponent() >  ((2*NTL_OVFBND)/(2*NTL_XD_HBOUND_LOG))) 
       Error("RR: overlow");
 
-   if (a.exponent() < -((1L << (NTL_BITS_PER_LONG-3))/(2*NTL_XD_HBOUND_LOG))) 
+   if (a.exponent() < -((2*NTL_OVFBND)/(2*NTL_XD_HBOUND_LOG))) 
       Error("RR: underflow");
 
    z.e += a.exponent()*(2*NTL_XD_HBOUND_LOG);
 
-   if (z.e >= (1L << (NTL_BITS_PER_LONG-4)))
+   if (z.e >= NTL_OVFBND)
       Error("RR: overflow");
 
-   if (z.e <= -(1L << (NTL_BITS_PER_LONG-4)))
+   if (z.e <= -NTL_OVFBND)
       Error("RR: underflow");
 }
+
+void ConvPrec(RR& x, const xdouble& a, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("ConvPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   conv(x, a);
+   RR::prec = old_p;
+}
+
 
 
 void conv(xdouble& z, const RR& a)
@@ -867,10 +1089,10 @@ void conv(xdouble& z, const RR& a)
       
 void power2(RR& z, long e)
 {
-   if (e >= (1L << (NTL_BITS_PER_LONG-4)))
+   if (e >= NTL_OVFBND)
       Error("RR: overflow");
 
-   if (e <= -(1L << (NTL_BITS_PER_LONG-4)))
+   if (e <= -NTL_OVFBND)
       Error("RR: underflow");
 
    set(z.x); 
@@ -881,17 +1103,23 @@ void conv(RR& z, const quad_float& a)
 {
    static RR hi, lo, res;
 
-   long old_p = RR::prec;
-   RR::prec = NTL_DOUBLE_PRECISION;
-
-   conv(hi, a.hi);
-   conv(lo, a.lo);
-
-   RR::prec = old_p;
+   ConvPrec(hi, a.hi, NTL_DOUBLE_PRECISION);
+   ConvPrec(lo, a.lo, NTL_DOUBLE_PRECISION);
 
    add(res, hi, lo);
 
    z = res;
+}
+
+void ConvPrec(RR& x, const quad_float& a, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("ConvPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   conv(x, a);
+   RR::prec = old_p;
 }
 
 
@@ -902,20 +1130,17 @@ void conv(quad_float& z, const RR& a)
 
    old_p = RR::prec;
 
-   RR::prec = NTL_DOUBLE_PRECISION;
-
-   conv(a_hi, a);  // high order bits
-   sub(a_lo, a, a_hi);  // low order bits
+   ConvPrec(a_hi, a, NTL_DOUBLE_PRECISION);  // high order bits
+   SubPrec(a_lo, a, a_hi, NTL_DOUBLE_PRECISION);  // low order bits
 
    z = to_quad_float(a_hi.x)*power2_quad_float(a_hi.e) +
        to_quad_float(a_lo.x)*power2_quad_float(a_lo.e);
-
-   RR::prec = old_p;
 }
 
 void conv(RR& x, const char *s)
 {
    long c;
+   long cval;
    long sign;
    ZZ a, b;
    long i = 0;
@@ -924,7 +1149,7 @@ void conv(RR& x, const char *s)
 
 
    c = s[i];
-   while (c == ' ' || c == '\n' || c == '\t') {
+   while (IsWhiteSpace(c)) {
       i++;
       c = s[i];
    }
@@ -944,14 +1169,17 @@ void conv(RR& x, const char *s)
    a = 0;
    b = 1;
 
-   if (c >= '0' && c <= '9') {
+   cval = CharToIntVal(c);
+
+   if (cval >= 0 && cval <= 9) {
       got1 = 1;
 
-      while (c >= '0' && c <= '9') {
+      while (cval >= 0 && cval <= 9) {
          mul(a, a, 10);
-         add(a, a, c-'0');
+         add(a, a, cval);
          i++;
          c = s[i];
+         cval = CharToIntVal(c);
       }
    }
 
@@ -960,16 +1188,18 @@ void conv(RR& x, const char *s)
 
       i++;
       c = s[i];
+      cval = CharToIntVal(c);
 
-      if (c >= '0' && c <= '9') {
+      if (cval >= 0 && cval <= 9) {
          got2 = 1;
    
-         while (c >= '0' && c <= '9') {
+         while (cval >= 0 && cval <= 9) {
             mul(a, a, 10);
-            add(a, a, c-'0');
+            add(a, a, cval);
             mul(b, b, 10);
             i++;
             c = s[i];
+            cval = CharToIntVal(c);
          }
       }
    }
@@ -1000,14 +1230,18 @@ void conv(RR& x, const char *s)
       else
          e_sign = 1;
 
-      if (c < '0' || c > '9') Error("bad RR input");
+
+      cval = CharToIntVal(c);
+
+      if (cval < 0 || cval > 9) Error("bad RR input");
 
       e = 0;
-      while (c >= '0' && c <= '9') {
+      while (cval >= 0 && cval <= 9) {
          mul(e, e, 10);
-         add(e, e, c-'0');
+         add(e, e, cval);
          i++;
          c = s[i];
+         cval = CharToIntVal(c);
       }
    }
 
@@ -1018,13 +1252,11 @@ void conv(RR& x, const char *s)
    long old_p = RR::precision();
 
    if (got1 || got2) {
-      RR::SetPrecision(max(NumBits(a), NumBits(b)));
-      conv(t1, a);
-      conv(t2, b);
+      ConvPrec(t1, a, max(NumBits(a), 1));
+      ConvPrec(t2, b, NumBits(b));
       if (got_e)
          RR::SetPrecision(old_p + 10);
-      else
-         RR::prec = old_p;
+
       div(v, t1, t2);
    }
    else
@@ -1034,7 +1266,7 @@ void conv(RR& x, const char *s)
       negate(v, v);
 
    if (got_e) {
-      if (e >= (1L << (NTL_BITS_PER_LONG-4))) Error("RR input overflow");
+      if (e >= NTL_OVFBND) Error("RR input overflow");
       long E;
       conv(E, e);
       if (e_sign < 0) E = -E;
@@ -1045,6 +1277,17 @@ void conv(RR& x, const char *s)
    }
 
    xcopy(x, v);
+}
+
+void ConvPrec(RR& x, const char *s, long p)
+{
+   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
+      Error("ConvPrec: bad precsion");
+
+   long old_p = RR::prec;
+   RR::prec = p;
+   conv(x, s);
+   RR::prec = old_p;
 }
 
 
@@ -1091,7 +1334,7 @@ void ComputeE(RR& res)
 
 void exp(RR& res, const RR& x)
 {
-   if (x >= (1L << (NTL_BITS_PER_LONG-4)) || x <= -(1L << (NTL_BITS_PER_LONG-4)))
+   if (x >= NTL_OVFBND || x <= -NTL_OVFBND)
       Error("RR: overflow");
 
    long p = RR::precision();
@@ -1745,7 +1988,7 @@ ostream& operator<<(ostream& s, const RR& a)
    len = 0;
    do {
       if (len >= bp_len) Error("RR output: buffer overflow");
-      bp[len] = DivRem(B, B, 10) + '0';
+      bp[len] = IntValToChar(DivRem(B, B, 10));
       len++;
    } while (B > 0);
 
@@ -1798,5 +2041,6 @@ ostream& operator<<(ostream& s, const RR& a)
    delete [] bp;
    return s;
 }
+
 
 NTL_END_IMPL

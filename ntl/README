@@ -1,4 +1,4 @@
-NTL  -- a library for doing numbery theory --  version 5.2
+NTL  -- a library for doing numbery theory --  version 5.3
 
 Author: Victor Shoup (victor@shoup.net)
 

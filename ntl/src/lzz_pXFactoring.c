@@ -1496,7 +1496,7 @@ void BuildIrred(zz_pX& f, long n)
    if (n <= 0)
       Error("BuildIrred: n must be positive");
 
-   if (n >= (1L << (NTL_BITS_PER_LONG-4))) Error("overflow in BuildIrred");
+   if (NTL_OVERFLOW(n, 1, 0)) Error("overflow in BuildIrred");
 
    if (n == 1) {
       SetX(f);
