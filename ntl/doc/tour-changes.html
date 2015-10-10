@@ -17,6 +17,63 @@ A Tour of NTL: Summary of Changes
 </p>
 </h1>
 
+
+<p> <hr> <p>
+<h3>
+Changes between NTL 5.1a and 5.2
+</h3>
+
+<p>
+
+<ul>
+<li>
+Implemented Mark van Hoeij's new algorithm for factorining polynomials
+with rational coefficients.
+This new algorithm is much more efficient than the previous algorithm
+used by NTL, and is the default (one can switch back to the old algorithm
+with a run-time switch).
+<p>
+<a href="ZZXFactoring.txt">[documentation]</a>
+<p>
+<a href="tour-time.html">[performance measurements]</a>
+<p>
+
+<li>
+Added routines <tt>LLL_plus</tt> that are just like the all-integer 
+<tt>LLL</tt> routines, except that they return the exact values of the
+squared lengths of the Gramm-Schmidt basis vectors.
+This is useful in implementing van Hoeij's algorithm.
+<a href="LLL.txt">[more details]</a>.
+<p>
+
+<li>
+Made a small change to <tt>quad_float.c</tt> to make it compile
+under  gcc version 3.0
+without errors.
+This is the <i>one</i> place in NTL where I resort to just a little
+assmebly code (but only on x86/Linux platforms), and wouldn't you know it,
+this is the <i>one</i> place where gcc 3.0 had problems.
+<p>
+
+<li>
+Made a small change to the procedure for generating a distribution,
+so that now all files in the "tar" file comprising the distribution
+come without any annoyingly excessive access control restrictions.
+<p>
+
+<li>
+Changed the version numbering scheme so that it is now closer to
+"standard practice".
+This is version "5.2".
+Any small bug fixes to this version will be named "5.2.1", "5.2.2", etc.
+Also, macros are now defined so that the numerical components
+of the version number are available to the programmer.
+<a href="version.txt">[more details]</a>.
+
+
+</ul>
+
+
 <p> <hr> <p>
 <h3>
 Changes between NTL 5.0c and 5.1a

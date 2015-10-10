@@ -81,7 +81,7 @@ NTL_START_IMPL
 
 
 #define START_FIX \
-  unsigned short __old_cw, __new_cw; \
+  volatile unsigned short __old_cw, __new_cw; \
   asm volatile ("fnstcw %0":"=m" (__old_cw)); \
   __new_cw = (__old_cw & ~0x300) | 0x200; \
   asm volatile ("fldcw %0": :"m" (__new_cw));

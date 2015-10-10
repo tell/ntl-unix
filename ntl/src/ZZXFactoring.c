@@ -5,10 +5,16 @@
 #include <NTL/vec_vec_ulong.h>
 #include <NTL/vec_double.h>
 
+#include <NTL/LLL.h>
+
 #include <NTL/new.h>
 
 NTL_START_IMPL
 
+long ZZXFac_van_Hoeij = 1;
+
+static
+long ok_to_abandon = 0;
 
 struct LocalInfoT {
    long n;
@@ -902,7 +908,7 @@ void UpdateLocalInfo(LocalInfoT& LocalInfo, vec_ZZ& pdeg,
       if (verbose) cerr << (GetTime()-t) << "\n";
    }
 
-   if (LocalInfo.NumPrimes < ZZXFac_MaxNumPrimes) {
+   if (!ZZXFac_van_Hoeij && LocalInfo.NumPrimes + 1 < ZZXFac_MaxNumPrimes) {
       if (verbose)
          cerr << "adding a prime\n";
 
@@ -2204,7 +2210,7 @@ void FindTrueFactors(vec_ZZX& factors, const ZZX& ff,
    k = 1;
    factors.SetLength(0);
    while (2*k <= W.length()) {
-      if (k <= 2)
+      if (k <= 1)
          CardinalitySearch(factors, f, W, LocalInfo, k, bnd, verbose);
       else
          CardinalitySearch1(factors, f, W, LocalInfo, k, bnd, verbose);
@@ -2217,6 +2223,1130 @@ void FindTrueFactors(vec_ZZX& factors, const ZZX& ff,
 }
 
 
+
+
+
+/**********************************************************************\
+
+                        van Hoeij's algorithm 
+
+\**********************************************************************/
+
+
+
+const long van_hoeij_size_thresh = 12; 
+// Use van Hoeij's algorithm if number of modular factors exceeds this bound.
+// Must be >= 1.
+
+const long van_hoeij_card_thresh = 3;
+// Switch to knapsack method if cardinality of candidate factors
+// exceeds this bound.
+// Must be >= 1.
+
+
+
+
+// This routine assumes that the input f is a non-zero polynomial
+// of degree n, and returns the value f(a).
+
+static 
+ZZ PolyEval(const ZZX& f, const ZZ& a)
+{
+   if (f == 0) Error("PolyEval: internal error");
+
+   long n = deg(f);
+
+   ZZ acc, t1, t2;
+   long i;
+
+   acc = f.rep[n];
+
+   for (i = n-1; i >= 0; i--) {
+      mul(t1, acc, a);
+      add(acc, t1, f.rep[i]);
+   }
+
+   return acc;
+}
+
+
+// This routine assumes that the input f is a polynomial with non-zero constant
+// term, of degree n, and with leading coefficient c; it returns 
+// an upper bound on the absolute value of the roots of the
+// monic, integer polynomial g(X) =  c^{n-1} f(X/c).
+
+static 
+ZZ RootBound(const ZZX& f)
+{
+   if (ConstTerm(f) == 0) Error("RootBound: internal error");
+
+   long n = deg(f);
+
+   ZZX g;
+   long i;
+
+   g = f;
+
+   if (g.rep[n] < 0) negate(g.rep[n], g.rep[n]);
+   for (i = 0; i < n; i++) {
+      if (g.rep[i] > 0) negate(g.rep[i], g.rep[i]);
+   }
+
+   ZZ lb, ub, mb;
+
+
+   lb = 0;
+
+   ub = 1;
+   while (PolyEval(g, ub) < 0) {
+      ub = 2*ub;
+   }
+
+   // lb < root <= ub
+
+   while (ub - lb > 1) {
+      ZZ mb = (ub + lb)/2;
+
+      if (PolyEval(g, mb) < 0) 
+         lb = mb;
+      else 
+         ub = mb;
+   }
+
+   return ub*g.rep[n];
+}
+
+
+// This routine takes as input an n x m integer matrix M, where the rows of M 
+// are assumed to be linearly independent.
+// It is also required that both n and m are non-zero.
+// It computes an integer d, along with an n x m matrix R, such that
+// R*d^{-1} is the reduced row echelon form of M.
+// The routine is probabilistic: the output is always correct, but the
+// routine may abort the program with negligible probability
+// (specifically, if GenPrime returns a composite, and the modular
+// gauss routine can't invert a non-zero element).
+
+static
+void gauss(ZZ& d_out, mat_ZZ& R_out, const mat_ZZ& M)
+{
+   long n = M.NumRows();
+   long m = M.NumCols();
+
+   if (n == 0 || m == 0) Error("gauss: internal error");
+
+   zz_pBak bak;
+   bak.save();
+
+   for (;;) {
+      long p = GenPrime_long(NTL_SP_NBITS);
+      zz_p::init(p);
+
+      mat_zz_p MM;
+      conv(MM, M);
+
+      long r = gauss(MM);
+      if (r < n) continue;
+
+      // compute pos(1..n), so that pos(i) is the index 
+      // of the i-th pivot column
+
+      vec_long pos;
+      pos.SetLength(n);
+
+      long i, j;
+      for (i = j = 1; i <= n; i++) {
+         while (MM(i, j) == 0) j++;
+         pos(i) = j;
+         j++;
+      } 
+
+      // compute the n x n sub-matrix consisting of the
+      // pivot columns of M
+
+      mat_ZZ S;
+      S.SetDims(n, n);
+
+      for (i = 1; i <= n; i++)
+         for (j = 1; j <= n; j++)
+            S(i, j) = M(i, pos(j));
+
+      mat_ZZ S_inv;
+      ZZ d;
+
+      inv(d, S_inv, S);
+      if (d == 0) continue;
+
+      mat_ZZ R;
+      mul(R, S_inv, M);
+
+      // now check that R is of the right form, which it will be
+      // if we were not unlucky
+
+      long OK = 1;
+
+      for (i = 1; i <= n && OK; i++) {
+         for (j = 1; j < pos(i) && OK; j++)
+            if (R(i, j) != 0) OK = 0;
+
+         if (R(i, pos(i)) != d) OK = 0;
+
+         for (j = 1; j < i && OK; j++)
+            if (R(j, pos(i)) != 0) OK = 0;
+      }
+
+      if (!OK) continue;
+
+      d_out = d;
+      R_out = R;
+      break;
+   }
+}
+
+
+// The input polynomial f should be monic, and deg(f) > 0.
+// The input P should be > 1.
+// Tr.length() >= d, and Tr(i), for i = 1..d-1, should be the
+// Tr_i(f) mod P (in van Hoeij's notation).
+// The quantity Tr_d(f) mod P is computed, and stored in Tr(d).
+
+
+void ComputeTrace(vec_ZZ& Tr, const ZZX& f, long d, const ZZ& P)
+{
+   long n = deg(f);
+
+   // check arguments
+
+   if (n <= 0 || LeadCoeff(f) != 1) 
+      Error("ComputeTrace: internal error (1)");
+
+   if (d <= 0)
+      Error("ComputeTrace: internal error (2)");
+
+   if (Tr.length() < d)
+      Error("ComputeTrace: internal error (3)");
+
+   if (P <= 1)
+      Error("ComputeTrace: internal error (4)");
+
+   // treat d > deg(f) separately
+
+   if (d > n) {
+      ZZ t1, t2;
+      long i;
+
+      t1 = 0;
+
+      for (i = 1; i <= n; i++) {
+         mul(t2, Tr(i + d - n - 1), f.rep[i-1]); 
+         add(t1, t1, t2);
+      }
+
+      rem(t1, t1, P);
+      NegateMod(t1, t1, P);
+      Tr(d) = t1;
+   }
+   else {
+      ZZ t1, t2;
+      long i;
+
+      mul(t1, f.rep[n-d], d);
+
+      for (i = 1; i < d; i++) {
+         mul(t2, Tr(i), f.rep[n-d+i]);
+         add(t1, t1, t2);
+      }
+
+      rem(t1, t1, P);
+      NegateMod(t1, t1, P);
+      Tr(d) = t1;
+   }
+}
+
+// Tr(1..d) are traces as computed above.
+// C and pb have length at least d.
+// For i = 1..d, pb(i) = p^{a_i} for a_i > 0.
+// pdelta = p^delta for delta > 0.
+// P = p^a for some a >= max{ a_i : i=1..d }.
+
+// This routine computes C(1..d), where 
+// C(i) = C_{a_i}^{a_i + delta}( Tr(i)*lc^i ) for i = 1..d.
+
+
+void ChopTraces(vec_ZZ& C, const vec_ZZ& Tr, long d,
+                const vec_ZZ& pb, const ZZ& pdelta, const ZZ& P, const ZZ& lc)
+{
+   if (d <= 0) Error("ChopTraces: internal error (1)");
+   if (C.length() < d) Error("ChopTraces: internal error (2)");
+   if (Tr.length() < d) Error("ChopTraces: internal error (3)");
+   if (pb.length() < d) Error("ChopTraces: internal error (4)");
+   if (P <= 1) Error("ChopTraces: internal error (5)");
+
+   ZZ lcpow, lcred;
+   lcpow = 1;
+   rem(lcred, lc, P);
+
+   ZZ pdelta_2;
+   RightShift(pdelta_2, pdelta, 1);
+
+   ZZ t1, t2;
+
+   long i;
+   for (i = 1; i <= d; i++) {
+      MulMod(lcpow, lcpow, lcred, P);
+      MulMod(t1, lcpow, Tr(i), P);
+
+      RightShift(t2, pb(i), 1);
+      add(t1, t1, t2);
+      div(t1, t1, pb(i));
+      rem(t1, t1, pdelta);
+      if (t1 > pdelta_2)
+         sub(t1, t1, pdelta);
+
+      C(i) = t1;
+   }
+}
+
+
+// Similar to above, but computes a linear combination of traces.
+
+
+static
+void DenseChopTraces(vec_ZZ& C, const vec_ZZ& Tr, long d, long d1, 
+                     const ZZ& pb_eff, const ZZ& pdelta, const ZZ& P, 
+                     const ZZ& lc, const mat_ZZ& A)
+{
+
+   ZZ pdelta_2;
+   RightShift(pdelta_2, pdelta, 1);
+
+   ZZ pb_eff_2;
+   RightShift(pb_eff_2, pb_eff, 1);
+
+   ZZ acc, t1, t2;
+
+   long i, j;
+
+   ZZ lcpow, lcred;
+   rem(lcred, lc, P);
+
+   for (i = 1; i <= d1; i++) {
+      lcpow = 1;
+      acc = 0;
+
+      for (j = 1; j <= d; j++) {
+         MulMod(lcpow, lcpow, lcred, P);
+         MulMod(t1, lcpow, Tr(j), P);
+         rem(t2, A(i, j), P);
+         MulMod(t1, t1, t2, P);
+         AddMod(acc, acc, t1, P);
+      }
+
+      t1 = acc;
+      add(t1, t1, pb_eff_2);
+      div(t1, t1, pb_eff);
+      rem(t1, t1, pdelta);
+      if (t1 > pdelta_2)
+         sub(t1, t1, pdelta);
+
+      C(i) = t1;
+   }
+}
+
+
+static
+void Compute_pb(vec_long& b,vec_ZZ& pb, long p, long d, 
+                const ZZ& root_bound, long n)
+{
+   ZZ t1, t2;
+   long i;
+
+   t1 = 2*power(root_bound, d)*n;
+
+   if (d == 1) {
+      i = 0;
+      t2 = 1;
+   }
+   else {
+      i = b(d-1);
+      t2 = pb(d-1);
+   }
+
+   while (t2 <= t1) {
+      i++;
+      t2 *= p;
+   }
+
+   b.SetLength(d);
+   b(d) = i;
+
+   pb.SetLength(d);
+   pb(d) = t2;
+}
+
+static
+void Compute_pdelta(long& delta, ZZ& pdelta, long p, long bit_delta)
+{
+   ZZ t1;
+   long i;
+
+   i = delta;
+   t1 = pdelta;
+
+   while (NumBits(t1) <= bit_delta) {
+      i++;
+      t1 *= p;
+   }
+
+   delta = i;
+   pdelta = t1;
+}
+
+static
+void BuildReductionMatrix(mat_ZZ& M, long& C, long r, long d, const ZZ& pdelta,
+                          const vec_vec_ZZ& chop_vec, 
+                          const mat_ZZ& B_L, long verbose)
+{
+   long s = B_L.NumRows();
+
+   C = long( sqrt(double(d) * double(r)) / 2.0 ) + 1;
+
+   M.SetDims(s+d, r+d);
+   clear(M);
+
+
+   long i, j, k;
+   ZZ t1, t2;
+
+   for (i = 1; i <= s; i++)
+      for (j = 1; j <= r; j++)
+         mul(M(i, j), B_L(i, j), C);
+
+   ZZ pdelta_2;
+
+   RightShift(pdelta_2, pdelta, 1);
+
+   long maxbits = 0;
+
+   for (i = 1; i <= s; i++)
+      for (j = 1; j <= d; j++) {
+         t1 = 0;
+         for (k = 1; k <= r; k++) {
+            mul(t2, B_L(i, k), chop_vec(k)(j));
+            add(t1, t1, t2);
+         }
+
+         rem(t1, t1, pdelta);
+         if (t1 > pdelta_2)
+            sub(t1, t1, pdelta);
+
+         maxbits = max(maxbits, NumBits(t1));
+
+         M(i, j+r) = t1;
+      }
+  
+
+   for (i = 1; i <= d; i++)
+      M(i+s, i+r) = pdelta;
+
+   if (verbose) 
+      cerr << "ratio = " << double(maxbits)/double(NumBits(pdelta))
+           << "; ";
+}
+
+
+static
+void CutAway(mat_ZZ& B1, vec_ZZ& D, mat_ZZ& M, 
+             long C, long r, long d)
+{
+   long k = M.NumRows();
+   ZZ bnd = 4*to_ZZ(C)*to_ZZ(C)*to_ZZ(r) + to_ZZ(d)*to_ZZ(r)*to_ZZ(r);
+
+   while (k >= 1 && 4*D[k] > bnd*D[k-1]) k--;
+
+   mat_ZZ B2;
+
+   B2.SetDims(k, r);
+   long i, j;
+
+   for (i = 1; i <= k; i++)
+      for (j = 1; j <= r; j++)
+         div(B2(i, j), M(i, j), C);
+
+   M.kill(); // save space
+   D.kill();
+
+   ZZ det2;
+   long rnk;
+
+   rnk = image(det2, B2);
+
+   B1.SetDims(rnk, r);
+   for (i = 1; i <= rnk; i++)
+      for (j = 1; j <= r; j++)
+         B1(i, j) = B2(i + k - rnk, j);
+}
+
+
+
+
+static
+long GotThem(vec_ZZX& factors, 
+             const mat_ZZ& B_L,
+             const vec_ZZ_pX& W, 
+             const ZZX& f, 
+             long bnd,
+             long verbose)
+{
+   double tt0, tt1;
+   ZZ det;
+   mat_ZZ R;
+   long s, r;
+   long i, j, cnt;
+
+   if (verbose) {
+      cerr << "   checking A (s = " << B_L.NumRows() 
+           << "): gauss...";
+   }
+
+   tt0 = GetTime();
+
+   gauss(det, R, B_L);
+
+   tt1 = GetTime();
+
+   if (verbose) cerr << (tt1-tt0) << "; ";
+
+   // check if condition A holds
+
+   s = B_L.NumRows();
+   r = B_L.NumCols();
+
+   for (j = 0; j < r; j++) {
+      cnt = 0;
+      for (i = 0; i < s; i++) {
+         if (R[i][j] == 0) continue;
+         if (R[i][j] != det) {
+            if (verbose) cerr << "failed.\n";
+            return 0;
+         }
+         cnt++;
+      }
+
+      if (cnt != 1) {
+         if (verbose) cerr << "failed.\n";
+         return 0;
+      }
+   }
+
+   if (verbose) {
+      cerr << "passed.\n";
+      cerr << "   checking B...";
+   }
+
+   // extract relevant information from R
+
+   vec_vec_long I_vec;
+   I_vec.SetLength(s);
+
+   vec_long deg_vec;
+   deg_vec.SetLength(s);
+
+   for (i = 0; i < s; i++) {
+      long dg = 0;
+
+      for (j = 0; j < r; j++) {
+         if (R[i][j] != 0) append(I_vec[i], j);
+         dg += deg(W[j]);
+      }
+
+      deg_vec[i] = dg;
+   }
+
+   R.kill(); // save space
+
+
+   // check if any candidate factor is the product of too few
+   // modular factors
+
+   for (i = 0; i < s; i++)
+      if (I_vec[i].length() <= van_hoeij_card_thresh) {
+         if (verbose) cerr << "X\n";
+         return 0;
+      }
+
+   if (verbose) cerr << "1";
+
+
+   // sort deg_vec, I_vec in order of increasing degree
+
+   for (i = 0; i < s-1; i++)
+      for (j = 0; j < s-1-i; j++)
+         if (deg_vec[j] > deg_vec[j+1]) {
+            swap(deg_vec[j], deg_vec[j+1]);
+            swap(I_vec[j], I_vec[j+1]);
+         }
+
+
+   // perform constant term tests
+
+   ZZ ct;
+   mul(ct, LeadCoeff(f), ConstTerm(f));
+
+   ZZ half_P;
+   RightShift(half_P, ZZ_p::modulus(), 1);
+
+   ZZ_p lc, prod;
+   conv(lc, LeadCoeff(f));
+
+   ZZ t1;
+
+   for (i = 0; i < s; i++) {
+      vec_long& I = I_vec[i];
+      prod = lc;
+      for (j = 0; j < I.length(); j++)
+         mul(prod, prod, ConstTerm(W[I[j]]));
+
+      t1 = rep(prod);
+      if (t1 > half_P)
+         sub(t1, t1, ZZ_p::modulus());
+
+      if (!divide(ct, t1)) {
+          if (verbose) cerr << "X\n";
+          return 0;
+      }
+   }
+
+   if (verbose) cerr << "2";
+
+
+   // multiply out polynomials and perform size tests
+
+   vec_ZZX fac;
+   ZZ_pX gg;
+   ZZX g;
+
+   for (i = 0; i < s-1; i++) {
+      vec_long& I = I_vec[i];
+      mul(gg, W, I);
+      mul(gg, gg, lc);
+      BalCopy(g, gg);
+      if (MaxBits(g) > bnd) {
+         if (verbose) cerr << "X\n";
+         return 0;
+      }
+      PrimitivePart(g, g);
+      append(fac, g);
+   }
+
+   if (verbose) cerr << "3";
+
+
+   // finally...trial division
+
+   ZZX f1 = f;
+   ZZX h;
+
+   for (i = 0; i < s-1; i++) {
+      if (!divide(h, f1, fac[i])) {
+         cerr << "X\n";
+         return 0;
+      }
+
+      f1 = h;
+   }
+
+   // got them!
+
+   if (verbose) cerr << "$\n";
+
+   append(factors, fac);
+   append(factors, f1);
+
+   return 1;
+}
+
+
+void AdditionalLifting(ZZ& P1, 
+                       long& e1, 
+                       vec_ZZX& w1, 
+                       long p, 
+                       long new_bound,
+                       const ZZX& f, 
+                       long doubling,
+                       long verbose)
+{
+   long new_e1;
+
+   if (doubling)
+      new_e1 = max(2*e1, new_bound); // at least double e1
+   else
+      new_e1 = new_bound;
+
+   if (verbose) {
+      cerr << ">>> additional hensel lifting to " << new_e1 << "...\n";
+   }
+
+   ZZ new_P1;
+
+   power(new_P1, p, new_e1);
+
+   ZZX f1;
+   ZZ t1, t2;
+   long i;
+   long n = deg(f);
+
+   if (LeadCoeff(f) == 1)
+      f1 = f;
+   else if (LeadCoeff(f) == -1)
+      negate(f1, f);
+   else {
+      rem(t1, LeadCoeff(f), new_P1);
+      InvMod(t1, t1, new_P1);
+      f1.rep.SetLength(n+1); 
+      for (i = 0; i <= n; i++) {
+         mul(t2, f.rep[i], t1);
+         rem(f1.rep[i], t2, new_P1);
+      }
+   }
+
+   zz_pBak bak;
+   bak.save();
+
+   zz_p::init(p, NextPowerOfTwo(n)+1);
+
+   long r = w1.length();
+
+   vec_zz_pX ww1;
+   ww1.SetLength(r);
+   for (i = 0; i < r; i++)
+      conv(ww1[i], w1[i]);
+
+   w1.kill();
+
+   double tt0, tt1;
+
+   tt0 = GetTime();
+
+   MultiLift(w1, ww1, f1, new_e1, verbose);
+
+   tt1 = GetTime();
+
+   if (verbose) {
+      cerr << "lifting time: " << (tt1-tt0) << "\n\n";
+   }
+
+   P1 = new_P1;
+   e1 = new_e1;
+
+   bak.restore();
+}
+
+static
+void Compute_pb_eff(long& b_eff, ZZ& pb_eff, long p, long d, 
+                    const ZZ& root_bound,  
+                    long n, long ran_bits)
+{
+   ZZ t1, t2;
+   long i;
+
+   if (root_bound == 1)
+      t1 = (to_ZZ(d)*to_ZZ(n)) << (ran_bits + 1);
+   else
+      t1 = (power(root_bound, d)*n) << (ran_bits + 2);
+
+   i = 0;
+   t2 = 1;
+
+   while (t2 <= t1) {
+      i++;
+      t2 *= p;
+   }
+
+   b_eff = i;
+   pb_eff = t2;
+}
+
+
+
+static
+long d1_val(long bit_delta, long r, long s)
+{
+   return long( 0.30*double(r)*double(s)/double(bit_delta) ) + 1;
+}
+
+
+
+
+// Next comes van Hoeij's algorithm itself.
+// Some notation that differs from van Hoeij's paper:
+//   n = deg(f)
+//   r = # modular factors
+//   s = dim(B_L)  (gets smaller over time)
+//   d = # traces used
+//   d1 = number of "compressed" traces
+//
+// The algorithm starts with a "sparse" version of van Hoeij, so that
+// at first the traces d = 1, 2, ... are used in conjunction with
+// a d x d identity matrix for van Hoeij's matrix A.
+// The number of "excess" bits used for each trace, bit_delta, is initially
+// 2*r.
+// 
+// When d*bit_delta exceeds 0.25*r*s, we switch to 
+// a "dense" mode, where we use only about 0.25*r*s "compressed" traces.
+// These bounds follow from van Hoeij's heuristic estimates.
+//
+// In sparse mode, d and bit_delta increase exponentially (but gently).
+// In dense mode, but d increases somewhat more aggressively,
+// and bit_delta is increased more gently.
+
+
+static
+void FindTrueFactors_vH(vec_ZZX& factors, const ZZX& ff, 
+                        const vec_ZZX& w, const ZZ& P, 
+                        long p, long e,
+                        LocalInfoT& LocalInfo,
+                        long verbose,
+                        long bnd)
+{
+   const long SkipSparse = 0;
+
+   ZZ_pBak bak;
+   bak.save();
+   ZZ_p::init(P);
+
+   long r = w.length();
+
+   vec_ZZ_pX W;
+   W.SetLength(r);
+
+   long i, j;
+
+   for (i = 0; i < r; i++)
+      conv(W[i], w[i]);
+
+
+   ZZX f;
+
+   f = ff;
+
+   long k;
+
+   k = 1;
+   factors.SetLength(0);
+   while (2*k <= W.length() && 
+      (k <= van_hoeij_card_thresh || W.length() <= van_hoeij_size_thresh)) {
+
+      if (k <= 1)
+         CardinalitySearch(factors, f, W, LocalInfo, k, bnd, verbose);
+      else
+         CardinalitySearch1(factors, f, W, LocalInfo, k, bnd, verbose);
+      k++;
+   }
+
+   if (2*k > W.length()) {
+      // rest is irreducible, so we're done
+
+      append(factors, f);
+   }
+   else {
+
+      // now we apply van Hoeij's algorithm proper to f
+   
+      double time_start, time_stop, lll_time, tt0, tt1;
+
+      time_start = GetTime();
+      lll_time = 0;
+   
+      if (verbose) {
+         cerr << "\n\n*** starting knapsack procedure\n";
+      }
+   
+      ZZ P1 = P;
+      long e1 = e;    // invariant: P1 = p^{e1}
+   
+      r = W.length();
+   
+      vec_ZZX w1;
+      w1.SetLength(r);
+      for (i = 0; i < r; i++)
+         conv(w1[i], W[i]);
+   
+      long n = deg(f);
+   
+      mat_ZZ B_L;            // van Hoeij's lattice
+      ident(B_L, r);
+   
+      long d = 0;            // number of traces
+      
+      long bit_delta = 0;    // number of "excess" bits
+
+      vec_long b;
+      vec_ZZ pb;             // pb(i) = p^{b(i)}
+
+      long delta = 0;
+      ZZ pdelta = to_ZZ(1);  // pdelta = p^delta
+      pdelta = 1;
+   
+      vec_vec_ZZ trace_vec;
+      trace_vec.SetLength(r);
+   
+      vec_vec_ZZ chop_vec;
+      chop_vec.SetLength(r);
+   
+      ZZ root_bound = RootBound(f);
+   
+      if (verbose) {
+         cerr << "NumBits(root_bound) = " << NumBits(root_bound) << "\n";
+      }
+
+      long dense = 0;
+      long ran_bits = 32;
+
+      long loop_cnt = 0;
+
+
+      long s = r;
+
+      for (;;) {
+
+         loop_cnt++;
+   
+         // if we are using the power hack, then we do not try too hard...
+         // this is really a hack on a hack!
+
+         if (ok_to_abandon && 
+             ((d >= 2 && s > 128) || (d >= 3 && s > 32) || (d >= 4 && s > 8) ||
+              d >= 5) ) {
+            if (verbose) cerr << "   abandoning\n";
+            append(factors, f);
+            break;
+         }
+
+         long d_last, d_inc, d_index;
+
+         d_last = d;
+
+         // set d_inc: 
+
+         if (!dense) {
+            d_inc = 1 + d/8;
+         }
+         else {
+            d_inc = 1 + d/4; 
+         }
+
+         d_inc = min(d_inc, n-1-d);
+            
+         d += d_inc;
+
+         // set bit_delta:
+   
+         if (bit_delta == 0) {
+            // set initial value...don't make it any smaller than 2*r
+
+            bit_delta = 2*r; 
+         }
+         else {
+            long extra_bits;
+
+            if (!dense) {
+               extra_bits = 1 + bit_delta/8;
+            }
+            else if (d_inc != 0) {
+               if (d1_val(bit_delta, r, s) > 1)
+                  extra_bits = 1 + bit_delta/16; 
+               else
+                  extra_bits = 0;
+            }
+            else
+               extra_bits = 1 + bit_delta/8;
+
+            bit_delta += extra_bits;
+         }
+
+         if (d > d1_val(bit_delta, r, s)) 
+            dense = 1;
+   
+         Compute_pdelta(delta, pdelta, p, bit_delta);
+
+         long d1;
+         long b_eff;
+         ZZ pb_eff;
+
+         if (!dense) {
+            for (d_index = d_last + 1; d_index <= d; d_index++)
+               Compute_pb(b, pb, p, d_index, root_bound, n);
+
+            d1 = d;
+            b_eff = b(d);
+            pb_eff = pb(d);
+         }
+         else {
+            d1 = d1_val(bit_delta, r, s);
+            Compute_pb_eff(b_eff, pb_eff, p, d, root_bound, n, ran_bits); 
+         }
+
+         if (verbose) {
+            cerr << "*** d = " << d 
+                 << "; s = " << s 
+                 << "; delta = " << delta 
+                 << "; b_eff = " << b_eff;
+
+            if (dense) cerr << "; dense [" << d1 << "]";
+            cerr << "\n";
+         }
+   
+         if (b_eff + delta > e1) {
+            long doubling;
+
+            doubling = 1;
+
+            AdditionalLifting(P1, e1, w1, p, b_eff + delta, f, 
+                              doubling, verbose);
+
+            if (verbose) {
+               cerr << ">>> recomputing traces...";
+            }
+
+            tt0 = GetTime();
+
+            trace_vec.kill();
+            trace_vec.SetLength(r);
+
+            for (i = 0; i < r; i++) {
+               trace_vec[i].SetLength(d_last);
+
+               for (d_index = 1; d_index <= d_last; d_index++) {
+                  ComputeTrace(trace_vec[i], w1[i], d_index, P1);
+               }
+            }
+
+            tt1 = GetTime();
+            if (verbose) cerr << (tt1-tt0) << "\n";
+         }
+   
+         if (verbose) cerr << "   trace..."; 
+   
+         tt0 = GetTime();
+
+         mat_ZZ A;
+
+         if (dense) {
+            A.SetDims(d1, d);
+            for (i = 1; i <= d1; i++)
+               for (j = 1; j <= d; j++) {
+                  RandomBits(A(i, j), ran_bits);
+                  if (RandomBnd(2)) negate(A(i, j), A(i, j));
+               }
+         }
+      
+   
+         for (i = 0; i < r; i++) {
+            trace_vec[i].SetLength(d);
+            for (d_index = d_last + 1; d_index <= d; d_index++)
+               ComputeTrace(trace_vec[i], w1[i], d_index, P1);
+   
+            chop_vec[i].SetLength(d1);
+
+            if (!dense)
+               ChopTraces(chop_vec[i], trace_vec[i], d, pb, pdelta, 
+                          P1, LeadCoeff(f));
+            else
+               DenseChopTraces(chop_vec[i], trace_vec[i], d, d1, pb_eff, 
+                               pdelta, P1, LeadCoeff(f), A);
+         }
+
+         A.kill();
+   
+         tt1 = GetTime();
+   
+         if (verbose) cerr << (tt1-tt0) << "\n";
+   
+         mat_ZZ M;
+         long C;
+   
+         if (verbose) cerr << "   building matrix...";
+   
+         tt0 = GetTime();
+   
+         BuildReductionMatrix(M, C, r, d1, pdelta, chop_vec, B_L, verbose);
+   
+         tt1 = GetTime();
+   
+         if (verbose) cerr << (tt1-tt0) << "\n";
+
+         if (SkipSparse) {   
+            if (!dense) {
+               if (verbose) cerr << "skipping LLL\n";
+               continue;
+            }
+         }
+
+         if (verbose) cerr << "   LLL...";
+   
+         tt0 = GetTime();
+   
+         vec_ZZ D;
+         long rnk = LLL_plus(D, M);
+   
+         tt1 = GetTime();
+
+         lll_time += (tt1-tt0);
+   
+         if (verbose) cerr << (tt1-tt0) << "\n";
+   
+         if (rnk != s + d1) {
+            Error("van Hoeij -- bad rank");
+         }
+   
+         mat_ZZ B1;
+   
+         if (verbose) cerr << "   CutAway...";
+   
+         tt0 = GetTime();
+   
+         CutAway(B1, D, M, C, r, d1);
+   
+         tt1 = GetTime();
+   
+         if (verbose) cerr << (tt1-tt0) << "\n";
+   
+         if (B1.NumRows() >= s) continue;
+         // no progress...try again
+
+         // otherwise, update B_L and test if we are done
+   
+         swap(B1, B_L);
+         B1.kill();
+         s = B_L.NumRows();
+   
+         if (s == 0)
+            Error("oops! s == 0 should not happen!");
+   
+         if (s == 1) {
+            if (verbose) cerr << "   irreducible!\n";
+            append(factors, f);
+            break;
+         }
+   
+         if (s > r / (van_hoeij_card_thresh + 1)) continue;
+         // dimension too high...we can't be done
+   
+         if (GotThem(factors, B_L, W, f, bnd, verbose)) break;
+      }
+
+      time_stop = GetTime();
+
+      if (verbose) {
+         cerr << "*** knapsack finished: total time = " 
+              << (time_stop - time_start) << "; LLL time = "
+              << lll_time << "\n";
+      }
+   }
+
+   bak.restore();
+}
 
 
 static
@@ -2417,8 +3547,8 @@ void ll_SFFactor(vec_ZZX& factors, const ZZX& ff,
    }
 
    if (verbose) {
-      cerr << "lifting bound = " << lift_bnd << "\n";
-      cerr << "Hensel lifting to exponent " << e << "...";
+      cerr << "lifting bound = " << lift_bnd << " bits.\n";
+      cerr << "Hensel lifting to exponent " << e << "...\n";
       t = GetTime();
    }
 
@@ -2452,7 +3582,8 @@ void ll_SFFactor(vec_ZZX& factors, const ZZX& ff,
 
    if (verbose) {
       t = GetTime()-t;
-      cerr << t << "\n";
+      cerr << "\nlifting time: ";
+      cerr << t << "\n\n";
    }
 
    // We're done with zz_p...restore
@@ -2467,8 +3598,11 @@ void ll_SFFactor(vec_ZZX& factors, const ZZX& ff,
       t = GetTime();
    }
 
-   FindTrueFactors(factors, f, w, P, LocalInfo, 
-                   verbose, coeff_bnd);
+   if (ZZXFac_van_Hoeij && w.length() > van_hoeij_size_thresh)
+      FindTrueFactors_vH(factors, f, w, P, p, e, 
+                         LocalInfo, verbose, coeff_bnd);
+   else
+      FindTrueFactors(factors, f, w, P, LocalInfo, verbose, coeff_bnd);
 
    if (verbose) {
       t = GetTime()-t;
@@ -2584,7 +3718,9 @@ void SFFactor(vec_ZZX& factors, const ZZX& ff,
       return;
    }
 
+
    if (!ZZXFac_PowerHack) {
+      ok_to_abandon = 0;
       ll_SFFactor(factors, ff, verbose, bnd);
       return;
    }
@@ -2596,6 +3732,7 @@ void SFFactor(vec_ZZX& factors, const ZZX& ff,
          cerr << "SFFactor -- no deflation\n";
       }
 
+      ok_to_abandon = 0;
       ll_SFFactor(factors, ff, verbose, bnd);
       return;
    }
@@ -2630,6 +3767,11 @@ void SFFactor(vec_ZZX& factors, const ZZX& ff,
                  << deg(res[j]) << "\n";
             t = GetTime();
          }
+
+         if (k < 0)
+            ok_to_abandon = 0;
+         else
+            ok_to_abandon = 1;
 
          ll_SFFactor(res2, res[j], verbose, k < 0 ? bnd : 0);
 

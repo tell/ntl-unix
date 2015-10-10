@@ -305,6 +305,8 @@ static void zz_p::init(long p, long maxroot);
 // case set maxroot to NextPowerOfTwo(n)+1.  This is useful, for
 // example, if you are going to factor a polynomial of degree n modulo
 // p, and you know n in advance.
+// If maxroot is set too low, the program will abort with an
+// appropriate error message.
 
 static void zz_p::FFTInit(long i);
 // sets modulus to the i-th FFT prime (counting from 0).  FFT primes

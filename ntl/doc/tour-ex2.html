@@ -233,6 +233,9 @@ On 32-bit machines, <tt>int</tt> and <tt>long</tt>
 are the same,
 but on 64-bit machines, they are often different, with 
 <tt>int</tt>'s having 32 bits and <tt>long</tt>'s having 64 bits. 
+Indeed, there is a standard, called "LP64", which is being adopted
+by all Unix-like systems, and which specifies that on 64-bit machines,
+<tt>int</tt>'s have 32 bits, and <tt>long</tt>'s and pointers have 64 bits.
 Moreover, on such 64-bit machines, 
 the "natural" word size is usually 64-bits;
 indeed, it is often more expensive to manipulate 32-bit integers.

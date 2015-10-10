@@ -45,6 +45,7 @@ extern long ZZXFac_MaxPrune;
 extern long ZZXFac_InitNumPrimes;
 extern long ZZXFac_MaxNumPrimes;
 extern long ZZXFac_PowerHack;
+extern long ZZXFac_van_Hoeij;
 
 
 void factor(ZZ& c,

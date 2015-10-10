@@ -28,11 +28,11 @@ int main(int argc, char **argv)
 
    fprintf(stderr, "running");
 
-   x = atol(argv[1]); // = 1
+   x = atol(argv[1]); /* = 1 */
 
-   n = atol(argv[2]); // = 1048576 = 2^20
+   n = atol(argv[2]); /* = 1048576 = 2^20 */
 
-   m = atol(argv[3]); // = 1048575 = 2^20 - 1
+   m = atol(argv[3]); /* = 1048575 = 2^20 - 1 */
 
    k = -1;
    t0 = _ntl_GetTime();

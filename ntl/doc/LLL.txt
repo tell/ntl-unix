@@ -37,8 +37,7 @@ long LLL(ZZ& det2, mat_ZZ& B, long verbose = 0);
 long LLL(ZZ& det2, mat_ZZ& B, mat_ZZ& U, long verbose = 0);
 
 long LLL(ZZ& det2, mat_ZZ& B, long a, long b, long verbose = 0);
-long LLL(ZZ& det2, mat_ZZ& B, mat_ZZ& U, long a, long b, 
-         long verbose = 0);
+long LLL(ZZ& det2, mat_ZZ& B, mat_ZZ& U, long a, long b, long verbose = 0);
 
 
 // performs LLL reduction.
@@ -76,6 +75,23 @@ long LLL(ZZ& det2, mat_ZZ& B, mat_ZZ& U, long a, long b,
 
 // The algorithm employed here is essentially the one in Cohen's book.
 
+
+// Some variations:
+
+long LLL_plus(vec_ZZ& D, mat_ZZ& B, long verbose = 0);
+long LLL_plus(vec_ZZ& D, mat_ZZ& B, mat_ZZ& U, long verbose = 0);
+
+long LLL_plus(vec_ZZ& D, mat_ZZ& B, long a, long b, long verbose = 0);
+long LLL_plus(vec_ZZ& D, mat_ZZ& B, mat_ZZ& U, long a, long b, 
+              long verbose = 0);
+
+// These are variations that return a bit more information about the
+// reduced basis.  If r is the rank of B, then D is a vector of length
+// r+1, such that D[0] = 1, and for i = 1..r, D[i]/D[i-1] is equal to
+// the square of the length of the i-th vector of the Gram-Schmidt basis
+// corresponding to the (non-zero) rows of the LLL reduced basis B.
+// In particular, D[r] is equal to the value det2 computed by the
+// plain LLL routines.
 
 /**************************************************************************\
 

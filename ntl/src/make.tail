@@ -141,7 +141,7 @@ D14=$(D13) tour-modules.html tour-stdcxx.html tour-unix.html tour-examples.html
 D15=$(D14) tour-roadmap.html tour-win.html tour-impl.html tour-struct.html
 D16=$(D15) tour.html tour-ex1.html tour-ex2.html tour-ex3.html tour-ex4.html
 D17=$(D16) tour-ex5.html tour-ex6.html arrow1.gif arrow2.gif arrow3.gif
-D18=$(D17) tour-gmp.html config.txt
+D18=$(D17) tour-gmp.html config.txt version.txt
 
 DOC = $(D18)
 
@@ -280,6 +280,7 @@ install:
 	mkdir $(DOCDIR)/NTL
 	cp ../doc/*.txt $(DOCDIR)/NTL
 	cp ../doc/*.html $(DOCDIR)/NTL
+	cp ../doc/*.gif $(DOCDIR)/NTL
 
 
 uninstall:
@@ -321,13 +322,14 @@ clean:
 #################################################################
 
 
-DIRNAME=ntl-5.1a
-WINDIR=WinNTL-5_1a
+DIRNAME=ntl-5.2
+WINDIR=WinNTL-5_2
 
 package:
 	sh unixify "$(SFILES)" "$(INCL)" "$(DOC)" 
 	-rm -r $(DIRNAME)
 	mv unix $(DIRNAME)
+	chmod -R a+rX $(DIRNAME)
 	tar -cvf $(DIRNAME).tar $(DIRNAME)
 	gzip $(DIRNAME).tar
 	- rm -r $(DIRNAME)
@@ -336,6 +338,7 @@ winpack:
 	sh dosify "$(SRC)" "$(INCL)" "$(DOC)" "$(TS)" "$(TD)" "$(SINC)"
 	- rm -r $(WINDIR)
 	mv dos $(WINDIR)
+	chmod -R a+rX $(WINDIR)
 	find ./$(WINDIR) '!' -name '*.gif' -print | zip -l $(WINDIR) -@
 	find ./$(WINDIR) -name '*.gif' -print | zip -u $(WINDIR) -@
 	rm -r $(WINDIR)

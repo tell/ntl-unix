@@ -10,9 +10,12 @@ long LLL(ZZ& det, mat_ZZ& B, long verbose = 0);
 long LLL(ZZ& det, mat_ZZ& B, mat_ZZ& U, long verbose = 0);
 
 long LLL(ZZ& det, mat_ZZ& B, long a, long b, long verbose = 0);
-long LLL(ZZ& det, mat_ZZ& B, mat_ZZ& U, long a, long b, 
-         long verbose = 0);
+long LLL(ZZ& det, mat_ZZ& B, mat_ZZ& U, long a, long b, long verbose = 0);
 
+long LLL_plus(vec_ZZ& D, mat_ZZ& B, mat_ZZ& U, long verbose=0);
+long LLL_plus(vec_ZZ& D, mat_ZZ& B, long verbose=0);
+long LLL_plus(vec_ZZ& D, mat_ZZ& B, mat_ZZ& U, long a, long b, long verbose=0);
+long LLL_plus(vec_ZZ& D, mat_ZZ& B, long a, long b, long verbose=0);
 
 long image(ZZ& det, mat_ZZ& B, long verbose = 0);
 long image(ZZ& det, mat_ZZ& B, mat_ZZ& U, long verbose = 0);

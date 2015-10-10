@@ -23,7 +23,7 @@ NTL is designed to be portable, fast,
 and relatively easy to use and extend.
 
 <p>
-To make NTL portable, no assembly code is used.
+To make NTL portable, no assembly code is used (well, almost none, see below).
 This is highly desirable, as architectures are constantly
 changing and evolving, and maintaining assembly
 code is quite costly.
@@ -134,6 +134,12 @@ and
 as well as <a href="mailto:abbott@dima.unige.it">John Abbott</a>
 and
 <a href="http://www.loria.fr/~zimmerma">Paul Zimmermann</a>.
+
+<p>
+Note that the GMP library itself generally relies on assembly code.
+There is also one place in NTL where assembly code is sometimes used directly.
+This is in the <tt>quad_float</tt> module, when compiling on
+a Linux/x86 platform. <a href="quad_float.txt">[more details]</a>.
 
 <p>
 <h3>

@@ -359,7 +359,7 @@ void IncrementalGS(mat_ZZ& B, vec_long& P, vec_ZZ& D, vec_vec_ZZ& lam,
 
 
 static
-long LLL(ZZ& det, mat_ZZ& B, mat_ZZ* U, long a, long b, long verbose)
+long LLL(vec_ZZ& D, mat_ZZ& B, mat_ZZ* U, long a, long b, long verbose)
 {
    long m = B.NumRows();
    long n = B.NumCols();
@@ -369,7 +369,6 @@ long LLL(ZZ& det, mat_ZZ& B, mat_ZZ* U, long a, long b, long verbose)
    vec_long P;
    P.SetLength(m);
 
-   vec_ZZ D;
    D.SetLength(m+1);
    D[0] = 1;
 
@@ -417,9 +416,10 @@ long LLL(ZZ& det, mat_ZZ& B, mat_ZZ* U, long a, long b, long verbose)
       }
    }
 
-   det = D[s];
+   D.SetLength(s+1);
    return s;
 }
+
 
 
 static
@@ -485,26 +485,83 @@ long image(ZZ& det, mat_ZZ& B, mat_ZZ* U, long verbose)
 
 long LLL(ZZ& det, mat_ZZ& B, mat_ZZ& U, long verbose)
 {
-   return LLL(det, B, &U, 3, 4, verbose);
+   vec_ZZ D;
+   long s;
+   s = LLL(D, B, &U, 3, 4, verbose);
+   det = D[s];
+   return s;
 }
 
 long LLL(ZZ& det, mat_ZZ& B, long verbose)
 {
-   return LLL(det, B, 0, 3, 4, verbose);
+   vec_ZZ D;
+   long s;
+   s = LLL(D, B, 0, 3, 4, verbose);
+   det = D[s];
+   return s;
 }
 
 long LLL(ZZ& det, mat_ZZ& B, mat_ZZ& U, long a, long b, long verbose)
 {
    if (a <= 0 || b <= 0 || a > b || b/4 >= a) Error("LLL: bad args");
-   
-   return LLL(det, B, &U, a, b, verbose);
+
+   vec_ZZ D;
+   long s;
+   s = LLL(D, B, &U, a, b, verbose);
+   det = D[s];
+   return s;
 }
 
 long LLL(ZZ& det, mat_ZZ& B, long a, long b, long verbose)
 {
    if (a <= 0 || b <= 0 || a > b || b/4 >= a) Error("LLL: bad args");
 
-   return LLL(det, B, 0, a, b, verbose);
+   vec_ZZ D;
+   long s;
+   s = LLL(D, B, 0, a, b, verbose);
+   det = D[s];
+   return s;
+}
+
+
+long LLL_plus(vec_ZZ& D_out, mat_ZZ& B, mat_ZZ& U, long verbose)
+{
+   vec_ZZ D;
+   long s;
+   s = LLL(D, B, &U, 3, 4, verbose);
+   D_out = D;
+   return s;
+}
+
+long LLL_plus(vec_ZZ& D_out, mat_ZZ& B, long verbose)
+{
+   vec_ZZ D;
+   long s;
+   s = LLL(D, B, 0, 3, 4, verbose);
+   D_out = D;
+   return s;
+}
+
+long LLL_plus(vec_ZZ& D_out, mat_ZZ& B, mat_ZZ& U, long a, long b, long verbose)
+{
+   if (a <= 0 || b <= 0 || a > b || b/4 >= a) Error("LLL_plus: bad args");
+
+   vec_ZZ D;
+   long s;
+   s = LLL(D, B, &U, a, b, verbose);
+   D_out = D;
+   return s;
+}
+
+long LLL_plus(vec_ZZ& D_out, mat_ZZ& B, long a, long b, long verbose)
+{
+   if (a <= 0 || b <= 0 || a > b || b/4 >= a) Error("LLL_plus: bad args");
+
+   vec_ZZ D;
+   long s;
+   s = LLL(D, B, 0, a, b, verbose);
+   D_out = D;
+   return s;
 }
 
 
