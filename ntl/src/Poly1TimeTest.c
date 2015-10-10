@@ -1,5 +1,6 @@
 
 #include <NTL/ZZ_pX.h>
+#include <NTL/FFT.h>
 
 #include <stdio.h>
 
@@ -35,14 +36,23 @@ double clean_data(double *t)
    return z;
 }
 
+
 void print_flag()
 {
 
 
-#ifdef NTL_TBL_REM
-printf("TBL_REM ");
+#if defined(NTL_SPMM_UL)
+printf("SPMM_UL ");
+#elif defined(NTL_SPMM_ULL)
+printf("SPMM_ULL ");
+#elif defined(NTL_SPMM_ASM)
+printf("SPMM_ASM ");
 #else
 printf("DEFAULT ");
+#endif
+
+#if defined(NTL_AVOID_BRANCHING)
+printf("AVOID_BRANCHING");
 #endif
 
 
@@ -54,6 +64,17 @@ printf("\n");
 int main()
 {
    _ntl_gmp_hack = 0;
+
+
+#ifdef NTL_SPMM_ULL
+
+   if (sizeof(NTL_ULL_TYPE) < 2*sizeof(long)) {
+      printf("999999999999999 ");
+      print_flag();
+      return 0;
+   }
+
+#endif
 
 
    long n, k;
@@ -75,6 +96,7 @@ int main()
    random(f, n);    // f =             "   "
 
    SetCoeff(f, n);  // Sets coefficient of X^n to 1
+   
 
    // For doing arithmetic mod f quickly, one must pre-compute
    // some information.
@@ -103,28 +125,28 @@ int main()
    }
 
    double t;
-   long i;
+   long i, j;
    long iter;
 
-   n = 1024;
-   k = 1024;
-   RandomLen(p, k);
+   UseFFTPrime(0);
 
-   ZZ_p::init(p);
+   vec_long aa, AA;
 
-   ZZ_pX j1, j2, j3;
+   aa.SetLength(4096);
+   AA.SetLength(4096);
 
-   random(j1, n);
-   random(j2, n);
+   for (i = 0; i < 4096; i++)
+      aa[i] = RandomBnd(FFTPrime[0]);
 
-   mul(j3, j1, j2);
+
+   FFT(AA.elts(), aa.elts(), 12, FFTPrime[0], &RootTable[0][0]);
 
    iter = 1;
 
    do {
      t = GetTime();
      for (i = 0; i < iter; i++) {
-        FFTMul(j3, j1, j2);
+        for (j = 0; j < 10; j++) FFT(AA.elts(), aa.elts(), 12, FFTPrime[0], &RootTable[0][0]);
      }
      t = GetTime() - t;
      iter = 2*iter;
@@ -134,22 +156,22 @@ int main()
 
    iter = long((2/t)*iter) + 1;
 
+
    double tvec[5];
    long w;
 
    for (w = 0; w < 5; w++) {
      t = GetTime();
      for (i = 0; i < iter; i++) {
-        FFTMul(j3, j1, j2);
+        for (j = 0; j < 10; j++) FFT(AA.elts(), aa.elts(), 12, FFTPrime[0], &RootTable[0][0]);
      }
      t = GetTime() - t;
      tvec[w] = t;
-   } 
-
+   }
 
    t = clean_data(tvec);
 
-   t = floor((t/iter)*1e12);
+   t = floor((t/iter)*1e13);
 
    if (t < 0 || t >= 1e15)
       printf("999999999999999 ");
