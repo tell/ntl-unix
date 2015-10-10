@@ -703,19 +703,19 @@ long G_LLL_XD(mat_ZZ& B, mat_ZZ* U, xdouble delta, long deep,
 
    // clean-up
 
-   for (i = 1; i <= m; i++) {
+   for (i = 1; i <= m+dep; i++) {
       delete [] B1[i];
    }
 
    delete [] B1;
 
-   for (i = 1; i <= m; i++) {
+   for (i = 1; i <= m+dep; i++) {
       delete [] mu[i];
    }
 
    delete [] mu;
 
-   for (i = 1; i <= m; i++) {
+   for (i = 1; i <= m+dep; i++) {
       delete [] aux[i];
    }
 
@@ -1326,19 +1326,19 @@ long G_BKZ_XD(mat_ZZ& BB, mat_ZZ* UU, xdouble delta,
       *UU = *U;
    }
 
-   for (i = 1; i <= m+1; i++) {
+   for (i = 1; i <= m_orig+1; i++) {
       delete [] B1[i];
    }
 
    delete [] B1;
 
-   for (i = 1; i <= m+1; i++) {
+   for (i = 1; i <= m_orig+1; i++) {
       delete [] mu[i];
    }
 
    delete [] mu;
 
-   for (i = 1; i <= m+1; i++) {
+   for (i = 1; i <= m_orig+1; i++) {
       delete [] aux[i];
    }
 

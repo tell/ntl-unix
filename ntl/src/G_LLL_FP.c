@@ -964,19 +964,19 @@ long G_LLL_FP(mat_ZZ& B, mat_ZZ* U, double delta, long deep,
 
    // clean-up
 
-   for (i = 1; i <= m; i++) {
+   for (i = 1; i <= m+dep; i++) {
       delete [] B1[i];
    }
 
    delete [] B1;
 
-   for (i = 1; i <= m; i++) {
+   for (i = 1; i <= m+dep; i++) {
       delete [] mu[i];
    }
 
    delete [] mu;
 
-   for (i = 1; i <= m; i++) {
+   for (i = 1; i <= m+dep; i++) {
       delete [] aux[i];
    }
 
@@ -1375,6 +1375,8 @@ long G_BKZ_FP(mat_ZZ& BB, mat_ZZ* UU, double delta,
 
             ctilda[t] = ctilda[t+1] + 
                (yvec[t]+utildavec[t])*(yvec[t]+utildavec[t])*c[t];
+
+            ForceToMem(&ctilda[t]); // prevents an infinite loop
    
             if (prune > 0 && t > jj) {
                eta = G_BKZThresh(t-jj);
@@ -1586,19 +1588,19 @@ long G_BKZ_FP(mat_ZZ& BB, mat_ZZ* UU, double delta,
       *UU = *U;
    }
 
-   for (i = 1; i <= m+1; i++) {
+   for (i = 1; i <= m_orig+1; i++) {
       delete [] B1[i];
    }
 
    delete [] B1;
 
-   for (i = 1; i <= m+1; i++) {
+   for (i = 1; i <= m_orig+1; i++) {
       delete [] mu[i];
    }
 
    delete [] mu;
 
-   for (i = 1; i <= m+1; i++) {
+   for (i = 1; i <= m_orig+1; i++) {
       delete [] aux[i];
    }
 

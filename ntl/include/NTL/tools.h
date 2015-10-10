@@ -256,7 +256,17 @@ void Error(const char *s);
 inline double GetTime() { return _ntl_GetTime(); }
 
 inline long IsFinite(double *p) { return _ntl_IsFinite(p); }
+
+
+#if (NTL_EXT_DOUBLE)
+
 inline void ForceToMem(double *p) { _ntl_ForceToMem(p); }
+
+#else
+
+inline void ForceToMem(double *p) { }
+
+#endif
 
 
 
