@@ -4,7 +4,6 @@
 A Tour of NTL: Traditional and ISO Modes  </title>
 </head>
 
-<body bgcolor="#fff9e6">
 <center>
 <a href="tour-modules.html"><img src="arrow1.gif" alt="[Previous]" align=bottom></a>
  <a href="tour.html"><img src="arrow2.gif" alt="[Up]" align=bottom></a> 
@@ -157,8 +156,7 @@ language.
 <p>
 
 Here is a simple example to illustrate namespaces.
-<p>
-<pre>
+<!-- STARTPLAIN
 
 namespace N {
    void f(int);
@@ -173,10 +171,34 @@ void h()
    x = 1;    // the global x
    N::x = 0; // the x in namespace N
    N::f(0);  // the f in namespace N
-   g(1);     // error -- g is not visible here
+   g(1);     // error ~~ g is not visible here
 }
 
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+<br>
+namespace N {<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>void</b></font>&nbsp;f(<font color="#008b00"><b>int</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>void</b></font>&nbsp;g(<font color="#008b00"><b>int</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>int</b></font>&nbsp;x;<br>
+}<br>
+<br>
+<font color="#008b00"><b>int</b></font>&nbsp;x;<br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;h()<br>
+{<br>
+&nbsp;&nbsp; x =&nbsp;<font color="#ff8c00">1</font>;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// the global x</i></font><br>
+&nbsp;&nbsp; N::x =&nbsp;<font color="#ff8c00">0</font>;&nbsp;<font color="#0000ee"><i>// the x in namespace N</i></font><br>
+&nbsp;&nbsp; N::f(<font color="#ff8c00">0</font>);&nbsp;&nbsp;<font color="#0000ee"><i>// the f in namespace N</i></font><br>
+&nbsp;&nbsp; g(<font color="#ff8c00">1</font>);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// error -- g is not visible here</i></font><br>
+}<br>
+<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 
 <p>
 All of this explicit qualification business
@@ -188,9 +210,7 @@ global scope.
 
 Here is a variation on the previous example, with a using directive.
 
-<p>
-<pre>
-
+<!-- STARTPLAIN
 namespace N {
    void f(int);
    void g(int);
@@ -203,21 +223,47 @@ using namespace N;
 
 void h()
 {
-   x = 1;    // error -- ambiguous: the global x or the x in namespace N?
+   x = 1;    // error ~~ ambiguous: the global x or the x in namespace N?
    ::x = 1;  // the global x
    N::x = 0; // the x in namespace N
    N::f(0);  // the f in namespace N
-   f(0);     // OK -- N::f(int) is visible here
-   g(1);     // OK -- N::g(int) is visible here
+   f(0);     // OK ~~ N::f(int) is visible here
+   g(1);     // OK ~~ N::g(int) is visible here
 }
 
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+namespace N {<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>void</b></font>&nbsp;f(<font color="#008b00"><b>int</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>void</b></font>&nbsp;g(<font color="#008b00"><b>int</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>int</b></font>&nbsp;x;<br>
+}<br>
+<br>
+<font color="#008b00"><b>int</b></font>&nbsp;x;<br>
+<br>
+using namespace N;<br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;h()<br>
+{<br>
+&nbsp;&nbsp; x =&nbsp;<font color="#ff8c00">1</font>;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// error -- ambiguous: the global x or the x in namespace N?</i></font><br>
+&nbsp;&nbsp; ::x =&nbsp;<font color="#ff8c00">1</font>;&nbsp;&nbsp;<font color="#0000ee"><i>// the global x</i></font><br>
+&nbsp;&nbsp; N::x =&nbsp;<font color="#ff8c00">0</font>;&nbsp;<font color="#0000ee"><i>// the x in namespace N</i></font><br>
+&nbsp;&nbsp; N::f(<font color="#ff8c00">0</font>);&nbsp;&nbsp;<font color="#0000ee"><i>// the f in namespace N</i></font><br>
+&nbsp;&nbsp; f(<font color="#ff8c00">0</font>);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// OK -- N::f(int) is visible here</i></font><br>
+&nbsp;&nbsp; g(<font color="#ff8c00">1</font>);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// OK -- N::g(int) is visible here</i></font><br>
+}<br>
+<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 
 <p>
 Here is another example.
 
-<p>
-<pre>
+<!-- STARTPLAIN
 
 namespace N1 {
    int x;
@@ -237,16 +283,51 @@ using namespace N2;
 
 void h()
 {
-   x = 1;     // error -- ambiguous: N1::x or N2::x?
+   x = 1;     // error ~~ ambiguous: N1::x or N2::x?
    N1::x = 1; // OK
    N2::x = 1; // OK
-   y = 1;     // OK  -- this is N2::y
-   g(0);      // error -- ambiguous: N1::g(int) or N2::g(int)?
-   f(0);      // OK -- N1::f(int), because it is the "best" match 
-   f(0.0);    // OK  -- N2::f(double), because it is the "best" match
+   y = 1;     // OK  ~~ this is N2::y
+   g(0);      // error ~~ ambiguous: N1::g(int) or N2::g(int)?
+   f(0);      // OK ~~ N1::f(int), because it is the "best" match 
+   f(0.0);    // OK  ~~ N2::f(double), because it is the "best" match
 }
 
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+<br>
+namespace N1 {<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>int</b></font>&nbsp;x;<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>void</b></font>&nbsp;f(<font color="#008b00"><b>int</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>void</b></font>&nbsp;g(<font color="#008b00"><b>int</b></font>);<br>
+}<br>
+<br>
+namespace N2 {<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>int</b></font>&nbsp;x;<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>int</b></font>&nbsp;y;<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>void</b></font>&nbsp;f(<font color="#008b00"><b>double</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>void</b></font>&nbsp;g(<font color="#008b00"><b>int</b></font>);<br>
+}<br>
+<br>
+using namespace N1;<br>
+using namespace N2;<br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;h()<br>
+{<br>
+&nbsp;&nbsp; x =&nbsp;<font color="#ff8c00">1</font>;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// error -- ambiguous: N1::x or N2::x?</i></font><br>
+&nbsp;&nbsp; N1::x =&nbsp;<font color="#ff8c00">1</font>;&nbsp;<font color="#0000ee"><i>// OK</i></font><br>
+&nbsp;&nbsp; N2::x =&nbsp;<font color="#ff8c00">1</font>;&nbsp;<font color="#0000ee"><i>// OK</i></font><br>
+&nbsp;&nbsp; y =&nbsp;<font color="#ff8c00">1</font>;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// OK&nbsp;&nbsp;-- this is N2::y</i></font><br>
+&nbsp;&nbsp; g(<font color="#ff8c00">0</font>);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// error -- ambiguous: N1::g(int) or N2::g(int)?</i></font><br>
+&nbsp;&nbsp; f(<font color="#ff8c00">0</font>);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// OK -- N1::f(int), because it is the &quot;best&quot; match&nbsp;</i></font><br>
+&nbsp;&nbsp; f(<font color="#ff8c00">0.0</font>);&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// OK&nbsp;&nbsp;-- N2::f(double), because it is the &quot;best&quot; match</i></font><br>
+}<br>
+<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 
 <p>
 This example illustrates the interaction between using declarations
@@ -272,8 +353,8 @@ In ISO mode, the standard library is "wrapped" in namespace <tt>std</tt>,
 and NTL is "wrapped" in namespace <tt>NTL</tt>.
 Thus, the header file <tt>&lt;NTL/ZZ.h&gt;</tt> in ISO mode looks
 something like this:
-<pre>
 
+<!-- STARTPLAIN
 namespace NTL {
 
    // ...
@@ -282,18 +363,44 @@ namespace NTL {
 
    // ...
 
-   ZZ operator+(const ZZ&amp; a, const ZZ&amp; b);
-   ZZ operator*(const ZZ&amp; a, const ZZ&amp; b);
+   ZZ operator+(const ZZ& a, const ZZ& b);
+   ZZ operator*(const ZZ& a, const ZZ& b);
 
-   std::istream&amp; operator>>(std::istream&amp; s, ZZ&amp; x);
-   std::ostream&amp; operator<<(std::ostream&amp; s, const ZZ&amp; a);
+   std::istream& operator>>(std::istream& s, ZZ& x);
+   std::ostream& operator<<(std::ostream& s, const ZZ& a);
 
    // ...
 
   
 }
 
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+namespace NTL {<br>
+<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// ...</i></font><br>
+<br>
+&nbsp;&nbsp; class ZZ {&nbsp;<font color="#0000ee"><i>/*</i></font><font color="#0000ee"><i>&nbsp;...&nbsp;</i></font><font color="#0000ee"><i>*/</i></font>&nbsp;};<br>
+<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// ...</i></font><br>
+<br>
+&nbsp;&nbsp; ZZ operator+(<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; b);<br>
+&nbsp;&nbsp; ZZ operator*(<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; b);<br>
+<br>
+&nbsp;&nbsp; std::istream&amp; operator&gt;&gt;(std::istream&amp; s, ZZ&amp; x);<br>
+&nbsp;&nbsp; std::ostream&amp; operator&lt;&lt;(std::ostream&amp; s,&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a);<br>
+<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// ...</i></font><br>
+<br>
+&nbsp;&nbsp;<br>
+}<br>
+<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 
 Therefore, one must explicitly qualify all names, or use appropriate
 using directives.
@@ -301,21 +408,39 @@ Here is how one could write the <a href="tour-ex1.html">first example</a>
 of the tour in
 ISO mode.
 
-<pre>
-
-#include &lt;NTL/ZZ.h&gt;
+<!-- STARTPLAIN
+#include <NTL/ZZ.h>
 
 int main()
 {
    NTL::ZZ a, b, c; 
 
-   std::cin &gt;&gt; a; 
-   std::cin &gt;&gt; b; 
+   std::cin >> a; 
+   std::cin >> b; 
    c = (a+1)*(b+1);
-   std::cout &lt;&lt; c &lt;&lt; "\n";
+   std::cout << c << "\n";
 }
 
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ.h&gt;</font><br>
+<br>
+<font color="#008b00"><b>int</b></font>&nbsp;main()<br>
+{<br>
+&nbsp;&nbsp; NTL::ZZ a, b, c;&nbsp;<br>
+<br>
+&nbsp;&nbsp; std::cin &gt;&gt; a;&nbsp;<br>
+&nbsp;&nbsp; std::cin &gt;&gt; b;&nbsp;<br>
+&nbsp;&nbsp; c = (a+<font color="#ff8c00">1</font>)*(b+<font color="#ff8c00">1</font>);<br>
+&nbsp;&nbsp; std::cout &lt;&lt; c &lt;&lt;&nbsp;<font color="#4a708b">&quot;</font><font color="#8a2be2">\n</font><font color="#4a708b">&quot;</font>;<br>
+}<br>
+<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 
 <p>
 Notice how everything is explicitly qualified.
@@ -332,9 +457,8 @@ Even with Koenig Lookup, explicit qualification can
 be a bit tedious.
 Here is the same example, this time with using directives.
 
-<pre>
-
-#include &lt;NTL/ZZ.h&gt;
+<!-- STARTPLAIN
+#include <NTL/ZZ.h>
 
 using namespace NTL;
 using namespace std;
@@ -343,20 +467,41 @@ int main()
 {
    ZZ a, b, c; 
 
-   cin &gt;&gt; a; 
-   cin &gt;&gt; b; 
+   cin >> a; 
+   cin >> b; 
    c = (a+1)*(b+1);
-   cout &lt;&lt; c &lt;&lt; "\n";
+   cout << c << "\n";
 }
 
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ.h&gt;</font><br>
+<br>
+using namespace NTL;<br>
+using namespace std;<br>
+<br>
+<font color="#008b00"><b>int</b></font>&nbsp;main()<br>
+{<br>
+&nbsp;&nbsp; ZZ a, b, c;&nbsp;<br>
+<br>
+&nbsp;&nbsp; cin &gt;&gt; a;&nbsp;<br>
+&nbsp;&nbsp; cin &gt;&gt; b;&nbsp;<br>
+&nbsp;&nbsp; c = (a+<font color="#ff8c00">1</font>)*(b+<font color="#ff8c00">1</font>);<br>
+&nbsp;&nbsp; cout &lt;&lt; c &lt;&lt;&nbsp;<font color="#4a708b">&quot;</font><font color="#8a2be2">\n</font><font color="#4a708b">&quot;</font>;<br>
+}<br>
+<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 
 To write NTL client code that will compile smoothly in either
 Traditional or ISO mode, one simply does the following:
 
-<pre>
-
-#include &lt;NTL/ZZ.h&gt;
+<!-- STARTPLAIN
+#include <NTL/ZZ.h>
 
 NTL_CLIENT
 
@@ -364,13 +509,34 @@ int main()
 {
    ZZ a, b, c; 
 
-   cin &gt;&gt; a; 
-   cin &gt;&gt; b; 
+   cin >> a; 
+   cin >> b; 
    c = (a+1)*(b+1);
-   cout &lt;&lt; c &lt;&lt; "\n";
+   cout << c << "\n";
 }
 
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+<font color="#1874cd">#include&nbsp;</font><font color="#4a708b">&lt;NTL/ZZ.h&gt;</font><br>
+<br>
+NTL_CLIENT<br>
+<br>
+<font color="#008b00"><b>int</b></font>&nbsp;main()<br>
+{<br>
+&nbsp;&nbsp; ZZ a, b, c;&nbsp;<br>
+<br>
+&nbsp;&nbsp; cin &gt;&gt; a;&nbsp;<br>
+&nbsp;&nbsp; cin &gt;&gt; b;&nbsp;<br>
+&nbsp;&nbsp; c = (a+<font color="#ff8c00">1</font>)*(b+<font color="#ff8c00">1</font>);<br>
+&nbsp;&nbsp; cout &lt;&lt; c &lt;&lt;&nbsp;<font color="#4a708b">&quot;</font><font color="#8a2be2">\n</font><font color="#4a708b">&quot;</font>;<br>
+}<br>
+<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 
 <p>
 Here, <tt>NTL_CLIENT</tt> is a macro defined by NTL
@@ -379,9 +545,8 @@ depending on the settings of <tt>NTL_STD_CXX</tt>,
 <tt>NTL_PSTD_NNS</tt>, and <tt>NTL_PSTD_NHF</tt>.
 Alternatively, instead of using the <tt>NTL_CLIENT</tt> macro,
 you can write:
-<p>
 
-<pre>
+<!-- STARTPLAIN
 #if (defined(NTL_PSTD_NNS) || defined(NTL_STD_CXX))
    using namespace NTL;
 #endif
@@ -389,7 +554,21 @@ you can write:
 #if (defined(NTL_PSTD_NHF) || defined(NTL_STD_CXX))
    using namespace std;
 #endif
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+<font color="#1874cd">#if (defined(NTL_PSTD_NNS) || defined(NTL_STD_CXX))</font><br>
+&nbsp;&nbsp; using namespace NTL;<br>
+<font color="#1874cd">#endif</font><br>
+<br>
+<font color="#1874cd">#if (defined(NTL_PSTD_NHF) || defined(NTL_STD_CXX))</font><br>
+&nbsp;&nbsp; using namespace std;<br>
+<font color="#1874cd">#endif</font><br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 
 Typically,
 when writing a program that uses NTL,
@@ -478,50 +657,112 @@ above and beyond the namespace wrapping.
 Specifically, the new header files declare several overloaded versions
 of some functions.
 For example, in the old header files, there was one function
-<pre>
+<!-- STARTPLAIN
    int abs(int);
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>int</b></font>&nbsp;abs(<font color="#008b00"><b>int</b></font>);<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 Now there are several, including:
-<pre>
+<!-- STARTPLAIN
    int abs(int);
    long abs(long);
    float abs(float);
    double abs(double);
    long double abs(long double);
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>int</b></font>&nbsp;abs(<font color="#008b00"><b>int</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;abs(<font color="#008b00"><b>long</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>float</b></font>&nbsp;abs(<font color="#008b00"><b>float</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;abs(<font color="#008b00"><b>double</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;abs(<font color="#008b00"><b>long</b></font>&nbsp;<font color="#008b00"><b>double</b></font>);<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 Also, functions like <tt>log</tt> and <tt>sqrt</tt> are also overloaded.
 So instead of just
-<pre>
+<!-- STARTPLAIN
    double log(double);
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;log(<font color="#008b00"><b>double</b></font>);<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 there are
-<pre>
+<!-- STARTPLAIN
    float log(float);
    double log(double);
    long double log(long double);
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>float</b></font>&nbsp;log(<font color="#008b00"><b>float</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;log(<font color="#008b00"><b>double</b></font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;log(<font color="#008b00"><b>long</b></font>&nbsp;<font color="#008b00"><b>double</b></font>);<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 
 <p>
 This can lead to compile-time errors in some old codes, such as:
-<pre>
+<!-- STARTPLAIN
    double log_2 = log(2);
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;log_2 = log(<font color="#ff8c00">2</font>);<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 
 <p>
 With the old header files, the <tt>int</tt> value 2 would have
 been converted to a <tt>double</tt>, and the function 
-<pre>
+<!-- STARTPLAIN
    double log(double);
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;log(<font color="#008b00"><b>double</b></font>);<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 would have been called.
 <p>
 With the new header files, the compiler would raise an error,
 because the function call is now ambiguous.
 <p>
 Of course, the fix is trivial:
-<pre>
+<!-- STARTPLAIN
    double log_2 = log(2.0);
-</pre>
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000">
+<font face="monospace">
+&nbsp;&nbsp;&nbsp;<font color="#008b00"><b>double</b></font>&nbsp;log_2 = log(<font color="#ff8c00">2.0</font>);<br>
+</font>
+</font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
 This will compile correctly with either old or new header files.
 
 <p>

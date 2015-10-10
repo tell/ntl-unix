@@ -4,7 +4,6 @@
 A Tour of NTL: NTL Implementation and Portability  </title>
 </head>
 
-<body bgcolor="#fff9e6">
 <center>
 <a href="tour-tips.html"><img src="arrow1.gif" alt="[Previous]" align=bottom></a>
  <a href="tour.html"><img src="arrow2.gif" alt="[Up]" align=bottom></a> 
@@ -233,7 +232,7 @@ This is achieved in a portable fashion throughout NTL, except
 for the <tt>quad_float</tt> module, where some desperate hacks,
 including assembly code, may be used
 to try to work around problems created by "loose" IEEE floating point
-<a href="quad_float.txt">[more details]</a>.
+<a href="quad_float.cpp.html">[more details]</a>.
 But note that even if the <tt>quad_float</tt> package does not work correctly
 because of these problems, the only other routines that are affected
 are the <tt>LLL_QP</tt> routines in the <tt>LLL</tt> module -- the

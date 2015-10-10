@@ -1,6 +1,4 @@
 
-// TODO: add constructor that uses BlockConstructFromObj
-
 #ifndef NTL_vector__H
 #define NTL_vector__H
 
@@ -424,7 +422,7 @@ void Vec<T>::DoSetLength(long n, const T& a)
    if (n >= allocated()) pos = position(a);
    AllocateTo(n);
    if (pos != -1) src = elts() + pos;
-   Init(n, a, *src);
+   Init(n, *src);
    AdjustLength(n);
 }
 
