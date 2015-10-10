@@ -129,38 +129,12 @@ using the configure script.
  * by the confiuration script when you pass the flag NTL_GMP_LIP=on
  * to that script.
  *
- * Beware that setting this flag can break some older NTL codes.
- * If you want complete backward compatability, but not quite
- * the full performance of GMP, use the flag NTL_GMP_HACK below.
- * See the full NTL documentation for more details.
+ * Beware that setting this flag can break some very old NTL codes.
  *
  * To re-build after changing this flag:
  *   rm *.o; make setup3; make ntl.a
  * You may also have to edit the makefile to modify the variables
  * GMP_OPT_INCDIR, GMP_OPT_LIBDIR, and GMP_OPT_LIB.
- */
-
-#elif 0
-#define NTL_GMP_HACK
-
-/* 
- * Use this flag if you want to use GMP as the long integer package.
- * This can result in significantly faster code on some platforms.
- * It requires that the GMP package (version >= 2.0.2) has already been
- * installed.  You will also have to set the variables GMP_OPT_INCDIR,
- * GMP_OPT_LIBDIR, GMP_OPT_LIB in the makefile (these are set automatically
- * by the confiuration script when you pass the flag NTL_GMP_HACK=on
- * to that script.
- *
- * Unlike the NTL_GMP_LIP flag above, setting this flag maintains
- * complete backward compatability with older NTL codes, but
- * you do not get the full performance of GMP.
- *
- * To re-build after changing this flag:
- *   rm lip.o; make setup3; make ntl.a
- * You may also have to edit the makefile to modify the variables
- * GMP_OPT_INCDIR, GMP_OPT_LIBDIR, and GMP_OPT_LIB.
- *
  */
 
 #endif
@@ -222,28 +196,6 @@ using the configure script.
 
 #endif
 
-
-#if 0
-#define NTL_CXX_ONLY
-
-/*
- *   It is possible to compile everything using C++ only.
- *   If you want to do this, make CC and CXX in the makefile the same.
- *   You may also want to set this flag, which eliminates some
- *   "C" linkage that is no longer necessary.
- *   However, it should still work without it.
- *   
- *   This flag can be set independently of NTL_STD_CXX.
- *   All functions that may have "C" linkage are never wrapped in
- *   namespace NTL;  instead, their names always start with "_ntl_",
- *   and as such, they should not conflict with other global names.
- *   All such names are undocumented, and should never be used 
- *   by NTL clients under normal circumstances.
- *
- *   To re-build after changing this flag: rm *.o; make ntl.a
- */
-
-#endif
 
 #if 0
 #define NTL_CLEAN_INT
@@ -343,14 +295,9 @@ using the configure script.
  *************************************************************************/
 
 
-/* One can choose one of four different stragtegies for long integer
- * arithmetic: the default, NTL_LONG_LONG, NTL_AVOID_FLOAT, or NTL_SINGLE_MUL.
- * The configuration wizard will choose among the first three; the use of
- * NTL_SINGLE_MUL is only allowed if NTL_CLEAN_INT is not set, and its
- * use is not recommended.
- *
- * These flags are irrelevant when NTL_GMP_LIP is set, and are simply ignored,
- * except for NTL_SINGLE_MUL -- setting that causes a complie-time error.
+/* One can choose one of three different stragtegies for long integer
+ * arithmetic: the default, NTL_LONG_LONG, or NTL_AVOID_FLOAT.
+ * The configuration wizard will choose among them.
  * 
  */
 
@@ -387,19 +334,6 @@ using the configure script.
  *   set NTL_TBL_REM (see below).
  *
  *   To re-build after changing this flag:  rm lip.o; make ntl.a
- */
-
-#elif 0
-#define NTL_SINGLE_MUL 
-
-/*   This was developed originally to improve performance on
- *   ancient Sparc stations that did not have built-in integer mul
- *   instructions.  Unless you have such an old-timer, I would not
- *   recommend using this option.  This option only works on
- *   32-bit machines with IEEE floating point, and is not truly
- *   portable.  If you use this option, you get a 26-bit radix.
- *
- *   To re-build after changing this flag: rm *.o; make ntl.a
  */
 
 #endif
@@ -591,22 +525,6 @@ using the configure script.
  */
 
  
-#if 0
-#define NTL_FAST_INT_MUL
-
-/*
- *   Really esoteric.
- *   If using NTL_SINGLE_MUL, and your machine
- *   has a fast integer multiply instruction, this might yield
- *   faster code.  Experiment!
- *
- *   Irrelevent when NTL_GMP_LIP is set.
- *
- *   To re-build after changing this flag: rm *.o; make ntl.a
- */
-
-#endif
-
 
 
 

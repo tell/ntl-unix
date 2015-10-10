@@ -515,7 +515,7 @@ void mul(mat_RR& X, const mat_RR& A, const RR& b_in)
 
 void mul(mat_RR& X, const mat_RR& A, double b_in)
 {
-   static RR b;
+   RR b;
    b = b_in;
    long n = A.NumRows();
    long m = A.NumCols();

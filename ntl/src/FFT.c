@@ -7,22 +7,78 @@
 NTL_START_IMPL
 
 
+NTL_THREAD_LOCAL
 FFTPrimeInfo **FFTTables = 0;
+
+NTL_THREAD_LOCAL static
 Vec<FFTPrimeInfo*> FFTTables_store;
 
+NTL_THREAD_LOCAL 
 long *FFTPrime = 0;
+
+NTL_THREAD_LOCAL static
 Vec<long> FFTPrime_store;
 
+NTL_THREAD_LOCAL
 double *FFTPrimeInv = 0;
+
+NTL_THREAD_LOCAL static
 Vec<double> FFTPrimeInv_store;
 
 // We separate the pointer from the Vec, to ensure
 // portability: global initialization of C++ objects
 // can be problematic.
 
-
-
+NTL_THREAD_LOCAL
 long NumFFTPrimes = 0;
+
+
+
+
+/*************************
+
+FIXME: in a thread safe implememntation, we need to do a lot
+of work so that we can share common tables across threads.
+
+One problem is how to represent the tables FFTPrimeInfo
+and FFTPrime (we can ultimately get rid of FFTPrimeInv).
+
+Option 1:
+If we put an absolute upper bound on the # of FFTPrimes,
+and allocate space for these tables just once and for all
+(the upper bound can default to some constant, and be dynamically
+adjusted at the very beginning of execution),
+then we can use standard double-checked locking to grow
+the tables.
+
+This means we need 16-bytes per FFT prime, if we are careful.
+If we allow 1MB of space for these tables...
+This means up to 2^20/16 = 65536 primes.
+Each prime gives us 50 bits, so 3276800 bits, divide by 2:
+1638400...so we can do ZZ_pX arithmetic with p up to 1.6M bits.
+That's pretty good.
+
+Option 2:
+Represent as 2D arrays, which we can grow dynamically, row by row.
+Advantage: don't need to allocate all space up front.
+Disadvantage: array references now more expensive.
+
+Option 3:
+Dynamically grow 1D vectors, but keep thread-local copies.
+This can be done, but leads to other complications.
+
+I kind of like option 1.  We still have to get rid of a few
+references to NumFFTPrimes which are lurking in the code.
+But it's not too bad.
+
+Another are the FFTMultipliers.
+I can also allocate the outer vectors once and for all
+(this comes to about 400B per prime, and so at most 
+400*256 = 100K).  Then use double-checked locking to
+initialize rows as needed.
+
+
+*************************/
 
 
 
@@ -104,8 +160,8 @@ long IsFFTPrime(long n, long& w)
 static
 void NextFFTPrime(long& q, long& w)
 {
-   static long m = NTL_FFTMaxRootBnd + 1;
-   static long k = 0;
+   NTL_THREAD_LOCAL static long m = NTL_FFTMaxRootBnd + 1;
+   NTL_THREAD_LOCAL static long k = 0;
 
    long t, cand;
 
@@ -152,6 +208,8 @@ void InitFFTPrimeInfo(FFTPrimeInfo& info, long q, long w, long bigtab)
 
    info.q = q;
    info.qinv = qinv;
+   info.zz_p_context = 0;
+
 
    info.RootTable.SetLength(mr+1);
    info.RootInvTable.SetLength(mr+1);
@@ -186,6 +244,12 @@ void InitFFTPrimeInfo(FFTPrimeInfo& info, long q, long w, long bigtab)
 }
 
 
+#ifndef NTL_WIZARD_HACK
+zz_pInfoT *Build_zz_pInfo(FFTPrimeInfo *info);
+#else
+zz_pInfoT *Build_zz_pInfo(FFTPrimeInfo *info) { return 0; }
+#endif
+
 void UseFFTPrime(long index)
 {
    long numprimes = FFTTables_store.length();
@@ -217,6 +281,7 @@ void UseFFTPrime(long index)
 #endif
 
    InitFFTPrimeInfo(info, q, w, bigtab);
+   info.zz_p_context = Build_zz_pInfo(&info);
 
    // initialize data structures for the legacy inteface
 
@@ -264,7 +329,16 @@ long RevInc(long a, long k)
 
 
 
-static Vec<long> brc_mem[NTL_FFTMaxRoot+1];
+NTL_THREAD_LOCAL static 
+Vec<long> brc_mem[NTL_FFTMaxRoot+1];
+
+//  NOTE: maybe try COBRA for BitReverseCopy? see:
+//  Towards an optimal bit-reversal permutation program
+//  This is more cache friendly.
+//  However, on some tests on a fairly old macbook (circa 2011),
+//  the contribution of BitReverseCopy for k up to 18 was
+//  pretty small...at worst, about 10% of the total time.
+//  So this may not be very pressing.
 
 static
 void BitReverseCopy(long *A, const long *a, long k)
@@ -328,9 +402,9 @@ void FFT(long* A, const long* a, long k, long q, const long* root)
 
    
 
-   static Vec<long> wtab_store;
-   static Vec<mulmod_precon_t> wqinvtab_store;
-   static Vec<long> AA_store;
+   NTL_THREAD_LOCAL static Vec<long> wtab_store;
+   NTL_THREAD_LOCAL static Vec<mulmod_precon_t> wqinvtab_store;
+   NTL_THREAD_LOCAL static Vec<long> AA_store;
 
    wtab_store.SetLength(1L << (k-2));
    wqinvtab_store.SetLength(1L << (k-2));
@@ -489,7 +563,7 @@ void FFT(long* A, const long* a, long k, long q, const long* root)
 
 
 
-#if (!defined(NTL_FFT_LAZYMUL) || defined(NTL_SINGLE_MUL) || \
+#if (!defined(NTL_FFT_LAZYMUL) || \
      (!defined(NTL_SPMM_ULL) && !defined(NTL_SPMM_ASM)))
 
 // FFT with precomputed tables 
@@ -597,7 +671,7 @@ void FFT(long* A, const long* a, long k, long q, const long* root, FFTMultiplier
 
    if (k > tab.MaxK) PrecompFFTMultipliers(k, q, root, tab);
 
-   static Vec<long> AA_store;
+   NTL_THREAD_LOCAL static Vec<long> AA_store;
    AA_store.SetLength(1L << k);
    long *AA = AA_store.elts();
 
@@ -967,7 +1041,7 @@ void FFT(long* A, const long* a, long k, long q, const long* root, FFTMultiplier
 
    if (k > tab.MaxK) LazyPrecompFFTMultipliers(k, q, root, tab);
 
-   static Vec<unsigned long> AA_store;
+   NTL_THREAD_LOCAL static Vec<unsigned long> AA_store;
    AA_store.SetLength(1L << k);
    unsigned long *AA = AA_store.elts();
 

@@ -20,7 +20,8 @@ void CheckFinite(double *p)
 static void RowTransform(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1)
 // x = x - y*MU
 {
-   static ZZ T, MU;
+   NTL_ZZRegister(T);
+   NTL_ZZRegister(MU);
    long k;
 
    long n = A.length();
@@ -137,7 +138,8 @@ static void RowTransform(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1,
                          double& max_a, double max_b, long& in_float)
 // x = x - y*MU
 {
-   static ZZ T, MU;
+   NTL_ZZRegister(T);
+   NTL_ZZRegister(MU);
    long k;
    double mu;
 
@@ -285,7 +287,8 @@ static void RowTransform2(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1)
 // x = x + y*MU
 
 {
-   static ZZ T, MU;
+   NTL_ZZRegister(T);
+   NTL_ZZRegister(MU);
    long k;
 
    long n = A.length();
@@ -577,14 +580,12 @@ void GivensComputeGS(double **B1, double **mu, double **aux, long k, long n,
       CheckFinite(&p[i]);
 }
 
-static double red_fudge = 0;
-static long log_red = 0;
-
-static long verbose = 0;
-
-static unsigned long NumSwaps = 0;
-static double StartTime = 0;
-static double LastTime = 0;
+NTL_THREAD_LOCAL static double red_fudge = 0;
+NTL_THREAD_LOCAL static long log_red = 0;
+NTL_THREAD_LOCAL static long verbose = 0;
+NTL_THREAD_LOCAL static unsigned long NumSwaps = 0;
+NTL_THREAD_LOCAL static double StartTime = 0;
+NTL_THREAD_LOCAL static double LastTime = 0;
 
 
 
@@ -1031,7 +1032,7 @@ long G_LLL_FP(mat_ZZ& B, mat_ZZ& U, double delta, long deep,
 
 
 
-static vec_double G_BKZConstant;
+NTL_THREAD_LOCAL static vec_double G_BKZConstant;
 
 static
 void ComputeG_BKZConstant(long beta, long p)
@@ -1086,7 +1087,7 @@ void ComputeG_BKZConstant(long beta, long p)
    }
 }
 
-static vec_double G_BKZThresh;
+NTL_THREAD_LOCAL static vec_double G_BKZThresh;
 
 static 
 void ComputeG_BKZThresh(double *c, long beta)

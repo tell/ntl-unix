@@ -189,14 +189,12 @@ using namespace NTL;
 
 long IrredTestMod(const ZZX&amp; f, const ZZ&amp; p)
 {
-   ZZ_pBak bak;  
-   bak.save();  // save current modulus in bak
-
-   ZZ_p::init(p);  // set the current modulus to p
+   ZZ_pPush push(p); // save current modulus and install p
+                     // as current modulus
 
    return DetIrredTest(conv&lt;ZZ_pX&gt;(f));
 
-   // old modulus is restored automatically when bak is destroyed
+   // old modulus is restored automatically when push is destroyed
    // upon return
 }
 </pre>
@@ -247,11 +245,7 @@ using namespace NTL;
 
 long IrredTestMod(const ZZX&amp; f, long p)
 {
-   zz_pBak bak; 
-   bak.save();
-
-   zz_p::init(p);  
-
+   zz_pPush push(p);
    return DetIrredTest(conv&lt;zz_pX&gt;(f));
 }
 </pre>
@@ -304,8 +298,7 @@ void GCD(ZZX&amp; d, const ZZX&amp; a, const ZZX&amp; b)
 
    ZZ prod;
 
-   zz_pBak bak;
-   bak.save();
+   zz_pPush push(); // save current modulus, restore upon return
 
    long FirstTime = 1;
 
@@ -364,6 +357,22 @@ see <a href="vec_lzz_p.txt"><tt>vec_lzz_p.txt</tt></a> for details on <tt>vec_zz
 see <a href="mat_lzz_p.txt"><tt>mat_lzz_p.txt</tt></a> for details on <tt>mat_zz_p</tt>.
 
 
+<p> <hr> <p>
+
+NTL provides a number of "residue class" types with a dynamic modulus
+stored as a global variable: the types <tt>ZZ_p</tt> and <tt>zz_p</tt>,
+discussed above, as well as the types <tt>ZZ_pE</tt>, <tt>zz_pE</tt>,
+and <tt>GF2E</tt>, discussed later.
+
+<p>
+Some caution must be used so that a variable constructed under
+one modulus is not used "out of context", when a different modulus, or perhaps
+no modulus, is installed as the current modulus.
+While arithmetic operations should certainly be avoided,
+NTL does take care to allow for certain operations to be safely
+performed "out of context". 
+These operations include default and copy constructors, as well as assignment.
+
 
 <p> <hr> <p>
 
@@ -411,7 +420,7 @@ long MatIrredTest(const GF2X&amp; f)
 
    M.SetDims(n, n);
 
-   GF2X x_squared = GF2X(2, 1);
+   GF2X x_squared = GF2X(INIT_MONO, 2);
 
    GF2X g;
    g = 1;

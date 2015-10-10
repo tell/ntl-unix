@@ -13,7 +13,7 @@ NTL_START_IMPL
 
 const zz_pEX& zz_pEX::zero()
 {
-   static zz_pEX z;
+   NTL_THREAD_LOCAL static zz_pEX z;
    return z;
 }
 
@@ -991,15 +991,15 @@ void PlainMul(zz_pEX& x, const zz_pEX& a, const zz_pEX& b)
    xp = x.rep.elts();
 
    long i, j, jmin, jmax;
-   static zz_pX t, accum;
+   zz_pX t, accum;
 
    for (i = 0; i <= d; i++) {
       jmin = max(0, i-db);
       jmax = min(da, i);
       clear(accum);
       for (j = jmin; j <= jmax; j++) {
-	 mul(t, rep(ap[j]), rep(bp[i-j]));
-	 add(accum, accum, t);
+         mul(t, rep(ap[j]), rep(bp[i-j]));
+         add(accum, accum, t);
       }
       conv(xp[i], accum);
    }
@@ -1070,13 +1070,13 @@ void PlainDivRem(zz_pEX& q, zz_pEX& r, const zz_pEX& a, const zz_pEX& b)
    for (i = dq; i >= 0; i--) {
       conv(t, xp[i+db]);
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       qp[i] = t;
       negate(t, t);
 
       for (j = db-1; j >= 0; j--) {
-	 mul(s, rep(t), rep(bp[j]));
-	 add(xp[i+j], xp[i+j], s);
+         mul(s, rep(t), rep(bp[j]));
+         add(xp[i+j], xp[i+j], s);
       }
    }
 
@@ -1126,12 +1126,12 @@ void PlainRem(zz_pEX& r, const zz_pEX& a, const zz_pEX& b, vec_zz_pX& x)
    for (i = dq; i >= 0; i--) {
       conv(t, xp[i+db]);
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       negate(t, t);
 
       for (j = db-1; j >= 0; j--) {
-	 mul(s, rep(t), rep(bp[j]));
-	 add(xp[i+j], xp[i+j], s);
+         mul(s, rep(t), rep(bp[j]));
+         add(xp[i+j], xp[i+j], s);
       }
    }
 
@@ -1193,13 +1193,13 @@ void PlainDivRem(zz_pEX& q, zz_pEX& r, const zz_pEX& a, const zz_pEX& b,
    for (i = dq; i >= 0; i--) {
       conv(t, xp[i+db]);
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       qp[i] = t;
       negate(t, t);
 
       for (j = db-1; j >= 0; j--) {
-	 mul(s, rep(t), rep(bp[j]));
-	 add(xp[i+j], xp[i+j], s);
+         mul(s, rep(t), rep(bp[j]));
+         add(xp[i+j], xp[i+j], s);
       }
    }
 
@@ -1262,15 +1262,15 @@ void PlainDiv(zz_pEX& q, const zz_pEX& a, const zz_pEX& b)
    for (i = dq; i >= 0; i--) {
       conv(t, xp[i]);
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       qp[i] = t;
       negate(t, t);
 
       long lastj = max(0, db-i);
 
       for (j = db-1; j >= lastj; j--) {
-	 mul(s, rep(t), rep(bp[j]));
-	 add(xp[i+j-db], xp[i+j-db], s);
+         mul(s, rep(t), rep(bp[j]));
+         add(xp[i+j-db], xp[i+j-db], s);
       }
    }
 }
@@ -1317,12 +1317,12 @@ void PlainRem(zz_pEX& r, const zz_pEX& a, const zz_pEX& b)
    for (i = dq; i >= 0; i--) {
       conv(t, xp[i+db]);
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       negate(t, t);
 
       for (j = db-1; j >= 0; j--) {
-	 mul(s, rep(t), rep(bp[j]));
-	 add(xp[i+j], xp[i+j], s);
+         mul(s, rep(t), rep(bp[j]));
+         add(xp[i+j], xp[i+j], s);
       }
    }
 
@@ -1410,7 +1410,7 @@ void NewtonInv(zz_pEX& c, const zz_pEX& a, long e)
       return;
    }
 
-   static vec_long E;
+   vec_long E;
    E.SetLength(0);
    append(E, e);
    while (e > 1) {
@@ -2215,7 +2215,7 @@ void build(zz_pEXArgument& A, const zz_pEX& h, const zz_pEXModulus& F, long m)
       MulMod(A.H[i], A.H[i-1], h, F);
 }
 
-long zz_pEXArgBound = 0;
+NTL_THREAD_LOCAL long zz_pEXArgBound = 0;
 
 
 
@@ -3039,6 +3039,8 @@ void TraceMod(zz_pE& x, const zz_pEX& a, const zz_pEXModulus& F)
 
    if (deg(a) >= n)
       Error("trace: bad args");
+
+   // FIXME: in a thread-safe impl, we need some kind of mutex here
 
    if (F.tracevec.length() == 0) 
       ComputeTraceVec(F);

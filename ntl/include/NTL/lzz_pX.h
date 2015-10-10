@@ -19,14 +19,14 @@ NTL_OPEN_NNS
 #define NTL_zz_pX_BERMASS_CROSSOVER (zz_pX_bermass_crossover[zz_pInfo->PrimeCnt])
 #define NTL_zz_pX_TRACE_CROSSOVER (zz_pX_trace_crossover[zz_pInfo->PrimeCnt])
 
-extern long zz_pX_mod_crossover[];
-extern long zz_pX_mul_crossover[];
-extern long zz_pX_newton_crossover[];
-extern long zz_pX_div_crossover[];
-extern long zz_pX_halfgcd_crossover[];
-extern long zz_pX_gcd_crossover[];
-extern long zz_pX_bermass_crossover[];
-extern long zz_pX_trace_crossover[];
+extern const long zz_pX_mod_crossover[];
+extern const long zz_pX_mul_crossover[];
+extern const long zz_pX_newton_crossover[];
+extern const long zz_pX_div_crossover[];
+extern const long zz_pX_halfgcd_crossover[];
+extern const long zz_pX_gcd_crossover[];
+extern const long zz_pX_bermass_crossover[];
+extern const long zz_pX_trace_crossover[];
 
 
 
@@ -46,16 +46,27 @@ Use the member function normalize() to strip leading zeros.
 
 **************************************************************/
 
-class zz_pX {
 
+class zz_pE; // forward declaration
+class zz_pXModulus;
+class fftRep;
+class zz_pXMultiplier;
+
+
+class zz_pX {
 public:
+typedef zz_p coeff_type;
+typedef zz_pE residue_type;
+typedef zz_pXModulus modulus_type;
+typedef zz_pXMultiplier multiplier_type;
+typedef fftRep fft_type;
+
 
 vec_zz_p rep;
 
 typedef vec_zz_p VectorBaseType;
 
 
-public:
 
 /***************************************************************
 
@@ -64,10 +75,11 @@ public:
 ****************************************************************/
 
 
-zz_pX()
+zz_pX() {}
 //  initial value 0
 
-   { }
+explicit zz_pX(long a) { *this = a; }
+explicit zz_pX(zz_p a) { *this = a; }
 
 
 zz_pX(INIT_SIZE_TYPE, long n) { rep.SetMaxLength(n); }
@@ -77,6 +89,10 @@ zz_pX(const zz_pX& a) : rep(a.rep) { }
 
 inline zz_pX(long i, zz_p c);
 inline zz_pX(long i, long c);
+
+inline zz_pX(INIT_MONO_TYPE, long i, zz_p c);
+inline zz_pX(INIT_MONO_TYPE, long i, long c);
+inline zz_pX(INIT_MONO_TYPE, long i);
 
 zz_pX& operator=(const zz_pX& a) 
    { rep = a.rep; return *this; }
@@ -103,7 +119,6 @@ void kill()
 
 
 
-typedef zz_p coeff_type;
 void SetLength(long n) { rep.SetLength(n); }
 zz_p& operator[](long i) { return rep[i]; }
 const zz_p& operator[](long i) const { return rep[i]; }
@@ -171,15 +186,17 @@ void SetCoeff(zz_pX& x, long i, zz_p a);
 // x[i] = a, error is raised if i < 0
 
 void SetCoeff(zz_pX& x, long i, long a);
-
-inline zz_pX::zz_pX(long i, zz_p a) 
-   { SetCoeff(*this, i, a); }
-
-inline zz_pX::zz_pX(long i, long a) 
-   { SetCoeff(*this, i, a); }
+// x[i] = a, error is raised if i < 0
 
 void SetCoeff(zz_pX& x, long i);
 // x[i] = 1, error is raised if i < 0
+
+inline zz_pX::zz_pX(long i, zz_p a) { SetCoeff(*this, i, a); }
+inline zz_pX::zz_pX(long i, long a) { SetCoeff(*this, i, a); }
+
+inline zz_pX::zz_pX(INIT_MONO_TYPE, long i, zz_p a) { SetCoeff(*this, i, a); }
+inline zz_pX::zz_pX(INIT_MONO_TYPE, long i, long a) { SetCoeff(*this, i, a); }
+inline zz_pX::zz_pX(INIT_MONO_TYPE, long i) { SetCoeff(*this, i); }
 
 void SetX(zz_pX& x);
 // x is set to the monomial X
@@ -1067,7 +1084,7 @@ struct zz_pXArgument {
    vec_zz_pX H;
 };
 
-extern long zz_pXArgBound;
+NTL_THREAD_LOCAL extern long zz_pXArgBound;
 
 
 void build(zz_pXArgument& H, const zz_pX& h, const zz_pXModulus& F, long m);

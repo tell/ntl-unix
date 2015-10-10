@@ -7,8 +7,57 @@
 
 NTL_OPEN_NNS
 
+
+
+
+// Context, Bak, and Push types, just for consistency.
+// They don't do anything
+
+class GF2Context {
+public:
+GF2Context() {}
+explicit GF2Context(long p) {  if (p != 2) Error("GF2Context with p != 2"); }
+void save() {}
+void restore() const {}
+};
+
+class GF2Bak {
+public:
+void save();
+void restore();
+
+
+private:
+GF2Bak(const GF2Bak&); // disabled
+void operator=(const GF2Bak&); // disabled
+
+
+};
+
+class GF2Push {
+
+GF2Push(const GF2Push&); // disabled
+void operator=(const GF2Push&); // disabled
+
+public:
+GF2Push() { }
+explicit GF2Push(const GF2Context& context) { }
+explicit GF2Push(long p) { if (p != 2) Error("GF2Push with p != 2"); }
+
+
+};
+
+class GF2X; // forward declaration
+
+
 class GF2 {
 public:
+typedef long rep_type;
+typedef GF2Context context_type;
+typedef GF2Bak bak_type;
+typedef GF2Push push_type;
+typedef GF2X poly_type;
+
 
 unsigned long _GF2__rep;
 
@@ -16,8 +65,13 @@ unsigned long _GF2__rep;
 GF2() : _GF2__rep(0) { }
 GF2(const GF2& a) : _GF2__rep(a._GF2__rep) { }
 
+explicit GF2(long a) : _GF2__rep(0) { *this = a; }
+
 GF2(INIT_VAL_TYPE, long a) : _GF2__rep(a & 1) { }
 GF2(INIT_LOOP_HOLE_TYPE, unsigned long a) : _GF2__rep(a) { }
+
+
+
 
 ~GF2() { }
 
@@ -26,6 +80,12 @@ GF2& operator=(long a) { _GF2__rep = a & 1; return *this; }
 
 static long modulus() { return 2; }
 static GF2 zero() { return GF2(); }
+
+// for consistency
+GF2(INIT_NO_ALLOC_TYPE) : _GF2__rep(0) { } 
+GF2(INIT_ALLOC_TYPE) : _GF2__rep(0) { } 
+void allocate() { }
+
 
 };
 
@@ -430,6 +490,8 @@ inline void conv(GF2& x, GF2 a) { x = a; }
 inline void conv(ref_GF2 x, GF2 a) { x = a; }
 
 /* ------------------------------------- */
+
+
 
 
 // Finally, we declare an specialization Vec<GF2>:

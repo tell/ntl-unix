@@ -205,7 +205,7 @@ void TraceMap(GF2X& w, const GF2X& a, long d, const GF2XModulus& F)
 }
 
 
-long GF2X_BlockingFactor = 40;
+const long GF2X_BlockingFactor = 40;
 
 void DDF(vec_pair_GF2X_long& factors, const GF2X& ff, long verbose)
 {

@@ -39,7 +39,6 @@
 
 typedef mp_limb_t *_ntl_limb_t_ptr;
 
-int _ntl_gmp_hack = 0;
 
 #if (__GNU_MP_VERSION < 3)
 
@@ -63,18 +62,12 @@ int _ntl_gmp_hack = 0;
 #define mpn_tdiv_qr __MPN(tdiv_qr)
 
 
-#ifdef __cplusplus
 extern "C" 
-#endif
 void mpn_tdiv_qr(mp_ptr, mp_ptr, mp_size_t, mp_srcptr, mp_size_t, 
                  mp_srcptr, mp_size_t);
 
 #endif
 
-
-#if (defined(NTL_CXX_ONLY) && !defined(__cplusplus))
-#error "CXX_ONLY flag set...must use C++ compiler"
-#endif
 
 
 union gbigint_header {
@@ -115,6 +108,9 @@ union gbigint_header {
  * through pointers of different types, and no alignmement
  * problems should arise.
  * 
+ * DIRT: This rule is broken in the file g_lip.h: the inline definition
+ * of _ntl_gmaxalloc in that file has the definition of ALLOC pasted in.
+ * 
  * Actually, mp_limb_t is usually the type unsigned long.
  * However, on some 64-bit platforms, the type long is only 32 bits,
  * and gmp makes mp_limb_t unsigned long long in this case.
@@ -122,7 +118,7 @@ union gbigint_header {
  * have 64-bit longs on 64-bit machines.
  */ 
 
-#if 1
+#if 0
 
 #define ALLOC(p) (((long *) (p))[0])
 #define SIZE(p) (((long *) (p))[1])
@@ -234,22 +230,28 @@ while (0)
  */
 
 
+static
 inline long& ALLOC(_ntl_gbigint p) 
    { return (((long *) p)[0]); }
 
+static
 inline long& SIZE(_ntl_gbigint p) 
    { return (((long *) p)[1]); }
 
+static
 inline mp_limb_t * DATA(_ntl_gbigint p) 
    { return ((mp_limb_t *) (((long *) (p)) + 2)); }
 
+static
 inline long STORAGE(long len)
    { return ((long)(2*sizeof(long) + (len)*sizeof(mp_limb_t))); }
 
+static
 inline long MustAlloc(_ntl_gbigint c, long len)  
    { return (!(c) || (ALLOC(c) >> 2) < (len)); }
 
 
+static
 inline void GET_SIZE_NEG(long& sz, long& neg, _ntl_gbigint p)
 { 
    long s; 
@@ -264,6 +266,7 @@ inline void GET_SIZE_NEG(long& sz, long& neg, _ntl_gbigint p)
    }
 }
 
+static
 inline void STRIP(long& sz, mp_limb_t *p)
 {
    long i;
@@ -272,16 +275,19 @@ inline void STRIP(long& sz, mp_limb_t *p)
    sz = i + 1;
 }
 
+static
 inline long ZEROP(_ntl_gbigint p)
 {
    return !p || !SIZE(p);
 }
 
+static
 inline long ONEP(_ntl_gbigint p)
 {
    return p && SIZE(p) == 1 && DATA(p)[0] == 1;
 }
 
+static
 inline void SWAP_BIGINT(_ntl_gbigint& a, _ntl_gbigint& b)
 {
    _ntl_gbigint t;
@@ -290,6 +296,7 @@ inline void SWAP_BIGINT(_ntl_gbigint& a, _ntl_gbigint& b)
    b = t;
 }
 
+static
 inline void SWAP_LONG(long& a, long& b)
 {
    long t;
@@ -298,6 +305,7 @@ inline void SWAP_LONG(long& a, long& b)
    b = t;
 }
 
+static
 inline void SWAP_LIMB_PTR(_ntl_limb_t_ptr& a, _ntl_limb_t_ptr& b)
 {
    _ntl_limb_t_ptr t;
@@ -307,6 +315,7 @@ inline void SWAP_LIMB_PTR(_ntl_limb_t_ptr& a, _ntl_limb_t_ptr& b)
 }
 
 
+static
 inline void COUNT_BITS(long& cnt, mp_limb_t a)
 {
    long i = 0;
@@ -324,6 +333,39 @@ inline void COUNT_BITS(long& cnt, mp_limb_t a)
 
    cnt = i;
 }
+
+#endif
+
+
+
+#if 0
+#define GRegister(x) static _ntl_gbigint x = 0 
+
+#else
+
+
+class _ntl_gbigint_watcher {
+public:
+   _ntl_gbigint *watched;
+
+   explicit
+   _ntl_gbigint_watcher(_ntl_gbigint *_watched) : watched(_watched) {}
+
+   ~_ntl_gbigint_watcher() 
+   {
+      if (*watched && (ALLOC(*watched) >> 2) > NTL_RELEASE_THRESH)
+         _ntl_gfree(watched);
+   }
+};
+
+#define GRegister(x) NTL_THREAD_LOCAL static _ntl_gbigint x = 0; _ntl_gbigint_watcher _WATCHER__ ## x(&x)
+
+// FIXME: when we implement thread safe code, we may want to define
+// this so that we also attach a thread-local watcher that unconditionally
+// releases memory when the thread terminates
+
+
+
 
 #endif
 
@@ -348,7 +390,7 @@ void ForceNormal(_ntl_gbigint x)
 
 
 static 
-void ghalt(char *c)
+void ghalt(const char *c)
 {
    fprintf(stderr,"fatal error:\n   %s\nexit...\n",c);
    fflush(stderr);
@@ -356,13 +398,6 @@ void ghalt(char *c)
 }
 
 
-long _ntl_gmaxalloc(_ntl_gbigint x)
-{
-   if (!x)
-      return 0;
-   else
-      return (ALLOC(x) >> 2) - 1;
-}
 
 #define MIN_SETL	(4)
    /* _ntl_gsetlength allocates a multiple of MIN_SETL digits */
@@ -463,7 +498,7 @@ _ntl_gswap(_ntl_gbigint *a, _ntl_gbigint *b)
    _ntl_gbigint c;
 
    if ((*a && (ALLOC(*a) & 1)) || (*b && (ALLOC(*b) & 1))) {
-      static _ntl_gbigint t = 0; 
+      GRegister(t);
       _ntl_gcopy(*a, &t);
       _ntl_gcopy(*b, a);
       _ntl_gcopy(t, b);
@@ -616,7 +651,7 @@ void _ntl_glowbits(_ntl_gbigint a, long b, _ntl_gbigint *cc)
 
 long _ntl_gslowbits(_ntl_gbigint a, long p)
 {
-   static _ntl_gbigint x = 0;
+   GRegister(x);
 
    if (p > NTL_BITS_PER_LONG)
       p = NTL_BITS_PER_LONG;
@@ -1214,7 +1249,7 @@ long _ntl_gscompare(_ntl_gbigint a, long b)
       return -1;
    }
    else {
-      static _ntl_gbigint B = 0;
+      GRegister(B);
       _ntl_gintoz(b, &B);
       return _ntl_gcompare(a, B);
    }
@@ -1448,7 +1483,7 @@ _ntl_gadd(_ntl_gbigint a, _ntl_gbigint b, _ntl_gbigint *cc)
 void
 _ntl_gsadd(_ntl_gbigint a, long b, _ntl_gbigint *cc)
 {
-   static _ntl_gbigint B = 0;
+   GRegister(B);
    _ntl_gintoz(b, &B);
    _ntl_gadd(a, B, cc);
 }
@@ -1600,7 +1635,7 @@ _ntl_gsubpos(_ntl_gbigint a, _ntl_gbigint b, _ntl_gbigint *cc)
 
 void _ntl_gmul(_ntl_gbigint a, _ntl_gbigint b, _ntl_gbigint *cc)
 {
-   static _ntl_gbigint mem = 0;
+   GRegister(mem);
 
    long sa, aneg, sb, bneg, alias, sc;
    mp_limb_t *adata, *bdata, *cdata, msl;
@@ -1849,7 +1884,8 @@ long _ntl_gsmod(_ntl_gbigint a, long d)
 void _ntl_gdiv(_ntl_gbigint a, _ntl_gbigint d, 
                _ntl_gbigint *bb, _ntl_gbigint *rr)
 {
-   static _ntl_gbigint b = 0, rmem = 0;
+   GRegister(b);
+   GRegister(rmem);
 
    _ntl_gbigint r;
 
@@ -1949,7 +1985,7 @@ done:
 static
 void gmod_simple(_ntl_gbigint a, _ntl_gbigint d, _ntl_gbigint *rr)
 {
-   static _ntl_gbigint b = 0;
+   GRegister(b);
 
    long sa, sb, sd, sr;
    mp_limb_t *adata, *ddata, *bdata, *rdata;
@@ -1999,7 +2035,7 @@ void _ntl_gquickmod(_ntl_gbigint *rr, _ntl_gbigint d)
 
 void _ntl_gsqrt(_ntl_gbigint n, _ntl_gbigint *rr)
 {
-   static _ntl_gbigint r = 0;
+   GRegister(r);
 
    long sn, sr;
    mp_limb_t *ndata, *rdata;
@@ -2052,7 +2088,9 @@ long _ntl_gsqrts(long n)
 
 void _ntl_ggcd(_ntl_gbigint m1, _ntl_gbigint m2, _ntl_gbigint *r)
 {
-   static _ntl_gbigint s1 = 0, s2 = 0, res = 0;
+   GRegister(s1);
+   GRegister(s2);
+   GRegister(res);
 
    long k1, k2, k_min, l1, l2, ss1, ss2, sres;
 
@@ -2113,13 +2151,14 @@ gxxeucl(
    _ntl_gbigint *uu
    )
 {
-   static _ntl_gbigint a = 0;
-   static _ntl_gbigint n = 0;
-   static _ntl_gbigint q = 0;
-   static _ntl_gbigint w = 0;
-   static _ntl_gbigint x = 0;
-   static _ntl_gbigint y = 0;
-   static _ntl_gbigint z = 0;
+   GRegister(a);
+   GRegister(n);
+   GRegister(q);
+   GRegister(w);
+   GRegister(x);
+   GRegister(y);
+   GRegister(z);
+
    _ntl_gbigint inv = *invv;
    _ntl_gbigint u = *uu;
    long diff;
@@ -2314,8 +2353,10 @@ _ntl_gexteucl(
 	_ntl_gbigint *d
 	)
 {
-   static _ntl_gbigint modcon = 0;
-   static _ntl_gbigint a=0, b=0;
+   GRegister(modcon);
+   GRegister(a);
+   GRegister(b);
+
    long anegative = 0;
    long bnegative = 0;
 
@@ -2402,7 +2443,12 @@ _ntl_gexteucl(
       _ntl_gintoz(bsign, xbp); 
    }
    else {
-      static _ntl_gbigint a = 0, b = 0, xa = 0, xb = 0, d = 0, tmp = 0;
+      GRegister(a);
+      GRegister(b);
+      GRegister(xa);
+      GRegister(xb);
+      GRegister(d);
+      GRegister(tmp);
 
       long sa, aneg, sb, bneg, rev;
       mp_limb_t *adata, *bdata, *ddata, *xadata;
@@ -2510,10 +2556,10 @@ _ntl_gexteucl(
 
 long _ntl_ginv(_ntl_gbigint ain, _ntl_gbigint nin, _ntl_gbigint *invv)
 {
-   static _ntl_gbigint u = 0;
-   static _ntl_gbigint d = 0;
-   static _ntl_gbigint a = 0;
-   static _ntl_gbigint n = 0;
+   GRegister(u);
+   GRegister(d);
+   GRegister(a);
+   GRegister(n);
 
    long sz; 
    long sd;
@@ -2623,7 +2669,7 @@ _ntl_gaddmod(
 			_ntl_gsubpos(*c, n, c);
 	}
 	else {
-		static _ntl_gbigint mem = 0;
+                GRegister(mem);
 
 		_ntl_gadd(a, b, &mem);
 		if (_ntl_gcompare(mem, n) >= 0)
@@ -2642,7 +2688,7 @@ _ntl_gsubmod(
 	_ntl_gbigint *c
 	)
 {
-	static _ntl_gbigint mem = 0;
+        GRegister(mem);
 	long cmp;
 
 	if ((cmp=_ntl_gcompare(a, b)) < 0) {
@@ -2662,7 +2708,7 @@ _ntl_gsmulmod(
 	_ntl_gbigint *c
 	)
 {
-	static _ntl_gbigint mem = 0;
+        GRegister(mem);
 
 	_ntl_gsmul(a, d, &mem);
 	_ntl_gmod(mem, n, c);
@@ -2678,7 +2724,7 @@ _ntl_gmulmod(
 	_ntl_gbigint *c
 	)
 {
-	static _ntl_gbigint mem = 0;
+        GRegister(mem);
 
 	_ntl_gmul(a, b, &mem);
 	_ntl_gmod(mem, n, c);
@@ -2796,7 +2842,7 @@ long _ntl_ground_correction(_ntl_gbigint a, long k, long residual)
 
 double _ntl_gdoub(_ntl_gbigint n)
 {
-   static _ntl_gbigint tmp = 0;
+   GRegister(tmp);
 
    long s;
    long shamt;
@@ -2825,7 +2871,7 @@ double _ntl_gdoub(_ntl_gbigint n)
 
 double _ntl_glog(_ntl_gbigint n)
 {
-   static _ntl_gbigint tmp = 0;
+   GRegister(tmp);
 
    static double log_2;
    static long init = 0;
@@ -2873,7 +2919,7 @@ double _ntl_glog(_ntl_gbigint n)
 
 void _ntl_gdoubtoz(double a, _ntl_gbigint *xx)
 {
-   static _ntl_gbigint x = 0;
+   GRegister(x);
 
    long neg, i, t, sz;
 
@@ -2941,19 +2987,19 @@ _ntl_gxxratrecon(
    _ntl_gbigint *den_out
    )
 {
-   static _ntl_gbigint a = 0;
-   static _ntl_gbigint n = 0;
-   static _ntl_gbigint q = 0;
-   static _ntl_gbigint w = 0;
-   static _ntl_gbigint x = 0;
-   static _ntl_gbigint y = 0;
-   static _ntl_gbigint z = 0;
-   static _ntl_gbigint inv = 0;
-   static _ntl_gbigint u = 0;
-   static _ntl_gbigint a_bak = 0;
-   static _ntl_gbigint n_bak = 0;
-   static _ntl_gbigint inv_bak = 0;
-   static _ntl_gbigint w_bak = 0;
+   GRegister(a);
+   GRegister(n);
+   GRegister(q);
+   GRegister(w);
+   GRegister(x);
+   GRegister(y);
+   GRegister(z);
+   GRegister(inv);
+   GRegister(u);
+   GRegister(a_bak);
+   GRegister(n_bak);
+   GRegister(inv_bak);
+   GRegister(w_bak);
 
    mp_limb_t *p;
 
@@ -3260,7 +3306,7 @@ _ntl_gexp(
 {
 	long k;
 	long len_a;
-	static _ntl_gbigint res = 0;
+        GRegister(res);
 
 	if (!e)
 	{
@@ -3305,7 +3351,7 @@ _ntl_gexps(
 {
 	long k;
 	long len_a;
-	static _ntl_gbigint res = 0;
+        GRegister(res);
 
 	if (!e)
 	{
@@ -3900,13 +3946,14 @@ long _ntl_gblock_construct_alloc(_ntl_gbigint *x, long d, long n)
    if (NTL_OVERFLOW(d, NTL_ZZ_NBITS, NTL_ZZ_NBITS))
       ghalt("block construct: d too large");
 
+   d1 = d + 1;
+
 #ifdef NTL_SMALL_MP_SIZE_T
    /* this makes sure that numbers don't get too big for GMP */
-   if (d >= (1L << (NTL_BITS_PER_INT-4)))
+   if (d1 >= (1L << (NTL_BITS_PER_INT-4)))
       ghalt("size too big for GMP");
 #endif
 
-   d1 = d + 1;
 
    if (STORAGE_OVF(d1))
       ghalt("block construct: d too large");
@@ -4151,8 +4198,11 @@ long sp_inv_mod(long a, long n)
       return s;
 }
 
-/* ------ HERE ------ */
-
+// FIXME: in a thread safe implementation, I have to rethink
+// this strategy, as multiple threads may be accessing the same
+// CRT structures...I may have to separate tables that are 
+// initialized once and shareable, from scratch space, which needs 
+// to be thread local
 
 
 struct crt_body_gmp {
@@ -4662,7 +4712,7 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
    r = (struct rem_body *) NTL_MALLOC(1, sizeof(struct rem_body), 0);
    if (!r) ghalt("out of memory");
 
-   if (n >= 32 && n <= 256) {
+   if ( n >= 32 && n <= 256) {
       struct rem_body_gmp1 *R = &r->U.G1;
 
       long *q;
@@ -5213,7 +5263,7 @@ _ntl_gaorsmul_1(_ntl_gbigint x, long yy, long sub, _ntl_gbigint *ww)
   }
 
   if (*ww == x) {
-    static _ntl_gbigint tmp = 0;
+    GRegister(tmp);
     _ntl_gsmul(x, yy, &tmp);
     if (sub)
        _ntl_gsub(*ww, tmp, ww);
@@ -5369,7 +5419,7 @@ _ntl_gssubmul(_ntl_gbigint x, long yy,  _ntl_gbigint *ww)
 void
 _ntl_gaorsmul(_ntl_gbigint x, _ntl_gbigint y, long sub,  _ntl_gbigint *ww)
 {
-   static _ntl_gbigint tmp = 0;
+   GRegister(tmp);
 
    _ntl_gmul(x, y, &tmp);
    if (sub)

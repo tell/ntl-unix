@@ -11,10 +11,9 @@
 
 NTL_START_IMPL
 
-long ZZXFac_van_Hoeij = 1;
+NTL_THREAD_LOCAL long ZZXFac_van_Hoeij = 1;
 
-static
-long ok_to_abandon = 0;
+NTL_THREAD_LOCAL static long ok_to_abandon = 0;
 
 struct LocalInfoT {
    long n;
@@ -465,8 +464,8 @@ void inplace_rev(ZZX& f)
    f.normalize();
 }
 
-long ZZXFac_InitNumPrimes = 7;
-long ZZXFac_MaxNumPrimes = 50;
+NTL_THREAD_LOCAL long ZZXFac_InitNumPrimes = 7;
+NTL_THREAD_LOCAL long ZZXFac_MaxNumPrimes = 50;
 
 static 
 void RecordPattern(vec_long& pat, vec_pair_zz_pX_long& fac)
@@ -855,7 +854,7 @@ void UpdateLocalInfo(LocalInfoT& LocalInfo, vec_ZZ& pdeg,
                      const vec_ZZ_pX& W, const vec_ZZX& factors,
                      const ZZX& f, long k, long verbose)
 {
-   static long cnt = 0;
+   NTL_THREAD_LOCAL static long cnt = 0;
 
    if (verbose) {
       cnt = (cnt + 1) % 100;
@@ -1621,7 +1620,7 @@ long ConstTermTest(const vec_ZZ_p& W,
 }
 
 
-long ZZXFac_MaxPrune = 10;
+NTL_THREAD_LOCAL long ZZXFac_MaxPrune = 10;
 
 
 
@@ -3701,7 +3700,7 @@ void MakeFacList(vec_long& v, long m)
    }
 }
 
-long ZZXFac_PowerHack = 1;
+NTL_THREAD_LOCAL long ZZXFac_PowerHack = 1;
 
 void SFFactor(vec_ZZX& factors, const ZZX& ff, 
               long verbose,

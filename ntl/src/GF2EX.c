@@ -12,7 +12,7 @@ NTL_START_IMPL
 
 const GF2EX& GF2EX::zero()
 {
-   static GF2EX z;
+   NTL_THREAD_LOCAL static GF2EX z;
    return z;
 }
 
@@ -1463,7 +1463,7 @@ void NewtonInvTrunc(GF2EX& c, const GF2EX& a, long e)
       return;
    }
 
-   static vec_long E;
+   vec_long E;
    E.SetLength(0);
    append(E, e);
    while (e > 1) {
@@ -2459,6 +2459,7 @@ void build(GF2EXArgument& A, const GF2EX& h, const GF2EXModulus& F, long m)
 
 
 
+NTL_THREAD_LOCAL
 long GF2EXArgBound = 0;
 
 
@@ -3056,6 +3057,9 @@ void TraceMod(GF2E& x, const GF2EX& a, const GF2EXModulus& F)
 
    if (deg(a) >= n)
       Error("trace: bad args");
+
+   // FIXME: in a thread safe version, we should use
+   // some kind of mutex
 
    if (F.tracevec.length() == 0) 
       ComputeTraceVec(F);

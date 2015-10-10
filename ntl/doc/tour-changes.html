@@ -19,10 +19,164 @@ A Tour of NTL: Summary of Changes
 
 <p> <hr> <p>
 <h3>
+2014.8.21: Changes between NTL 6.1 and 6.2
+</h3>
+
+<ul>
+
+<p>
+<li>
+I added <i>explicit</i> constructors corresponding to promotions.
+For example:
+<pre>
+   ZZ w = ZZ(1); // legal
+   ZZ w(1);      // legal
+   ZZ w{1};      // legal in C++11
+   ZZ w = 1;     // not legal
+</pre>
+<p>
+Also added new names for the "monomial constructors", e.g.,
+<tt>ZZX(INIT_MONO, i, c)</tt> is now preferred to <tt>ZZX(i, c)</tt>,
+although the old constructors are still there.
+There are also new constructors like <tt>ZZX(INIT_MONO, i)</tt>
+for making monic monomials.
+
+<p>
+<li>
+An subtle but important change is that now objects from
+classes that represent residue class rings with a
+dynamically installed modulus, i.e.,
+<pre>
+   ZZ_p, zz_p, ZZ_pE, lzz_pE, GF2E,
+</pre>
+may now be used a bit more flexibly.
+
+<p>
+It is critical that such objects created under one modulus are not used in
+any non-trivial way "out of context", i.e., under a different (or undefined)
+modulus.  However, for ease-of-use, some operations may be safely
+performed out of context.  These safe operations now include: the default and copy
+constructor, the destructor, and the assignment operator.  In addition it is
+generally safe to read any object out of context (i.e., printing it out, or
+fetching its underlying representive using the rep() function).
+(In the past, it was generally unsafe to use the the default and copy constructors
+out of context, which also prevented vectors and polynomials
+of such objects from being copied out of context.)
+
+<p>
+The implementations of <tt>Vec&lt;ZZ_p&gt;</tt> and <tt>Vec&lt;GF2E&gt;</tt>
+are still specialized to manage memory more
+efficiently than in the default implementation of <tt>Vec&lt;T&gt;</tt>.  
+Contiguous elements in such an array are allocated in a contiguous region of
+memory.  This reduces the number of calls to the memory allocator, and  
+leads to greater locality of reference.  
+A consequence of
+this implementation is that any calls to <tt>SetLength</tt> on such a vector will
+need to use information about the current modulus, and so such calls should
+only be done "in context".  That said, it is still safe to construct a
+such a vector using the default or copy contructor, and to assign or append one
+to another "out of context".
+
+<p>
+<li>
+For the classes <tt>ZZ_p</tt>, <tt>ZZ_pE</tt>, <tt>zz_pE</tt>,
+and <tt>GF2E</tt>, added explicit "allocation" and "no allocation" contructors
+(invoked with <tt>INIT_ALLOC</tt> and <tt>INIT_NO_ALLOC</tt>) and special member function
+<tt>allocate()</tt>.  This allows one to explicitly determine exactly when
+space for such objects is allocated.
+By default, no space is allocated (this is different from prior versions of NTL),
+except for <tt>ZZ_p</tt>'s that are a part of a <tt>Vec&lt;ZZ_p&gt;</tt>
+and <tt>GF2E</tt>'s that are a part of a <tt>Vec&lt;GF2E&gt;</tt>
+
+
+<p>
+<li>
+Added new classes <tt>ZZ_pPush</tt>, <tt>ZZ_pEPush</tt>, 
+<tt>zz_pPush</tt>, <tt>zz_pEPush</tt>, <tt>GF2EPush</tt>.
+These allow one to conveniently backup and optionally install
+a new modulus in one step:
+<pre>
+   { ZZ_pPush push(p); ... }
+</pre>
+will save the current modulus and install <tt>p</tt> as the
+new modulus; when the destructor for <tt>push</tt> is invoked,
+the old modulus will be re-installed.
+
+
+<p>
+<li>
+Made the one-arg constructors for all the  various "context" classes
+(e.g., <tt>ZZ_pContext</tt>) <i>explicit</i>.
+
+
+<p>
+<li>
+As a general aid to generic programming, I've added a
+bunch of typedef's using consistent naming conventions
+to all of the main arithmetic classes.
+E.g., <tt>ZZ_p::poly_type</tt> is a typedef for <tt>ZZ_pX</tt>.
+There are a whole bunch of these.
+See the documentation for the individual classes for details.
+
+<p>
+<li>
+Got rid of a few esoteric compilation modes:
+<ul>
+<li>
+All files are now <tt>C++</tt> files, and should be compiled
+using a <tt>C++</tt> compiler. In older versions, some files
+could be compiled either as <tt>C</tt> or <tt>C++</tt>.
+
+<li>
+The flag <tt>NTL_GMP_HACK</tt> is no longer supported.
+GMP may still be used using the <tt>NTL_GMP_LIP</tt> flag,
+which is still highly recommended for high-performance applcations.
+
+<li>
+The flags <tt>NTL_SINGLE_MUL</tt> and <tt>NTL_FAST_INT_MUL</tt>
+are no longer recognized.
+These were really outdated and esoteric.
+</ul>
+
+<p>
+<li>
+I have started working towards making NTL thread safe.
+It is not as difficult as I thought it would be, but it is still
+a work in progress.
+So far I have identified all global variables, and either got
+rid of them, or tagged them as "thread local".
+So, although there are still some global variables, they will
+all eventually be "thread local".
+In particular, things like the current <tt>ZZ_p</tt> modulus
+will be a thread-local global variable.
+
+
+<p>
+There are a few remaining trouble spots I've tagged:
+these mostly involve lazy initialization of tables;
+I have a plan for making this code thread safe using
+nearly lock-free coding techniques.
+
+<p>
+I will hopefully get this done within the next 6-12 months.
+One thing that is slowing me down is the lack of availibility
+of <tt>C++11</tt> features that I need to do some of this,
+but it will come.
+
+<p>
+The main reason for getting rid of the esoteric compilation modes
+mentioned above is to make it easier to do this thread-safety work.
+
+
+</ul>
+
+<p> <hr> <p>
+<h3>
 2014.03.13: Changes between NTL 6.0 and 6.1
 </h3>
 
 <ul>
+<li>
 Added support for "user defined" FFT primes for <tt>zz_p</tt>.
 See the functions
 <pre>

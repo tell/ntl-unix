@@ -131,7 +131,7 @@ NTL already provides a more sophisticated one, though.
 <pre>
 ZZ PowerMod(const ZZ&amp; a, const ZZ&amp; e, const ZZ&amp; n)
 {
-   if (e == 0) return to_ZZ(1);
+   if (e == 0) return ZZ(1);
 
    long k = NumBits(e);
 
@@ -369,6 +369,16 @@ Note that one cannot write
 </pre>
 to initialize a <tt>ZZ</tt>.
 Instead, one could write
+<pre>
+   ZZ x = ZZ(1);
+   ZZ y(1);
+   ZZ z{1}; // C++11 only
+</pre>
+Using the comstructor that allows one to <i>explicitly</i>
+construct a <tt>ZZ</tt> from a <tt>long</tt>.
+
+<p>
+Alternatively, one could write this as:
 <pre>
    ZZ x = conv&lt;ZZ&gt;(1);
 </pre>

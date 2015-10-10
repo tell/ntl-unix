@@ -401,7 +401,7 @@ void FindRoots(vec_GF2E& x, const GF2EX& ff)
 static
 void RandomBasisElt(GF2EX& g, const vec_long& D, const vec_GF2XVec& M)
 {
-   static GF2X t1, t2;
+   GF2X t1, t2;
 
    long n = D.length();
 
@@ -844,6 +844,7 @@ long ProbIrredTest(const GF2EX& f, long iter)
 }
 
 
+NTL_THREAD_LOCAL
 long GF2EX_BlockingFactor = 10;
 
 void DDF(vec_pair_GF2EX_long& factors, const GF2EX& ff, const GF2EX& hh, 
@@ -1631,15 +1632,27 @@ void BuildRandomIrred(GF2EX& f, const GF2EX& g)
 
 /************* NEW DDF ****************/
 
+NTL_THREAD_LOCAL
 long GF2EX_GCDTableSize = 4;
+
+NTL_THREAD_LOCAL
 char GF2EX_stem[256] = "";
 
-double GF2EXFileThresh = 256;
+NTL_THREAD_LOCAL
+double GF2EXFileThresh = NTL_FILE_THRESH;
 
+NTL_THREAD_LOCAL
 static vec_GF2EX BabyStepFile;
+
+NTL_THREAD_LOCAL
 static vec_GF2EX GiantStepFile;
 
+NTL_THREAD_LOCAL
 static long use_files;
+
+// FIXME: in a thread-safe implementation, we have to rethink the
+// use of external files for auxilliary storage...there could be
+// name clashes...maybe use thread IDs?
 
 
 static

@@ -1,6 +1,15 @@
 
+Temporary development notes here
+--------------------------------
+
+ - besides thread safety, other things I want to do:
+     * speed up ZZX mul: faster HomMul and faster SSMul
+     * speed up GF2X mul using new x86 instructions
+
+-----------------------------
 These are basically notes to myself on preparing a new
 distribution of NTL.
+-----------------------------
 
 
 - change version numbers in ../include/NTL/version.h, DIRNAME, and WINDIR
@@ -21,8 +30,12 @@ cp ../include/NTL/config.h ../include/NTL/def_config.h
 
 - run:  
 
+make ppdoc
 make package
 make winpack
+
+NOTE: try executing export COPYFILE_DISABLE=1
+beforehand
 
 
 

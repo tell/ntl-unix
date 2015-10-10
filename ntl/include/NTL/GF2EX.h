@@ -12,10 +12,13 @@
 
 NTL_OPEN_NNS
 
+class GF2EXModulus; // forward declaration
 
 class GF2EX {
-
 public:
+typedef GF2E coeff_type;
+typedef GF2EXModulus modulus_type;
+
 
 vec_GF2E rep;
 
@@ -28,6 +31,10 @@ vec_GF2E rep;
 
 
 GF2EX() { }
+
+explicit GF2EX(long a) { *this = a; }
+explicit GF2EX(GF2 a) { *this = a; }
+explicit GF2EX(const GF2& a) { *this = a; }
 
 
 GF2EX(INIT_SIZE_TYPE, long n) { rep.SetMaxLength(n); }
@@ -57,7 +64,6 @@ void kill()
 
 
 
-typedef GF2E coeff_type;
 void SetLength(long n) { rep.SetLength(n); }
 GF2E& operator[](long i) { return rep[i]; }
 const GF2E& operator[](long i) const { return rep[i]; }
@@ -76,6 +82,13 @@ inline GF2EX& operator=(const GF2E& a);
 inline GF2EX(long i, long a);
 inline GF2EX(long i, GF2 a);
 inline GF2EX(long i, const GF2E& a);
+
+
+inline GF2EX(INIT_MONO_TYPE, long i, long a);
+inline GF2EX(INIT_MONO_TYPE, long i, GF2 a);
+inline GF2EX(INIT_MONO_TYPE, long i, const GF2E& a);
+inline GF2EX(INIT_MONO_TYPE, long i);
+
 
 GF2EX(GF2EX& x, INIT_TRANS_TYPE) : rep(x.rep, INIT_TRANS) { }
 
@@ -124,12 +137,19 @@ void SetCoeff(GF2EX& x, long i, GF2 a);
 void SetCoeff(GF2EX& x, long i, long a);
 // x[i] = a, error is raised if i < 0
 
+void SetCoeff(GF2EX& x, long i);
+// x[i] = 1, error is raised if i < 0
+
 inline GF2EX::GF2EX(long i, const GF2E& a) { SetCoeff(*this, i, a); }
 inline GF2EX::GF2EX(long i, GF2 a) { SetCoeff(*this, i, a); }
 inline GF2EX::GF2EX(long i, long a) { SetCoeff(*this, i, a); }
 
-void SetCoeff(GF2EX& x, long i);
-// x[i] = 1, error is raised if i < 0
+
+inline GF2EX::GF2EX(INIT_MONO_TYPE, long i, const GF2E& a) { SetCoeff(*this, i, a); }
+inline GF2EX::GF2EX(INIT_MONO_TYPE, long i, GF2 a) { SetCoeff(*this, i, a); }
+inline GF2EX::GF2EX(INIT_MONO_TYPE, long i, long a) { SetCoeff(*this, i, a); }
+inline GF2EX::GF2EX(INIT_MONO_TYPE, long i) { SetCoeff(*this, i); }
+
 
 void SetX(GF2EX& x);
 // x is set to the monomial X
@@ -825,6 +845,7 @@ struct GF2EXArgument {
    vec_GF2EX H;
 };
 
+NTL_THREAD_LOCAL
 extern long GF2EXArgBound;
 
 

@@ -360,7 +360,7 @@ long ProbIrredTest(const zz_pEX& f, long iter)
 }
 
 
-long zz_pEX_BlockingFactor = 10;
+NTL_THREAD_LOCAL long zz_pEX_BlockingFactor = 10;
 
 
 
@@ -1064,15 +1064,14 @@ void BuildRandomIrred(zz_pEX& f, const zz_pEX& g)
 
 /************* NEW DDF ****************/
 
-long zz_pEX_GCDTableSize = 4;
-char zz_pEX_stem[256] = "";
+NTL_THREAD_LOCAL long zz_pEX_GCDTableSize = 4;
+NTL_THREAD_LOCAL char zz_pEX_stem[256] = "";
+NTL_THREAD_LOCAL double zz_pEXFileThresh = NTL_FILE_THRESH;
+NTL_THREAD_LOCAL static vec_zz_pEX BabyStepFile;
+NTL_THREAD_LOCAL static vec_zz_pEX GiantStepFile;
+NTL_THREAD_LOCAL static long use_files;
 
-double zz_pEXFileThresh = 256;
-
-static vec_zz_pEX BabyStepFile;
-static vec_zz_pEX GiantStepFile;
-
-static long use_files;
+// FIXME: thread-safe impl: need unique file names
 
 
 static

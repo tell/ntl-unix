@@ -43,10 +43,18 @@ Use the member function normalize() to strip leading zeros.
 
 **************************************************************/
 
+class ZZ_pE; // forward declaration
+class ZZ_pXModulus;
+class FFTRep;
+class ZZ_pXMultiplier;
 
 class ZZ_pX {
-
 public:
+typedef ZZ_p coeff_type;
+typedef ZZ_pE residue_type;
+typedef ZZ_pXModulus modulus_type;
+typedef ZZ_pXMultiplier multiplier_type;
+typedef FFTRep fft_type;
 
 typedef vec_ZZ_p VectorBaseType; 
 
@@ -61,10 +69,12 @@ vec_ZZ_p rep;
 ****************************************************************/
 
 
-ZZ_pX()
+ZZ_pX() { }
 //  initial value 0
 
-   { }
+
+explicit ZZ_pX(long a) { *this = a; }
+explicit ZZ_pX(const ZZ_p& a) { *this = a; }
 
 
 ZZ_pX(INIT_SIZE_TYPE, long n) { rep.SetMaxLength(n); }
@@ -94,7 +104,6 @@ void kill()
    { rep.kill(); }
 
 
-typedef ZZ_p coeff_type;
 void SetLength(long n) { rep.SetLength(n); }
 ZZ_p& operator[](long i) { return rep[i]; }
 const ZZ_p& operator[](long i) const { return rep[i]; }
@@ -107,6 +116,10 @@ ZZ_pX(ZZ_pX& x, INIT_TRANS_TYPE) : rep(x.rep, INIT_TRANS) { }
 
 inline ZZ_pX(long i, const ZZ_p& c);
 inline ZZ_pX(long i, long c);
+
+inline ZZ_pX(INIT_MONO_TYPE, long i, const ZZ_p& c);
+inline ZZ_pX(INIT_MONO_TYPE, long i, long c);
+inline ZZ_pX(INIT_MONO_TYPE, long i);
 
 ZZ_pX& operator=(long a);
 ZZ_pX& operator=(const ZZ_p& a);
@@ -172,11 +185,12 @@ void SetCoeff(ZZ_pX& x, long i, long a);
 void SetCoeff(ZZ_pX& x, long i);
 // x[i] = 1, error is raised if i < 0
 
-inline ZZ_pX::ZZ_pX(long i, const ZZ_p& a)
-   { SetCoeff(*this, i, a); } 
+inline ZZ_pX::ZZ_pX(long i, const ZZ_p& a) { SetCoeff(*this, i, a); } 
+inline ZZ_pX::ZZ_pX(long i, long a) { SetCoeff(*this, i, a); } 
 
-inline ZZ_pX::ZZ_pX(long i, long a)
-   { SetCoeff(*this, i, a); } 
+inline ZZ_pX::ZZ_pX(INIT_MONO_TYPE, long i, const ZZ_p& a) { SetCoeff(*this, i, a); } 
+inline ZZ_pX::ZZ_pX(INIT_MONO_TYPE, long i, long a) { SetCoeff(*this, i, a); } 
+inline ZZ_pX::ZZ_pX(INIT_MONO_TYPE, long i) { SetCoeff(*this, i); } 
 
 void SetX(ZZ_pX& x);
 // x is set to the monomial X
@@ -1076,7 +1090,7 @@ struct ZZ_pXArgument {
    vec_ZZ_pX H;
 };
 
-extern long ZZ_pXArgBound;
+NTL_THREAD_LOCAL extern long ZZ_pXArgBound;
 
 
 void build(ZZ_pXArgument& H, const ZZ_pX& h, const ZZ_pXModulus& F, long m);

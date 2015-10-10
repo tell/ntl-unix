@@ -53,8 +53,6 @@ printf("\n");
 
 int main()
 {
-   _ntl_gmp_hack = 0;
-
 
    long n, k;
 

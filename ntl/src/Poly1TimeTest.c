@@ -71,8 +71,6 @@ printf("\n");
 
 int main()
 {
-   _ntl_gmp_hack = 0;
-
 
 #ifdef NTL_SPMM_ULL
 

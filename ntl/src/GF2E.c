@@ -68,6 +68,8 @@ const ZZ& GF2E::cardinality()
 {
    if (!GF2EInfo) Error("GF2E::cardinality: undefined modulus");
 
+   // FIXME: in a thread safe impl, this needs to be mutex'd
+
    if (!GF2EInfo->_card_init) {
       power(GF2EInfo->_card, 2, GF2EInfo->_card_exp);
       GF2EInfo->_card_init = 1;
@@ -79,6 +81,7 @@ const ZZ& GF2E::cardinality()
 
 
 
+NTL_THREAD_LOCAL
 GF2EInfoT *GF2EInfo = 0; 
 
 
@@ -182,7 +185,7 @@ void GF2EBak::restore()
 
 const GF2E& GF2E::zero()
 {
-   static GF2E z(GF2E_NoAlloc);
+   NTL_THREAD_LOCAL static GF2E z(INIT_NO_ALLOC);
    return z;
 }
 

@@ -6,6 +6,11 @@
 
 NTL_START_IMPL
 
+
+// FIXME: why do vec_GF2 and GF2X use different strategies for 
+// keeping high order bits cleared?  I don't think it matters
+// much, but it is strange.
+
 void vec_GF2::SetLength(long n)
 {
    long len = length();
@@ -78,6 +83,17 @@ void vec_GF2::SetLength(long n)
    _len = n;
    _maxlen = (n << 1);
 
+}
+
+void vec_GF2::SetLength(long n, GF2 a)
+{
+   long old_len = length();
+   SetLength(n);
+
+   if (!IsZero(a) && old_len < n) {
+      long i;
+      for (i = old_len; i < n; i++) put(i, a);
+   }
 }
 
 
@@ -188,44 +204,44 @@ void vec_GF2::put(long i, GF2 a)
       ClearBit(*this, i);
 }
 
-void swap(vec_GF2& x, vec_GF2& y)
+void vec_GF2::swap(vec_GF2& y)
 {
-   long xf = x.fixed();
+   long xf = fixed();
    long yf = y.fixed();
 
-   if (xf != yf || (xf && x.length() != y.length()))
+   if (xf != yf || (xf && length() != y.length()))
       Error("swap: can't swap these vec_GF2s");
 
-   swap(x.rep, y.rep);
-   swap(x._len, y._len);
-   swap(x._maxlen, y._maxlen);
+   ::swap(rep, y.rep);
+   ::swap(_len, y._len);
+   ::swap(_maxlen, y._maxlen);
 }
 
 
-void append(vec_GF2& v, const GF2& a)
+void vec_GF2::append(GF2 a)
 {
-   long n = v.length();
-   v.SetLength(n+1);
-   v.put(n, a);
+   long n = length();
+   SetLength(n+1);
+   put(n, a);
 }
 
-void append(vec_GF2& x, const vec_GF2& a)
+void vec_GF2::append(const vec_GF2& a)
 {
    long a_len = a.length();
-   long x_len = x.length();
+   long x_len = length();
 
    if (a_len == 0) return;
    if (x_len == 0) {
-      x = a;
+      *this = a;
       return;
    }
 
 
-   x.SetLength(x_len + a_len);
+   SetLength(x_len + a_len);
    // new bits are guaranteed zero
 
 
-   ShiftAdd(x.rep.elts(), a.rep.elts(), a.rep.length(), x_len);
+   ShiftAdd(rep.elts(), a.rep.elts(), a.rep.length(), x_len);
 }
 
 
@@ -240,7 +256,7 @@ long operator==(const vec_GF2& a, const vec_GF2& b)
 
 istream & operator>>(istream& s, vec_GF2& a) 
 {   
-   static ZZ ival;
+   NTL_ZZRegister(ival);
 
    long c;   
    if (!s) Error("bad vec_GF2 input"); 
@@ -472,7 +488,7 @@ void shift(vec_GF2& x, const vec_GF2& a, long n)
 // This code is simply canibalized from GF2X.c...
 // so much for "code re-use" and "modularity"
 
-static _ntl_ulong revtab[256] = {
+static const _ntl_ulong revtab[256] = {
 
 0UL, 128UL, 64UL, 192UL, 32UL, 160UL, 96UL, 224UL, 16UL, 144UL, 
 80UL, 208UL, 48UL, 176UL, 112UL, 240UL, 8UL, 136UL, 72UL, 200UL, 

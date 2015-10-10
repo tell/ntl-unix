@@ -31,8 +31,11 @@ public:
    long _card_exp;
 };
 
+NTL_THREAD_LOCAL
 extern GF2EInfoT *GF2EInfo; // info for current modulus, initially null
 
+// FIXME: in a thread safe implementation, we need to use
+// shared_ptrs for contexts
 
 
 
@@ -45,7 +48,8 @@ void save();
 void restore() const;
 
 GF2EContext() { ptr = 0; }
-GF2EContext(const GF2X& p);
+
+explicit GF2EContext(const GF2X& p);
 
 GF2EContext(const GF2EContext&); 
 
@@ -80,28 +84,51 @@ GF2EBak() { MustRestore = 0; ptr = 0; }
 
 
 
-struct GF2E_NoAlloc_type { GF2E_NoAlloc_type() { } };
-const GF2E_NoAlloc_type GF2E_NoAlloc = GF2E_NoAlloc_type();
+class GF2EPush {
+private:
+GF2EBak bak;
 
-
-
-class GF2E {
+GF2EPush(const GF2EPush&); // disabled
+void operator=(const GF2EPush&); // disabled
 
 public:
+GF2EPush() { bak.save(); }
+explicit GF2EPush(const GF2EContext& context) { bak.save(); context.restore(); }
+explicit GF2EPush(const GF2X& p) { bak.save(); GF2EContext c(p); c.restore(); }
+
+
+};
+
+
+
+
+class GF2EX; // forward declaration
+
+class GF2E {
+public:
+typedef GF2X rep_type;
+typedef GF2EContext context_type;
+typedef GF2EBak bak_type;
+typedef GF2EPush push_type;
+typedef GF2EX poly_type;
+
 
 GF2X _GF2E__rep;
 
 
 // ****** constructors and assignment
 
-GF2E() { _GF2E__rep.xrep.SetMaxLength(GF2E::WordLength()); }
+GF2E() {  } // NO_ALLOC
+GF2E(const GF2E& a)  {  _GF2E__rep = a._GF2E__rep; } // NO_ALLOC
+
+explicit GF2E(long a) { *this = a;  } // NO_ALLOC
+explicit GF2E(GF2 a) { *this = a;  } // NO_ALLOC
 
 GF2E(GF2E& x, INIT_TRANS_TYPE) : _GF2E__rep(x._GF2E__rep, INIT_TRANS) { }
 
-GF2E(const GF2E& a)  
-   { _GF2E__rep.xrep.SetMaxLength(GF2E::WordLength()); _GF2E__rep = a._GF2E__rep; }
-
-GF2E(GF2E_NoAlloc_type) { }  // allocates no space
+GF2E(INIT_NO_ALLOC_TYPE) { }  // allocates no space
+GF2E(INIT_ALLOC_TYPE) { _GF2E__rep.xrep.SetMaxLength(GF2E::WordLength());  }  // allocates space
+void allocate() { _GF2E__rep.xrep.SetMaxLength(GF2E::WordLength()); }
 
 ~GF2E() { } 
 
@@ -130,6 +157,7 @@ static const GF2E& zero();
 static const ZZ& cardinality();
 
 static void init(const GF2X& NewP);
+
 
 };
 
@@ -458,6 +486,8 @@ inline void conv(GF2E& x, const GF2E& a) { x = a; }
 // overload these functions for Vec<GF2E>.
 // They are defined in vec_GF2E.c
 void BlockConstruct(GF2E* p, long n);
+void BlockConstructFromVec(GF2E* p, long n, const GF2E* q);
+void BlockConstructFromObj(GF2E* p, long n, const GF2E& q);
 void BlockDestroy(GF2E* p, long n);
 
 

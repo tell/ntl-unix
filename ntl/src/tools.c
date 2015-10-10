@@ -7,7 +7,7 @@
 #include <NTL/new.h>
 
 
-void _ntl_abort_cxx_callback(void)
+void _ntl_abort_cxx_callback()
 {
    if (NTL_NNS ErrorCallback) (*NTL_NNS ErrorCallback)();
 }
@@ -15,7 +15,7 @@ void _ntl_abort_cxx_callback(void)
 
 NTL_START_IMPL
 
-void (*ErrorCallback)() = 0;
+NTL_THREAD_LOCAL void (*ErrorCallback)() = 0;
 
 
 void Error(const char *s)

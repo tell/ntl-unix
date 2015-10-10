@@ -45,7 +45,6 @@ cp ZZ_pX1.c small/src
 cp lip.c small/src
 cp g_lip_impl.h small/src
 cp c_lip_impl.h small/src
-cp lip_gmp_aux_impl.h small/src
 cp tools.c small/src
 cp vec_ZZ.c small/src
 cp vec_ZZ_p.c small/src

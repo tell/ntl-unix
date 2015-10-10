@@ -23,7 +23,7 @@ A Tour of NTL: Tips for Getting the Best Performance out of NTL
 <ol>
 
 <li>
-Build NTL using GMP as the primary long integer package.
+Build NTL using GMP as the long integer package.
 This is extremely important, as the GMP implementation
 of long integer arithmetic is <i>much</i> faster
 than the default implementation.
@@ -41,6 +41,8 @@ pass <tt>"CFLAGS=-O2 -m64"</tt>
 to the <tt>configure</tt> script (note the use of quotes).
 If you are using NTL with GMP on such a machine,
 you <i>must</i> do this to get compatible code.
+Note, however, that 64-bit is becoming the default, so this
+may not be necessary.
 
 <p>
 <li>
@@ -100,7 +102,7 @@ If you use the class <tt>ZZ_p</tt>, try to avoid switching the modulus
 too often, as this can be a rather expensive operation.
 If you <i>must</i> switch the modulus often,
 use the class <tt>ZZ_pContext</tt> to save the information
-associated with the modulus (see <a href="ZZ.txt">ZZ.txt</a>). 
+associated with the modulus (see <a href="ZZ_p.txt">ZZ_p.txt</a>). 
 
 
 

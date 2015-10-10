@@ -7,23 +7,23 @@
 NTL_START_IMPL
 
 
+// NOTE: these are declared extern in lzz_pX.h
 
-long zz_pX_mod_crossover[5] = {45, 45, 90, 180, 180};
-long zz_pX_mul_crossover[5] = {90, 400, 600, 1500, 1500};
-long zz_pX_newton_crossover[5] = {150, 150, 300, 700, 700};
-long zz_pX_div_crossover[5] = {180, 180, 350, 750, 750};
-long zz_pX_halfgcd_crossover[5] = {90, 90, 180, 350, 350};
-long zz_pX_gcd_crossover[5] = {400, 400, 800, 1400, 1400};
-long zz_pX_bermass_crossover[5] = {400, 480, 900, 1600, 1600};
-long zz_pX_trace_crossover[5] = {200, 350, 450, 800, 800};
+const long zz_pX_mod_crossover[5] = {45, 45, 90, 180, 180};
+const long zz_pX_mul_crossover[5] = {90, 400, 600, 1500, 1500};
+const long zz_pX_newton_crossover[5] = {150, 150, 300, 700, 700};
+const long zz_pX_div_crossover[5] = {180, 180, 350, 750, 750};
+const long zz_pX_halfgcd_crossover[5] = {90, 90, 180, 350, 350};
+const long zz_pX_gcd_crossover[5] = {400, 400, 800, 1400, 1400};
+const long zz_pX_bermass_crossover[5] = {400, 480, 900, 1600, 1600};
+const long zz_pX_trace_crossover[5] = {200, 350, 450, 800, 800};
 
-#define QUICK_CRT (NTL_DOUBLE_PRECISION - NTL_SP_NBITS > 12)
 
 
 
 const zz_pX& zz_pX::zero()
 {
-   static zz_pX z;
+   NTL_THREAD_LOCAL static zz_pX z;
    return z;
 }
 
@@ -367,7 +367,7 @@ void PlainMul(zz_p *xp, const zz_p *ap, long sa, const zz_p *bp, long sb)
    }
 }
 
-static vec_double a_buf, b_buf;
+NTL_THREAD_LOCAL static vec_double a_buf, b_buf;
 
 static inline 
 void reduce(zz_p& r, double x, long p, double pinv)
@@ -958,7 +958,7 @@ void PlainDivRem(zz_pX& q, zz_pX& r, const zz_pX& a, const zz_pX& b)
    for (i = dq; i >= 0; i--) {
       t = xp[i+db];
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       qp[i] = t;
       negate(t, t);
 
@@ -1036,7 +1036,7 @@ void PlainDiv(zz_pX& q, const zz_pX& a, const zz_pX& b)
    for (i = dq; i >= 0; i--) {
       t = xp[i];
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       qp[i] = t;
       negate(t, t);
 
@@ -1100,7 +1100,7 @@ void PlainRem(zz_pX& r, const zz_pX& a, const zz_pX& b)
    for (i = dq; i >= 0; i--) {
       t = xp[i+db];
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       negate(t, t);
 
       long T = rep(t);
@@ -1487,24 +1487,29 @@ fftRep::~fftRep()
 
 
 
-void FromModularRep(zz_p& x, long *a)
+void FromModularRep(zz_p& res, long *a)
 {
    long n = zz_pInfo->NumPrimes;
    long p = zz_pInfo->p;
    double pinv = zz_pInfo->pinv;
+   long *CoeffModP = zz_pInfo->CoeffModP;
+   double *x = zz_pInfo->x;
+   long *u = zz_pInfo->u;
+   long MinusMModP = zz_pInfo->MinusMModP;
+
    long q, s, t;
    long i;
    double y;
 
 
+
 // I've re-written the following code in v5.3 so that it is 
 // a bit more robust.  
 
-#if QUICK_CRT
-
+#if (NTL_zz_p_QUICK_CRT)
    y = 0;
    for (i = 0; i < n; i++)
-      y = y + ((double) a[i])*zz_pInfo->x[i];
+      y = y + ((double) a[i])*x[i];
 
    y = floor(y + 0.5);
    y = y - floor(y*pinv)*double(p);
@@ -1512,37 +1517,47 @@ void FromModularRep(zz_p& x, long *a)
    while (y < 0) y += p;
    q = long(y);
 
-#else
-
-   long Q, r;
-
-   y = 0;
-   q = 0;
-
-   for (i = 0; i < n; i++) {
-      r = MulDivRem(Q, a[i], zz_pInfo->u[i], FFTPrime[i], zz_pInfo->x[i]);
-      q = q + Q;
-#if (NTL_BITS_PER_LONG - NTL_SP_NBITS <= 4)
-      // on typical platforms, this reduction will not be necessary.
-      q = q % p;
-#endif
-      y = y + r*FFTPrimeInv[i];
-   }
-
-   q = (q + long(y + 0.5)) % p;
-
-#endif
-
    t = 0;
    for (i = 0; i < n; i++) {
-      s = MulMod(a[i], zz_pInfo->CoeffModP[i], p, pinv);
+
+      // DIRT: uses undocumented MulMod feature (see ZZ.h)
+      // a[i] is not reduced mod p
+      s = MulMod(a[i], CoeffModP[i], p, pinv);
+
       t = AddMod(t, s, p);
    }
       
 
-   s = MulMod(q, zz_pInfo->MinusMModP, p, pinv);
+   s = MulMod(q, MinusMModP, p, pinv);
    t = AddMod(t, s, p);
-   x.LoopHole() = t;
+   res.LoopHole() = t;
+#else
+
+   y = 0;
+   t = 0;
+
+   for (i = 0; i < n; i++) {
+      s = MulMod2(a[i], u[i], FFTPrime[i], x[i]);
+      y = y + double(s)*FFTPrimeInv[i];
+
+
+      // DIRT: uses undocumented MulMod feature (see ZZ.h)
+      // a[i] is not reduced mod p
+      s = MulMod(s, CoeffModP[i], p, pinv);
+
+      t = AddMod(t, s, p);
+   }
+
+   q = (long) (y + 0.5);
+
+   // DIRT: uses undocumented MulMod feature (see ZZ.h)
+   // q may not be reduced mod p
+   s = MulMod(q, MinusMModP, p, pinv);
+
+   t = AddMod(t, s, p);
+   res.LoopHole() = t;
+#endif
+
 }
 
 

@@ -270,7 +270,7 @@ xdouble to_xdouble(const ZZ& a)
    long old_p = RR::precision();
    RR::SetPrecision(NTL_DOUBLE_PRECISION);
    
-   static RR t;
+   NTL_THREAD_LOCAL static RR t;
    conv(t, a);
 
    double x;
@@ -293,7 +293,7 @@ void conv(ZZ& x, const xdouble& a)
    xdouble b = floor(a);
    long old_p = RR::precision();
    RR::SetPrecision(NTL_DOUBLE_PRECISION);
-   static RR t;
+   NTL_THREAD_LOCAL static RR t;
    conv(t, b);
    conv(x, t);
    RR::SetPrecision(old_p);
@@ -361,7 +361,7 @@ void power(xdouble& z, const xdouble& a, const ZZ& e)
 
 void power(xdouble& z, const xdouble& a, long e)
 {
-   static ZZ E;
+   NTL_ZZRegister(E);
    E = e;
    power(z, a, E);
 }
@@ -513,7 +513,7 @@ void MulSub(xdouble& z, const xdouble& a, const xdouble& b, const xdouble& c)
 
 double log(const xdouble& a)
 {
-   static double LogBound = log(NTL_XD_BOUND);
+   NTL_THREAD_LOCAL static double LogBound = log(NTL_XD_BOUND);
    if (a.x <= 0) {
       Error("log(xdouble): argument must be positive");
    }
@@ -568,9 +568,9 @@ long ComputeMax10Power()
 
 xdouble PowerOf10(const ZZ& e)
 {
-   static long init = 0;
-   static xdouble v10k;
-   static long k;
+   NTL_THREAD_LOCAL static long init = 0;
+   NTL_THREAD_LOCAL static xdouble v10k;
+   NTL_THREAD_LOCAL static long k;
 
    if (!init) {
       long old_p = RR::precision();

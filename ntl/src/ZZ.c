@@ -13,26 +13,26 @@ NTL_START_IMPL
 
 
 
+
 const ZZ& ZZ::zero()
 {
-   static ZZ z;
+   NTL_THREAD_LOCAL static ZZ z;
    return z;
 }
 
 
 const ZZ& ZZ_expo(long e)
 {
-   static ZZ expo_helper;
+   NTL_THREAD_LOCAL static ZZ expo_helper;
    conv(expo_helper, e);
    return expo_helper;
 }
 
 
 
-
 void AddMod(ZZ& x, const ZZ& a, long b, const ZZ& n)
 {
-   static ZZ B;
+   NTL_ZZRegister(B);
    conv(B, b);
    AddMod(x, a, B, n);
 }
@@ -40,14 +40,14 @@ void AddMod(ZZ& x, const ZZ& a, long b, const ZZ& n)
 
 void SubMod(ZZ& x, const ZZ& a, long b, const ZZ& n)
 {
-   static ZZ B;
+   NTL_ZZRegister(B);
    conv(B, b);
    SubMod(x, a, B, n);
 }
 
 void SubMod(ZZ& x, long a, const ZZ& b, const ZZ& n)
 {
-   static ZZ A;
+   NTL_ZZRegister(A);
    conv(A, a);
    SubMod(x, A, b, n);
 }
@@ -56,8 +56,8 @@ void SubMod(ZZ& x, long a, const ZZ& b, const ZZ& n)
 
 // ****** input and output
 
-static long iodigits = 0;
-static long ioradix = 0;
+NTL_THREAD_LOCAL static long iodigits = 0;
+NTL_THREAD_LOCAL static long ioradix = 0;
 
 // iodigits is the greatest integer such that 10^{iodigits} < NTL_WSP_BOUND
 // ioradix = 10^{iodigits}
@@ -79,6 +79,7 @@ static void InitZZIO()
    if (iodigits <= 0) Error("problem with I/O");
 }
 
+
 istream& operator>>(istream& s, ZZ& x)
 {
    long c;
@@ -86,7 +87,7 @@ istream& operator>>(istream& s, ZZ& x)
    long sign;
    long ndigits;
    long acc;
-   static ZZ a;
+   NTL_ZZRegister(a);
 
    if (!s) Error("bad ZZ input");
 
@@ -153,48 +154,30 @@ istream& operator>>(istream& s, ZZ& x)
 
 struct _ZZ_local_stack {
    long top;
-   long alloc;
-   long *elts;
+   Vec<long> data;
 
-   _ZZ_local_stack() { top = -1; alloc = 0; elts = 0; }
-   ~_ZZ_local_stack() { }
+   _ZZ_local_stack() { top = -1; }
 
-   long pop() { return elts[top--]; }
+   long pop() { return data[top--]; }
    long empty() { return (top == -1); }
    void push(long x);
 };
 
 void _ZZ_local_stack::push(long x)
 {
-   if (alloc == 0) {
-      alloc = 100;
-      elts = (long *) NTL_MALLOC(alloc, sizeof(long), 0);
-   }
-
    top++;
 
-   if (top + 1 > alloc) {
-      alloc = 2*alloc;
-      elts = (long *) NTL_REALLOC(elts, alloc, sizeof(long), 0);
-   }
+   if (top >= data.length()) 
+      data.SetLength(max(32, long(1.414*data.length())));
 
-   if (!elts) {
-      Error("out of space in ZZ output");
-   }
-
-   elts[top] = x;
+   data[top] = x;
 }
 
 
 static
 void PrintDigits(ostream& s, long d, long justify)
 {
-   static char *buf = 0;
-
-   if (!buf) {
-      buf = (char *) NTL_MALLOC(iodigits, 1, 0);
-      if (!buf) Error("out of memory");
-   }
+   NTL_THREAD_LOCAL static Vec<char> buf(INIT_SIZE, iodigits);
 
    long i = 0;
 
@@ -223,8 +206,8 @@ void PrintDigits(ostream& s, long d, long justify)
 
 ostream& operator<<(ostream& s, const ZZ& a)
 {
-   static ZZ b;
-   static _ZZ_local_stack S;
+   ZZ b;
+   _ZZ_local_stack S;
    long r;
    long k;
 
@@ -660,7 +643,8 @@ long bit(long a, long k)
 
 long divide(ZZ& q, const ZZ& a, const ZZ& b)
 {
-   static ZZ qq, r;
+   NTL_ZZRegister(qq);
+   NTL_ZZRegister(r);
 
    if (IsZero(b)) {
       if (IsZero(a)) {
@@ -685,7 +669,7 @@ long divide(ZZ& q, const ZZ& a, const ZZ& b)
 
 long divide(const ZZ& a, const ZZ& b)
 {
-   static ZZ r;
+   NTL_ZZRegister(r);
 
    if (IsZero(b)) return IsZero(a);
    if (IsOne(b)) return 1;
@@ -696,7 +680,7 @@ long divide(const ZZ& a, const ZZ& b)
 
 long divide(ZZ& q, const ZZ& a, long b)
 {
-   static ZZ qq;
+   NTL_ZZRegister(qq);
 
    if (!b) {
       if (IsZero(a)) {
@@ -748,17 +732,11 @@ long RandomPrime_long(long l, long NumTrials)
 PrimeSeq::PrimeSeq()
 {
    movesieve = 0;
-   movesieve_mem = 0;
    pshift = -1;
    pindex = -1;
    exhausted = 0;
 }
 
-PrimeSeq::~PrimeSeq()
-{
-   if (movesieve_mem)
-      free(movesieve_mem);
-}
 
 long PrimeSeq::next()
 {
@@ -794,7 +772,8 @@ long PrimeSeq::next()
    }
 }
 
-static char *lowsieve = 0;
+NTL_THREAD_LOCAL static char *lowsieve = 0;
+NTL_THREAD_LOCAL static Vec<char> lowsieve_mem;
 
 void PrimeSeq::shift(long newshift)
 {
@@ -824,13 +803,11 @@ void PrimeSeq::shift(long newshift)
       movesieve = lowsieve;
    } 
    else {
-      if (!movesieve_mem) {
-         movesieve_mem = (char *) NTL_MALLOC(NTL_PRIME_BND, 1, 0);
-         if (!movesieve_mem) 
-            Error("out of memory in PrimeSeq");
+      if (movesieve_mem.length() == 0) {
+         movesieve_mem.SetLength(NTL_PRIME_BND);
       }
 
-      p = movesieve = movesieve_mem;
+      p = movesieve = movesieve_mem.elts();
       for (i = 0; i < NTL_PRIME_BND; i++)
          p[i] = 1;
 
@@ -861,9 +838,8 @@ void PrimeSeq::start()
    long ibnd;
    char *p;
 
-   p = lowsieve = (char *) NTL_MALLOC(NTL_PRIME_BND, 1, 0);
-   if (!p)
-      Error("out of memory in PrimeSeq");
+   lowsieve_mem.SetLength(NTL_PRIME_BND);
+   p = lowsieve = lowsieve_mem.elts();
 
    for (i = 0; i < NTL_PRIME_BND; i++)
       p[i] = 1;
@@ -1104,7 +1080,7 @@ long CRT(ZZ& gg, ZZ& a, long G, long p)
 
    long modified = 0;
 
-   static ZZ g;
+   NTL_ZZRegister(g);
 
    if (!CRTInRange(gg, a)) {
       modified = 1;
@@ -1198,14 +1174,14 @@ long CRT(ZZ& gg, ZZ& a, const ZZ& G, const ZZ& p)
 
 void sub(ZZ& x, const ZZ& a, long b)
 {
-   static ZZ B;
+   NTL_ZZRegister(B);
    conv(B, b);
    sub(x, a, B);
 }
 
 void sub(ZZ& x, long a, const ZZ& b)
 {
-   static ZZ A;
+   NTL_ZZRegister(A);
    conv(A, a);
    sub(x, A, b);
 }
@@ -1228,7 +1204,7 @@ void conv(ZZ& x, const char *s)
    long acc;
    long i = 0;
 
-   static ZZ a;
+   NTL_ZZRegister(a);
 
    if (!s) Error("bad ZZ input");
 
@@ -1292,21 +1268,21 @@ void conv(ZZ& x, const char *s)
 
 void bit_and(ZZ& x, const ZZ& a, long b)
 {
-   static ZZ B;
+   NTL_ZZRegister(B);
    conv(B, b);
    bit_and(x, a, B);
 }
 
 void bit_or(ZZ& x, const ZZ& a, long b)
 {
-   static ZZ B;
+   NTL_ZZRegister(B);
    conv(B, b);
    bit_or(x, a, B);
 }
 
 void bit_xor(ZZ& x, const ZZ& a, long b)
 {
-   static ZZ B;
+   NTL_ZZRegister(B);
    conv(B, b);
    bit_xor(x, a, B);
 }
@@ -1338,6 +1314,8 @@ long power_long(long a, long e)
 
    return to_long(res);
 }
+
+
 
 //  RANDOM NUMBER GENERATION
 
@@ -1553,7 +1531,7 @@ void MD5_compress(unsigned long *buf, unsigned long *in)
 
 
 static
-void words_from_bytes(unsigned long *txtl, unsigned char *txtc, long n)
+void words_from_bytes(unsigned long *txtl, const unsigned char *txtc, long n)
 {
    long i;
    unsigned long v;
@@ -1568,7 +1546,7 @@ void words_from_bytes(unsigned long *txtl, unsigned char *txtc, long n)
 }
 
 static 
-void bytes_from_words(unsigned char *txtc, unsigned long *txtl, long n)
+void bytes_from_words(unsigned char *txtc, const unsigned long *txtl, long n)
 {
    long i;
    unsigned long v;
@@ -1686,10 +1664,10 @@ void arc4(unsigned char *buffer_ptr, long buffer_len, _ZZ_arc4_key *key)
 
 // global state information for PRNG
 
-static long ran_initialized = 0;
-static _ZZ_arc4_key ran_key;
+NTL_THREAD_LOCAL static long ran_initialized = 0;
+NTL_THREAD_LOCAL static _ZZ_arc4_key ran_key;
 
-static unsigned long default_md5_tab[16] = {
+static const unsigned long default_md5_tab[16] = {
 744663023UL, 1011602954UL, 3163087192UL, 3383838527UL, 
 3305324122UL, 3197458079UL, 2266495600UL, 2760303563UL, 
 346234297UL, 1919920720UL, 1896169861UL, 2192176675UL, 
@@ -1746,6 +1724,10 @@ void SetSeed(const ZZ& s)
 
    ran_initialized = 1;
 }
+
+
+// FIXME: in a thread-safe impl, we should perhaps make the default
+// seed dependent on the thread ID
 
 static 
 void ran_bytes(unsigned char *bytes, long n)
@@ -1842,26 +1824,33 @@ void RandomBits(ZZ& x, long l)
 
    long nb = (l+7)/8;
 
-   static unsigned char *buf = 0;
-   static long buf_len = 0;
+   NTL_THREAD_LOCAL static Vec<unsigned char> buf_mem;
+   NTL_THREAD_LOCAL static unsigned char *buf = 0;
+   NTL_THREAD_LOCAL static long buf_len = 0;
 
    if (nb > buf_len) {
-      if (buf) delete [] buf;
       buf_len = ((nb + 1023)/1024)*1024; // allocate in 1024-byte lots
-      typedef unsigned char u_char;
-      buf = NTL_NEW_OP u_char[buf_len];
-      if (!buf) Error("out of memory");
+      buf_mem.SetLength(buf_len);
+      buf = buf_mem.elts();
    }
 
    ran_bytes(buf, nb);
 
-   static ZZ res;
+   NTL_ZZRegister(res);
 
    ZZFromBytes(res, buf, nb);
    trunc(res, res, l);
 
    x = res;
+
+   // release buf if it is too big
+   if (buf_len > NTL_RELEASE_THRESH) {
+      buf_mem.kill();
+      buf = 0;
+      buf_len = 0;
+   }
 }
+
 
 void RandomLen(ZZ& x, long l)
 {
@@ -1906,8 +1895,10 @@ void RandomBnd(ZZ& x, const ZZ& bnd)
 
    long l = k + RandomBndExcess;
 
-   static ZZ t, r, t1;
-
+   NTL_ZZRegister(t);
+   NTL_ZZRegister(r);
+   NTL_ZZRegister(t1);
+   
    do {
       RandomBits(t, l);
       rem(r, t, bnd);
@@ -1930,7 +1921,8 @@ long RandomBnd(long bnd)
    long l = k + RandomBndExcess;
 
    if (l > NTL_BITS_PER_LONG-2) {
-      static ZZ Bnd, res;
+      NTL_ZZRegister(Bnd);
+      NTL_ZZRegister(res);
 
       Bnd = bnd;
       RandomBnd(res, Bnd);
@@ -1955,7 +1947,7 @@ long RandomBnd(long bnd)
 static
 double Log2(double x)
 {
-   static double log2 = log(2.0);
+   NTL_THREAD_LOCAL static double log2 = log(2.0);
    return log(x)/log2;
 }
 

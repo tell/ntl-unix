@@ -28,10 +28,14 @@ void OpenRead(ifstream& s, const char *name)
    }
 }
 
-static char sbuf[256];
+#define SBUF_SZ (1024)
+
+NTL_THREAD_LOCAL static char sbuf[SBUF_SZ];
 
 char *FileName(const char* stem, const char *ext)
 {
+   if (strlen(stem) + 1 + strlen(ext) >= SBUF_SZ) Error("bad file name");
+
    strcpy(sbuf, stem);
    strcat(sbuf, "-");
    strcat(sbuf, ext);
@@ -41,6 +45,8 @@ char *FileName(const char* stem, const char *ext)
 
 char *FileName(const char* stem, const char *ext, long d)
 {
+   if (strlen(stem) + 1 + strlen(ext) + 1 + 5 >= SBUF_SZ) Error("bad file name");
+
    strcpy(sbuf, stem);
    strcat(sbuf, "-");
    strcat(sbuf, ext);

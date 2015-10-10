@@ -16,7 +16,7 @@
 #include <NTL/new.h>
 
 
-#if (defined(NTL_GMP_LIP) || defined(NTL_GMP_HACK))
+#if (defined(NTL_GMP_LIP))
 #define KARX 200
 #else
 #define KARX 80
@@ -30,7 +30,7 @@ NTL_START_IMPL
 
 const ZZ_pX& ZZ_pX::zero()
 {
-   static ZZ_pX z;
+   NTL_THREAD_LOCAL static ZZ_pX z;
    return z;
 }
 
@@ -116,7 +116,7 @@ void SetCoeff(ZZ_pX& x, long i, const ZZ_p& a)
       long alloc = x.rep.allocated();
 
       if (alloc > 0 && i >= alloc) {
-         ZZ_pTemp aa_tmp;  ZZ_p& aa = aa_tmp.val();
+         NTL_ZZ_pRegister(aa);
          aa = a;
          x.rep.SetLength(i+1);
          x.rep[i] = aa;
@@ -140,7 +140,7 @@ void SetCoeff(ZZ_pX& x, long i, long a)
    if (a == 1) 
       SetCoeff(x, i);
    else {
-      ZZ_pTemp TT;  ZZ_p& T = TT.val(); 
+      NTL_ZZ_pRegister(T);
       conv(T, a);
       SetCoeff(x, i, T);
    }
@@ -230,7 +230,7 @@ void conv(ZZ_pX& x, long a)
    else if (a == 1)
       set(x);
    else {
-      ZZ_pTemp TT; ZZ_p& T = TT.val();
+      NTL_ZZ_pRegister(T);
       conv(T, a);
       conv(x, T);
    }
@@ -241,7 +241,7 @@ void conv(ZZ_pX& x, const ZZ& a)
    if (IsZero(a))
       clear(x);
    else {
-      ZZ_pTemp TT; ZZ_p& T = TT.val();
+      NTL_ZZ_pRegister(T);
       conv(T, a);
       conv(x, T);
    }
@@ -402,7 +402,7 @@ void sub(ZZ_pX& x, const ZZ_pX& a, long b)
 
 void sub(ZZ_pX& x, const ZZ_p& a, const ZZ_pX& b)
 {
-   ZZ_pTemp TT; ZZ_p& T = TT.val(); 
+   NTL_ZZ_pRegister(T);
    T = a;
 
    negate(x, b);
@@ -411,7 +411,7 @@ void sub(ZZ_pX& x, const ZZ_p& a, const ZZ_pX& b)
 
 void sub(ZZ_pX& x, long a, const ZZ_pX& b)
 {
-   ZZ_pTemp TT; ZZ_p& T = TT.val(); 
+   NTL_ZZ_pRegister(T);
    T = a;
 
    negate(x, b);
@@ -601,15 +601,16 @@ void PlainMul(ZZ_pX& x, const ZZ_pX& a, const ZZ_pX& b)
    xp = x.rep.elts();
 
    long i, j, jmin, jmax;
-   static ZZ t, accum;
+   NTL_ZZRegister(t);
+   NTL_ZZRegister(accum);
 
    for (i = 0; i <= d; i++) {
       jmin = max(0, i-db);
       jmax = min(da, i);
       clear(accum);
       for (j = jmin; j <= jmax; j++) {
-	 mul(t, rep(ap[j]), rep(bp[i-j]));
-	 add(accum, accum, t);
+         mul(t, rep(ap[j]), rep(bp[i-j]));
+         add(accum, accum, t);
       }
       conv(xp[i], accum);
    }
@@ -646,7 +647,8 @@ void PlainSqr(ZZ_pX& x, const ZZ_pX& a)
 
    long i, j, jmin, jmax;
    long m, m2;
-   static ZZ t, accum;
+   NTL_ZZRegister(t);
+   NTL_ZZRegister(accum);
 
    for (i = 0; i <= d; i++) {
       jmin = max(0, i-da);
@@ -656,13 +658,13 @@ void PlainSqr(ZZ_pX& x, const ZZ_pX& a)
       jmax = jmin + m2 - 1;
       clear(accum);
       for (j = jmin; j <= jmax; j++) {
-	 mul(t, rep(ap[j]), rep(ap[i-j]));
-	 add(accum, accum, t);
+         mul(t, rep(ap[j]), rep(ap[i-j]));
+         add(accum, accum, t);
       }
       add(accum, accum, accum);
       if (m & 1) {
-	 sqr(t, rep(ap[jmax + 1]));
-	 add(accum, accum, t);
+         sqr(t, rep(ap[jmax + 1]));
+         add(accum, accum, t);
       }
 
       conv(xp[i], accum);
@@ -680,7 +682,7 @@ void PlainDivRem(ZZ_pX& q, ZZ_pX& r, const ZZ_pX& a, const ZZ_pX& b)
 
 
    ZZ_p LCInv, t;
-   static ZZ s;
+   NTL_ZZRegister(s);
 
    da = deg(a);
    db = deg(b);
@@ -723,13 +725,13 @@ void PlainDivRem(ZZ_pX& q, ZZ_pX& r, const ZZ_pX& a, const ZZ_pX& b)
    for (i = dq; i >= 0; i--) {
       conv(t, xp[i+db]);
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       qp[i] = t;
       negate(t, t);
 
       for (j = db-1; j >= 0; j--) {
-	 mul(s, rep(t), rep(bp[j]));
-	 add(xp[i+j], xp[i+j], s);
+         mul(s, rep(t), rep(bp[j]));
+         add(xp[i+j], xp[i+j], s);
       }
    }
 
@@ -748,7 +750,7 @@ void PlainRem(ZZ_pX& r, const ZZ_pX& a, const ZZ_pX& b, ZZVec& x)
 
 
    ZZ_p LCInv, t;
-   static ZZ s;
+   NTL_ZZRegister(s);
 
    da = deg(a);
    db = deg(b);
@@ -779,12 +781,12 @@ void PlainRem(ZZ_pX& r, const ZZ_pX& a, const ZZ_pX& b, ZZVec& x)
    for (i = dq; i >= 0; i--) {
       conv(t, xp[i+db]);
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       negate(t, t);
 
       for (j = db-1; j >= 0; j--) {
-	 mul(s, rep(t), rep(bp[j]));
-	 add(xp[i+j], xp[i+j], s);
+         mul(s, rep(t), rep(bp[j]));
+         add(xp[i+j], xp[i+j], s);
       }
    }
 
@@ -804,7 +806,7 @@ void PlainDivRem(ZZ_pX& q, ZZ_pX& r, const ZZ_pX& a, const ZZ_pX& b, ZZVec& x)
 
 
    ZZ_p LCInv, t;
-   static ZZ s;
+   NTL_ZZRegister(s);
 
    da = deg(a);
    db = deg(b);
@@ -845,13 +847,13 @@ void PlainDivRem(ZZ_pX& q, ZZ_pX& r, const ZZ_pX& a, const ZZ_pX& b, ZZVec& x)
    for (i = dq; i >= 0; i--) {
       conv(t, xp[i+db]);
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       qp[i] = t;
       negate(t, t);
 
       for (j = db-1; j >= 0; j--) {
-	 mul(s, rep(t), rep(bp[j]));
-	 add(xp[i+j], xp[i+j], s);
+         mul(s, rep(t), rep(bp[j]));
+         add(xp[i+j], xp[i+j], s);
       }
    }
 
@@ -871,7 +873,7 @@ void PlainDiv(ZZ_pX& q, const ZZ_pX& a, const ZZ_pX& b)
 
 
    ZZ_p LCInv, t;
-   static ZZ s;
+   NTL_ZZRegister(s);
 
    da = deg(a);
    db = deg(b);
@@ -913,15 +915,15 @@ void PlainDiv(ZZ_pX& q, const ZZ_pX& a, const ZZ_pX& b)
    for (i = dq; i >= 0; i--) {
       conv(t, xp[i]);
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       qp[i] = t;
       negate(t, t);
 
       long lastj = max(0, db-i);
 
       for (j = db-1; j >= lastj; j--) {
-	 mul(s, rep(t), rep(bp[j]));
-	 add(xp[i+j-db], xp[i+j-db], s);
+         mul(s, rep(t), rep(bp[j]));
+         add(xp[i+j-db], xp[i+j-db], s);
       }
    }
 }
@@ -934,7 +936,7 @@ void PlainRem(ZZ_pX& r, const ZZ_pX& a, const ZZ_pX& b)
 
 
    ZZ_p LCInv, t;
-   static ZZ s;
+   NTL_ZZRegister(s);
 
    da = deg(a);
    db = deg(b);
@@ -967,12 +969,12 @@ void PlainRem(ZZ_pX& r, const ZZ_pX& a, const ZZ_pX& b)
    for (i = dq; i >= 0; i--) {
       conv(t, xp[i+db]);
       if (!LCIsOne)
-	 mul(t, t, LCInv);
+         mul(t, t, LCInv);
       negate(t, t);
 
       for (j = db-1; j >= 0; j--) {
-	 mul(s, rep(t), rep(bp[j]));
-	 add(xp[i+j], xp[i+j], s);
+         mul(s, rep(t), rep(bp[j]));
+         add(xp[i+j], xp[i+j], s);
       }
    }
 
@@ -994,7 +996,7 @@ void mul(ZZ_pX& x, const ZZ_pX& a, const ZZ_p& b)
       return;
    }
 
-   ZZ_pTemp TT; ZZ_p& t = TT.val();
+   NTL_ZZ_pRegister(t);
 
    long i, da;
 
@@ -1017,7 +1019,7 @@ void mul(ZZ_pX& x, const ZZ_pX& a, const ZZ_p& b)
 
 void mul(ZZ_pX& x, const ZZ_pX& a, long b)
 {
-   ZZ_pTemp TT;  ZZ_p& T = TT.val();
+   NTL_ZZ_pRegister(T);
    conv(T, b);
    mul(x, a, T);
 }
@@ -1420,7 +1422,9 @@ ZZ_pXModRep::~ZZ_pXModRep()
 }
 
 
-static vec_long ModularRepBuf;
+NTL_THREAD_LOCAL static vec_long ModularRepBuf;
+// FIXME: I may want to consider putting this in 
+// the thread local scratch space associated with ZZ_p contexts.
 
 
 void ToModularRep(vec_long& x, const ZZ_p& a)
@@ -1440,7 +1444,9 @@ void FromModularRep(ZZ_p& x, const vec_long& a)
    ZZ_pInfo->check();
 
    long n = ZZ_pInfo->NumPrimes;
-   static ZZ q, s, t;
+   NTL_ZZRegister(q);
+   NTL_ZZRegister(s);
+   NTL_ZZRegister(t);
    long i;
    double y;
 
@@ -1459,7 +1465,7 @@ void FromModularRep(ZZ_p& x, const vec_long& a)
       conv(q, (y + 0.5)); 
    } else {
       long Q, r;
-      static ZZ qq;
+      NTL_ZZRegister(qq);
 
       y = 0;
 
@@ -1530,6 +1536,12 @@ void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
          }
       }
    }
+
+   // FIXME: something to think about...part of the above logic
+   // is essentially a matrix transpose, which could lead to bad
+   // cache performance.  I don't really know if that is an issue.
+
+   
 
 
    for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
@@ -2443,7 +2455,8 @@ void PlainInvTrunc(ZZ_pX& x, const ZZ_pX& a, long m)
 
 {
    long i, k, n, lb;
-   static ZZ v, t;
+   NTL_ZZRegister(v);
+   NTL_ZZRegister(t);
    ZZ_p s;
    const ZZ_p* ap;
    ZZ_p* xp;
@@ -2990,7 +3003,7 @@ void div(ZZ_pX& q, const ZZ_pX& a, const ZZ_pX& b)
 
 void div(ZZ_pX& q, const ZZ_pX& a, const ZZ_p& b)
 {
-   ZZ_pTemp TT; ZZ_p& T = TT.val();
+   NTL_ZZ_pRegister(T);
 
    inv(T, b);
    mul(q, a, T);
@@ -2998,7 +3011,7 @@ void div(ZZ_pX& q, const ZZ_pX& a, const ZZ_p& b)
 
 void div(ZZ_pX& q, const ZZ_pX& a, long b)
 {
-   ZZ_pTemp TT; ZZ_p& T = TT.val();
+   NTL_ZZ_pRegister(T);
 
    T = b;
    inv(T, T);
@@ -3029,7 +3042,7 @@ long operator==(const ZZ_pX& a, long b)
    if (da > 0)
       return 0;
 
-   ZZ_pTemp TT; ZZ_p& bb = TT.val();
+   NTL_ZZ_pRegister(bb);
    bb = b;
 
    if (da < 0)

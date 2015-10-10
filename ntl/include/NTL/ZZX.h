@@ -23,11 +23,11 @@ vec_ZZ rep;
 ****************************************************************/
 
 
-ZZX()
+ZZX() { }
 //  initial value 0
 
-   { }
-
+explicit ZZX(long a) { *this = a; }
+explicit ZZX(const ZZ& a) { *this = a; }
 
 ZZX(INIT_SIZE_TYPE, long n) 
 // initial value 0, but space is pre-allocated for n coefficients
@@ -72,6 +72,10 @@ static const ZZX& zero();
 
 inline ZZX(long i, const ZZ& c);
 inline ZZX(long i, long c);
+
+inline ZZX(INIT_MONO_TYPE, long i, const ZZ& c);
+inline ZZX(INIT_MONO_TYPE, long i, long c);
+inline ZZX(INIT_MONO_TYPE, long i);
 
 
 inline ZZX& operator=(long a);
@@ -135,15 +139,18 @@ void SetCoeff(ZZX& x, long i, const ZZ& a);
 // x[i] = a, error is raised if i < 0
 
 void SetCoeff(ZZX& x, long i, long a);
-
-inline ZZX::ZZX(long i, const ZZ& a)
-   { SetCoeff(*this, i, a); }
-
-inline ZZX::ZZX(long i, long a)
-   { SetCoeff(*this, i, a); }
+// x[i] = a, error is raised if i < 0
 
 void SetCoeff(ZZX& x, long i);
 // x[i] = 1, error is raised if i < 0
+
+inline ZZX::ZZX(long i, const ZZ& a) { SetCoeff(*this, i, a); }
+inline ZZX::ZZX(long i, long a) { SetCoeff(*this, i, a); }
+
+inline ZZX::ZZX(INIT_MONO_TYPE, long i, const ZZ& a) { SetCoeff(*this, i, a); }
+inline ZZX::ZZX(INIT_MONO_TYPE, long i, long a) { SetCoeff(*this, i, a); }
+inline ZZX::ZZX(INIT_MONO_TYPE, long i) { SetCoeff(*this, i); }
+
 
 void SetX(ZZX& x);
 // x is set to the monomial X

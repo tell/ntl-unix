@@ -29,7 +29,6 @@ cp MakeDescAux.c dos/MakeDesc/MakeDescAux.cpp
 
 cp newnames.c dos/misc/newnames.cpp
 cp gen_gmp_aux.c dos/misc/gen_gmp_aux.cpp
-cp gen_lip_gmp_aux.c dos/misc/gen_lip_gmp_aux.cpp
 
 for i in $1
 do

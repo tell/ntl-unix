@@ -33,6 +33,9 @@ public:
    long size;  // p.size()
    long ExtendedModulusSize;
 
+   // FIXME: in a thread safe version, this lazy initialization
+   // needs to be in some kind of mutex
+
    // the following implement a "lazy" initialization strategy
    long initialized;  // flag if initialization really was done
    void init();
@@ -58,14 +61,9 @@ public:
    double *x;          // u/q, where u = (M/q)^{-1} mod q
    long *u;            // u, as above
 
-   double **tbl;       // table used for MultiRem; only with NTL_SINGLE_MUL
-
-   long **tbl1;        // table used for MultiRem; only with NTL_TBL_REM
-
-   ZZ_p *temps[MAX_ZZ_p_TEMPS];
-   long temps_top;
 };
 
+NTL_THREAD_LOCAL
 extern ZZ_pInfoT *ZZ_pInfo; // info for current modulus, initially null
 
 
@@ -79,7 +77,7 @@ void save();
 void restore() const;
 
 ZZ_pContext() { ptr = 0; }
-ZZ_pContext(const ZZ& p);
+explicit ZZ_pContext(const ZZ& p);
 
 ZZ_pContext(const ZZ_pContext&); 
 
@@ -112,31 +110,38 @@ ZZ_pBak() { MustRestore = 0; ptr = 0; }
 
 };
 
-
-
-
-struct ZZ_p_NoAlloc_type { ZZ_p_NoAlloc_type() { } };
-const ZZ_p_NoAlloc_type ZZ_p_NoAlloc = ZZ_p_NoAlloc_type();
-
-
-class ZZ_pTemp {
+class ZZ_pPush {
 private:
-   long pos;
+ZZ_pBak bak;
+
+ZZ_pPush(const ZZ_pPush&); // disabled
+void operator=(const ZZ_pPush&); // disabled
 
 public:
-   ZZ_pTemp();
-   ~ZZ_pTemp();
+ZZ_pPush() { bak.save(); }
+explicit ZZ_pPush(const ZZ_pContext& context) { bak.save(); context.restore(); }
+explicit ZZ_pPush(const ZZ& p) { bak.save(); ZZ_pContext c(p); c.restore(); }
 
-   ZZ_p& val() const;
+
 };
 
-#define NTL_ZZ_pRegister(x)  \
-   ZZ_pTemp ZZ_pTemp__ ## x; ZZ_p& x = ZZ_pTemp__ ## x . val()
+// FIXME: in a thread safe version, these reference counted
+// pointers should be replaced by shared_ptr's (which are
+// thread safe)
 
+
+class ZZ_pX; // forward declaration
 
 class ZZ_p {
 
 public:
+typedef ZZ rep_type;
+typedef ZZ_pContext context_type;
+typedef ZZ_pBak bak_type;
+typedef ZZ_pPush push_type;
+typedef ZZ_pX poly_type;
+
+
 
 ZZ _ZZ_p__rep;
 
@@ -145,16 +150,19 @@ static void init(const ZZ&);
 
 
 typedef void (*DivHandlerPtr)(const ZZ_p& a);   // error-handler for division
-static DivHandlerPtr DivHandler;
+
+NTL_THREAD_LOCAL static DivHandlerPtr DivHandler;
 
 
 // ****** constructors and assignment
 
-ZZ_p();
+ZZ_p() { } // NO_ALLOC
+explicit ZZ_p(long a) { *this = a; }
 
-ZZ_p(const ZZ_p& a) :  _ZZ_p__rep(INIT_SIZE, ZZ_pInfo->size) { _ZZ_p__rep = a._ZZ_p__rep; }
+ZZ_p(const ZZ_p& a) { _ZZ_p__rep = a._ZZ_p__rep; } // NO_ALLOC
 
-ZZ_p(ZZ_p_NoAlloc_type) { }  // allocates no space
+ZZ_p(INIT_NO_ALLOC_TYPE) { }  // allocates no space
+ZZ_p(INIT_ALLOC_TYPE) { _ZZ_p__rep.SetSize(ZZ_pInfo->size); }  // allocates space
 
 ~ZZ_p() { } 
 
@@ -178,6 +186,20 @@ static const ZZ_p& zero();
 
 ZZ_p(INIT_VAL_TYPE, const ZZ& a);
 ZZ_p(INIT_VAL_TYPE, long a);
+
+
+
+void allocate() 
+{ 
+   long sz = ZZ_pInfo->size;
+   if (_ZZ_p__rep.MaxAlloc() < sz) 
+      _ZZ_p__rep.SetSize(sz);
+}
+
+// mainly for internal consumption by the ZZ_pWatcher class below
+
+void release() { _ZZ_p__rep.release(); }
+
 
 };
 
@@ -449,7 +471,36 @@ inline void conv(ZZ_p& x, const ZZ_p& a) { x = a; }
 // overload these functions for Vec<ZZ_p>.
 // They are defined in vec_ZZ_p.c
 void BlockConstruct(ZZ_p* p, long n);
+void BlockConstructFromVec(ZZ_p* p, long n, const ZZ_p* q);
+void BlockConstructFromObj(ZZ_p* p, long n, const ZZ_p& q);
 void BlockDestroy(ZZ_p* p, long n);
+
+
+// ZZ_p scratch variables
+
+
+
+class ZZ_pWatcher {
+public:
+   ZZ_p *watched;
+   explicit
+   ZZ_pWatcher(ZZ_p *_watched) : watched(_watched) { watched->allocate(); }
+
+   ~ZZ_pWatcher() { watched->release(); }
+};
+
+#define NTL_ZZ_pRegister(x) NTL_THREAD_LOCAL static ZZ_p x; ZZ_pWatcher _WATCHER__ ## x(&x)
+
+// FIXME: register variables that are allocated with respect to one modulus
+// and then reused with another modulus may have initial values that are
+// not in the correct range.  This should not cause any problems, though,
+// as these register values should always be written to before being read.
+// Note also that the underlying integer reps may have space
+// allocated that is smaller or *bigger* than the current modulus.
+// This may impact future interface design changes --- especially
+// one that tries to make "out of context" copy constructors
+// safe by reading the allocated space of the source.
+
 
 
 NTL_CLOSE_NNS

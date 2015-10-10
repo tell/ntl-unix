@@ -74,13 +74,14 @@ public:
    Vec();  // initially length 0
 
    Vec(const Vec<T>& a); 
-   // copy constructor;  currently, this is implemented by
-   // initializing elements using T's defaults constructor and 
-   // copying elements from a using T's assigment operator.
+   // copy constructor;  uses the assignment operator of T
+   // for copying into locations that have already been initialized,
+   // and uses the copy constructor for T for initializing new locations.
 
    Vec& operator=(const Vec<T>& a);  
-   // assignment: performs an element-wise assignment
-   // using T's assignment operator.
+   // assignment;  uses the assignment operator of T
+   // for copying into locations that have already been initialized,
+   // and uses the copy constructor for T for initializing new locations.
 
    ~Vec();  
    // destructor: calls T's destructor for all initialized
@@ -88,6 +89,11 @@ public:
   
    void SetLength(long n);  
    // set current length to n, growing vector if necessary
+   // new objects are initialized using the default contructor for T
+  
+   void SetLength(long n, const T& a);  
+   // set current length to n, growing vector if necessary
+   // new objects are initialized using the copy contructor for T
 
    long length() const;
    // current length
@@ -114,6 +120,20 @@ public:
    // The first version is applied to non-const Vec<T>,
    // and returns a non-const pointer to a T, while the second version
    // is applied to a const Vec<T> and returns a const reference to a T.
+
+   
+   void swap(Vec<T>& y);
+   // swap with y (fast: just swaps pointers)
+
+   void append(const T& a);
+   // append a to end of vector; uses the assignment operator of T
+   // for copying into locations that have already been initialized,
+   // and uses the copy constructor for T for initializing new locations.
+
+   void append(const Vec<T>& w);
+   // append w to end of vector; uses the assignment operator of T
+   // for copying into locations that have already been initialized,
+   // and uses the copy constructor for T for initializing new locations.
 
 
 // Alternative access interface 
@@ -172,7 +192,7 @@ public:
    // The kill operation is also subsequently prohibited, and swap is
    // allowed on fixed length vectors of the same length.
 
-   // FixLength is provided mainly to implement mat_T, to enforce
+   // FixLength is provided mainly to implement Mat<T>, to enforce
    // the restriction that all rows have the same length.
 
    long fixed() const;
@@ -215,15 +235,15 @@ public:
    
 template<class T>
 void swap(Vec<T>& x, Vec<T>& y);
-// swaps x & y by swapping pointers
+// swaps x & y; same as x.swap(y)
 
 template<class T>
 void append(Vec<T>& v, const T& a); 
-// appends a to the end of v
+// appends a to the end of v; same as v.append(a)
 
 template<class T>
 void append(Vec<T>& v, const Vec<T>& w);
-// appends w to the end of v
+// appends w to the end of v; same as v.append(w)
 
 
 
@@ -236,6 +256,8 @@ void append(Vec<T>& v, const Vec<T>& w);
 The I/O format for a vector v with n elements is:
 
    [v[0] v[1] ... v[n-1]]
+
+Uses corresponding I/O operators for T
 
 \**************************************************************************/
 
@@ -265,25 +287,35 @@ long operator!=(const Vec<T>& a, const Vec<T>& b);
 
                   Customized Constructors and Destructors
  
-Esoteric: skip on first reading
+Esoteric: skip on first reading...also these interfaces are subject to change
 
-When new elements in a vector need to be constructed, the routine
+When new elements in a vector need to be constructed, one of the
+following routines is called:
 
-   void BlockConstruct(T* p, long n);
+   void BlockConstruct(T* p, long n); 
+   // invokes T() to initialize p[i] for i = 0..n-1
 
-is called, whose default implementation invokes the default
-constructor for T n times.  Likewise, when a vector is destroyed, the
-routine
+   void BlockConstructFromVec(T* p, long n, const T* q);
+   // invokes T(q[i]) to initialize p[i] for i = 0..n-1;
+   // q points to elements from a Vec<T>
+
+   void BlockConstructFromObj(T* p, long n, const T& q);
+   // invokes T(q) to initialize p[i] for i = 0..n-1
+
+
+When a vector is destroyed, the following routine is called:
 
    void BlockDestroy(T* p, long n);
+   // invokes ~T() on p[i] for i = 0..n-1
 
-is called, whose default implementation invokes the default destructor
-for T n times.
-
-Both of these default implementations can be overridden as follows
-by overloading these functions with a custom implementation.
+The default behavior of these routines may be modified by 
+overloading these functions with a custom implementation.
  
-For an example of this, see vec_ZZ_p.c.
+In NTL, these routines are overridden for the ZZ_p and GF2E classes,
+so that many vector entries will be packed into contiguous storage
+locations.  This reduces the number of invocations of malloc, and
+increases locality of reference.
+
 
 \**************************************************************************/
 

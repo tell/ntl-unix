@@ -36,38 +36,12 @@
 
 NTL_START_IMPL
 
-/********** data structures for accesss to GF2XRegisters ************/
-
-static GF2X GF2XRegisterVec[32];
-static long GF2XRegisterTop = 0;
 
 
-class GF2XRegisterType {
-public:
-
-GF2X *xrep;
-
-GF2XRegisterType()
-{ xrep = &GF2XRegisterVec[GF2XRegisterTop]; GF2XRegisterTop++; }
-
-~GF2XRegisterType()
-{ xrep->xrep.release();  
-  GF2XRegisterTop--; }
-
-operator GF2X& () { return *xrep; }
-
-};
-
-#define GF2XRegister(a) GF2XRegisterType GF2XReg__ ## a ; GF2X& a = GF2XReg__ ## a
-
-
-
-
-
-
-
+NTL_THREAD_LOCAL
 static vec_GF2X stab;  // used by PlainDivRem and PlainRem
 
+NTL_THREAD_LOCAL
 static WordVector GF2X_rembuf;
 
 
@@ -175,7 +149,7 @@ void PlainDivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2X& b)
 
 void PlainDiv(GF2X& q, const GF2X& a, const GF2X& b)
 {
-   GF2XRegister(r);
+   NTL_GF2XRegister(r);
    PlainDivRem(q, r, a, b);
 }
 
@@ -265,7 +239,7 @@ void PlainRem(GF2X& r, const GF2X& a, const GF2X& b)
 
 #define MASK8 ((1UL << 8)-1UL)
 
-static _ntl_ulong invtab[128] = {
+static const _ntl_ulong invtab[128] = {
 1UL, 255UL, 85UL, 219UL, 73UL, 151UL, 157UL, 51UL, 17UL, 175UL,
 69UL, 139UL, 89UL, 199UL, 141UL, 99UL, 33UL, 95UL, 117UL, 123UL,
 105UL, 55UL, 189UL, 147UL, 49UL, 15UL, 101UL, 43UL, 121UL, 103UL,
@@ -289,7 +263,7 @@ void NewtonInvTrunc(GF2X& c, const GF2X& a, long e)
       return;
    }
 
-   static vec_long E;
+   NTL_THREAD_LOCAL static vec_long E;
    E.SetLength(0);
    append(E, e);
    while (e > 8) {
@@ -299,10 +273,10 @@ void NewtonInvTrunc(GF2X& c, const GF2X& a, long e)
 
    long L = E.length();
 
-   GF2XRegister(g);
-   GF2XRegister(g0);
-   GF2XRegister(g1);
-   GF2XRegister(g2);
+   NTL_GF2XRegister(g);
+   NTL_GF2XRegister(g0);
+   NTL_GF2XRegister(g1);
+   NTL_GF2XRegister(g2);
 
    g.xrep.SetMaxLength((E[0]+NTL_BITS_PER_LONG-1)/NTL_BITS_PER_LONG + 1);
    g0.xrep.SetMaxLength((E[0]+NTL_BITS_PER_LONG-1)/NTL_BITS_PER_LONG + 1);
@@ -687,8 +661,8 @@ GF2XModulus::GF2XModulus(const GF2X& ff)
 
 void UseMulRem21(GF2X& r, const GF2X& a, const GF2XModulus& F)
 {
-   GF2XRegister(P1);
-   GF2XRegister(P2);
+   NTL_GF2XRegister(P1);
+   NTL_GF2XRegister(P2);
 
    RightShift(P1, a, F.n);
    mul(P2, P1, F.h0);
@@ -702,8 +676,8 @@ void UseMulRem21(GF2X& r, const GF2X& a, const GF2XModulus& F)
 
 void UseMulDivRem21(GF2X& q, GF2X& r, const GF2X& a, const GF2XModulus& F)
 {
-   GF2XRegister(P1);
-   GF2XRegister(P2);
+   NTL_GF2XRegister(P1);
+   NTL_GF2XRegister(P2);
 
    RightShift(P1, a, F.n);
    mul(P2, P1, F.h0);
@@ -718,8 +692,8 @@ void UseMulDivRem21(GF2X& q, GF2X& r, const GF2X& a, const GF2XModulus& F)
 
 void UseMulDiv21(GF2X& q, const GF2X& a, const GF2XModulus& F)
 {
-   GF2XRegister(P1);
-   GF2XRegister(P2);
+   NTL_GF2XRegister(P1);
+   NTL_GF2XRegister(P2);
 
    RightShift(P1, a, F.n);
    mul(P2, P1, F.h0);
@@ -731,9 +705,9 @@ void UseMulDiv21(GF2X& q, const GF2X& a, const GF2XModulus& F)
 
 void UseMulRemX1(GF2X& r, const GF2X& aa, const GF2XModulus& F)
 {
-   GF2XRegister(buf);
-   GF2XRegister(tmp);
-   GF2XRegister(a);
+   NTL_GF2XRegister(buf);
+   NTL_GF2XRegister(tmp);
+   NTL_GF2XRegister(a);
 
    clear(buf);
    a = aa;
@@ -760,11 +734,11 @@ void UseMulRemX1(GF2X& r, const GF2X& aa, const GF2XModulus& F)
 
 void UseMulDivRemX1(GF2X& q, GF2X& r, const GF2X& aa, const GF2XModulus& F)
 {
-   GF2XRegister(buf);
-   GF2XRegister(tmp);
-   GF2XRegister(a);
-   GF2XRegister(qq);
-   GF2XRegister(qbuf);
+   NTL_GF2XRegister(buf);
+   NTL_GF2XRegister(tmp);
+   NTL_GF2XRegister(a);
+   NTL_GF2XRegister(qq);
+   NTL_GF2XRegister(qbuf);
 
    clear(buf);
    a = aa;
@@ -795,11 +769,11 @@ void UseMulDivRemX1(GF2X& q, GF2X& r, const GF2X& aa, const GF2XModulus& F)
 
 void UseMulDivX1(GF2X& q, const GF2X& aa, const GF2XModulus& F)
 {
-   GF2XRegister(buf);
-   GF2XRegister(tmp);
-   GF2XRegister(a);
-   GF2XRegister(qq);
-   GF2XRegister(qbuf);
+   NTL_GF2XRegister(buf);
+   NTL_GF2XRegister(tmp);
+   NTL_GF2XRegister(a);
+   NTL_GF2XRegister(qq);
+   NTL_GF2XRegister(qbuf);
    
    clear(buf);
    a = aa;
@@ -842,7 +816,7 @@ void TrinomReduce(GF2X& x, const GF2X& a, long n, long k)
       return;
    }
 
-   GF2XRegister(r);
+   NTL_GF2XRegister(r);
 
    r = a;
 
@@ -953,7 +927,7 @@ void PentReduce(GF2X& x, const GF2X& a, long n, long k3, long k2, long k1)
    long wdiff3 = (n-k3)/NTL_BITS_PER_LONG;
    long bdiff3 = (n-k3) - wdiff3*NTL_BITS_PER_LONG;
 
-   GF2XRegister(r);
+   NTL_GF2XRegister(r);
    r = a;
 
    _ntl_ulong *p = r.xrep.elts();
@@ -1094,7 +1068,7 @@ void RightShiftAdd(GF2X& c, const GF2X& a, long n)
 static
 void TriDiv21(GF2X& q, const GF2X& a, long n, long k)
 {
-   GF2XRegister(P1);
+   NTL_GF2XRegister(P1);
 
    RightShift(P1, a, n);
    if (k != 1) 
@@ -1106,7 +1080,7 @@ void TriDiv21(GF2X& q, const GF2X& a, long n, long k)
 static 
 void TriDivRem21(GF2X& q, GF2X& r, const GF2X& a, long n, long k)
 {
-   GF2XRegister(Q);
+   NTL_GF2XRegister(Q);
    TriDiv21(Q, a, n, k);
    TrinomReduce(r, a, n, k);
    q = Q;
@@ -1121,8 +1095,8 @@ void PentDiv21(GF2X& q, const GF2X& a, long n, long k3, long k2, long k1)
       return;
    }
 
-   GF2XRegister(P1);
-   GF2XRegister(P2);
+   NTL_GF2XRegister(P1);
+   NTL_GF2XRegister(P2);
 
    RightShift(P1, a, n);
    
@@ -1141,7 +1115,7 @@ static
 void PentDivRem21(GF2X& q, GF2X& r, const GF2X& a, long n, 
                   long k3, long k2, long k1)
 {
-   GF2XRegister(Q);
+   NTL_GF2XRegister(Q);
    PentDiv21(Q, a, n, k3, k2, k1);
    PentReduce(r, a, n, k3, k2, k1);
    q = Q;
@@ -1150,11 +1124,11 @@ void PentDivRem21(GF2X& q, GF2X& r, const GF2X& a, long n,
 static
 void TriDivRemX1(GF2X& q, GF2X& r, const GF2X& aa, long n, long k)
 {
-   GF2XRegister(buf);
-   GF2XRegister(tmp);
-   GF2XRegister(a);
-   GF2XRegister(qq);
-   GF2XRegister(qbuf);
+   NTL_GF2XRegister(buf);
+   NTL_GF2XRegister(tmp);
+   NTL_GF2XRegister(a);
+   NTL_GF2XRegister(qq);
+   NTL_GF2XRegister(qbuf);
 
    clear(buf);
    a = aa;
@@ -1185,11 +1159,11 @@ void TriDivRemX1(GF2X& q, GF2X& r, const GF2X& aa, long n, long k)
 static
 void TriDivX1(GF2X& q, const GF2X& aa, long n, long k)
 {
-   GF2XRegister(buf);
-   GF2XRegister(tmp);
-   GF2XRegister(a);
-   GF2XRegister(qq);
-   GF2XRegister(qbuf);
+   NTL_GF2XRegister(buf);
+   NTL_GF2XRegister(tmp);
+   NTL_GF2XRegister(a);
+   NTL_GF2XRegister(qq);
+   NTL_GF2XRegister(qbuf);
    
    clear(buf);
    a = aa;
@@ -1219,11 +1193,11 @@ static
 void PentDivRemX1(GF2X& q, GF2X& r, const GF2X& aa, long n, 
                   long k3, long k2, long k1)
 {
-   GF2XRegister(buf);
-   GF2XRegister(tmp);
-   GF2XRegister(a);
-   GF2XRegister(qq);
-   GF2XRegister(qbuf);
+   NTL_GF2XRegister(buf);
+   NTL_GF2XRegister(tmp);
+   NTL_GF2XRegister(a);
+   NTL_GF2XRegister(qq);
+   NTL_GF2XRegister(qbuf);
 
    clear(buf);
    a = aa;
@@ -1254,11 +1228,11 @@ void PentDivRemX1(GF2X& q, GF2X& r, const GF2X& aa, long n,
 static
 void PentDivX1(GF2X& q, const GF2X& aa, long n, long k3, long k2, long k1)
 {
-   GF2XRegister(buf);
-   GF2XRegister(tmp);
-   GF2XRegister(a);
-   GF2XRegister(qq);
-   GF2XRegister(qbuf);
+   NTL_GF2XRegister(buf);
+   NTL_GF2XRegister(tmp);
+   NTL_GF2XRegister(a);
+   NTL_GF2XRegister(qq);
+   NTL_GF2XRegister(qbuf);
    
    clear(buf);
    a = aa;
@@ -1703,7 +1677,7 @@ void MulMod(GF2X& c, const GF2X& a, const GF2X& b, const GF2XModulus& F)
 {
    if (F.n < 0) Error("MulMod: uninitialized modulus");
 
-   GF2XRegister(t);
+   NTL_GF2XRegister(t);
    mul(t, a, b);
    rem(c, t, F);
 }
@@ -1713,7 +1687,7 @@ void SqrMod(GF2X& c, const GF2X& a, const GF2XModulus& F)
 {
    if (F.n < 0) Error("SqrMod: uninitialized modulus");
 
-   GF2XRegister(t);
+   NTL_GF2XRegister(t);
    sqr(t, a);
    rem(c, t, F);
 }
@@ -1725,14 +1699,14 @@ void SqrMod(GF2X& c, const GF2X& a, const GF2XModulus& F)
 
 void MulMod(GF2X& c, const GF2X& a, const GF2X& b, const GF2X& f)
 {
-   GF2XRegister(t);
+   NTL_GF2XRegister(t);
    mul(t, a, b);
    rem(c, t, f);
 }
 
 void SqrMod(GF2X& c, const GF2X& a, const GF2X& f)
 {
-   GF2XRegister(t);
+   NTL_GF2XRegister(t);
    sqr(t, a);
    rem(c, t, f);
 }
@@ -1914,8 +1888,8 @@ void PowerXMod(GF2X& hh, const ZZ& e, const GF2XModulus& F)
 
 void UseMulRem(GF2X& r, const GF2X& a, const GF2X& b)
 {
-   GF2XRegister(P1);
-   GF2XRegister(P2);
+   NTL_GF2XRegister(P1);
+   NTL_GF2XRegister(P2);
 
    long da = deg(a);
    long db = deg(b);
@@ -1935,8 +1909,8 @@ void UseMulRem(GF2X& r, const GF2X& a, const GF2X& b)
 
 void UseMulDivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2X& b)
 {
-   GF2XRegister(P1);
-   GF2XRegister(P2);
+   NTL_GF2XRegister(P1);
+   NTL_GF2XRegister(P2);
 
    long da = deg(a);
    long db = deg(b);
@@ -1957,8 +1931,8 @@ void UseMulDivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2X& b)
 
 void UseMulDiv(GF2X& q, const GF2X& a, const GF2X& b)
 {
-   GF2XRegister(P1);
-   GF2XRegister(P2);
+   NTL_GF2XRegister(P1);
+   NTL_GF2XRegister(P2);
 
    long da = deg(a);
    long db = deg(b);
@@ -2036,8 +2010,8 @@ void swap(_ntl_ulong_ptr& a, _ntl_ulong_ptr& b)
 static
 void BaseGCD(GF2X& d, const GF2X& a_in, const GF2X& b_in)
 {
-   GF2XRegister(a);
-   GF2XRegister(b);
+   NTL_GF2XRegister(a);
+   NTL_GF2XRegister(b);
    
    if (IsZero(a_in)) {
       d = b_in;
@@ -2118,13 +2092,13 @@ void OldGCD(GF2X& d, const GF2X& a, const GF2X& b)
    long sb = b.xrep.length();
 
    if (sb >= 10 && 2*sa > 3*sb) {
-      GF2XRegister(r);
+      NTL_GF2XRegister(r);
 
       rem(r, a, b);
       BaseGCD(d, b, r);
    }
    else if (sa >= 10 && 2*sb > 3*sa) {
-      GF2XRegister(r);
+      NTL_GF2XRegister(r);
 
       rem(r, b, a);
       BaseGCD(d, a, r);
@@ -2229,10 +2203,10 @@ void OldGCD(GF2X& d, const GF2X& a, const GF2X& b)
 static
 void XXGCD(GF2X& d, GF2X& r_out, const GF2X& a_in, const GF2X& b_in)
 {
-   GF2XRegister(a);
-   GF2XRegister(b);
-   GF2XRegister(r);
-   GF2XRegister(s);
+   NTL_GF2XRegister(a);
+   NTL_GF2XRegister(b);
+   NTL_GF2XRegister(r);
+   NTL_GF2XRegister(s);
 
    if (IsZero(b_in)) {
       d = a_in;
@@ -2323,8 +2297,8 @@ void BaseXGCD(GF2X& d, GF2X& s, GF2X& t, const GF2X& a, const GF2X& b)
       clear(t);
    }
    else {
-      GF2XRegister(t1);
-      GF2XRegister(b1);
+      NTL_GF2XRegister(t1);
+      NTL_GF2XRegister(b1);
 
       b1 = b;
       XXGCD(d, s, a, b);
@@ -2344,10 +2318,10 @@ void OldXGCD(GF2X& d, GF2X& s, GF2X& t, const GF2X& a, const GF2X& b)
 
 
    if (sb >= 10 && 2*sa > 3*sb) {
-      GF2XRegister(r);
-      GF2XRegister(q);
-      GF2XRegister(s1);
-      GF2XRegister(t1);
+      NTL_GF2XRegister(r);
+      NTL_GF2XRegister(q);
+      NTL_GF2XRegister(s1);
+      NTL_GF2XRegister(t1);
 
 
       DivRem(q, r, a, b);
@@ -2361,10 +2335,10 @@ void OldXGCD(GF2X& d, GF2X& s, GF2X& t, const GF2X& a, const GF2X& b)
       t = r;   
    }
    else if (sa >= 10 && 2*sb > 3*sa) {
-      GF2XRegister(r);
-      GF2XRegister(q);
-      GF2XRegister(s1);
-      GF2XRegister(t1);
+      NTL_GF2XRegister(r);
+      NTL_GF2XRegister(q);
+      NTL_GF2XRegister(s1);
+      NTL_GF2XRegister(t1);
 
 
       DivRem(q, r, b, a);
@@ -2396,7 +2370,7 @@ void BaseInvMod(GF2X& d, GF2X& s, const GF2X& a, const GF2X& f)
 
    if ((sa >= 10 && 2*sf > 3*sa) || 
        sf > NTL_GF2X_GCD_CROSSOVER/NTL_BITS_PER_LONG) {
-      GF2XRegister(t);
+      NTL_GF2XRegister(t);
 
       XGCD(d, s, t, a, f);
    }
@@ -2410,8 +2384,8 @@ void BaseInvMod(GF2X& d, GF2X& s, const GF2X& a, const GF2X& f)
 
 void InvMod(GF2X& c, const GF2X& a, const GF2X& f)
 { 
-   GF2XRegister(d);
-   GF2XRegister(s);
+   NTL_GF2XRegister(d);
+   NTL_GF2XRegister(s);
    BaseInvMod(d, s, a, f);
 
    if (!IsOne(d)) Error("InvMod: inverse undefined");
@@ -2423,8 +2397,8 @@ void InvMod(GF2X& c, const GF2X& a, const GF2X& f)
 
 long InvModStatus(GF2X& c, const GF2X& a, const GF2X& f)
 { 
-   GF2XRegister(d);
-   GF2XRegister(s);
+   NTL_GF2XRegister(d);
+   NTL_GF2XRegister(s);
    BaseInvMod(d, s, a, f);
 
    if (!IsOne(d)) {
@@ -2564,7 +2538,7 @@ void add(GF2X& c, const GF2X& a, GF2 b)
 
 void MulTrunc(GF2X& c, const GF2X& a, const GF2X& b, long n)
 {
-   GF2XRegister(t);
+   NTL_GF2XRegister(t);
 
    mul(t, a, b);
    trunc(c, t, n);
@@ -2572,7 +2546,7 @@ void MulTrunc(GF2X& c, const GF2X& a, const GF2X& b, long n)
 
 void SqrTrunc(GF2X& c, const GF2X& a, long n)
 {
-   GF2XRegister(t);
+   NTL_GF2XRegister(t);
 
    sqr(t, a);
    trunc(c, t, n);
@@ -2590,8 +2564,8 @@ long divide(GF2X& q, const GF2X& a, const GF2X& b)
          return 0;
    }
 
-   GF2XRegister(lq);
-   GF2XRegister(r);
+   NTL_GF2XRegister(lq);
+   NTL_GF2XRegister(r);
 
    DivRem(lq, r, a, b);
    if (!IsZero(r)) return 0;
@@ -2602,7 +2576,7 @@ long divide(GF2X& q, const GF2X& a, const GF2X& b)
 long divide(const GF2X& a, const GF2X& b)
 {
    if (IsZero(b)) return IsZero(a);
-   GF2XRegister(r);
+   NTL_GF2XRegister(r);
    rem(r, a, b);
    if (!IsZero(r)) return 0;
    return 1;
@@ -2829,9 +2803,9 @@ void TransMulMod(GF2X& x, const GF2X& a, const GF2XTransMultiplier& B,
 {
    if (deg(a) >= F.n) Error("TransMulMod: bad args");
 
-   GF2XRegister(t1);
-   GF2XRegister(t2);
-   GF2XRegister(t3);
+   NTL_GF2XRegister(t1);
+   NTL_GF2XRegister(t2);
+   NTL_GF2XRegister(t3);
 
    mul(t1, a, B.b);
    RightShift(t1, t1, B.shamt_b);
@@ -2866,8 +2840,8 @@ void TransMulMod(GF2X& x, const GF2X& a, const GF2XTransMultiplier& B,
 void UpdateMap(vec_GF2& x, const vec_GF2& a, const GF2XTransMultiplier& B,
        const GF2XModulus& F)
 {
-   GF2XRegister(xx);
-   GF2XRegister(aa);
+   NTL_GF2XRegister(xx);
+   NTL_GF2XRegister(aa);
    conv(aa, a);
    TransMulMod(xx, aa, B, F);
    conv(x, xx);
@@ -3281,6 +3255,8 @@ void TraceMod(ref_GF2 x, const GF2X& a, const GF2XModulus& F)
 
    if (deg(a) >= n)
       Error("trace: bad args");
+
+   // FIXME: in a thread-safe impl, this needs a mutex
 
    if (F.tracevec.length() == 0) 
       ComputeTraceVec(F);

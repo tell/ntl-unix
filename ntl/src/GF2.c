@@ -30,7 +30,7 @@ ostream& operator<<(ostream& s, GF2 a)
 
 istream& operator>>(istream& s, ref_GF2 x)
 {
-   static ZZ a;
+   NTL_ZZRegister(a);
 
    s >> a;
    conv(x, a);

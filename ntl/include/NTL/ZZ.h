@@ -17,14 +17,18 @@
 
 #include <NTL/lip.h>
 #include <NTL/tools.h>
+#include <NTL/vector.h>
 
 NTL_OPEN_NNS
 
 
-
+class ZZ_p; // forward declaration
+class ZZX;
 
 class ZZ {
 public:
+typedef ZZ_p residue_type;
+typedef ZZX poly_type;
 
 NTL_verylong rep; // This is currently public for "emergency" situations
                    // May be private in future versions.
@@ -33,6 +37,7 @@ NTL_verylong rep; // This is currently public for "emergency" situations
 ZZ() : rep(0) { }
 // initial value is 0.
 
+explicit ZZ(long a) : rep(0) { *this = a; }
 
 ZZ(INIT_SIZE_TYPE, long k) : rep(0)
 // initial value is 0, but space is pre-allocated so that numbers
@@ -113,9 +118,32 @@ static const ZZ& zero();
 ZZ(ZZ& x, INIT_TRANS_TYPE) { rep = x.rep; x.rep = 0; }
 // used to cheaply hand off memory management of return value,
 // without copying, assuming compiler implements the
-// "return value optimization"
+// "return value optimization".  This is probably obsolete by
+// now, as modern compilers can and should optimize
+// the copy constructor in the situations where this is used.
+// This should only be used for simple, local variables
+// that are not be subject to special memory management.
+
+
+// mainly for internal consumption by ZZWatcher
+
+void release() { if (MaxAlloc() > NTL_RELEASE_THRESH) kill(); }
 
 };
+
+
+class ZZWatcher {
+public:
+   ZZ *watched;
+   explicit
+   ZZWatcher(ZZ *_watched) : watched(_watched) {}
+
+   ~ZZWatcher() { watched->release(); }
+};
+
+#define NTL_ZZRegister(x) NTL_THREAD_LOCAL static ZZ x; ZZWatcher _WATCHER__ ## x(&x)
+
+
 
 
 
@@ -1196,9 +1224,8 @@ inline ZZ SqrRootMod(const ZZ& a, const ZZ& n)
 
 class PrimeSeq {
 
-
 char *movesieve;
-char *movesieve_mem;
+Vec<char> movesieve_mem;
 long pindex;
 long pshift;
 long exhausted;
@@ -1206,7 +1233,6 @@ long exhausted;
 public:
 
 PrimeSeq();
-~PrimeSeq();
 
 long next();
 // returns next prime in the sequence.
@@ -1261,6 +1287,13 @@ The number n itself should be in the range 1..2^{NTL_SP_NBITS}-1.
 // possibility of the linker complaining when the definitions
 // are inconsistent across severeal files.
 // Maybe an unnamed namespace would be better.
+
+// DIRT: undocumented feature: in all of these MulMod routines,
+// the first argument, a, need only be in the range
+// 0..2^{NTL_SP_NBITS}-1.  This is assumption is used internally
+// in some NT routines...I've tried to mark all such uses with a
+// DIRT comment.  I may decide to make this feature part
+// of the documented interface at some point in the future.
 
 
 
@@ -1322,216 +1355,7 @@ static inline long NegateMod(long a, long n)
 #endif
 
 
-#if (defined(NTL_SINGLE_MUL))
-
-
-#if (!defined(NTL_FAST_INT_MUL))
-
-
-static inline long MulMod(long a, long b, long n)
-// return (a*b)%n
-
-{
-   double ab;
-   long q, res;
-
-   ab = ((double) a) * ((double) b);
-   q  = (long) (ab/((double) n));  // q could be off by (+/-) 1
-   res = (long) (ab - ((double) q)*((double) n));
-#if (NTL_ARITH_RIGHT_SHIFT && defined(NTL_AVOID_BRANCHING))
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-   res -= n;
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-#else
-   if (res >= n)
-      res -= n;
-   else if (res < 0)
-      res += n;
-#endif
-   return res;
-}
-
-/*
-The following MulMod takes a fourth argument, ninv,
-which is assumed to equal 1/((double) n).
-It is usually faster than the above.
-*/
-
-static inline long MulMod(long a, long b, long n, double ninv)
-{
-   double ab;
-   long q, res;
-
-   ab = ((double) a) * ((double) b);
-   q  = (long) (ab*ninv);   // q could be off by (+/-) 1
-   res = (long) (ab - ((double) q)*((double) n));
-#if (NTL_ARITH_RIGHT_SHIFT && defined(NTL_AVOID_BRANCHING))
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-   res -= n;
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-#else
-   if (res >= n)
-      res -= n;
-   else if (res < 0)
-      res += n;
-#endif
-   return res;
-}
-
-/*
-Yet another MulMod.
-This time, the 4th argument should be ((double) b)/((double) n).
-*/
-
-static inline long MulMod2(long a, long b, long n, double bninv)
-{
-   double ab;
-   long q, res;
-
-   ab = ((double) a)*((double) b);
-   q = (long) (((double) a)*bninv);
-   res = (long) (ab - ((double) q)*((double) n));
-#if (NTL_ARITH_RIGHT_SHIFT && defined(NTL_AVOID_BRANCHING))
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-   res -= n;
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-#else
-   if (res >= n)
-      res -= n;
-   else if (res < 0)
-      res += n;
-#endif
-   return res;
-}
-
-static inline long MulDivRem(long& qq, long a, long b, long n, double bninv)
-{
-   double ab;
-   long q, res;
-
-   ab = ((double) a)*((double) b);
-   q = (long) (((double) a)*bninv);
-   res = (long) (ab - ((double) q)*((double) n));
-   if (res >= n) {
-      res -= n;
-      q++;
-   } else if (res < 0) {
-      res += n;
-      q--;
-   }
-
-   qq = q;
-   return res;
-}
-
-#else
-
-static inline long MulMod(long a, long b, long n)
-// return (a*b)%n
-
-{
-   double ab, xx;
-   long iab, q, res;
-
-   ab = ((double) a) * ((double) b);
-   q  = (long) (ab/((double) n));  // q could be off by (+/-) 1
-
-   xx = ab + 4503599627370496.0;
-   NTL_FetchLo(iab, xx);
-
-   res = iab - q*n;
-
-#if (NTL_ARITH_RIGHT_SHIFT && defined(NTL_AVOID_BRANCHING))
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-   res -= n;
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-#else
-   if (res >= n)
-      res -= n;
-   else if (res < 0)
-      res += n;
-#endif
-   return res;
-}
-
-/*
-The following MulMod takes a fourth argument, ninv,
-which is assumed to equal 1/((double) n).
-It is usually faster than the above.
-*/
-
-static inline long MulMod(long a, long b, long n, double ninv)
-{
-   double ab, xx;
-   long iab, q, res;
-
-   ab = ((double) a) * ((double) b);
-   q  = (long) (ab*ninv);   // q could be off by (+/-) 1
-
-   xx = ab + 4503599627370496.0;
-   NTL_FetchLo(iab, xx);
-
-   res = iab - q*n;
-#if (NTL_ARITH_RIGHT_SHIFT && defined(NTL_AVOID_BRANCHING))
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-   res -= n;
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-#else
-   if (res >= n)
-      res -= n;
-   else if (res < 0)
-      res += n;
-#endif
-   return res;
-}
-
-/*
-Yet another MulMod.
-This time, the 4th argument should be ((double) b)/((double) n).
-*/
-
-static inline long MulMod2(long a, long b, long n, double bninv)
-{
-   long q, res;
-
-   q = (long) (((double) a)*bninv);
-   res = a*b - q*n;
-#if (NTL_ARITH_RIGHT_SHIFT && defined(NTL_AVOID_BRANCHING))
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-   res -= n;
-   res += (res >> (NTL_BITS_PER_LONG-1)) & n;
-#else
-   if (res >= n)
-      res -= n;
-   else if (res < 0)
-      res += n;
-#endif
-   return res;
-}
-
-
-static inline long MulDivRem(long& qq, long a, long b, long n, double bninv)
-{
-   long q, res;
-
-   q = (long) (((double) a)*bninv);
-   res = a*b - q*n;
-   if (res >= n) {
-      res -= n;
-      q++;
-   } else if (res < 0) {
-      res += n;
-      q--;
-   }
-
-   qq = q;
-   return res;
-}
-
-#endif
-
-
-#elif (!defined(NTL_CLEAN_SPMM))
+#if (!defined(NTL_CLEAN_SPMM))
 
 
 /*
@@ -1729,7 +1553,7 @@ static inline long MulDivRem(long& qq, long a, long b, long n, double bninv)
 //  - NTL_SPMM_ASM: uses assembly language (if possible)
 //  - NTL_SPMM_UL: uses only unsigned long arithmetic (portable, slower).
 
-#if (!defined(NTL_SINGLE_MUL) && (defined(NTL_SPMM_ULL) || defined(NTL_SPMM_ASM)))
+#if ((defined(NTL_SPMM_ULL) || defined(NTL_SPMM_ASM)))
 
 
 // unsigned long long / asm versions
@@ -1863,7 +1687,7 @@ static inline long MulModPrecon(long a, long b, long n, unsigned long bninv)
 
 
 
-#elif (!defined(NTL_SINGLE_MUL) && defined(NTL_SPMM_UL))
+#elif (defined(NTL_SPMM_UL))
 
 // plain, portable (but slower) int version
 

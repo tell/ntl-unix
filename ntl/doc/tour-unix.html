@@ -173,10 +173,8 @@ Here are the most important variables, and their default values.
 
 <p>
 <pre>
-CC=gcc               # The C compiler
 CXX=g++              # The C++ compiler
-CFLAGS=-O2           # C complilation flags
-CXXFLAGS=$(CFLAGS)   # C++ compilation flags (by default, same as CFLAGS)
+CXXFLAGS=-O2         # C++ complilation flags
 
 DEF_PREFIX=/usr/local # Default software directory
 PREFIX=$(DEF_PREFIX) # Directory in which to install NTL library components
@@ -211,9 +209,9 @@ the configure script.
 
 <p>
 <li>
-If your C/C++ compilers are called cc/CC, run:
+If your C++ compilers is called CC, run:
 <pre>
-   % ./configure CC=cc CXX=CC
+   % ./configure CXX=CC
 </pre>
 
 <p>
@@ -221,7 +219,7 @@ If your C/C++ compilers are called cc/CC, run:
 If you want to use, say, the options <tt>-g</tt> and <tt>-O</tt> for 
 compiling <tt>C</tt> and <tt>C++</tt>, run:
 <pre>
-   % ./configure "CFLAGS=-g -O"
+   % ./configure "CXXFLAGS=-g -O"
 </pre>
 Note the use of quotes to keep the argument in one piece.
 
@@ -342,9 +340,9 @@ it copies the file into <tt>GetTime.c</tt>.
 
 <p>
 <li>
-The files "<tt>lip_gmp_aux_impl.h</tt>" and "<tt>../include/NTL/gmp_aux.h</tt>"
-are generated for use with GMP.
-If not using GMP, these files are still created, but they are empty.
+The file  "<tt>../include/NTL/gmp_aux.h</tt>"
+is generated for use with GMP.
+If not using GMP, this files are still created, but it is empty.
 
 
 <p>

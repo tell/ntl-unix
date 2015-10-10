@@ -99,9 +99,6 @@ float floor(float);
 
 
 
-#if (!defined(NTL_CXX_ONLY)) 
-extern "C"
-#endif
 double _ntl_GetTime();
 
 typedef unsigned long _ntl_ulong;
@@ -115,7 +112,14 @@ typedef _ntl_ulong *_ntl_ulong_ptr;
 
 NTL_OPEN_NNS
 
-extern void (*ErrorCallback)();
+
+#define NTL_FILE_THRESH (64000.0)
+// threshold in KB for switching to external storage of certain
+// tables (currently in the DDF polynomial factoring routines)
+
+
+
+NTL_THREAD_LOCAL extern void (*ErrorCallback)();
 
 struct INIT_SIZE_STRUCT { };
 const INIT_SIZE_STRUCT INIT_SIZE = INIT_SIZE_STRUCT();
@@ -141,6 +145,19 @@ typedef const INIT_FFT_STRUCT& INIT_FFT_TYPE;
 struct INIT_USER_FFT_STRUCT { };
 const INIT_USER_FFT_STRUCT INIT_USER_FFT = INIT_USER_FFT_STRUCT();
 typedef const INIT_USER_FFT_STRUCT& INIT_USER_FFT_TYPE;
+
+struct INIT_NO_ALLOC_STRUCT { };
+const INIT_NO_ALLOC_STRUCT INIT_NO_ALLOC = INIT_NO_ALLOC_STRUCT();
+typedef const INIT_NO_ALLOC_STRUCT& INIT_NO_ALLOC_TYPE;
+
+struct INIT_ALLOC_STRUCT { };
+const INIT_ALLOC_STRUCT INIT_ALLOC = INIT_ALLOC_STRUCT();
+typedef const INIT_ALLOC_STRUCT& INIT_ALLOC_TYPE;
+
+struct INIT_MONO_STRUCT { };
+const INIT_MONO_STRUCT INIT_MONO = INIT_MONO_STRUCT();
+typedef const INIT_MONO_STRUCT& INIT_MONO_TYPE;
+
 
 
 #ifdef NTL_NO_INIT_TRANS

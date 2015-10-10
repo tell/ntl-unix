@@ -36,11 +36,11 @@ void OpenRead(NTL_SNS ifstream& s, const char *name);
 
 char *FileName(const char* stem, const char *ext);
 
-// builds the name "stem.ext"
+// builds the name "stem-ext", returns a pointer to buffer
 
 char *FileName(const char* stem, const char *ext, long d);
 
-// builds the name stem.ext.d
+// builds the name stem-ext-DDDDD, returns pointer to buffer
 
 NTL_CLOSE_NNS
 

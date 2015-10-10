@@ -135,7 +135,7 @@ void mul(vec_zz_p& x, const vec_zz_p& a, zz_p b)
    if (n <= 1) {
 
       for (i = 0; i < n; i++)
-	 mul(x[i], a[i], b);
+         mul(x[i], a[i], b);
 
    }
    else {

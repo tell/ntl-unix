@@ -32,7 +32,7 @@ public:
 
 };
 
-extern zz_pEInfoT *zz_pEInfo; // info for current modulus, initially null
+NTL_THREAD_LOCAL extern zz_pEInfoT *zz_pEInfo; // info for current modulus, initially null
 
 
 
@@ -46,7 +46,7 @@ void save();
 void restore() const;
 
 zz_pEContext() { ptr = 0; }
-zz_pEContext(const zz_pX& p);
+explicit zz_pEContext(const zz_pX& p);
 
 zz_pEContext(const zz_pEContext&); 
 
@@ -81,14 +81,35 @@ zz_pEBak() { MustRestore = 0; ptr = 0; }
 
 
 
-struct zz_pE_NoAlloc_type { zz_pE_NoAlloc_type() { } };
-const zz_pE_NoAlloc_type zz_pE_NoAlloc = zz_pE_NoAlloc_type();
 
+class zz_pEPush {
+private:
+zz_pEBak bak;
 
-
-class zz_pE {
+zz_pEPush(const zz_pEPush&); // disabled
+void operator=(const zz_pEPush&); // disabled
 
 public:
+zz_pEPush() { bak.save(); }
+explicit zz_pEPush(const zz_pEContext& context) { bak.save(); context.restore(); }
+explicit zz_pEPush(const zz_pX& p) { bak.save(); zz_pEContext c(p); c.restore(); }
+
+
+};
+
+
+
+
+class zz_pEX; // forward declaration
+
+class zz_pE {
+public:
+typedef zz_pX rep_type;
+typedef zz_pEContext context_type;
+typedef zz_pEBak bak_type;
+typedef zz_pEPush push_type;
+typedef zz_pEX poly_type;
+
 
 zz_pX _zz_pE__rep;
 
@@ -99,11 +120,16 @@ static long ModCross() { return 8; }
 
 // ****** constructors and assignment
 
-zz_pE();
+zz_pE() {  } // NO_ALLOC
 
-zz_pE(const zz_pE& a)  { _zz_pE__rep.SetMaxLength(zz_pE::degree()); _zz_pE__rep = a._zz_pE__rep; }
+explicit zz_pE(long a) { *this = a;  } // NO_ALLOC
+explicit zz_pE(const zz_p& a) { *this = a;  } // NO_ALLOC
 
-zz_pE(zz_pE_NoAlloc_type) { }  // allocates no space
+zz_pE(const zz_pE& a)  {  _zz_pE__rep = a._zz_pE__rep; } // NO_ALLOC
+
+zz_pE(INIT_NO_ALLOC_TYPE) { }  // allocates no space
+zz_pE(INIT_ALLOC_TYPE) {  _zz_pE__rep.rep.SetMaxLength(zz_pE::degree()); }  // allocates space
+void allocate() {  _zz_pE__rep.rep.SetMaxLength(zz_pE::degree()); }
 
 ~zz_pE() { } 
 

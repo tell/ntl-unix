@@ -2,34 +2,12 @@
 
 typedef long * _ntl_verylong;
 
-#if (defined(NTL_SINGLE_MUL))
-
-#if (defined(NTL_AVOID_FLOAT) || defined(NTL_LONG_LONG))
-#error "at most one of NTL_SINGLE_MUL NTL_AVOID_FLOAT NTL_LONG_LONG allowed"
+#if (defined(NTL_AVOID_FLOAT) && defined(NTL_LONG_LONG))
+#error "at most one of NTL_AVOID_FLOAT NTL_LONG_LONG allowed"
 #endif
 
-#elif (defined(NTL_AVOID_FLOAT) && defined(NTL_LONG_LONG))
-#error "at most one of NTL_SINGLE_MUL NTL_AVOID_FLOAT NTL_LONG_LONG allowed"
-#endif
-
-#if (defined(NTL_SINGLE_MUL))
-
-#if (!NTL_SINGLE_MUL_OK)
-#error "NTL_SINGLE_MUL not supported on this platform"
-#endif
-
-#if (defined(NTL_CLEAN_INT))
-#error "NTL_SINGLE_MUL not allowed with NTL_CLEAN_INT"
-#endif
-
-
-#define NTL_NBITS (26)
-
-#else
 
 #define NTL_NBITS NTL_NBITS_MAX
-
-#endif
 
 
 #define NTL_RADIX           (1L<<NTL_NBITS)
@@ -55,49 +33,6 @@ typedef long * _ntl_verylong;
 
 
 
-#if (defined(NTL_SINGLE_MUL) && !NTL_SINGLE_MUL_OK)
-#undef NTL_SINGLE_MUL
-#endif
-
-#if (defined(NTL_SINGLE_MUL))
-
-
-/****************************************************************
-
-The following macros extract the two words of a double,
-getting around the type system.
-This is only used in the NTL_SINGLE_MUL strategy.
-
-*****************************************************************/
-
-#if (NTL_DOUBLES_LOW_HIGH)
-#define NTL_LO_WD 0
-#define NTL_HI_WD 1
-#else
-#define NTL_LO_WD 1
-#define NTL_HI_WD 0
-#endif
-
-
-typedef union { double d; unsigned long rep[2]; } _ntl_d_or_rep;
-
-#define NTL_FetchHiLo(hi,lo,x) \
-do { \
-   _ntl_d_or_rep ll_xx; \
-   ll_xx.d = (x); \
-   hi = ll_xx.rep[NTL_HI_WD]; \
-   lo = ll_xx.rep[NTL_LO_WD]; \
-} while (0)
-
-
-#define NTL_FetchLo(lo,x)  \
-do {  \
-   _ntl_d_or_rep ll_xx;  \
-   ll_xx.d = x;  \
-   lo = ll_xx.rep[NTL_LO_WD];  \
-} while (0) 
-
-#endif
 
 
 /**********************************************************************
@@ -122,10 +57,6 @@ do {  \
 ************************************************************************/
 
 
-
-#if (defined(__cplusplus) && !defined(NTL_CXX_ONLY))
-extern "C" {
-#endif
 
 
 /***********************************************************************
@@ -566,12 +497,7 @@ void _ntl_rem_struct_eval(void *rem_struct, long *x, _ntl_verylong a);
 
 
 
-#if (defined(__cplusplus) && !defined(NTL_CXX_ONLY))
-}
-#endif
 
-
-extern int _ntl_gmp_hack;
 
 #define NTL_crt_struct_eval _ntl_crt_struct_eval
 #define NTL_crt_struct_free _ntl_crt_struct_free

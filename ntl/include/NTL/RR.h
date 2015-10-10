@@ -17,6 +17,8 @@ long e;
 
 RR() {  e = 0; }
 
+explicit RR(double a) : e(0) { *this = a; }
+
 inline RR(INIT_VAL_TYPE, const ZZ& a);
 inline RR(INIT_VAL_TYPE, int a);
 inline RR(INIT_VAL_TYPE, long a);
@@ -43,11 +45,11 @@ RR(RR& z, INIT_TRANS_TYPE) : x(z.x, INIT_TRANS), e(z.e) { }
 const ZZ& mantissa() const { return x; }
 long exponent() const { return e; }
 
-static long prec;
+NTL_THREAD_LOCAL static long prec;
 static void SetPrecision(long p);
 static long precision() { return prec; }
 
-static long oprec;
+NTL_THREAD_LOCAL static long oprec;
 static void SetOutputPrecision(long p);
 static long OutputPrecision() { return oprec; }
 

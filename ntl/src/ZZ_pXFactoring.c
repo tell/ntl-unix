@@ -685,7 +685,7 @@ long ProbIrredTest(const ZZ_pX& f, long iter)
    return !IsX(s);
 }
 
-long ZZ_pX_BlockingFactor = 10;
+NTL_THREAD_LOCAL long ZZ_pX_BlockingFactor = 10;
 
 void DDF(vec_pair_ZZ_pX_long& factors, const ZZ_pX& ff, const ZZ_pX& hh, 
          long verbose)
@@ -1469,15 +1469,15 @@ void BuildRandomIrred(ZZ_pX& f, const ZZ_pX& g)
 
 /************* NEW DDF ****************/
 
-long ZZ_pX_GCDTableSize = 4;
-char ZZ_pX_stem[256] = "";
+NTL_THREAD_LOCAL long ZZ_pX_GCDTableSize = 4;
+NTL_THREAD_LOCAL char ZZ_pX_stem[256] = "";
+NTL_THREAD_LOCAL double ZZ_pXFileThresh = NTL_FILE_THRESH;
+NTL_THREAD_LOCAL static vec_ZZ_pX BabyStepFile;
+NTL_THREAD_LOCAL static vec_ZZ_pX GiantStepFile;
+NTL_THREAD_LOCAL static long use_files;
 
-double ZZ_pXFileThresh = 256;
-
-static vec_ZZ_pX BabyStepFile;
-static vec_ZZ_pX GiantStepFile;
-
-static long use_files;
+// FIXME: in a thread-safe impl, we have to worry about 
+// file name clashes
 
 
 

@@ -6,10 +6,13 @@
 
 NTL_OPEN_NNS
 
+class ZZ_pEXModulus; // forward declaration
 
 class ZZ_pEX {
-
 public:
+typedef ZZ_pE coeff_type;
+typedef ZZ_pEXModulus modulus_type;
+
 
 vec_ZZ_pE rep;
 
@@ -21,10 +24,12 @@ vec_ZZ_pE rep;
 ****************************************************************/
 
 
-ZZ_pEX()
+ZZ_pEX() { }
 //  initial value 0
 
-   { }
+explicit ZZ_pEX(long a) { *this = a; }
+explicit ZZ_pEX(const ZZ_p& a) { *this = a; }
+explicit ZZ_pEX(const ZZ_pE& a) { *this = a; }
 
 
 ZZ_pEX(INIT_SIZE_TYPE, long n) { rep.SetMaxLength(n); }
@@ -48,7 +53,6 @@ void kill()
 
 
 
-typedef ZZ_pE coeff_type;
 void SetLength(long n) { rep.SetLength(n); }
 ZZ_pE& operator[](long i) { return rep[i]; }
 const ZZ_pE& operator[](long i) const { return rep[i]; }
@@ -62,6 +66,11 @@ static const ZZ_pEX& zero();
 inline ZZ_pEX(long i, const ZZ_pE& c);
 inline ZZ_pEX(long i, const ZZ_p& c);
 inline ZZ_pEX(long i, long c);
+
+inline ZZ_pEX(INIT_MONO_TYPE, long i, const ZZ_pE& c);
+inline ZZ_pEX(INIT_MONO_TYPE, long i, const ZZ_p& c);
+inline ZZ_pEX(INIT_MONO_TYPE, long i, long c);
+inline ZZ_pEX(INIT_MONO_TYPE, long i);
 
 
 inline ZZ_pEX& operator=(long a);
@@ -105,17 +114,17 @@ void SetCoeff(ZZ_pEX& x, long i, const ZZ_p& a);
 void SetCoeff(ZZ_pEX& x, long i, long a);
 // x[i] = a, error is raised if i < 0
 
-inline ZZ_pEX::ZZ_pEX(long i, const ZZ_pE& a)
-   { SetCoeff(*this, i, a); }
-
-inline ZZ_pEX::ZZ_pEX(long i, const ZZ_p& a)
-   { SetCoeff(*this, i, a); }
-
-inline ZZ_pEX::ZZ_pEX(long i, long a)
-   { SetCoeff(*this, i, a); }
-
 void SetCoeff(ZZ_pEX& x, long i);
 // x[i] = 1, error is raised if i < 0
+
+inline ZZ_pEX::ZZ_pEX(long i, const ZZ_pE& a) { SetCoeff(*this, i, a); }
+inline ZZ_pEX::ZZ_pEX(long i, const ZZ_p& a) { SetCoeff(*this, i, a); }
+inline ZZ_pEX::ZZ_pEX(long i, long a) { SetCoeff(*this, i, a); }
+
+inline ZZ_pEX::ZZ_pEX(INIT_MONO_TYPE, long i, const ZZ_pE& a) { SetCoeff(*this, i, a); }
+inline ZZ_pEX::ZZ_pEX(INIT_MONO_TYPE, long i, const ZZ_p& a) { SetCoeff(*this, i, a); }
+inline ZZ_pEX::ZZ_pEX(INIT_MONO_TYPE, long i, long a) { SetCoeff(*this, i, a); }
+inline ZZ_pEX::ZZ_pEX(INIT_MONO_TYPE, long i) { SetCoeff(*this, i); }
 
 void SetX(ZZ_pEX& x);
 // x is set to the monomial X
@@ -834,7 +843,7 @@ struct ZZ_pEXArgument {
    vec_ZZ_pEX H;
 };
 
-extern long ZZ_pEXArgBound;
+NTL_THREAD_LOCAL extern long ZZ_pEXArgBound;
 
 
 void build(ZZ_pEXArgument& H, const ZZ_pEX& h, const ZZ_pEXModulus& F, long m);

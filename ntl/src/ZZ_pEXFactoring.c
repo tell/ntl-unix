@@ -360,7 +360,7 @@ long ProbIrredTest(const ZZ_pEX& f, long iter)
 }
 
 
-long ZZ_pEX_BlockingFactor = 10;
+NTL_THREAD_LOCAL long ZZ_pEX_BlockingFactor = 10;
 
 
 
@@ -1064,15 +1064,18 @@ void BuildRandomIrred(ZZ_pEX& f, const ZZ_pEX& g)
 
 /************* NEW DDF ****************/
 
-long ZZ_pEX_GCDTableSize = 4;
-char ZZ_pEX_stem[256] = "";
+NTL_THREAD_LOCAL long ZZ_pEX_GCDTableSize = 4;
+NTL_THREAD_LOCAL char ZZ_pEX_stem[256] = "";
 
-double ZZ_pEXFileThresh = 256;
+NTL_THREAD_LOCAL double ZZ_pEXFileThresh = NTL_FILE_THRESH;
 
-static vec_ZZ_pEX BabyStepFile;
-static vec_ZZ_pEX GiantStepFile;
+NTL_THREAD_LOCAL static vec_ZZ_pEX BabyStepFile;
+NTL_THREAD_LOCAL static vec_ZZ_pEX GiantStepFile;
 
-static long use_files;
+NTL_THREAD_LOCAL static long use_files;
+
+// FIXME: in a thread-safe impl, we should be careful
+// with external file names.
 
 
 static

@@ -46,11 +46,6 @@ int main()
    cout << "NTL_GMP_LIP=0\n";
 #endif
 
-#ifdef NTL_GMP_HACK
-   cout << "NTL_GMP_HACK=1\n";
-#else
-   cout << "NTL_GMP_HACK=0\n";
-#endif
 
 #ifdef NTL_GF2X_LIB
    cout << "NTL_GF2X_LIB=1\n";
@@ -73,12 +68,6 @@ int main()
 #else
    cout << "FLAG_UNSIGNED_LONG_LONG_TYPE=0\n";
    cout << "NTL_UNSIGNED_LONG_LONG_TYPE=unsigned long long\n";
-#endif
-
-#ifdef NTL_CXX_ONLY
-   cout << "NTL_CXX_ONLY=1\n";
-#else
-   cout << "NTL_CXX_ONLY=0\n";
 #endif
 
 

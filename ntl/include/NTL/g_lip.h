@@ -1,8 +1,5 @@
 
 
-#ifdef NTL_SINGLE_MUL
-#error "do not set NTL_SINGLE_MUL when NTL_GMP_LIP is set"
-#endif
 
 #if 1
 
@@ -39,9 +36,6 @@ typedef struct _ntl_gbigint_is_opaque * _ntl_gbigint;
 
 
 
-#if (defined(__cplusplus) && !defined(NTL_CXX_ONLY))
-extern "C" {
-#endif
 
 
 /***********************************************************************
@@ -401,14 +395,25 @@ extern "C" {
 
 ***********************************************************************/
 
-    long _ntl_gmaxalloc(_ntl_gbigint x);
-       /* max allocation request, possibly rounded up a bit */
+    inline
+    long _ntl_gmaxalloc(_ntl_gbigint x)
+    {
+      if (!x)
+         return 0;
+      else
+         return ((((long *) (x))[0]) >> 2);
+    }
+
+    /* DIRT: the above maxalloc routine is inlined, with the definition
+       of ALLOC copied and pasted. */
+
 
     void _ntl_gsetlength(_ntl_gbigint *v, long len);
        /* Allocates enough space to hold a len-digit number,
           where each digit has NTL_NBITS bits.
           If space must be allocated, space for one extra digit
-          is always allocated. */
+          is always allocated. if (exact) then no rounding
+          occurs. */
 
     void _ntl_gfree(_ntl_gbigint *x);
        /* Free's space held by x, and sets x back to 0. */
@@ -452,12 +457,8 @@ void _ntl_grem_struct_eval(void *rem_struct, long *x, _ntl_gbigint a);
 
 
 
-#if (defined(__cplusplus) && !defined(NTL_CXX_ONLY))
-}
-#endif
 
 
-extern int _ntl_gmp_hack;
 
 #define NTL_crt_struct_eval _ntl_gcrt_struct_eval
 #define NTL_crt_struct_free _ntl_gcrt_struct_free

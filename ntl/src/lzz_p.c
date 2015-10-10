@@ -5,6 +5,12 @@
 
 NTL_START_IMPL
 
+zz_pInfoT *Build_zz_pInfo(FFTPrimeInfo *info)
+{
+   return NTL_NEW_OP zz_pInfoT(INIT_FFT, info);
+}
+
+
 zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
 {
    ref_count = 1;
@@ -66,30 +72,21 @@ zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
       div(M1, M, q);
       t = rem(M1, q);
       t = InvMod(t, q);
-      mul(M1, M1, t);
+      if (NTL_zz_p_QUICK_CRT) mul(M1, M1, t);
       CoeffModP[i] = rem(M1, p);
       x[i] = ((double) t)/((double) q);
       u[i] = t;
    }
 }
 
-zz_pInfoT::zz_pInfoT(INIT_FFT_TYPE, long index)
+zz_pInfoT::zz_pInfoT(INIT_FFT_TYPE, FFTPrimeInfo *info)
 {
    ref_count = 1;
 
-   if (index < 0)
-      Error("bad FFT prime index");
+   p = info->q;
+   pinv = info->qinv;
 
-   // allows non-consecutive indices...I'm not sure why
-   while (NumFFTPrimes < index)
-      UseFFTPrime(NumFFTPrimes);
-
-   UseFFTPrime(index);
-
-   p = FFTPrime[index];
-   pinv = FFTPrimeInv[index];
-
-   p_info = FFTTables[index];
+   p_info = info;
    p_own = 0;
 
    NumPrimes = 1;
@@ -141,7 +138,7 @@ zz_pInfoT::~zz_pInfoT()
 }
 
 
-zz_pInfoT *zz_pInfo = 0;
+NTL_THREAD_LOCAL zz_pInfoT *zz_pInfo = 0;
 
 
 typedef zz_pInfoT *zz_pInfoPtr;
@@ -195,9 +192,32 @@ zz_pContext::zz_pContext(long p, long maxroot)
    ptr = NTL_NEW_OP zz_pInfoT(p, maxroot);
 }
 
+// FIXME: maybe store FFT contexts in a global table,
+// so we don't go through the trouble of creating and destroying
+// them so much
+
+// FIXME: in a thread-safe impl: with my idea for having
+// thread local copies of certain FFT tables (and NumFFTPrimes)
+// I have to be careful when installing a "foreign" zz_pContext
+// -- and for that matter, a "foreign" ZZ_pContext -- from
+// another thread. The issue is that the foreign thread may
+// have seen more FFTPrimes. So I'll need to perform
+// a special check, and if necessary, refresh the local
+// view of the FFT tables.
+
 zz_pContext::zz_pContext(INIT_FFT_TYPE, long index)
 {
-   ptr = NTL_NEW_OP zz_pInfoT(INIT_FFT, index);
+   if (index < 0)
+      Error("bad FFT prime index");
+
+   // allows non-consecutive indices...I'm not sure why
+   while (NumFFTPrimes < index)
+      UseFFTPrime(NumFFTPrimes);
+
+   UseFFTPrime(index);
+
+   ptr = 0;
+   CopyPointer(ptr, FFTTables[index]->zz_p_context);
 }
 
 zz_pContext::zz_pContext(INIT_USER_FFT_TYPE, long q)
@@ -296,7 +316,7 @@ void conv(zz_p& x, const ZZ& a)
 
 istream& operator>>(istream& s, zz_p& x)
 {
-   static ZZ y;
+   NTL_ZZRegister(y);
    s >> y;
    conv(x, y);
 
@@ -305,7 +325,7 @@ istream& operator>>(istream& s, zz_p& x)
 
 ostream& operator<<(ostream& s, zz_p a)
 {
-   static ZZ y;
+   NTL_ZZRegister(y);
    y = rep(a);
    s << y;
 

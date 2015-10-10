@@ -44,10 +44,20 @@ public:
    FFTMultipliers() : MaxK(-1) { }
 };
 
+#ifndef NTL_WIZARD_HACK
+class zz_pInfoT; // forward reference, defined in lzz_p.h
+#else
+typedef long zz_pInfoT;
+#endif
+
 
 struct FFTPrimeInfo {
    long q;   // the prime itself
    double qinv;   // 1/((double) q)
+
+   zz_pInfoT *zz_p_context; 
+   // pointer to corresponding zz_p context, which points back to this 
+   // object in the case of a non-user FFT prime
 
    Vec<long> RootTable;
    //   RootTable[j] = w^{2^{MaxRoot-j}},
@@ -77,13 +87,19 @@ void InitFFTPrimeInfo(FFTPrimeInfo& info, long q, long w, long bigtab);
 // the convolution as well.
 
 
+NTL_THREAD_LOCAL
 extern FFTPrimeInfo **FFTTables;
 
 
 // legacy interface
 
+NTL_THREAD_LOCAL
 extern long NumFFTPrimes;
+
+NTL_THREAD_LOCAL
 extern long *FFTPrime;
+
+NTL_THREAD_LOCAL
 extern double *FFTPrimeInv;
 
 

@@ -260,8 +260,8 @@ ZZ operator+(const ZZ&amp; a, const ZZ&amp; b);
 This means that in addition to the declared function, there
 are two other functions that are logically equivalent to the following:
 <pre>
-ZZ operator+(long a, const ZZ&amp; b) { return conv&lt;ZZ&gt;(a) + b; }
-ZZ operator+(const ZZ&amp; a, long b) { return a + conv&lt;ZZ&gt;(b); }
+ZZ operator+(long a, const ZZ&amp; b) { return ZZ(a) + b; }
+ZZ operator+(const ZZ&amp; a, long b) { return a + ZZ(b); }
 </pre>
 
 <p>
@@ -272,7 +272,7 @@ It is in generally more efficient to write
 </pre>
 than it is to write
 <pre>
-   x = y + conv&lt;ZZ&gt;(2);
+   x = y + ZZ(2);
 </pre>
 The former notation avoids the creation and destruction
 of a temporary <tt>ZZ</tt>
@@ -348,6 +348,16 @@ are a few general rules describing the available promotions:
 <ul>
 
 <li>
+All classes provide explicit constructors for promoted types.
+For example,
+<pre>
+   ZZ w = ZZ(1);
+   ZZ x(1);  // allowed
+   ZZ y{1};  // allowed in C++11
+   ZZ z = 1; // not allowed
+</pre>
+
+<li>
 Promotions apply uniformly to both procedural and functional 
 forms, as well as to the corresponding assignment operator forms.
 E.g.,
@@ -363,7 +373,7 @@ routines always promote both arguments.  E.g.,
 <pre>
    x = 2 + y;
    add(x, 2, y);
-   if (3 > x || y == 5) ...
+   if (3 &gt; x || y == 5) ...
 </pre>
 
 <li>
@@ -412,7 +422,7 @@ promote the coefficient argument.
 E.g.,
 <pre>
    ZZX f;
-   f = ZZX(3, 5);  // f == 5*X^3
+   f = ZZX(INIT_MONO, 3, 5);  // f == 5*X^3
    SetCoeff(f, 0, 2);  // f == 5*x^3 + 2;
 </pre>
 
@@ -457,11 +467,15 @@ This is equivialent to
 <pre>
    a = a + long(x);
 </pre>
+and to 
+<pre>
+   a = a + ZZ(x);
+</pre>
 One could also use an explicit conversion function:
 <pre>
    a = a + conv&lt;ZZ&gt;(x);
 </pre>
-The second version guarantees that there is no loss of precision,
+This last version guarantees that there is no loss of precision,
 and also guarantees that the floor of <tt>x</tt> is computed.
 With the first version, one may lose precision when <tt>x</tt>
 is converted to a <tt>long</tt>, and also the direction of truncation
@@ -545,14 +559,10 @@ NTL's dynamic vectors.
 However, it is helpful to understand a little of what is happening behind the scenes.
 
 <p>
-Most classes are implemented as a pointer, and the default constructor
+Almost all classes are implemented as a pointer, and the default constructor
 just sets this pointer to 0.
 Space is allocated for the object as needed, and when the object's
 destructor is called, the space is freed.
-Exceptions to this are the "modular" classes <tt>ZZ_p</tt>, <tt>ZZ_pE</tt>, <tt>zz_pE</tt>,
-and <tt>GF2E</tt>.
-Since, for a given modulus, the sizes of these objects are fixed, the default constructor
-allocates the appropriate amount of space.
 
 <p>
 Copies are "deep" rather than "shallow".
@@ -569,7 +579,7 @@ which frees all space held by the object, and sets its state to
 the default initial state (a value 0 or a zero-length vector).
 
 <p>
-The only exception to the above are the special classes <tt>ZZ_pBak</tt>,
+The only exception to the above is the class
 <tt>ZZ_pContext</tt>, and the analogous classes for <tt>zz_p</tt>, 
 <tt>ZZ_pE</tt>, <tt>zz_pE</tt>, and <tt>GF2E</tt>.
 These objects are implemented as referenced-counted pointers,
@@ -578,7 +588,7 @@ and copies are "shallow".
 <p> 
 While we are discussing initialization, there is one technical point
 worth mentioning.
-It is safe to declare global objects of any NTL type (except modular types),
+It is safe to declare global objects of any NTL type 
 as long as one uses only the default constructor.
 For example, the global declarations
 <pre>
@@ -633,6 +643,118 @@ This is a very simple and general strategy that most <tt>C++</tt>
 experts recommend using whenever the initialization of a non-global
 object requires non-trivial computation.
 
+
+
+<p>
+<p>
+<h3>
+Residue class rings and modulus switching
+</h3>
+<p>
+
+NTL provides a number of classes to represent residue class rings:
+<pre>
+   ZZ_p, zz_p, GF2, ZZ_pE, lzz_pE, GF2E.
+</pre>
+For each such class, except <tt>GF2</tt>, there is a global, current modulus.
+
+<p>
+We focus on the class <tt>ZZ_p</tt>, but similar comments apply to the other
+residue class types.
+For example, for <tt>ZZ_p</tt>, you can set the current modulus to <tt>p</tt>
+as follows:
+<pre>
+   ZZ_p::init(p);
+</pre>
+The current modulus <i>must</i> be initialized before any operations
+on <tt>ZZ_p</tt>'s are performed.  The modulus may be changed, and a mechanism is provided
+for saving and restoring a modulus.
+
+<p>
+Here is what you do to save the current modulus, temporarily
+set it to p, and automatically restore it:
+
+<pre>
+   { 
+      ZZ_pPush push(p); 
+
+      ...
+
+   }
+</pre>
+
+The constructor for push will save the current modulus, and install <tt>p</tt> as the
+current modulus.  The destructor for push will restore the old modulus when the
+scope enclosing it exits.  This is the so-called RAII (resource acquisition is
+initialization) paradigm.
+
+<p>
+You could also do the following:
+
+<pre>
+   {
+      ZZ_pPush push(); // just backup current modulus
+
+        ...
+
+      ZZ_p::init(p1); // install p1 
+
+        ...
+
+      ZZ_p::init(p2); // install p2
+
+      // reinstall original modulus as close of scope
+   }
+</pre>
+
+      
+<p>
+The <tt>ZZ_pPush</tt> interface is good for implementing simple stack-like
+modulus "context switching".  For more general context switching,
+see the class <tt>ZZ_pContext</tt>.
+
+<p>
+It is critical that <tt>ZZ_p</tt> objects created under one <tt>ZZ_p</tt> modulus are not used in
+any non-trivial way "out of context", i.e., under a different (or undefined)
+<tt>ZZ_p</tt> modulus.  However, for ease-of-use, some operations may be safely
+performed out of context.  These safe operations include: the default and copy
+constructor, the destructor, and the assignment operator.  In addition it is
+generally safe to read any <tt>ZZ_p</tt> object out of context (i.e., printing it out, or
+fetching its underlying representive using the rep() function).
+
+<p>
+Any unsafe uses out of context are not in general checked, and may 
+lead to unpredictable behavior.
+
+
+
+<p>
+The implementations of <tt>Vec&lt;ZZ_p&gt;</tt>, <tt>Vec&lt;GF2E&gt;</tt>, and <tt>Vec&lt;GF2&gt;</tt> 
+are specialized to manage memory more
+efficiently than in the default implementation of <tt>Vec&lt;T&gt;</tt>.  
+
+<p>
+Contiguous elements in a <tt>Vec&lt;ZZ_p&gt;</tt> are allocated in a contiguous region of
+memory.  This reduces the number of calls to the memory allocator, and  
+leads to greater locality of reference.  A consequence of
+this implementation is that any calls to SetLength on a <tt>Vec&lt;ZZ_p&gt;</tt> object will
+need to use information about the current modulus, and so such calls should
+only be done "in context".  That said, it is still safe to construct a
+<tt>Vec&lt;ZZ_p&gt;</tt> using the default or copy contructor, and to assign or append one
+<tt>Vec&lt;ZZ_p&gt;</tt> to another "out of context".
+
+<p>
+The same strategy is used for <tt>Vec&lt;GF2E&gt;</tt>'s.
+
+<p>
+In any case, the above restrictions adhere to the general rules
+for safely using residue class ring objects "out of context".
+
+<p>
+<tt>Vec&lt;GF2&gt;</tt>'s are implemented by packing coefficients (which are just bits)
+into words.  A mechanism is provided to make indexing these vectors
+behave like normal vectors, via a class the mimics ordinary references
+to <tt>GF2</tt>'s.  
 
 
 

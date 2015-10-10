@@ -50,11 +50,6 @@ NTL_OPEN_NNS
 #define NTL_WordVectorInputBlock 50
 #endif
 
-// controls release functionality
-
-#define NTL_RELEASE_THRESH (10000)
-// #define NTL_RELEASE_THRESH (0)
-
 
 class WordVector {  
 public:  

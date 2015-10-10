@@ -292,7 +292,7 @@ END_FIX
 
 quad_float& operator -=(quad_float& x, const quad_float& y ) {
 START_FIX
-	DOUBLE    H, h, T, t, S, s, e, f;
+        DOUBLE    H, h, T, t, S, s, e, f;
         DOUBLE    t1, yhi, ylo;
 
         yhi = -y.hi;
@@ -641,7 +641,7 @@ void conv(quad_float& z, const ZZ& a)
       return;
    }
 
-   static ZZ t;
+   NTL_ZZRegister(t);
 
    conv(t, xhi);
    sub(t, a, t);
@@ -657,7 +657,9 @@ void conv(quad_float& z, const ZZ& a)
 
 void conv(ZZ& z, const quad_float& x)
 { 
-   static ZZ t1, t2, t3;
+   NTL_ZZRegister(t1);
+   NTL_ZZRegister(t2);
+   NTL_ZZRegister(t3);
 
    double fhi, flo;
 
@@ -692,7 +694,7 @@ ostream& operator<<(ostream& s, const quad_float& a)
    RR::SetPrecision(long(3.33*quad_float::oprec) + 10);
    RR::SetOutputPrecision(quad_float::oprec);
 
-   static RR t;
+   NTL_THREAD_LOCAL static RR t;
 
    conv(t, a);
    s << t;
@@ -708,7 +710,7 @@ istream& operator>>(istream& s, quad_float& x)
    long old_p = RR::precision();
    RR::SetPrecision(4*NTL_DOUBLE_PRECISION);
 
-   static RR t;
+   NTL_THREAD_LOCAL static RR t;
    s >> t;
    conv(x, t);
 
@@ -721,7 +723,7 @@ void random(quad_float& x)
    long old_p = RR::precision();
    RR::SetPrecision(4*NTL_DOUBLE_PRECISION);
 
-   static RR t;
+   NTL_THREAD_LOCAL static RR t;
    random(t);
    conv(x, t);
 
@@ -815,7 +817,7 @@ quad_float to_quad_float(const char *s)
    long old_p = RR::precision();
    RR::SetPrecision(4*NTL_DOUBLE_PRECISION);
 
-   static RR t;
+   NTL_THREAD_LOCAL static RR t;
    conv(t, s);
    conv(x, t);
 
@@ -861,7 +863,7 @@ quad_float exp(const quad_float& x) { // New version 97 Aug 05
 
   // changed this from "const" to "static" in v5.3, since "const"
   // causes the initialization to be performed with *every* invocation.
-  static quad_float Log2 = 
+  NTL_THREAD_LOCAL static quad_float Log2 = 
     to_quad_float("0.6931471805599453094172321214581765680755");
 
   quad_float y,temp,ysq,sum1,sum2;

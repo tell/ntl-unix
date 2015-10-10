@@ -990,7 +990,7 @@ void build(zz_pXArgument& A, const zz_pX& h, const zz_pXModulus& F, long m)
 
 
 
-long zz_pXArgBound = 0;
+NTL_THREAD_LOCAL long zz_pXArgBound = 0;
 
 
 void CompMod(zz_pX& x, const zz_pX& g, const zz_pX& h, const zz_pXModulus& F)
@@ -1616,6 +1616,8 @@ void TraceMod(zz_p& x, const zz_pX& a, const zz_pXModulus& F)
 
    if (deg(a) >= n)
       Error("trace: bad args");
+
+   // FIXME: thread-safe-imple: need mutex here
 
    if (F.tracevec.length() == 0) 
       ComputeTraceVec(F);

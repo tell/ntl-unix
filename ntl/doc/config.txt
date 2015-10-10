@@ -17,10 +17,8 @@ correct for your platform, you have to set an appropriate variable.
 
 ########### Here are the most important variables, and their default values.
 
-CC=gcc               # The C compiler
 CXX=g++              # The C++ compiler
-CFLAGS=-O2           # C complilation flags
-CXXFLAGS=$(CFLAGS)   # C++ compilation flags (by default, same as CFLAGS)
+CXXFLAGS=-O2         # C++ complilation flags
 
 DEF_PREFIX=/usr/local # Default software directory
 PREFIX=$(DEF_PREFIX) # Directory in which to install NTL library components
@@ -43,16 +41,6 @@ GF2X_PREFIX=$(DEF_PREFIX) # Directory in which gf2x components are installed
 
 ########## Basic compilation variables:
 
-CC=gcc
-
-# A C or C++ compiler, e. g., gcc, cc, xlc.
-# There are a few components written in C which may be compiled
-# under C++, but C compilers tend to generate slightly better code.
-# The C++ and C compilers (if different) must generate
-# compatible code.
-
-
-
 CXX=g++
 
 # A C++ compiler, e.g., g++, CC, xlC
@@ -62,26 +50,12 @@ CXX=g++
 
 
 
-CFLAGS=-O2
+CXXFLAGS=-O2
 
 # Flags for the C compiler
 # Some useful flags:
 #   -O2   --  recommended level of optimization
 #   -g    --  debugging
-#   -mcpu=v8  --  needed with gcc/g++ to get the full instruction set
-#                 of a SparcStation
-#   -qarch=ppc  -- needed with xlc/C to get the full instruction set
-#                  of a PowerPC
-
-
-
-CXXFLAGS=$(CFLAGS)
-
-# Flags for the C++ compiler (usually the same as CFLAGS)
-# Some useful flags:
-#   -+  -- needed with xlC to make it treat .c files as C++ files
-
-
 
 
 ########## Installation path:
@@ -151,9 +125,7 @@ NTL_GMP_LIP=off
 # Set to 'on' if you want to use GMP, the GNU Multi-Precision package,
 # as the primary long integer package.
 # This will typically yield significantly faster long integer arithmetic 
-# compared to the traditional long integer package, and will yield somewhat
-# faster long integer arithmetic compared the traditinal package
-# supplemented by GMP (i.e., the NTL_GMP_HACK flag, see below).
+# compared to the traditional long integer package.
 
 # If you set this flag, please note the following.
 # If you have installed GMP in a standard "system" location, this is
@@ -211,9 +183,9 @@ GF2X_PREFIX=$(DEF_PREFIX)
 
 
 
-# If your C/C++ compilers are called cc/CC:
+# If your C++ compiler is called CC:
 
-   ./configure CC=cc CXX=CC
+   ./configure CXX=CC
 
 
 
@@ -229,10 +201,10 @@ GF2X_PREFIX=$(DEF_PREFIX)
 
 
 
-# If you want to use the options -g and -O for compiling C and C++,
+# If you want to use the options -g and -O for compiling C++,
 # just execute
 
-   ./configure "CFLAGS=-g -O"
+   ./configure "CXXFLAGS=-g -O"
 
 # Note the use of quotes to keep the argument in one piece.
 
@@ -258,9 +230,7 @@ AR=ar
 ARFLAGS=ruv
 RANLIB=ranlib
 LDFLAGS=
-LDFLAGS_CXX=$(LDFLAGS)
 LDLIBS=-lm
-LDLIBS_CXX=$(LDLIBS)
 CPPFLAGS=
 LIBTOOL=libtool
 
@@ -275,7 +245,6 @@ NTL_PSTD_NTN=off
 
 NTL_LONG_LONG_TYPE=undefined
 NTL_UNSIGNED_LONG_LONG_TYPE=undefined
-NTL_CXX_ONLY=off
 NTL_CLEAN_INT=off
 NTL_CLEAN_PTR=off
 NTL_RANGE_CHECK=off
@@ -297,7 +266,6 @@ NTL_GF2X_NOINLINE=off
 NTL_GF2X_ALTCODE=off
 NTL_GF2X_ALTCODE1=off
 
-NTL_GMP_HACK=off
 GMP_INCDIR=$(GMP_PREFIX)/include
 GMP_LIBDIR=$(GMP_PREFIX)/lib
 
@@ -336,19 +304,8 @@ LDFLAGS=
 
 
 
-LDFLAGS_CXX=$(LDFLAGS)
-
-# libraries for linking C programs
-
-
 
 LDLIBS=-lm
-
-# libraries for linking C programs
-
-
-
-LDLIBS_CXX=$(LDLIBS)
 
 # libraries for linking C++ programs
 
@@ -367,18 +324,12 @@ LIBTOOL=libtool
 ########### Details of the compilation process (when SHARED=off)
 
 
-# When a C file foo.c is compiled:
-   $(CC) -I../include $(CPPFLAGS) $(CFLAGS) -c foo.c
-
-# When a C file foo.c is compiled and linked:
-   $(CC) -I../include $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o foo foo.c $(LDLIBS)
-
 # When a C++ file foo.c is compiled:
    $(CXX) -I../include $(CPPFLAGS) $(CXXFLAGS) -c foo.c
 
 # When a C++ file foo.c is compiled and linked:
-   $(CXX) -I../include $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS_CXX) \ 
-      -o foo foo.c $(LDLIBS_CXX)
+   $(CXX) -I../include $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) \ 
+      -o foo foo.c $(LDLIBS)
 
 # When the library ntl.a is built
    $(AR) $(ARFLAGS) ntl.a [ object files ]...
@@ -452,22 +403,6 @@ NTL_UNSIGNED_LONG_LONG_TYPE=undefined
 # the type most suitable for your machine (based on compiler and
 # word size).
 
-
-
-
-
-NTL_CXX_ONLY=off
-
-# It is possible to compile everything using C++ only.
-# If you want to do this, CC and CXX should both be C++ compilers.
-# You may also want to set NTL_CXX_ONLY=on, which eliminates some
-# "C" linkage that is no longer necessary.
-# However, it should still work without it.
-# 
-# This flag can be set independently of NTL_STD_CXX.
-# All functions that may have "C" linkage are never wrapped in
-# namespace NTL;  instead, their names always start with "_ntl_",
-# and as such, they should not conflict with other global names.
 
 
 
@@ -650,19 +585,6 @@ NTL_GF2X_ALTCODE1=off
 
 ########## More GMP Options:
 
-
-NTL_GMP_HACK=off
-
-# Set to 'on' if you want to use GMP, the GNU Multi-Precision package,
-# as a supplemental long integer package.
-# This will typically yield significantly faster long integer arithmetic 
-# compared  to the traditional long integer package, while still maintaining
-# complete backward compataibility with code that uses the traditional
-# long integer package.  However, this flag is mainly for
-# enabling backward compatibility, and you are much better off
-# using the NTL_GMP_LIP flag.  
-
-# If you set this flag, you may have to set GMP_PREFIX as well. 
 
 GMP_INCDIR=$(GMP_PREFIX)/include
 # directory containing gmp.h

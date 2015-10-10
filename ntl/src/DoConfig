@@ -12,19 +12,15 @@
 
 %MakeVal = (
 
-'CC'	      => 'gcc',
 'CXX'	      => 'g++',
-'CFLAGS'      => '-O2',
-'CXXFLAGS'    => '$(CFLAGS)',
+'CXXFLAGS'    => '-O2',
 'AR'	      => 'ar',
 'ARFLAGS'     => 'ruv',
 'RANLIB'      => 'ranlib',
 'LIBTOOL'     => 'libtool',
 
 'LDFLAGS'     => '',
-'LDFLAGS_CXX' => '$(LDFLAGS)',
 'LDLIBS'      => '-lm',
-'LDLIBS_CXX'  => '$(LDLIBS)',
 'CPPFLAGS'    => '',
 
 'DEF_PREFIX'  => '/usr/local',
@@ -54,9 +50,7 @@
 'NTL_PSTD_NHF'          => 'off',
 'NTL_PSTD_NTN'          => 'off',
 'NTL_GMP_LIP'           => 'off',
-'NTL_GMP_HACK'          => 'off',
 'NTL_GF2X_LIB'          => 'off',
-'NTL_CXX_ONLY'          => 'off',
 'NTL_X86_FIX'           => 'off',
 'NTL_NO_X86_FIX'        => 'off',
 'NTL_AVOID_FLOAT'       => 'off',

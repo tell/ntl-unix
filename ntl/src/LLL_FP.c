@@ -29,7 +29,8 @@ static double InnerProduct(double *a, double *b, long n)
 static void RowTransform(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1)
 // x = x - y*MU
 {
-   static ZZ T, MU;
+   NTL_ZZRegister(T);
+   NTL_ZZRegister(MU);
    long k;
 
    long n = A.length();
@@ -145,7 +146,8 @@ static void RowTransform(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1,
                          double& max_a, double max_b, long& in_float)
 // x = x - y*MU
 {
-   static ZZ T, MU;
+   NTL_ZZRegister(T);
+   NTL_ZZRegister(MU);
    long k;
    double mu;
 
@@ -293,7 +295,8 @@ static void RowTransform2(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1)
 // x = x + y*MU
 
 {
-   static ZZ T, MU;
+   NTL_ZZRegister(T);
+   NTL_ZZRegister(MU);
    long k;
 
    long n = A.length();
@@ -423,18 +426,17 @@ void ComputeGS(mat_ZZ& B, double **B1, double **mu, double *b,
    c[k] = b[k] - s;
 }
 
-static double red_fudge = 0;
-static long log_red = 0;
+NTL_THREAD_LOCAL static double red_fudge = 0;
+NTL_THREAD_LOCAL static long log_red = 0;
+NTL_THREAD_LOCAL static long verbose = 0;
 
-static long verbose = 0;
+NTL_THREAD_LOCAL double LLLStatusInterval = 900.0;
+NTL_THREAD_LOCAL char *LLLDumpFile = 0;
 
-double LLLStatusInterval = 900.0;
-char *LLLDumpFile = 0;
-
-static unsigned long NumSwaps = 0;
-static double RR_GS_time = 0;
-static double StartTime = 0;
-static double LastTime = 0;
+NTL_THREAD_LOCAL static unsigned long NumSwaps = 0;
+NTL_THREAD_LOCAL static double RR_GS_time = 0;
+NTL_THREAD_LOCAL static double StartTime = 0;
+NTL_THREAD_LOCAL static double LastTime = 0;
 
 
 

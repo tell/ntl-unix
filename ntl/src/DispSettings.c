@@ -40,9 +40,6 @@ int main()
    cout << "NTL_GMP_LIP\n";
 #endif
 
-#ifdef NTL_GMP_HACK
-   cout << "NTL_GMP_HACK\n";
-#endif
 
 #ifdef NTL_GF2X_LIB
    cout << "NTL_GF2X_LIB\n";
@@ -56,10 +53,6 @@ int main()
 #ifdef NTL_UNSIGNED_LONG_LONG_TYPE
    cout << "NTL_UNSIGNED_LONG_LONG_TYPE: ";
    cout << make_string(NTL_UNSIGNED_LONG_LONG_TYPE) << "\n";
-#endif
-
-#ifdef NTL_CXX_ONLY
-   cout << "NTL_CXX_ONLY\n";
 #endif
 
 

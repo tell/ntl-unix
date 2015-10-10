@@ -25,7 +25,8 @@ static xdouble InnerProduct(xdouble *a, xdouble *b, long n)
 static void RowTransform(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1)
 // x = x - y*MU
 {
-   static ZZ T, MU;
+   NTL_ZZRegister(T);
+   NTL_ZZRegister(MU);
    long k;
 
    long n = A.length();
@@ -88,7 +89,8 @@ static void RowTransform(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1)
 static void RowTransform2(vec_ZZ& A, vec_ZZ& B, const ZZ& MU1)
 // x = x + y*MU
 {
-   static ZZ T, MU;
+   NTL_ZZRegister(T);
+   NTL_ZZRegister(MU);
    long k;
 
    long n = A.length();
@@ -188,8 +190,8 @@ void ComputeGS(mat_ZZ& B, xdouble **B1, xdouble **mu, xdouble *b,
    c[k] = b[k] - s;
 }
 
-static xdouble red_fudge = to_xdouble(0);
-static long log_red = 0;
+NTL_THREAD_LOCAL static xdouble red_fudge = to_xdouble(0);
+NTL_THREAD_LOCAL static long log_red = 0;
 
 static void init_red_fudge()
 {
@@ -216,11 +218,10 @@ static void inc_red_fudge()
 
 
 
-static long verbose = 0;
-
-static unsigned long NumSwaps = 0;
-static double StartTime = 0;
-static double LastTime = 0;
+NTL_THREAD_LOCAL static long verbose = 0;
+NTL_THREAD_LOCAL static unsigned long NumSwaps = 0;
+NTL_THREAD_LOCAL static double StartTime = 0;
+NTL_THREAD_LOCAL static double LastTime = 0;
 
 
 
@@ -284,7 +285,7 @@ long ll_LLL_XD(mat_ZZ& B, mat_ZZ* U, xdouble delta, long deep,
    xdouble *tp;
 
 
-   static xdouble bound = to_xdouble(0);
+   NTL_THREAD_LOCAL static xdouble bound = to_xdouble(0);
 
 
    if (bound == 0) {
@@ -653,7 +654,7 @@ long LLL_XD(mat_ZZ& B, mat_ZZ& U, double delta, long deep,
 
 
 
-static vec_xdouble BKZConstant;
+NTL_THREAD_LOCAL static vec_xdouble BKZConstant;
 
 static
 void ComputeBKZConstant(long beta, long p)
@@ -708,7 +709,7 @@ void ComputeBKZConstant(long beta, long p)
    }
 }
 
-static vec_xdouble BKZThresh;
+NTL_THREAD_LOCAL static vec_xdouble BKZThresh;
 
 static
 void ComputeBKZThresh(xdouble *c, long beta)

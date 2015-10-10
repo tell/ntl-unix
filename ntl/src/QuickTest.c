@@ -110,7 +110,7 @@ int main()
 
 
 #ifdef NTL_STD_CXX
-   cerr << "NTL_STD_CXX\n";
+   cout << "NTL_STD_CXX\n";
 #endif
 
 #ifdef NTL_PSTD_NNS
@@ -129,9 +129,6 @@ int main()
    cerr << "NTL_GMP_LIP\n";
 #endif
 
-#ifdef NTL_GMP_HACK
-   cerr << "NTL_GMP_HACK\n";
-#endif
 
 #ifdef NTL_GF2X_LIB
    cerr << "NTL_GF2X_LIB\n";
@@ -146,10 +143,6 @@ int main()
 #ifdef NTL_UNSIGNED_LONG_LONG_TYPE
    cerr << "NTL_UNSIGNED_LONG_LONG_TYPE: ";
    cerr << make_string(NTL_UNSIGNED_LONG_LONG_TYPE) << "\n";
-#endif
-
-#ifdef NTL_CXX_ONLY
-   cerr << "NTL_CXX_ONLY\n";
 #endif
 
 
@@ -249,9 +242,6 @@ cerr << "Performance Options:\n";
 
    cerr << "\n\n";
 
-   if (_ntl_gmp_hack)
-      cerr << "using GMP hack\n\n";
-
    cerr << "running tests...";
 
    long n, k;
@@ -348,21 +338,6 @@ cerr << "Performance Options:\n";
    t = GetTime()-t;
 
    cerr << "time for 1024-bit mul: " << t*10 << "us";
-
-   if (_ntl_gmp_hack) {
-      _ntl_gmp_hack = 0;
-      mul(x4, x2, x3);
-
-      t = GetTime();
-      for (i = 0; i < 100000; i++)
-         mul(x4, x2, x3);
-      t = GetTime()-t;
-
-      cerr << " (" << (t*10) << "us without GMP)"; 
-
-      _ntl_gmp_hack = 1;
-   }
-
    cerr << "\n";
 
    rem(x2, x4, x1);
@@ -373,20 +348,6 @@ cerr << "Performance Options:\n";
    t = GetTime()-t;
 
    cerr << "time for 2048/1024-bit rem: " << t*10 << "us";
-
-   if (_ntl_gmp_hack) {
-      _ntl_gmp_hack = 0;
-      rem(x2, x4, x1);
-   
-      t = GetTime();
-      for (i = 0; i < 100000; i++)
-         rem(x2, x4, x1);
-      t = GetTime()-t;
-      cerr << " (" << (t*10) << "us without GMP)"; 
-
-      _ntl_gmp_hack = 1;
-   }
-
    cerr << "\n";
    
 
@@ -402,20 +363,6 @@ cerr << "Performance Options:\n";
    t = GetTime()-t;
 
    cerr << "time for 1024-bit modular inverse: " << t*1000 << "us";
-
-   if (_ntl_gmp_hack) {
-      _ntl_gmp_hack = 0;
-      InvMod(x2, x1, p);
-   
-      t = GetTime();
-      for (i = 0; i < 1000; i++)
-         InvMod(x2, x1, p);
-      t = GetTime()-t;
-         cerr << " (" << (t*1000) << "us without GMP)"; 
-
-      _ntl_gmp_hack = 1;
-   }
-
    cerr << "\n";
 
 
@@ -440,21 +387,6 @@ cerr << "Performance Options:\n";
 
    cerr << "time to multiply degree 1023 polynomials\n   modulo a 1024-bit number: ";
    cerr << (t/20) << "s";
-
-   if (_ntl_gmp_hack) {
-      _ntl_gmp_hack = 0;
-
-      ZZ_p::init(p);
-      ZZ_pInfo->check();
-
-      t = GetTime();
-      for (i = 0; i < 20; i++) mul(j3, j1, j2);
-      t = GetTime()-t;
-
-      cerr << " (" << (t/20) << "s without GMP)";
-      _ntl_gmp_hack = 1;
-   }
-
    cerr << "\n";
 
    GF2X_time();

@@ -31,8 +31,11 @@ public:
 
 };
 
-extern ZZ_pEInfoT *ZZ_pEInfo; // info for current modulus, initially null
+NTL_THREAD_LOCAL extern ZZ_pEInfoT *ZZ_pEInfo; // info for current modulus, initially null
 
+
+// FIXME: in a thread-safe impl, we will need to use shared_ptr's 
+// for reference counted pointers
 
 
 
@@ -45,7 +48,7 @@ void save();
 void restore() const;
 
 ZZ_pEContext() { ptr = 0; }
-ZZ_pEContext(const ZZ_pX& p);
+explicit ZZ_pEContext(const ZZ_pX& p);
 
 ZZ_pEContext(const ZZ_pEContext&); 
 
@@ -80,14 +83,36 @@ ZZ_pEBak() { MustRestore = 0; ptr = 0; }
 
 
 
-struct ZZ_pE_NoAlloc_type { ZZ_pE_NoAlloc_type() { } };
-const ZZ_pE_NoAlloc_type ZZ_pE_NoAlloc = ZZ_pE_NoAlloc_type();
+class ZZ_pEPush {
+private:
+ZZ_pEBak bak;
 
+ZZ_pEPush(const ZZ_pEPush&); // disabled
+void operator=(const ZZ_pEPush&); // disabled
+
+public:
+ZZ_pEPush() { bak.save(); }
+explicit ZZ_pEPush(const ZZ_pEContext& context) { bak.save(); context.restore(); }
+explicit ZZ_pEPush(const ZZ_pX& p) { bak.save(); ZZ_pEContext c(p); c.restore(); }
+
+
+};
+
+
+
+
+
+class ZZ_pEX;  // forward declaration
 
 
 class ZZ_pE {
-
 public:
+typedef ZZ_pX rep_type;
+typedef ZZ_pEContext context_type;
+typedef ZZ_pEBak bak_type;
+typedef ZZ_pEPush push_type;
+typedef ZZ_pEX poly_type;
+
 
 ZZ_pX _ZZ_pE__rep;
 
@@ -100,11 +125,17 @@ static long ModCross() { return 8; }
 
 // ****** constructors and assignment
 
-ZZ_pE();
+ZZ_pE() {  } // NO_ALLOC
 
-ZZ_pE(const ZZ_pE& a)  { _ZZ_pE__rep.rep.SetMaxLength(ZZ_pE::degree()); _ZZ_pE__rep = a._ZZ_pE__rep; }
+explicit ZZ_pE(long a) { *this = a;  } // NO_ALLOC
+explicit ZZ_pE(const ZZ_p& a) { *this = a;  } // NO_ALLOC
 
-ZZ_pE(ZZ_pE_NoAlloc_type) { }  // allocates no space
+
+ZZ_pE(const ZZ_pE& a)  {  _ZZ_pE__rep = a._ZZ_pE__rep; } // NO_ALLOC
+
+ZZ_pE(INIT_NO_ALLOC_TYPE) { }  // allocates no space
+ZZ_pE(INIT_ALLOC_TYPE) {_ZZ_pE__rep.rep.SetMaxLength(ZZ_pE::degree());  }  // allocates space
+void allocate() { _ZZ_pE__rep.rep.SetMaxLength(ZZ_pE::degree()); }
 
 ~ZZ_pE() { } 
 

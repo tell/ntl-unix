@@ -24,13 +24,20 @@ numbers.
 class ZZ {
 public:
 
+
    ZZ(); // initial value is 0
+
+   ZZ(const ZZ& a);  // copy constructor
+   explicit ZZ(long a);  // promotion constructor
+
+   ~ZZ(); // destructor
 
    ZZ& operator=(const ZZ& a);  // assignment operator
    ZZ& operator=(long a);  
 
-   ZZ(const ZZ& a);  // copy constructor
-   ~ZZ(); // destructor
+   // typedefs to aid in generic programming
+   typedef ZZ_p residue_type;
+   typedef ZZX poly_type;
 
 
    // ...

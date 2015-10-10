@@ -36,7 +36,7 @@ GF2X::GF2X(INIT_SIZE_TYPE, long n)
 
 const GF2X& GF2X::zero()
 {
-   static GF2X z;
+   NTL_THREAD_LOCAL static GF2X z;
    return z;
 }
 
@@ -322,7 +322,7 @@ istream & HexInput(istream& s, GF2X& a)
 
 istream & operator>>(istream& s, GF2X& a)   
 {   
-   static ZZ ival;
+   NTL_ZZRegister(ival);
 
    long c;   
    if (!s) Error("bad GF2X input"); 
@@ -1035,7 +1035,7 @@ void mul(GF2X& c, const GF2X& a, const GF2X& b)
    // finally: the general case
 
 
-   WordVector mem;
+   NTL_THREAD_LOCAL static WordVector mem;
 
    const _ntl_ulong *ap = a.xrep.elts(), *bp = b.xrep.elts();
    _ntl_ulong *cp;
@@ -1401,9 +1401,9 @@ void mul(GF2X& c, const GF2X& a, const GF2X& b)
    // finally: the general case
 
    
-   static WordVector mem;
-   static WordVector stk;
-   static WordVector vec;
+   NTL_THREAD_LOCAL static WordVector mem;
+   NTL_THREAD_LOCAL static WordVector stk;
+   NTL_THREAD_LOCAL static WordVector vec;
 
    const _ntl_ulong *ap, *bp;
    _ntl_ulong *cp;
@@ -1582,7 +1582,7 @@ void MulByX(GF2X& x, const GF2X& a)
 
 
 
-static _ntl_ulong sqrtab[256] = {
+static const _ntl_ulong sqrtab[256] = {
 
 0UL, 1UL, 4UL, 5UL, 16UL, 17UL, 20UL, 21UL, 64UL, 
 65UL, 68UL, 69UL, 80UL, 81UL, 84UL, 85UL, 256UL, 
@@ -1820,7 +1820,7 @@ void RightShift(GF2X& c, const GF2X& a, long n)
 
 
 
-static _ntl_ulong revtab[256] = {
+static const _ntl_ulong revtab[256] = {
 
 0UL, 128UL, 64UL, 192UL, 32UL, 160UL, 96UL, 224UL, 16UL, 144UL, 
 80UL, 208UL, 48UL, 176UL, 112UL, 240UL, 8UL, 136UL, 72UL, 200UL, 

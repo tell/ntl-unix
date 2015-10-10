@@ -43,10 +43,10 @@ void sub(mat_zz_p& X, const mat_zz_p& A, const mat_zz_p& B)
 }  
   
 
+// some local buffers
 
-static vec_long mul_aux_vec;
-
-static NTL_SPMM_VEC_T precon_vec;
+NTL_THREAD_LOCAL static vec_long mul_aux_vec;
+NTL_THREAD_LOCAL static NTL_SPMM_VEC_T precon_vec;
 
 
 
@@ -96,6 +96,7 @@ void mul_aux(mat_zz_p& X, const mat_zz_p& A, const mat_zz_p& B)
             xp[j].LoopHole() = acc[j];    
       }
 
+      if (mul_aux_vec.length() > NTL_RELEASE_THRESH) mul_aux_vec.kill();
    }
    else {  // just use the old code, w/o preconditioning
 
@@ -196,7 +197,8 @@ void mul(vec_zz_p& x, const vec_zz_p& a, const mat_zz_p& B)
       zz_p *xp = x.elts();
       for (j = 0; j < m; j++)
          xp[j].LoopHole() = acc[j];    
-      
+
+      if (mul_aux_vec.length() > NTL_RELEASE_THRESH) mul_aux_vec.kill();
    }
 }
 
@@ -254,6 +256,9 @@ void mul_aux(vec_zz_p& x, const mat_zz_p& A, const vec_zz_p& b)
 
 	 xp[i].LoopHole() = acc;
       } 
+
+      if (precon_vec.length() > NTL_RELEASE_THRESH) precon_vec.kill();
+
    
    }
 }

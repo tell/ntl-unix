@@ -21,6 +21,8 @@ const ZZ& ZZ_pE::cardinality()
 {
    if (!ZZ_pEInfo) Error("ZZ_pE::cardinality: undefined modulus");
 
+   // FIXME: in a thread-safe impl, the following needs to be mutexed
+
    if (!ZZ_pEInfo->_card_init) {
       power(ZZ_pEInfo->_card, ZZ_pEInfo->_card_base, ZZ_pEInfo->_card_exp);
       ZZ_pEInfo->_card_init = 1;
@@ -33,7 +35,7 @@ const ZZ& ZZ_pE::cardinality()
 
 
 
-ZZ_pEInfoT *ZZ_pEInfo = 0; 
+NTL_THREAD_LOCAL ZZ_pEInfoT *ZZ_pEInfo = 0; 
 
 
 
@@ -135,15 +137,10 @@ void ZZ_pEBak::restore()
 
 const ZZ_pE& ZZ_pE::zero()
 {
-   static ZZ_pE z(ZZ_pE_NoAlloc);
+   static ZZ_pE z(INIT_NO_ALLOC);
    return z;
 }
 
-
-ZZ_pE::ZZ_pE()
-{
-   _ZZ_pE__rep.rep.SetMaxLength(ZZ_pE::degree());
-}
 
 
 

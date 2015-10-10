@@ -209,7 +209,7 @@ static void LeftRotate(ZZ& a, const ZZ& b, long l, const ZZ& p, long n)
   }
 
   /* tmp := upper l bits of b */
-  static ZZ tmp;
+  NTL_ZZRegister(tmp);
   RightShift(tmp, b, n - l);
   /* a := 2^l * lower n - l bits of b */
   trunc(a, b, n - l);
@@ -263,22 +263,22 @@ static void fft(vec_ZZ& a, long r, long l, const ZZ& p, long n)
     halfsize =  1L << (l - 1 - round);
     for (i = (1L << round) - 1, off = 0; i >= 0; i--, off += halfsize) {
       for (j = 0, e = 0; j < halfsize; j++, off++, e+=r) {
-	/* One butterfly : 
-	 ( a[off], a[off+halfsize] ) *= ( 1  w^{j2^round} )
-	                                ( 1 -w^{j2^round} ) */
-	/* tmp = a[off] - a[off + halfsize] mod p */
-	sub(tmp, a[off], a[off + halfsize]);
-	if (sign(tmp) < 0) {
-	  add(tmp, tmp, p);
-	}
-	/* a[off] += a[off + halfsize] mod p */
-	add(a[off], a[off], a[off + halfsize]);
-	sub(tmp1, a[off], p);
-	if (sign(tmp1) >= 0) {
-	  a[off] = tmp1;
-	}
-	/* a[off + halfsize] = tmp * w^{j2^round} mod p */
-	Rotate(a[off + halfsize], tmp, e, p, n);
+        /* One butterfly : 
+         ( a[off], a[off+halfsize] ) *= ( 1  w^{j2^round} )
+                                        ( 1 -w^{j2^round} ) */
+        /* tmp = a[off] - a[off + halfsize] mod p */
+        sub(tmp, a[off], a[off + halfsize]);
+        if (sign(tmp) < 0) {
+          add(tmp, tmp, p);
+        }
+        /* a[off] += a[off + halfsize] mod p */
+        add(a[off], a[off], a[off + halfsize]);
+        sub(tmp1, a[off], p);
+        if (sign(tmp1) >= 0) {
+          a[off] = tmp1;
+        }
+        /* a[off + halfsize] = tmp * w^{j2^round} mod p */
+        Rotate(a[off + halfsize], tmp, e, p, n);
       }
     }
   }
@@ -297,26 +297,26 @@ static void ifft(vec_ZZ& a, long r, long l, const ZZ& p, long n)
     halfsize = 1L << (l - 1 - round);
     for (i = (1L << round) - 1, off = 0; i >= 0; i--, off += halfsize) {
       for (j = 0, e = 0; j < halfsize; j++, off++, e+=r) {
-	/* One inverse butterfly : 
-	 ( a[off], a[off+halfsize] ) *= ( 1               1             )
-	                                ( w^{-j2^round}  -w^{-j2^round} ) */
-	/* a[off + halfsize] *= w^{-j2^round} mod p */
-	Rotate(a[off + halfsize], a[off + halfsize], -e, p, n);
-	/* tmp = a[off] - a[off + halfsize] */
-	sub(tmp, a[off], a[off + halfsize]);
+        /* One inverse butterfly : 
+         ( a[off], a[off+halfsize] ) *= ( 1               1             )
+                                        ( w^{-j2^round}  -w^{-j2^round} ) */
+        /* a[off + halfsize] *= w^{-j2^round} mod p */
+        Rotate(a[off + halfsize], a[off + halfsize], -e, p, n);
+        /* tmp = a[off] - a[off + halfsize] */
+        sub(tmp, a[off], a[off + halfsize]);
 
-	/* a[off] += a[off + halfsize] mod p */
-	add(a[off], a[off], a[off + halfsize]);
-	sub(tmp1, a[off], p);
-	if (sign(tmp1) >= 0) {
-	  a[off] = tmp1;
-	}
-	/* a[off+halfsize] = tmp mod p */
-	if (sign(tmp) < 0) {
-	  add(a[off+halfsize], tmp, p);
-	} else {
-	  a[off+halfsize] = tmp;
-	}
+        /* a[off] += a[off + halfsize] mod p */
+        add(a[off], a[off], a[off + halfsize]);
+        sub(tmp1, a[off], p);
+        if (sign(tmp1) >= 0) {
+          a[off] = tmp1;
+        }
+        /* a[off+halfsize] = tmp mod p */
+        if (sign(tmp) < 0) {
+          add(a[off+halfsize], tmp, p);
+        } else {
+          a[off+halfsize] = tmp;
+        }
       }
     }
   }
@@ -398,7 +398,7 @@ void SSMul(ZZX& c, const ZZX& a, const ZZX& b)
       trunc(ai, ai, mr);
       sub(ai, ai, tmp);
       if (sign(ai) < 0) {
-	add(ai, ai, p);
+        add(ai, ai, p);
       }
     }
     aa[i] = ai;
@@ -416,7 +416,7 @@ void SSMul(ZZX& c, const ZZX& a, const ZZX& b)
       LeftRotate(ai, ai, mr - l - 1, p, mr);
       sub(tmp, p, ai);
       if (NumBits(tmp) >= mr) { /* ci >= (p-1)/2 */
-	negate(ci, ai); /* ci = -ai = ci - p */
+        negate(ci, ai); /* ci = -ai = ci - p */
       }
       else
         ci = tmp;
@@ -637,7 +637,7 @@ void SSSqr(ZZX& c, const ZZX& a)
       trunc(ai, ai, mr);
       sub(ai, ai, tmp);
       if (sign(ai) < 0) {
-	add(ai, ai, p);
+        add(ai, ai, p);
       }
     }
     aa[i] = ai;
@@ -658,7 +658,7 @@ void SSSqr(ZZX& c, const ZZX& a)
       LeftRotate(ai, ai, mr - l - 1, p, mr);
       sub(tmp, p, ai);
       if (NumBits(tmp) >= mr) { /* ci >= (p-1)/2 */
-	negate(ci, ai); /* ci = -ai = ci - p */
+        negate(ci, ai); /* ci = -ai = ci - p */
       }
       else
         ci = tmp;
@@ -1028,9 +1028,9 @@ void PlainPseudoDivRem(ZZX& q, ZZX& r, const ZZX& a, const ZZX& b)
       qp[i] = t;
 
       for (j = db-1; j >= 0; j--) {
-	 mul(s, t, bp[j]);
+         mul(s, t, bp[j]);
          if (!LCIsOne) mul(xp[i+j], xp[i+j], LC);
-	 sub(xp[i+j], xp[i+j], s);
+         sub(xp[i+j], xp[i+j], s);
       }
    }
 
@@ -1408,8 +1408,8 @@ long PlainDivide(ZZX& qq, const ZZX& aa, const ZZX& bb)
       qp[i] = t;
 
       for (j = db-1; j >= 0; j--) {
-	 mul(s, t, bp[j]);
-	 sub(xp[i+j], xp[i+j], s);
+         mul(s, t, bp[j]);
+         sub(xp[i+j], xp[i+j], s);
       }
    }
 
@@ -2324,7 +2324,7 @@ void SetCoeff(ZZX& x, long i, long a)
    if (a == 1) 
       SetCoeff(x, i);
    else {
-      static ZZ aa;
+      NTL_ZZRegister(aa);
       conv(aa, a);
       SetCoeff(x, i, aa);
    }
@@ -2404,7 +2404,7 @@ void NewtonInvTrunc(ZZX& c, const ZZX& a, long e)
       return;
    }
 
-   static vec_long E;
+   vec_long E;
    E.SetLength(0);
    append(E, e);
    while (e > 1) {

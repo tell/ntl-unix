@@ -118,7 +118,7 @@ int main()
          if (i % j == 0)
             t *= phi(j);
 
-      phi(i) = (ZZX(i, 1) - 1)/t;  // ZZX(i, a) == X^i * a
+      phi(i) = (ZZX(INIT_MONO, i) - 1)/t;  
 
       cout &lt;&lt; phi(i) &lt;&lt; "\n";
    }
@@ -159,12 +159,12 @@ Also, one can write <tt>phi[j-1]</tt> in place of <tt>phi(j)</tt>.
 <p>
 Third, instead of
 <pre>
-      phi(i) = (ZZX(i, 1) - 1)/t;  
+      phi(i) = (ZZX(INIT_MONO, i) - 1)/t;  
 </pre>
 one can write
 <pre>
       ZZX t1;
-      SetCoeff(t1, i, 1);
+      SetCoeff(t1, i);
       SetCoeff(t1, 0, -1);
       div(phi(i), t1, t);
 </pre>

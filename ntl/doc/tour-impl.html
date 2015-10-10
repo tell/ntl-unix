@@ -117,7 +117,7 @@ The differences are not very significant (maybe 10%).
 Therefore, there is hardly any reason to not set this flag.
 Also, note that the only code affected by this flag
 is the traditional long integer package (which, if you use
-GMP as the primary long integer package, is not involved),
+GMP as the long integer package, is not involved),
 and the single-precision modular multiplication routines
 defined in <tt>ZZ.h</tt>.
 
@@ -263,33 +263,19 @@ and "not a number" are implemented correctly.
 There are three basic strategies for implementing long integer arithmetic.
 
 <p>
-The <i>default</i> strategy is implemented in the 
+The default strategy is implemented in the 
 <i>traditional long integer arithmetic package</i>.
 This package is derived from the LIP package originally developed by
 A. K. Lenstra, although it has evolved quite a bit within NTL.
 This package uses no assembly code and is very portable.
 
 <p>
-The <i>second</i> strategy is to use the Gnu Multi-Precision Package (GMP)
-as a <i>supplemental long integer arithmetic package</i>.
-In this strategy, the representation of long integers is identical
-to that in he traditional long integer package.
-This representation is incompatible with the GMP representation,
-and on-the-fly conversions are done between the two representations
-(only when this is sensible).
-This strategy typically yields better performance, but requires
-that GMP is installed on your platform.
-
-<p>
-The <i>third</i> strategy is to use GMP as the 
-<i>primary long integer arithmetic package</i>.
+The alternative strategy is to use GMP in place of LIP.
 In this strategy, the representation of long integers is in a 
 form compatible with GMP.
 This strategy typically yields the best performance,
 but requires
-that GMP is installed on your platform, and also
-introduces some minor backward incompatibilities in the programming
-interface.
+that GMP is installed on your platform.
 
 <p>
 <a href="tour-gmp.html">Go here</a> for more details on the use
@@ -304,8 +290,7 @@ NTL makes fairly consistent use of asymptotically fast algorithms.
 Long integer multiplication is implemented using the classical
 algorithm, crossing over to Karatsuba for very big numbers.
 Long integer division is currently only implemented using
-the classical algorithm -- unless you use NTL with GMP (version 3 or later)
-as either a supplemental or primary long integer package,
+the classical algorithm -- unless you use NTL with GMP (version 3 or later),
 which
 employs an algorithm that is about twice as slow as multiplication
 for very large numbers.
@@ -337,8 +322,10 @@ Here are some limitations of NTL that a "perfect" library would not have:
 <p>
 <ul>
 <li>
-NTL is neither thread-safe nor re-entrant, and making it so 
-would require a fundamental redesign.
+NTL is currently not thread safe, but I am in the process
+of making it so.
+This will hopefully happen some time before summer 2015.
+
 <p>
 
 <li>

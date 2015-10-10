@@ -134,10 +134,12 @@ void WordVector::RangeError(long i) const
 
 void CopySwap(WordVector& x, WordVector& y)
 {
-   static WordVector t;
+   NTL_THREAD_LOCAL static WordVector t;
+
    t = x;
    x = y;
    y = t;
+   t.release();
 }
  
 void WordVector::swap_impl(WordVector& x, WordVector& y)  

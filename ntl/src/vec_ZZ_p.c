@@ -4,16 +4,9 @@
 
 NTL_START_IMPL
 
-
-void BlockConstruct(ZZ_p* x, long n)
+static 
+void BasicBlockConstruct(ZZ_p* x, long n, long d)
 {
-   if (n <= 0) return; 
-
-   if (!ZZ_pInfo)
-      Error("ZZ_p constructor called while modulus undefined");
-
-   long d = ZZ_p::ModulusSize();
-
    long m, j;
 
    long i = 0;
@@ -25,6 +18,41 @@ void BlockConstruct(ZZ_p* x, long n)
       i += m;
    }
 }
+
+void BlockConstruct(ZZ_p* x, long n)
+{
+   if (n <= 0) return; 
+
+   if (!ZZ_pInfo)
+      Error("ZZ_p constructor called while modulus undefined");
+
+   long d = ZZ_p::ModulusSize();
+
+   BasicBlockConstruct(x, n, d);
+}
+
+void BlockConstructFromVec(ZZ_p* x, long n, const ZZ_p* y)
+{
+   if (n <= 0) return;
+
+   long d = y->_ZZ_p__rep.MaxAlloc() - 1;
+   BasicBlockConstruct(x, n, d);
+
+   long i;
+   for (i = 0; i < n; i++) x[i] = y[i];
+}
+
+void BlockConstructFromObj(ZZ_p* x, long n, const ZZ_p& y)
+{
+   if (n <= 0) return;
+
+   long d = y._ZZ_p__rep.MaxAlloc() - 1;
+   BasicBlockConstruct(x, n, d);
+
+   long i;
+   for (i = 0; i < n; i++) x[i] = y;
+}
+
 
 void BlockDestroy(ZZ_p* x, long n)
 {
@@ -69,7 +97,8 @@ void InnerProduct(ZZ_p& x, const vec_ZZ_p& a, const vec_ZZ_p& b)
 {
    long n = min(a.length(), b.length());
    long i;
-   static ZZ accum, t;
+   NTL_ZZRegister(accum);
+   NTL_ZZRegister(t);
 
    clear(accum);
    for (i = 0; i < n; i++) {
@@ -88,7 +117,8 @@ void InnerProduct(ZZ_p& x, const vec_ZZ_p& a, const vec_ZZ_p& b,
 
    long n = min(a.length(), b.length()+offset);
    long i;
-   static ZZ accum, t;
+   NTL_ZZRegister(accum);
+   NTL_ZZRegister(t);
 
    clear(accum);
    for (i = offset; i < n; i++) {

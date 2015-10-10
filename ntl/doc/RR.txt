@@ -119,6 +119,10 @@ public:
 RR(); // = 0
 
 RR(const RR& a); // copy constructor
+
+
+explicit RR(double a);  // promotion constructor
+
 RR& operator=(const RR& a); // assignment operator
 
 // NOTE: the copy constructor and assignment operator

@@ -33,7 +33,7 @@ void mul(vec_RR& x, const vec_RR& a, const RR& b_in)
 
 void mul(vec_RR& x, const vec_RR& a, double b_in)
 {
-   static RR b;
+   NTL_THREAD_LOCAL static RR b;
    conv(b, b_in);
    long n = a.length();
    x.SetLength(n);
