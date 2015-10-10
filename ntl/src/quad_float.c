@@ -708,7 +708,7 @@ ostream& operator<<(ostream& s, const quad_float& a)
 
 istream& operator>>(istream& s, quad_float& x)
 {
-   RRPush push();
+   RRPush push;
 
    RR::SetPrecision(4*NTL_DOUBLE_PRECISION);
 

@@ -18,6 +18,26 @@ A Tour of NTL: Summary of Changes
 
 <p> <hr> <p>
 <h3>
+2014.12.15:
+Changes between NTL 7.0.1 and 7.0.2
+</h3>
+
+<ul>
+<p><li>
+Fixed bug introduced in v7.0 affecting <tt>RR</tt> and <tt>quad_float</tt> input routines,
+which would leave the <tt>RR</tt> precision variable in an incorrect state.
+<p><li>
+Fixed a bug introduced in the v6.2 that affected the append routines
+for <tt>ZZ_p</tt> and <tt>GF2E</tt>, which would lead to incorrect memory allocation
+(which, if triggered, should just have led to an error message and abort, rather than 
+incorrect results).
+This bug also affected the new <tt>Vec</tt> constructor introduced in v7.0
+(and again, only for <tt>ZZ_p</tt> and <tt>GF2E</tt>).
+
+</ul>
+
+<p> <hr> <p>
+<h3>
 2014.11.14:
 Changes between NTL 7.0.0 and 7.0.1
 </h3>

@@ -402,7 +402,7 @@ void GCD(ZZX& d, const ZZX& a, const ZZX& b)
 
    ZZ prod;
 
-   zz_pPush push(); // save current modulus, restore upon return
+   zz_pPush push; // save current modulus, restore upon return
 
    long FirstTime = 1;
 
@@ -489,7 +489,7 @@ ENDPLAIN -->
 <br>
 &nbsp;&nbsp; ZZ prod;<br>
 <br>
-&nbsp;&nbsp; zz_pPush push(); <font color="#0000ed"><i>// save current modulus, restore upon return</i></font><br>
+&nbsp;&nbsp; zz_pPush push; <font color="#0000ed"><i>// save current modulus, restore upon return</i></font><br>
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;FirstTime = <font color="#ff8b00">1</font>;<br>
 <br>

@@ -254,7 +254,7 @@ initialization) paradigm.
 You could also do the following:
 
    {
-      ZZ_pEPush push(); // just backup current modulus
+      ZZ_pEPush push; // just backup current modulus
 
         ...
 

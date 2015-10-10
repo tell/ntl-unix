@@ -46,7 +46,11 @@ void BlockConstructFromObj(ZZ_p* x, long n, const ZZ_p& y)
 {
    if (n <= 0) return;
 
-   long d = y._ZZ_p__rep.MaxAlloc() - 1;
+   if (!ZZ_pInfo)
+      Error("ZZ_p constructor called while modulus undefined");
+
+   long d = ZZ_p::ModulusSize();
+
    BasicBlockConstruct(x, n, d);
 
    long i;

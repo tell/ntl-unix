@@ -223,7 +223,7 @@ initialization) paradigm.
 You could also do the following:
 
    {
-      zz_pPush push(); // just backup current modulus
+      zz_pPush push; // just backup current modulus
 
         ...
 

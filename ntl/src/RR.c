@@ -922,7 +922,7 @@ istream& operator>>(istream& s, RR& x)
    RR v;
 
    {
-      RRPush push();
+      RRPush push;
 
       long c;
       long cval;

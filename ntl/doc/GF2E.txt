@@ -254,7 +254,7 @@ initialization) paradigm.
 You could also do the following:
 
    {
-      GF2EPush push(); // just backup current modulus
+      GF2EPush push; // just backup current modulus
 
         ...
 

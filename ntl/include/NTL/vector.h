@@ -541,7 +541,8 @@ void Vec<T>::append(const T& a)
    long src_len = 1;
 
    // if vector gets moved, we have to worry about
-   // a aliasing a vector element
+   // a aliasing a vector element...mostly 
+
    const T *src = &a;
    long pos = -1;
    if (len >= allocated()) pos = position(a);  
@@ -558,7 +559,9 @@ void Vec<T>::append(const T& a)
    else {
       for (i = 0; i < init-len; i++)
          dst[i+len] = src[i];
-      Init(src_len+len, src+init-len);
+
+      // make sure we use BlockConstructFromObj
+      Init(src_len+len, *src);
    }
 
    AdjustLength(len+src_len);

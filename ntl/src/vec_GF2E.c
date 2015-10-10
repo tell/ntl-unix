@@ -46,7 +46,11 @@ void BlockConstructFromObj(GF2E* x, long n, const GF2E& y)
 {
    if (n <= 0) return;
 
-   long d = y._GF2E__rep.xrep.MaxLength();
+   if (!GF2EInfo)
+      Error("GF2E constructor called while modulus undefined");
+
+   long d = GF2E::WordLength();
+
    BasicBlockConstruct(x, n, d);
 
    long i;
