@@ -361,10 +361,10 @@ setup4:
 ntl.a:	$(OBJ) 
 	$(AR) $(ARFLAGS) ntl.a $(OBJ) #LSTAT
 	- $(RANLIB) ntl.a #LSTAT
-# 	$(LIBTOOL) --mode=link $(LINK) -o libntl.la $(OBJ:.o=.lo) $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(GF2X_OPT_LIBDIR) $(GF2X_OPT_LIB) $(LDLIBS) -rpath $(LIBDIR) -version-info `cat VERSION_INFO` #LSHAR
+# 	$(LIBTOOL) --tag=CXX --mode=link $(LINK) -o libntl.la $(OBJ:.o=.lo) $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(GF2X_OPT_LIBDIR) $(GF2X_OPT_LIB) $(LDLIBS) -rpath $(LIBDIR) -version-info `cat VERSION_INFO` #LSHAR
 
 LCOMP= #LSTAT
-# LCOMP=$(LIBTOOL) --mode=compile #LSHAR
+# LCOMP=$(LIBTOOL) --tag=CXX --mode=compile #LSHAR
 
 lip.o:	lip.c g_lip_impl.h c_lip_impl.h 
 	$(LCOMP) $(COMPILE) $(GMP_OPT_INCDIR) lip.c
@@ -386,7 +386,7 @@ GetPID.o: GetPID.c
 
 .c: 
 	$(LINK) -o $@ $< ntl.a $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(GF2X_OPT_LIBDIR) $(GF2X_OPT_LIB) $(LDLIBS) #LSTAT
-# 	$(LIBTOOL) --mode=link $(LINK) -o $@ $< libntl.la #LSHAR
+# 	$(LIBTOOL) --tag=CXX --mode=link $(LINK) -o $@ $< libntl.la #LSHAR
 
 #################################################################
 #

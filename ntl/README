@@ -1,5 +1,5 @@
-NTL  -- a library for doing numbery theory --  version 8.1.0
-Release date: 2015.1.9
+NTL  -- a library for doing numbery theory --  version 8.1.1
+Release date: 2015.1.30
 
 Author: Victor Shoup (victor@shoup.net)
 
