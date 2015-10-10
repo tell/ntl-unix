@@ -411,7 +411,7 @@ using the configure script.
  * and NTL_SPMM_ASM.
  * This plays a crucial role in the  "small prime FFT" used to 
  * implement polynomial arithmetic, and in other CRT-based methods 
- * (such as linear  algebra over ZZ), as well as polynomial andd matrix 
+ * (such as linear  algebra over ZZ), as well as polynomial and matrix 
  * arithmetic over zz_p.  
  */
 
@@ -450,6 +450,47 @@ using the configure script.
  *    This is only supported on a select mechines under GCC. 
  *
  *    To re-build after changing this flag: rm *.o; make ntl.a
+ */
+
+
+#endif
+
+
+
+/*
+ * The following two flags provide additional control for how the 
+ * FFT modulo single-precision primes is implemented.
+ */
+
+#if 0
+#define NTL_FFT_BIGTAB
+
+/*
+ * Precomputed tables are used to store all the roots of unity
+ * used in an FFT computation for the first NTL_FFT_BIGTAB_LIMIT
+ * FFT primes (the latter is defined in FFT.h).  This can
+ * lead to significant time savings but at the const of some space:
+ * in the worst case, the precomputed tables will take of space
+ * log_2(NTL_FFT_BUGTAB_LIMIT) * M, where M is roughly the maxmimum
+ * space occupied by any one polynomial that was involved in an
+ * FFT computation (this could be a polynomial over zz_p, ZZ_p, or ZZ).
+ *
+ *   To re-build after changing this flag: rm *.o; make ntl.a
+ */
+
+#endif
+
+
+#if 0
+#define  NTL_FFT_LAZYMUL
+
+/*
+ * This flag only has an effect when combined with the NTL_FFT_BIGTAB
+ * flag, and either the NTL_SPMM_ULL or NTL_SPMM_ASM flags. 
+ * When set, a "lazy multiplication" strategy due to David Harvey:
+ * see his paper "FASTER ARITHMETIC FOR NUMBER-THEORETIC TRANSFORMS".
+ *
+ *   To re-build after changing this flag: rm *.o; make ntl.a
  */
 
 

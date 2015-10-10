@@ -11,9 +11,31 @@ Computationally speaking, it is not a particularly useful class.
 Its main use is to make the interfaces to the various finite 
 field classes as uniform as possible.
 
+The header file for GF2 also declares the class ref_GF2, which
+use used to represent non-const references to GF2's, such as
+those obtained from indexing a vec_GF2, which "packs" GF2's
+into words.
+
+There are implicit conversions from ref_GF2 to const GF2
+and from GF2& to ref_GF2.  Therefore, if you want to declare
+a function that takes a non-const reference to a GF2, you
+should declare the parameter of type ref_GF2: this will
+allow you to pass variables of type GF2 as well as 
+elements of vec_GF2's obtained through indexing.
+
+For all functions defined below which take a parameter of type
+GF2&, there is also a function that takes a parameter of type ref_GF2.
+Theoretically, we could have just defined the functions that take
+the ref_GF2 parameter type, because of the implicit conversion
+from GF2& to ref_GF2; however, for efficiency reasons, both
+flavors are actually provided.   It is recommended that higher-level
+functions use the ref_GF2 type exclusively.
+
+
 \**************************************************************************/
 
 #include <NTL/ZZ.h>
+#include <NTL/vector.h>
 
 
 class GF2 {
@@ -191,4 +213,10 @@ static GF2 GF2::zero();
 
 static long GF2::modulus();
 // GF2::modulus() returns the value 2
+
+template<> class Vec<GF2>;
+// Forward declaration of the explicit specialization
+// of Vec<GF2>.  This specialization is defined in <NTL/vec_GF2.h>,
+// which must be included in source files that need to use Vec<GF2>.
+
 

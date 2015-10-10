@@ -382,6 +382,20 @@ long MulModPrecon(long a, long b, long n, mulmod_precon_t bninv);
 
 
 
+// The following are vector versions of the MulMod routines
+// They each compute x[i] = (a[i] * b[i])% n   i = 0..k-1 
+
+void VectorMulMod(long k, long *x, const long *a, long b, long n);
+
+void VectorMulMod(long k, long *x, const long *a, long b, long n, 
+                  double ninv);
+// ninv == 1/((double) n)
+
+void VectorMulModPrecon(long k, long *x, const long *a, long b, long n, 
+                        mulmod_precon_t bninv);
+// bninv == MulModPrecon(b, n, ninv)
+
+
 
 
 

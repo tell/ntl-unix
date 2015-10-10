@@ -4,91 +4,83 @@
 
 #include <NTL/tools.h>
 
-#define NTL_pair_decl(S,T,pair_S_T)  \
-class pair_S_T {  \
-public:  \
-   S a;  \
-   T b;  \
-  \
-   pair_S_T() { }  \
-   pair_S_T(const pair_S_T& l__x) : a(l__x.a), b(l__x.b) { } \
-   pair_S_T& operator=(const pair_S_T& l__x) { a = l__x.a; b = l__x.b; return *this; } \
-   pair_S_T(const S& l__x, const T& l__y) : a(l__x), b(l__y) { }  \
-   ~pair_S_T() { }  \
-};  \
-  \
-inline pair_S_T cons(const S& l__x, const T& l__y) { return pair_S_T(l__x, l__y); } \
+// pair templates
+
+NTL_OPEN_NNS
+
+template<class S, class T>
+class Pair {  
+public:  
+   S a;  
+   T b;  
+  
+   Pair() { }  
+   Pair(const Pair<S,T>& x) : a(x.a), b(x.b) { } 
+   Pair(const S& x, const T& y) : a(x), b(y) { }  
+   Pair<S,T>& operator=(const Pair<S,T>& x) { a = x.a; b = x.b; return *this; } 
+   ~Pair() { }  
+};  
+  
+template<class S, class T>
+inline Pair<S,T> cons(const S& x, const T& y) { return Pair<S,T>(x, y); } 
 
 
 
+template<class S, class T>
+inline long operator==(const Pair<S,T>& x, const Pair<S,T>& y)  
+   { return x.a == y.a && x.b == y.b; }  
 
-#define NTL_pair_io_decl(S,T,pair_S_T) \
-NTL_SNS istream& operator>>(NTL_SNS istream&, pair_S_T&);  \
-  \
-NTL_SNS ostream& operator<<(NTL_SNS ostream&, const pair_S_T&);  \
-
-
-
-#define NTL_pair_eq_decl(S,T,pair_S_T)  \
-inline long operator==(const pair_S_T& l__x, const pair_S_T& l__y)  \
-   { return l__x.a == l__y.a && l__x.b == l__y.b; }  \
-inline long operator!=(const pair_S_T& l__x, const pair_S_T& l__y) \
-   { return !(l__x == l__y); }  \
+template<class S, class T>
+inline long operator!=(const Pair<S,T>& x, const Pair<S,T>& y) 
+   { return !(x == y); }  
 
 
 
-// For compatability...
-#define NTL_pair_impl(S,T,pair_S_T)
+template<class S, class T>
+NTL_SNS istream& operator>>(NTL_SNS istream& s, Pair<S,T>& x)  
+{  
+   long c;  
+  
+   if (!s) Error("bad pair input");  
+  
+   c = s.peek();  
+   while (IsWhiteSpace(c)) {  
+      s.get();  
+      c = s.peek();  
+   }  
+  
+   if (c != '[')  
+      Error("bad pair input");  
+  
+   s.get();  
+  
+   if (!(s >> x.a))   
+      Error("bad pair input");  
+   if (!(s >> x.b))  
+      Error("bad pair input");  
+  
+   c = s.peek();  
+   while (IsWhiteSpace(c)) {  
+      s.get();  
+      c = s.peek();  
+   }  
+  
+   if (c != ']')  
+      Error("bad pair input");  
+  
+   s.get();  
+  
+   return s;  
+}  
+  
+template<class S, class T>
+NTL_SNS ostream& operator<<(NTL_SNS ostream& s, const Pair<S,T>& x)  
+{  
+   return s << "[" << x.a << " " << x.b << "]";  
+}  
 
 
-#define NTL_pair_io_impl(S,T,pair_S_T)  \
-NTL_SNS istream& operator>>(NTL_SNS istream& l__s, pair_S_T& l__x)  \
-{  \
-   long l__c;  \
-  \
-   if (!l__s) NTL_NNS Error("bad pair input");  \
-  \
-   l__c = l__s.peek();  \
-   while (NTL_NNS IsWhiteSpace(l__c)) {  \
-      l__s.get();  \
-      l__c = l__s.peek();  \
-   }  \
-  \
-   if (l__c != '[')  \
-      NTL_NNS Error("bad pair input");  \
-  \
-   l__s.get();  \
-  \
-   if (!(l__s >> l__x.a))   \
-      NTL_NNS Error("bad pair input");  \
-   if (!(l__s >> l__x.b))  \
-      NTL_NNS Error("bad pair input");  \
-  \
-   l__c = l__s.peek();  \
-   while (NTL_NNS IsWhiteSpace(l__c)) {  \
-      l__s.get();  \
-      l__c = l__s.peek();  \
-   }  \
-  \
-   if (l__c != ']')  \
-      NTL_NNS Error("bad pair input");  \
-  \
-   l__s.get();  \
-  \
-   return l__s;  \
-}  \
-  \
-NTL_SNS ostream& operator<<(NTL_SNS ostream& l__s, const pair_S_T& l__x)  \
-{  \
-   return l__s << "[" << l__x.a << " " << l__x.b << "]";  \
-}  \
-
-
-
-// For compatability...
-#define NTL_pair_eq_impl(S,T,pair_S_T)
-
-
+NTL_CLOSE_NNS
 
 
 #endif

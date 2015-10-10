@@ -2103,7 +2103,7 @@ void NewDDF(vec_pair_GF2EX_long& factors,
 
    if (deg(f) == 1) {
       factors.SetLength(0);
-      append(factors, cons(f, 1));
+      append(factors, cons(f, 1L));
       return;
    }
 

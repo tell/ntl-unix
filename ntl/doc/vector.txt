@@ -6,28 +6,11 @@ MODULE: vector
 
 SUMMARY:
 
-Macros are defined providing template-like classes for dynamic-sized
-arrays.
-
-The macro NTL_vector_decl(T,vec_T) declares a class vec_T, whose
-implementation can be instantiated with NTL_vector_impl(T,vec_T).  It is
-presumed that the underlying type have a public default constructor, copy
-constructor, assignment operator, and a destructor (this is
-normally the case for most types).
-
-Note that the type T must be a type name (you'll need to make
-a typedef for the type if this is not the case).
-
-If the type T supports I/O operator << and >>, then vec_T can be
-made to support these operators as well using NTL_io_vector_decl(T,vec_T) and
-NTL_io_vector_impl(T,vec_T).
-
-The same goes for equality operators == and != using 
-NTL_eq_vector_decl(T,vec_T) and NTL_eq_vector_impl(T,vec_T).
+Template class for dynamic-sized vectors.
 
 The declaration
 
-   vec_T v;
+   Vec<T> v;
 
 creates a zero-length vector.  To grow this vector to length n,
 execute
@@ -56,8 +39,8 @@ Initializations are performed using T's default constructor.
 
 v.MaxLength() is the largest value of n for which v.SetLength(n) was invoked,
 and is equal to the number of entries that have been initialized.
-v.SetMaxLength(n) will allocate space for and
-initialize up to n elements, without changing v.length().
+v.SetMaxLength(n) will allocate space for and initialize up to n elements,
+without changing v.length().
 
 When v's destructor is called, all constructed elements will be
 destructed, and all space will be relinquished.
@@ -84,58 +67,95 @@ not to cause any memory allocation, or movement of objects.
 
 \**************************************************************************/
 
-class vec_T {  
+template<class T>
+class Vec {  
 public:  
 
-   vec_T();  // initially length 0
+   Vec();  // initially length 0
 
-   vec_T(const vec_T& a); 
+   Vec(const Vec<T>& a); 
    // copy constructor;  currently, this is implemented by
    // initializing elements using T's defaults constructor and 
    // copying elements from a using T's assigment operator.
 
-   vec_T& operator=(const vec_T& a);  
-   // assignment...performs an element-wise assignment
+   Vec& operator=(const Vec<T>& a);  
+   // assignment: performs an element-wise assignment
    // using T's assignment operator.
 
-   ~vec_T();  
+   ~Vec();  
+   // destructor: calls T's destructor for all initialized
+   // elements in the vector, and then frees the vector itself
   
    void SetLength(long n);  
    // set current length to n, growing vector if necessary
 
    long length() const;
    // current length
-   // SIZE INVARIANT: length()*sizeof(T) < 2^(NTL_BITS_PER_LONG-4)
   
    T& operator[](long i);
    const T& operator[](long i) const;
    // indexing operation, starting from 0.
-   // The first version is applied to non-const vec_T,
+   // The first version is applied to non-const Vec<T>,
    // and returns a non-const reference to a T, while the second version
-   // is applied to a const vec_T and returns a const reference to a T.
+   // is applied to a const Vec<T> and returns a const reference to a T.
   
    T& operator()(long i);
    const T& operator()(long i) const;
    // indexing operation, starting from 1
-   // The first version is applied to non-const vec_T,
+   // The first version is applied to non-const Vec<T>,
    // and returns a non-const reference to a T, while the second version
-   // is applied to a const vec_T and returns a const reference to a T.
+   // is applied to a const Vec<T> and returns a const reference to a T.
   
    T* elts();
    const T* elts() const;
    // returns address of first vector element (or 0 if no space has
    // been allocated for this vector).  If a vector potentially has
    // length 0, it is safer to write v.elts() instead of &v[0].
-   // The first version is applied to non-const vec_T,
+   // The first version is applied to non-const Vec<T>,
    // and returns a non-const pointer to a T, while the second version
-   // is applied to a const vec_T and returns a const reference to a T.
+   // is applied to a const Vec<T> and returns a const reference to a T.
 
 
-   // the remaining member functions are a bit esoteric (skip on first
-   // reading):
+// Alternative access interface 
 
-   vec_T(INIT_SIZE_TYPE, long n);
-   // vec_T(INIT_SIZE, n) initializes with an intial length of n.
+   const T& get(long i) const; 
+   // v.get(i) returns v[i]
+ 
+   void put(long i, const T& a); 
+   // v.put(i, a) equivalent to v[i] = q
+
+
+
+// Some STL compatibility
+
+   typedef T value_type;
+   typedef value_type& reference;
+   typedef const value_type& const_reference;
+   typedef value_type *iterator;
+   typedef const value_type *const_iterator; 
+
+   T* data();
+   const T* data() const;
+   // v.data() same as v.elts()
+
+   T* begin();
+   const T* begin() const;
+   // v.begin() same as v.elts()
+
+   T* end();
+   const T* end() const;
+   // pointer to last element (or NULL)
+
+   T& at(long i);
+   const T& at(long i) const;
+   // indexing with range checking
+
+
+// the remaining member functions are a bit esoteric (skip on first
+// reading)
+
+   Vec(INIT_SIZE_TYPE, long n);
+   // Vec(INIT_SIZE, n) initializes with an intial length of n.
 
    void kill(); 
    // release space and set to length 0
@@ -171,7 +191,7 @@ public:
 
    long position(const T& a) const;
    // returns position of a in the vector, or -1 if it is not there.
-   // The search is conducted from position 0 to MaxAlloc()-1 of the vector, 
+   // The search is conducted from position 0 to allocated()-1 the vector, 
    // and an error is raised if the object is found at position MaxLength()
    // or higher (in which case a references an uninitialized object).
    // Note that if NTL_CLEAN_PTR flag is set, this routine takes
@@ -193,13 +213,16 @@ public:
 \**************************************************************************/
 
    
-void swap(vec_T& x, vec_T& y);
+template<class T>
+void swap(Vec<T>& x, Vec<T>& y);
 // swaps x & y by swapping pointers
 
-void append(vec_T& v, const T& a); 
+template<class T>
+void append(Vec<T>& v, const T& a); 
 // appends a to the end of v
 
-void append(vec_T& v, const vec_T& w);
+template<class T>
+void append(Vec<T>& v, const Vec<T>& w);
 // appends w to the end of v
 
 
@@ -209,9 +232,6 @@ void append(vec_T& v, const vec_T& w);
 
                              Input/Output
 
-The I/O operators can be declared with NTL_io_vector_decl(T,vec_T), and
-implemented using NTL_io_vector_impl(T,vec_T).  Elements are read and written
-using the underlying I/O operators << and >> for T.
 
 The I/O format for a vector v with n elements is:
 
@@ -219,8 +239,11 @@ The I/O format for a vector v with n elements is:
 
 \**************************************************************************/
 
-istream& operator>>(istream&, vec_T&);  
-ostream& operator<<(ostream&, const vec_T&);  
+template<class T>
+istream& operator>>(istream&, Vec<T>&);  
+
+template<class T>
+ostream& operator<<(ostream&, const Vec<T>&);  
 
 
 
@@ -228,16 +251,14 @@ ostream& operator<<(ostream&, const vec_T&);
 
                               Equality Testing
 
-The equality testing operators == and != can be declared
-with NTL_eq_vector_decl(T,vec_T) and implemented with 
-NTL_eq_vector_impl(T,vec_T).
-The tests are performed using the underlying operator == for T.
-
 \**************************************************************************/
 
 
-long operator==(const vec_T& a, const vec_T& b);  
-long operator!=(const vec_T& a, const vec_T& b);
+template<class T>
+long operator==(const Vec<T>& a, const Vec<T>& b);  
+
+template<class T>
+long operator!=(const Vec<T>& a, const Vec<T>& b);
 
 
 /**************************************************************************\
@@ -259,11 +280,9 @@ routine
 is called, whose default implementation invokes the default destructor
 for T n times.
 
-Both of these default implementations can be overridden as follows.
-Instead of implementing vec_T with NTL_vector_impl(T,vec_T), implement it
-with NTL_vector_impl_plain(T,vec_T), and then write your own BlockConstruct and
-BlockDestroy.
-
+Both of these default implementations can be overridden as follows
+by overloading these functions with a custom implementation.
+ 
 For an example of this, see vec_ZZ_p.c.
 
 \**************************************************************************/

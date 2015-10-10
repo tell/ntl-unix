@@ -120,12 +120,17 @@ cout << "Performance Options:\n";
 #endif
 
 
-
-
 #ifdef NTL_AVOID_BRANCHING
    cout << "NTL_AVOID_BRANCHING\n";
 #endif
 
+#ifdef NTL_FFT_BIGTAB
+   cout << "NTL_FFT_BIGTAB\n";
+#endif
+
+#ifdef NTL_FFT_LAZYMUL
+   cout << "NTL_FFT_LAZYMUL\n";
+#endif
 
 
 #ifdef NTL_TBL_REM

@@ -65,9 +65,9 @@ public:
 
 
   
-   WordVector() { rep = 0; }  
-   WordVector(INIT_SIZE_TYPE, long n) { rep = 0; DoSetLength(n); }  
-   WordVector(const WordVector& a) { rep = 0; *this = a; }     
+   WordVector() : rep(0) { }  
+   WordVector(INIT_SIZE_TYPE, long n) : rep(0) { DoSetLength(n); }  
+   WordVector(const WordVector& a) : rep(0) { *this = a; }     
 
    WordVector& operator=(const WordVector& a);  
 

@@ -34,7 +34,8 @@ factors it, and prints the factorization.
 <pre>
 #include &lt;NTL/ZZXFactoring.h&gt;
 
-NTL_CLIENT
+using namespace std;
+using namespace NTL;
 
 int main()
 {
@@ -42,7 +43,7 @@ int main()
 
    cin &gt;&gt; f;
 
-   vec_pair_ZZX_long factors;
+   Vec&lt; Pair&lt; ZZX, long &gt; &gt; factors;
    ZZ c;
 
    factor(c, factors, f);
@@ -85,14 +86,10 @@ but then NTL has no pretensions about being an interactive
 computer algebra system: it is a library for programmers.
 
 <p>
-In this example, the type <tt>vec_pair_long_ZZ</tt>
-is an NTL vector whose base type is <tt>pair_long_ZZ</tt>.
-The type <tt>pair_long_ZZ</tt> is a type created by
-another template-like macro mechanism.
-In general, for types <tt>S</tt> and <tt>T</tt>,
-one can create a type <tt>pair_S_T</tt> which is
-a class with a field <tt>a</tt> of type <tt>S</tt>
-and a field <tt>b</tt> of type <tt>T</tt>.
+In this example, the type <tt>Vec&lt; Pair&lt; ZZX, long &gt; &gt;</tt>
+is an NTL vector whose base type is <tt>Pair&lt; ZZX, long &gt;</tt>.
+The type <tt>Pair&lt; ZZX, long &gt;</tt> is the instantiation
+of a template "pair" type defined by NTL.
 See <a href="pair.txt"><tt>pair.txt</tt></a> for more details.
 
 
@@ -106,11 +103,12 @@ The following program prints out the first 100 cyclotomic polynomials.
 
 #include &lt;NTL/ZZX.h&gt;
 
-NTL_CLIENT
+using namespace std;
+using namespace NTL;
 
 int main()
 {
-   vec_ZZX phi(INIT_SIZE, 100);  
+   Vec&lt;ZZX&gt; phi(INIT_SIZE, 100);  
 
    for (long i = 1; i &lt;= 100; i++) {
       ZZX t;
@@ -134,11 +132,11 @@ this routine could have been written.
 <p>
 First, instead of
 <pre>
-   vec_ZZX phi(INIT_SIZE, 100);  
+   Vec&lt;ZZX&gt; phi(INIT_SIZE, 100);  
 </pre>
 one can write
 <pre>
-   vec_ZZX phi;
+   Vec&lt;ZZX&gt; phi;
    phi.SetLength(100);
 </pre>
 
@@ -170,21 +168,19 @@ one can write
       SetCoeff(t1, 0, -1);
       div(phi(i), t1, t);
 </pre>
-Alternatively, one could directly access the coefficient vector:
+Alternatively, one could directly access the coefficient vector as follows:
 <pre>
       ZZX t1;
-      t1.rep.SetLength(i+1); // all vector elements are initialized to zero
-      t1.rep[i] = 1;
-      t1.rep[0] = -1;
+      t1.SetLength(i+1); // all vector elements are initialized to zero
+      t1[i] = 1;
+      t1[0] = -1;
       t1.normalize();  // not necessary here, but good practice in general
       div(phi(i), t1, t);
 </pre>
-The coefficient vector of a polynomial is always an NTL vector
-over the ground ring: in this case <tt>vec_ZZ</tt>.
-NTL does not try to be a dictator:  it gives you free access
-to the coefficient vector.
+Generally, you can freely access the coefficient vector
+of a polynomial, as above.
 However, after fiddling with this vector, you should "normalize"
-the polynomial, so that the leading coefficient in non-zero:
+the polynomial, so that the leading coefficient is non-zero:
 this is an invariant which all routines that work with polynomials
 expect to hold.
 Of course, if you can avoid directly accessing the
@@ -193,7 +189,7 @@ You can always use the <tt>SetCoeff</tt> routine above to set or
 change coefficients, and you can always read the value of a coefficient
 using the routine <tt>coeff</tt>, e.g., 
 <pre>
-   ... f.rep[i] == 1 ...
+   ... f[i] == 1 ...
 </pre>
 is equivalent to
 <pre>
@@ -206,7 +202,7 @@ and <tt>ConstTerm(f)</tt>.
    
       
 <p>
-NTL provides a full compliment of operations for polynomials
+NTL provides a full compliment of arithmetic operations for polynomials
 over the integers, in both operator and procedural form.
 All of the basic operations support a "promotion logic" similar
 to that for <tt>ZZ</tt>, except that inputs of <i>both</i> types 

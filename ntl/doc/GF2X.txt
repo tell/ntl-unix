@@ -30,11 +30,96 @@ public:
 
    GF2X(long i, GF2 c); // initialize to X^i*c
    GF2X(long i, long c); 
-   
+
+
+   typedef GF2 coeff_type;
+
+   // ...
+
 };
 
 
-// SIZE INVARIANT: for any f in GF2X, def(f)+1 < 2^(NTL_BITS_PER_LONG-4).
+
+/**************************************************************************\
+
+                              Accessing coefficients
+
+The degree of a polynomial f is obtained as deg(f),
+where the zero polynomial, by definition, has degree -1.
+
+A polynomial f is represented as a coefficient vector.
+Coefficients may be accesses in one of two ways.
+
+The safe, high-level method is to call the function
+coeff(f, i) to get the coefficient of X^i in the polynomial f,
+and to call the function SetCoeff(f, i, a) to set the coefficient
+of X^i in f to the scalar a.
+
+One can also access the coefficients more directly via a lower level 
+interface.  The coefficient of X^i in f may be accessed using 
+subscript notation f[i].  In addition, one may write f.SetLength(n)
+to set the length of the underlying coefficient vector to n,
+and f.SetMaxLength(n) to allocate space for n coefficients,
+without changing the coefficient vector itself.
+
+After setting coefficients using this low-level interface,
+one must ensure that leading zeros in the coefficient vector
+are stripped afterwards by calling the function f.normalize().
+
+NOTE: unlike other polynomial classes, the coefficient vector
+for GF2X has a special representation, packing coefficients into 
+words.  This has two consequences.  First, when using the indexing
+notation on a non-const polynomial f, the return type is ref_GF2,
+rather than GF2&.  For the most part, a ref_GF2 may be used like
+a GF2& --- see GF2.txt for more details.  Second, when applying 
+f.SetLength(n) to a polynomial f, this essentially has the effect
+of zeroing out the coefficients of X^i for i >= n.
+
+\**************************************************************************/
+
+long deg(const GF2X& a);  // return deg(a); deg(0) == -1.
+
+const GF2 coeff(const GF2X& a, long i);
+// returns the coefficient of X^i, or zero if i not in range
+
+const GF2 LeadCoeff(const GF2X& a);
+// returns leading term of a, or zero if a == 0
+
+const GF2 ConstTerm(const GF2X& a);
+// returns constant term of a, or zero if a == 0
+
+void SetCoeff(GF2X& x, long i, GF2 a);
+void SetCoeff(GF2X& x, long i, long a);
+// makes coefficient of X^i equal to a; error is raised if i < 0
+
+void SetCoeff(GF2X& x, long i);
+// makes coefficient of X^i equal to 1;  error is raised if i < 0
+
+void SetX(GF2X& x); // x is set to the monomial X
+
+long IsX(const GF2X& a); // test if x = X
+
+
+
+
+ref_GF2 GF2X::operator[](long i); 
+const GF2 GF2X::operator[](long i) const;
+// indexing operators: f[i] is the coefficient of X^i ---
+// i should satsify i >= 0 and i <= deg(f)
+
+void GF2X::SetLength(long n);
+// f.SetLength(n) sets the length of the inderlying coefficient
+// vector to n --- after this call, indexing f[i] for i = 0..n-1
+// is valid.
+
+void GF2X::normalize();  
+// f.normalize() strips leading zeros from coefficient vector of f
+
+void GF2X::SetMaxLength(long n);
+// f.SetMaxLength(n) pre-allocate spaces for n coefficients.  The
+// polynomial that f represents is unchanged.
+
+
 
 
 
@@ -236,27 +321,6 @@ ostream& operator<<(ostream& s, const GF2X& a);
 
 \**************************************************************************/
 
-long deg(const GF2X& a);  // return deg(a); deg(0) == -1.
-
-GF2 coeff(const GF2X& a, long i);
-// returns the coefficient of X^i, or zero if i not in range
-
-GF2 LeadCoeff(const GF2X& a);
-// returns leading term of a, or zero if a == 0
-
-GF2 ConstTerm(const GF2X& a);
-// returns constant term of a, or zero if a == 0
-
-void SetCoeff(GF2X& x, long i, GF2 a);
-void SetCoeff(GF2X& x, long i, long a);
-// makes coefficient of X^i equal to a; error is raised if i < 0
-
-void SetCoeff(GF2X& x, long i);
-// makes coefficient of X^i equal to 1;  error is raised if i < 0
-
-void SetX(GF2X& x); // x is set to the monomial X
-
-long IsX(const GF2X& a); // test if x = X
 
 void diff(GF2X& x, const GF2X& a);
 GF2X diff(const GF2X& a); 
@@ -510,14 +574,8 @@ GF2X& operator%=(GF2X& x, const GF2XModulus& F);
 
 \**************************************************************************/
 
-NTL_vector_decl(GF2X,vec_GF2X)
-// vec_GF2X
 
-NTL_eq_vector_decl(GF2X,vec_GF2X)
-// == and !=
-
-NTL_io_vector_decl(GF2X,vec_GF2X)
-// I/O operators
+typedef Vec<GF2X> vec_GF2X; // backward compatibility
 
 
 /**************************************************************************\
@@ -726,16 +784,9 @@ vec_GF2 TraceVec(const GF2X& f);
 void clear(GF2X& x) // x = 0
 void set(GF2X& x); // x = 1
 
-void GF2X::normalize();  
-// f.normalize() strips leading zeros from f.rep.
-
-void GF2X::SetMaxLength(long n);
-// f.SetMaxLength(n) pre-allocate spaces for n coefficients.  The
-// polynomial that f represents is unchanged.
 
 void GF2X::kill();
-// f.kill() sets f to 0 and frees all memory held by f.  Equivalent to
-// f.rep.kill().
+// f.kill() sets f to 0 and frees all memory held by f.  
 
 GF2X::GF2X(INIT_SIZE_TYPE, long n);
 // GF2X(INIT_SIZE, n) initializes to zero, but space is pre-allocated
@@ -747,3 +798,4 @@ static const GF2X& zero();
 void swap(GF2X& x, GF2X& y); 
 // swap x and y (via "pointer swapping")
 
+// SIZE INVARIANT: for any f in GF2X, deg(f)+1 < 2^(NTL_BITS_PER_LONG-4).

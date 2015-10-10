@@ -7,11 +7,7 @@
 NTL_OPEN_NNS
 
 
-NTL_vector_decl(zz_pE,vec_zz_pE)
-
-NTL_io_vector_decl(zz_pE,vec_zz_pE)
-
-NTL_eq_vector_decl(zz_pE,vec_zz_pE)
+typedef Vec<zz_pE> vec_zz_pE;
 
 void mul(vec_zz_pE& x, const vec_zz_pE& a, const zz_pE& b);
 inline void mul(vec_zz_pE& x, const zz_pE& a, const vec_zz_pE& b)

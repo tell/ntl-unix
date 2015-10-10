@@ -483,6 +483,17 @@ inline zz_pE& operator/=(zz_pE& x, const zz_p& b)
 inline zz_pE& operator/=(zz_pE& x, long b)
    { div(x, x, b); return x; }
 
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(zz_pX& x, const zz_pE& a) { x = rep(a); }
+inline void conv(zz_pE& x, const zz_pE& a) { x = a; }
+
+
+/* ------------------------------------- */
+
+
 NTL_CLOSE_NNS
 
 #endif

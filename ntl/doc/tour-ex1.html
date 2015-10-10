@@ -31,7 +31,8 @@ and prints <tt>(a+1)*(b+1)</tt>.
 <pre>
 #include &lt;NTL/ZZ.h&gt;
 
-NTL_CLIENT
+using namespace std;
+using namespace NTL;
 
 int main()
 {
@@ -62,16 +63,15 @@ of all the bookkeeping involved
 with memory management and temporary objects.
 
 <p>
-Note the macro <tt>NTL_CLIENT</tt>.
-When compiling NTL is ISO mode (the default), this
-expands to 
+Note that by default, all of NTL's components
+are in the namespace <tt>NTL</tt>;
+with the "using directive" 
 <pre>
-   using namespace std;
    using namespace NTL;
 </pre>
-When compiling NTL in traditional mode, this expands
-to the empty string.
-More details <a href="tour-stdcxx.html">here</a>.
+in the above example, one can access
+these components directly.
+More details on namespaces and NTL <a href="tour-stdcxx.html">here</a>.
 
 <p> <hr> <p>
 
@@ -82,7 +82,10 @@ input and prints the sum of their squares.
 <pre>
 #include &lt;NTL/ZZ.h&gt;
 
-NTL_CLIENT
+
+using namespace std;
+using namespace NTL;
+
 
 int main()
 {
@@ -207,13 +210,14 @@ This example is a bit more interesting.
 The following program prompts the user for an input,
 and applies a simple probabilistic primality test.
 Note that NTL already provides a slightly more sophisticated
-prime test.
+primality test.
 
 <p>
 <pre>
 #include &lt;NTL/ZZ.h&gt;
 
-NTL_CLIENT
+using namespace std;
+using namespace NTL;
 
 long witness(const ZZ&amp; n, const ZZ&amp; x)
 {
@@ -364,21 +368,17 @@ Note that one cannot write
    ZZ x = 1;  // error
 </pre>
 to initialize a <tt>ZZ</tt>.
-As a design principle, NTL avoids implicit conversions, and unfortunately,
-the only way to allow initializations like this in <tt>C++</tt>
-is to define an implicit conversion operator.
 Instead, one could write
 <pre>
-   ZZ x = to_ZZ(1);
+   ZZ x = conv&lt;ZZ&gt;(1);
 </pre>
 This is an example of one of NTL's conversion routines.
 For very large constants, one can write:
 <pre>
-   ZZ x = to_ZZ("99999999999999999999");
+   ZZ x = conv&lt;ZZ&gt;("99999999999999999999");
 </pre>
 These examples illustrate conversion rountines in their 
 functional forms.
-The corresponding procedural forms are all called <tt>conv</tt>, e.g.,
 <pre>
    ZZ x;
    conv(x, 1);
@@ -395,7 +395,7 @@ All of the basic arithmetic operators are supported,
 including comparison, arithmetic, shift, and bit-wise logical operations.
 One can mix <tt>ZZ</tt>s and <tt>long</tt>s in any expresion in
 a natural way.
-As was already mentioned, NTL does not support implicit type conversion;
+NTL does not support implicit type conversion;
 rather, for basic operations, it simply overloads the operators
 or functions in a way to achieve a kind of "promotion logic":
 if one input is a <tt>ZZ</tt> and the other is a <tt>long</tt>

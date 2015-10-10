@@ -2,11 +2,9 @@
 #include <NTL/FacVec.h>
 #include <NTL/ZZ.h>
 
-#include <NTL/new.h>
 
 NTL_START_IMPL
 
-NTL_vector_impl(IntFactor,vec_IntFactor)
 
 static
 void swap(IntFactor& x, IntFactor& y)

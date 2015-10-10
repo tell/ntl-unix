@@ -7,11 +7,6 @@
 
 NTL_START_IMPL
 
-NTL_matrix_impl(GF2E,vec_GF2E,vec_vec_GF2E,mat_GF2E)
-NTL_io_matrix_impl(GF2E,vec_GF2E,vec_vec_GF2E,mat_GF2E)
-NTL_eq_matrix_impl(GF2E,vec_GF2E,vec_vec_GF2E,mat_GF2E)
-
-
   
 void add(mat_GF2E& X, const mat_GF2E& A, const mat_GF2E& B)  
 {  

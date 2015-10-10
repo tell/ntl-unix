@@ -52,7 +52,15 @@ printf("DEFAULT ");
 #endif
 
 #if defined(NTL_AVOID_BRANCHING)
-printf("AVOID_BRANCHING");
+printf("AVOID_BRANCHING ");
+#endif
+
+#if defined(NTL_FFT_BIGTAB)
+printf("FFT_BIGTAB ");
+#endif
+
+#if defined(NTL_FFT_LAZYMUL)
+printf("FFT_LAZYMUL ");
 #endif
 
 
@@ -125,28 +133,34 @@ int main()
    }
 
    double t;
-   long i, j;
+   long i;
    long iter;
 
-   UseFFTPrime(0);
+   const int nprimes = 10;
+   long r;
+   
 
-   vec_long aa, AA;
+   for (r = 0; r < nprimes; r++) UseFFTPrime(r);
 
-   aa.SetLength(4096);
-   AA.SetLength(4096);
+   vec_long aa[nprimes], AA[nprimes];
 
-   for (i = 0; i < 4096; i++)
-      aa[i] = RandomBnd(FFTPrime[0]);
+   for (r = 0; r < nprimes; r++) {
+      aa[r].SetLength(4096);
+      AA[r].SetLength(4096);
+
+      for (i = 0; i < 4096; i++)
+         aa[r][i] = RandomBnd(FFTPrime[r]);
 
 
-   FFT(AA.elts(), aa.elts(), 12, FFTPrime[0], &RootTable[0][0]);
+      FFTFwd(AA[r].elts(), aa[r].elts(), 12, r);
+   }
 
    iter = 1;
 
    do {
      t = GetTime();
      for (i = 0; i < iter; i++) {
-        for (j = 0; j < 10; j++) FFT(AA.elts(), aa.elts(), 12, FFTPrime[0], &RootTable[0][0]);
+        for (r = 0; r < nprimes; r++) FFTFwd(AA[r].elts(), aa[r].elts(), 12, r);
      }
      t = GetTime() - t;
      iter = 2*iter;
@@ -163,7 +177,7 @@ int main()
    for (w = 0; w < 5; w++) {
      t = GetTime();
      for (i = 0; i < iter; i++) {
-        for (j = 0; j < 10; j++) FFT(AA.elts(), aa.elts(), 12, FFTPrime[0], &RootTable[0][0]);
+        for (r = 0; r < nprimes; r++) FFTFwd(AA[r].elts(), aa[r].elts(), 12, r);
      }
      t = GetTime() - t;
      tvec[w] = t;

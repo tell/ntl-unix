@@ -160,16 +160,16 @@ O06=$(O05) fileio.o lip.o lzz_p.o lzz_pE.o lzz_pEX.o lzz_pEXFactoring.o
 O07=$(O06) lzz_pX.o lzz_pX1.o lzz_pXCharPoly.o lzz_pXFactoring.o
 O08=$(O07) mat_GF2.o mat_GF2E.o mat_RR.o mat_ZZ.o mat_ZZ_p.o
 O09=$(O08) mat_ZZ_pE.o mat_lzz_p.o mat_lzz_pE.o mat_poly_ZZ.o
-O10=$(O09) mat_poly_ZZ_p.o mat_poly_lzz_p.o pair_GF2EX_long.o
-O11=$(O10) pair_GF2X_long.o pair_ZZX_long.o pair_ZZ_pEX_long.o
-O12=$(O11) pair_ZZ_pX_long.o pair_lzz_pEX_long.o pair_lzz_pX_long.o
-O13=$(O12) quad_float.o tools.o vec_GF2.o vec_GF2E.o vec_GF2XVec.o
-O14=$(O13) vec_RR.o vec_ZZ.o vec_ZZVec.o vec_ZZ_p.o vec_ZZ_pE.o
-O15=$(O14) vec_double.o vec_long.o vec_lzz_p.o vec_lzz_pE.o vec_quad_float.o
-O16=$(O15) vec_vec_GF2.o vec_vec_GF2E.o vec_vec_RR.o vec_vec_ZZ.o
-O17=$(O16) vec_vec_ZZ_p.o vec_vec_ZZ_pE.o vec_vec_long.o vec_vec_lzz_p.o
-O18=$(O17) vec_vec_lzz_pE.o vec_xdouble.o xdouble.o
-O19=$(O18) G_LLL_FP.o G_LLL_QP.o G_LLL_XD.o G_LLL_RR.o vec_ulong.o vec_vec_ulong.o
+O10=$(O09) mat_poly_ZZ_p.o mat_poly_lzz_p.o 
+O11=$(O10) 
+O12=$(O11) 
+O13=$(O12) quad_float.o tools.o vec_GF2.o vec_GF2E.o
+O14=$(O13) vec_RR.o vec_ZZ.o vec_ZZ_p.o vec_ZZ_pE.o
+O15=$(O14) vec_lzz_p.o vec_lzz_pE.o 
+O16=$(O15) 
+O17=$(O16) 
+O18=$(O17) xdouble.o
+O19=$(O18) G_LLL_FP.o G_LLL_QP.o G_LLL_XD.o G_LLL_RR.o 
 
 OBJ=$(O19)
 
@@ -185,19 +185,18 @@ S06=$(S05) ZZ_pXFactoring.c fileio.c lip.c lzz_p.c lzz_pE.c lzz_pEX.c
 S07=$(S06) lzz_pEXFactoring.c lzz_pX.c lzz_pX1.c
 S08=$(S07) lzz_pXCharPoly.c lzz_pXFactoring.c mat_GF2.c mat_GF2E.c
 S09=$(S08) mat_RR.c mat_ZZ.c mat_ZZ_p.c mat_ZZ_pE.c mat_lzz_p.c mat_lzz_pE.c
-S10=$(S09) mat_poly_ZZ.c mat_poly_ZZ_p.c mat_poly_lzz_p.c pair_GF2EX_long.c
-S11=$(S10) pair_GF2X_long.c pair_ZZX_long.c pair_ZZ_pEX_long.c
-S12=$(S11) pair_ZZ_pX_long.c pair_lzz_pEX_long.c pair_lzz_pX_long.c
-S13=$(S12) quad_float.c tools.c vec_GF2.c vec_GF2E.c vec_GF2XVec.c vec_RR.c
-S14=$(S13) vec_ZZ.c vec_ZZVec.c vec_ZZ_p.c vec_ZZ_pE.c vec_double.c
-S15=$(S14) vec_long.c vec_lzz_p.c vec_lzz_pE.c vec_quad_float.c
-S16=$(S15) vec_vec_GF2.c vec_vec_GF2E.c vec_vec_RR.c vec_vec_ZZ.c
-S17=$(S16) vec_vec_ZZ_p.c vec_vec_ZZ_pE.c vec_vec_long.c vec_vec_lzz_p.c
-S18=$(S17) vec_vec_lzz_pE.c vec_xdouble.c xdouble.c
+S10=$(S09) mat_poly_ZZ.c mat_poly_ZZ_p.c mat_poly_lzz_p.c 
+S11=$(S10) 
+S12=$(S11) 
+S13=$(S12) quad_float.c tools.c vec_GF2.c vec_GF2E.c vec_RR.c
+S14=$(S13) vec_ZZ.c vec_ZZ_p.c vec_ZZ_pE.c 
+S15=$(S14) vec_lzz_p.c vec_lzz_pE.c 
+S16=$(S15) 
+S17=$(S16) 
+S18=$(S17) xdouble.c
 S19=$(S18) G_LLL_FP.c G_LLL_QP.c G_LLL_XD.c G_LLL_RR.c 
-S20=$(S19) vec_ulong.c vec_vec_ulong.c 
 
-SRC = $(S20)
+SRC = $(S19)
 
 # library source files that are header files
 
@@ -516,7 +515,7 @@ winpack:
 ######################################################################
 
 WO1 = FFT.o  GetTime.o ctools.o ZZ.o ZZVec.o ZZ_p.o ZZ_pX.o
-WO2 = $(WO1) ZZ_pX1.o lip.o tools.o vec_ZZ.o vec_ZZ_p.o vec_long.o
+WO2 = $(WO1) ZZ_pX1.o lip.o tools.o vec_ZZ.o vec_ZZ_p.o 
 WO3 = $(WO2) GF2.o WordVector.o vec_GF2.o GF2X.o GF2X1.o
 
 WOBJ = $(WO3)

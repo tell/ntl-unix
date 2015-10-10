@@ -26,11 +26,13 @@ The following routine sums up the
 numbers in a vector of <tt>ZZ</tt>'s.
 
 <pre>
-#include &lt;NTL/vec_ZZ.h&gt;
+#include &lt;NTL/ZZ.h&gt;
+#include &lt;NTL/vector.h&gt;
 
-NTL_CLIENT
+using namespace std;
+using namespace NTL;
 
-ZZ sum(const vec_ZZ&amp; v)
+ZZ sum(const Vec&lt;ZZ&gt;&amp; v)
 {
    ZZ acc;
 
@@ -44,15 +46,21 @@ ZZ sum(const vec_ZZ&amp; v)
 </pre>
 
 <p>
-The class <tt>vec_ZZ</tt> is a dynamic-length array of <tt>ZZ</tt>s;
-more generally, NTL provides template-like macros to create dynamic-length 
-vectors over any type T.
-By convention, NTL names these vec_T.
-The reason that macros are used instead of true templates is simple:
-at the present time, compiler support for templates is not entirely
-satisfactory, and their use would make NTL much more difficult to port.
-At some point in the future, a template-version of NTL may be made
-available.
+The class <tt>Vec&lt;ZZ&gt;</tt> is a dynamic-length array of <tt>ZZ</tt>s;
+more generally, NTL provides a template class  <tt>Vec&lt;T&gt;</tt>
+for 
+dynamic-length 
+vectors over any type <tt>T</tt>.
+
+Some history is in order here.
+NTL predates the STL and the <tt>vector</tt> template
+found in modern <tt>C++</tt>.
+Older versions of NTL (prior to v6) did not use templates, but instead
+defined generic vectors using macros.
+By convention, NTL named these <tt>vec_T</tt>.
+For backward compatibility, NTL now provides typedefs
+all these "legacy" vector types.
+
 
 <p>
 Vectors in NTL are indexed from 0, but in many situations
@@ -61,11 +69,13 @@ The generic vector class allows for this;
 the above example could be written as follows.
 
 <pre>
-#include &lt;NTL/vec_ZZ.h&gt;
+#include &lt;NTL/ZZ.h&gt;
+#include &lt;NTL/vector.h&gt;
 
-NTL_CLIENT
+using namespace std;
+using namespace NTL;
 
-ZZ sum(ZZ&amp; s, const vec_ZZ&amp; v)
+ZZ sum(ZZ&amp; s, const Vec&lt;ZZ&gt;&amp; v)
 {
    ZZ acc;
 
@@ -89,17 +99,19 @@ may be activated, and to not access elements that are out of range.
 
 The following example illustrates vector I/O,
 as well as changing the length of a vector.
-This program reads a <tt>vec_ZZ</tt>,
+This program reads a <tt>Vec&lt;ZZ&gt;</tt>,
 and then creates and prints a "palindrome". 
 
 <pre>
-#include &lt;NTL/vec_ZZ.h&gt;
+#include &lt;NTL/ZZ.h&gt;
+#include &lt;NTL/vector.h&gt;
 
-NTL_CLIENT
+using namespace std;
+using namespace NTL;
 
 int main()
 {
-   vec_ZZ v;
+   Vec&lt;ZZ&gt; v;
    cin &gt;&gt; v;
 
    long n = v.length();
@@ -132,12 +144,17 @@ as input, the output is
 
 <p>
 
-NTL pre-defines a number of vector types.
-In addition, you can create your own.
 See <a href="vector.txt"><tt>vector.txt</tt></a> for
 complete details of NTL's generic vector mechanism.
-Also see <a href="vec_ZZ.txt"><tt>vec_ZZ.txt</tt></a> for
-complete details on the arithmetic operations for <tt>vec_ZZ</tt>s
+
+Also note that for several fundamental vector types, such as
+<tt>Vec&lt;ZZ&gt;.txt</tt>, there is a corresponding header file
+<tt>&lt;NTL/vec_ZZ.h&gt;</tt> that defines
+a number of basic arithmetic operations,
+as well as provides the typedef 
+typedef <tt>vec_ZZ</tt> for backward compatibilty.
+See <a href="vec_ZZ.txt"><tt>vec_ZZ.txt</tt></a> for
+complete details on the arithmetic operations for <tt>Vec&lt;ZZ&gt;</tt>'s
 provided by NTL.
 
 
@@ -146,8 +163,8 @@ provided by NTL.
 
 There is also basic support for matrices
 in NTL.
-In general, the class <tt>mat_T</tt> is a special
-kind of <tt>vec_vec_T</tt>, where each row is 
+In general, the class <tt>Mat&lt;T&gt;</tt> is a special
+kind of <tt>Vec&lt; Vec&lt; T &gt; &gt;</tt>, where each row is 
 a vector of the same length.
 Row <tt>i</tt> of matrix <tt>M</tt>
 can be accessed as <tt>M[i]</tt> (indexing from 0)
@@ -161,11 +178,13 @@ Here is a matrix multiplication routine,
 which in fact is already provided by NTL.
 
 <pre>
-#include &lt;NTL/mat_ZZ.h&gt;
+#include &lt;NTL/ZZ.h&gt;
+#include &lt;NTL/matrix.h&gt;
 
-NTL_CLIENT
+using namespace std;
+using namespace NTL;
 
-void mul(mat_ZZ&amp; X, const mat_ZZ&amp; A, const mat_ZZ&amp; B)
+void mul(Mat&lt;ZZ&gt;&amp; X, const Mat&lt;ZZ&gt;&amp; A, const Mat&lt;ZZ&gt;&amp; B)
 {
    long n = A.NumRows();
    long l = A.NumCols();
@@ -197,9 +216,6 @@ In case of a dimension mismatch, the routine calls the
 <tt>Error</tt> function, which is a part of NTL and which simply
 prints the message and aborts.
 That is generally how NTL deals with errors.
-Currently, NTL makes no use of exceptions (for the same reason
-it does not use templates--see above), but a future version
-may incorporate them.
 
 <p>
 This routine will not work properly if <tt>X</tt> aliases 
@@ -208,8 +224,8 @@ The actual matrix multiplication routine in NTL takes care of this.
 In fact, all of NTL's routines allow outputs to alias inputs.
 
 <p>
-
-To call the multiplication routine, one can write 
+To call NTL's built-in  multiplication routine
+(declared in <tt>&lt;NTL/mat_ZZ.h&gt;</tt>), one can write 
 <pre>
    mul(X, A, B);
 </pre>
@@ -223,7 +239,7 @@ NTL provides several matrix types.
 See <a href="matrix.txt"><tt>matrix.txt</tt></a>
 for complete details on NTL's generic matrix mechanism.
 Also see <a href="mat_ZZ.txt"><tt>mat_ZZ.txt</tt></a> for
-complete details on the arithmetic operations for <tt>mat_ZZ</tt>s
+complete details on the arithmetic operations for <tt>Mat&lt;ZZ&gt;</tt>'s
 provideed by NTL (including basic linear algebra).
 Also see <a href="LLL.txt"><tt>LLL.txt</tt></a> 
 for details on routines for lattice basis reduction

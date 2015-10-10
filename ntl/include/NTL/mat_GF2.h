@@ -3,72 +3,24 @@
 #define NTL_mat_GF2__H
 
 
+#include <NTL/matrix.h>
 #include <NTL/vec_vec_GF2.h>
 
 NTL_OPEN_NNS
 
 
-class mat_GF2 {  
-public:  
-  
-   vec_vec_GF2 _mat_GF2__rep;  
-   long _mat_GF2__numcols;  
-  
-   mat_GF2() { _mat_GF2__numcols = 0; }  
-   mat_GF2(const mat_GF2& a);  
-   mat_GF2& operator=(const mat_GF2& a);  
-   ~mat_GF2() { }  
-  
-   mat_GF2(INIT_SIZE_TYPE, long n, long m);  
-  
-   void kill();  
-  
-   void SetDims(long n, long m);  
-  
-   long NumRows() const { return _mat_GF2__rep.length(); }  
-   long NumCols() const { return _mat_GF2__numcols; }  
-  
-   vec_GF2& operator[](long i) { return _mat_GF2__rep[i]; }  
-   const vec_GF2& operator[](long i) const { return _mat_GF2__rep[i]; }  
-  
-   vec_GF2& operator()(long i) { return _mat_GF2__rep[i-1]; }  
-   const vec_GF2& operator()(long i) const { return _mat_GF2__rep[i-1]; }  
-
-   GF2 get(long i, long j) const { return _mat_GF2__rep[i].get(j); }
-   void put(long i, long j, GF2 a) { _mat_GF2__rep[i].put(j, a); }
-   void put(long i, long j, long a) { _mat_GF2__rep[i].put(j, a); }
-
-   subscript_GF2 operator()(long i, long j)
-      { return subscript_GF2(_mat_GF2__rep[i-1], j-1); }
-
-   const_subscript_GF2 operator()(long i, long j) const
-      { return const_subscript_GF2(_mat_GF2__rep[i-1], j-1); }
-
-   long position(const vec_GF2& a) const { return _mat_GF2__rep.position(a); }
-   long position1(const vec_GF2& a) const { return _mat_GF2__rep.position1(a); }
-  
-   mat_GF2(mat_GF2& x, INIT_TRANS_TYPE)  :
-      _mat_GF2__rep(x._mat_GF2__rep, INIT_TRANS), _mat_GF2__numcols(x._mat_GF2__numcols) { }
-};  
-  
-inline const vec_vec_GF2& rep(const mat_GF2& a)  
-   { return a._mat_GF2__rep; }  
-
-  
-void swap(mat_GF2& X, mat_GF2& Y); 
-  
-void conv(mat_GF2& x, const vec_vec_GF2& a);  
-inline mat_GF2 to_mat_GF2(const vec_vec_GF2& a)
-   { mat_GF2 x; conv(x, a); NTL_OPT_RETURN(mat_GF2, x); }
+typedef Mat<GF2> mat_GF2;
 
 
+// some backward compaitibilty stuff
 
-long operator==(const mat_GF2& a, const mat_GF2& b); 
-long operator!=(const mat_GF2& a, const mat_GF2& b); 
+inline void conv(mat_GF2& x, const vec_vec_GF2& a) {
+   MakeMatrix(x, a);
+}
 
-
-NTL_SNS istream& operator>>(NTL_SNS istream&, mat_GF2&); 
-NTL_SNS ostream& operator<<(NTL_SNS ostream&, const mat_GF2&);  
+inline mat_GF2 to_mat_GF2(const vec_vec_GF2& a) {
+   mat_GF2 x; conv(x, a); NTL_OPT_RETURN(mat_GF2, x); 
+}
 
 
 
@@ -99,8 +51,8 @@ inline mat_GF2 ident_mat_GF2(long n)
 
 long IsIdent(const mat_GF2& A, long n);
 void transpose(mat_GF2& X, const mat_GF2& A);
-void solve(GF2& d, vec_GF2& X, const mat_GF2& A, const vec_GF2& b);
-void inv(GF2& d, mat_GF2& X, const mat_GF2& A);
+void solve(ref_GF2 d, vec_GF2& X, const mat_GF2& A, const vec_GF2& b);
+void inv(ref_GF2 d, mat_GF2& X, const mat_GF2& A);
 
 inline void sqr(mat_GF2& X, const mat_GF2& A)
    { mul(X, A, A); }
@@ -138,7 +90,7 @@ void kernel(mat_GF2& X, const mat_GF2& A);
 
 
 
-void determinant(GF2& x, const mat_GF2& a);
+void determinant(ref_GF2 x, const mat_GF2& a);
 inline GF2 determinant(const mat_GF2& a)
    { GF2 x; determinant(x, a); return x; }
 

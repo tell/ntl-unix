@@ -7,11 +7,7 @@
 
 NTL_OPEN_NNS
 
-NTL_vector_decl(vec_GF2,vec_vec_GF2)
-
-NTL_eq_vector_decl(vec_GF2,vec_vec_GF2)
-
-NTL_io_vector_decl(vec_GF2,vec_vec_GF2)
+typedef Vec< Vec<GF2> > vec_vec_GF2;
 
 NTL_CLOSE_NNS
 

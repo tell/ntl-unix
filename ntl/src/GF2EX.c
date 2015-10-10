@@ -2,6 +2,7 @@
 
 #include <NTL/GF2EX.h>
 #include <NTL/vec_vec_GF2.h>
+#include <NTL/ZZX.h>
 
 #include <NTL/new.h>
 
@@ -238,6 +239,27 @@ void conv(GF2EX& x, const vec_GF2E& a)
    x.rep = a;
    x.normalize();
 }
+
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+void conv(GF2EX& x, const ZZX& a)
+{
+   long n = a.rep.length();
+   long i;
+
+   x.rep.SetLength(n);
+   for (i = 0; i < n; i++)
+      conv(x.rep[i], a.rep[i]);
+
+   x.normalize();
+}
+
+
+/* ------------------------------------- */
+
+
 
 
 void add(GF2EX& x, const GF2EX& a, const GF2EX& b)
@@ -2207,14 +2229,6 @@ void ShiftAdd(GF2EX& U, const GF2EX& V, long n)
    U.normalize();
 }
 
-NTL_vector_impl(GF2EX,vec_GF2EX)
-
-NTL_eq_vector_impl(GF2EX,vec_GF2EX)
-
-NTL_io_vector_impl(GF2EX,vec_GF2EX)
-
-
-
 
 void IterBuild(GF2E* a, long n)
 {
@@ -3231,7 +3245,7 @@ void PrepareProjection(vec_vec_GF2& tt, const vec_GF2E& s,
    }
 }
 
-void ProjectedInnerProduct(GF2& x, const vec_GF2E& a, 
+void ProjectedInnerProduct(ref_GF2 x, const vec_GF2E& a, 
                            const vec_vec_GF2& b)
 {
    long n = min(a.length(), b.length());

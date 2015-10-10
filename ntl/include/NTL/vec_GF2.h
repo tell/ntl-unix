@@ -7,38 +7,13 @@
 
 NTL_OPEN_NNS
 
-class vec_GF2;
 
-class subscript_GF2 {
-public:
-   vec_GF2& v;
-   long i;
+// Vec<GF2> is an explicit specialization of Vec<T>.
+// Vec<GF2> is declared, but not defined, in GF2.h,
+// to prevent the generic Vec from being used.
 
-   subscript_GF2(vec_GF2& vv, long ii) : v(vv), i(ii) { }
-
-   inline const subscript_GF2& operator=(const subscript_GF2&) const;
-   inline const subscript_GF2& operator=(GF2) const;
-   inline const subscript_GF2& operator=(long) const;
-
-   inline operator GF2() const;
-};
-
-class const_subscript_GF2 {
-public:
-   const vec_GF2& v;
-   long i;
-
-   const_subscript_GF2(const vec_GF2& vv, long ii) : v(vv), i(ii) { }
-
-   inline operator GF2() const;
-
-private:
-   void operator=(const const_subscript_GF2&); // disabled
-
-};
-   
-
-class vec_GF2 {
+template<> 
+class Vec<GF2> {
 
 public:
 
@@ -59,13 +34,13 @@ public:
 //the following are "really" public
 
 
-   vec_GF2() : _len(0), _maxlen(0) {}
-   vec_GF2(INIT_SIZE_TYPE, long n) : _len(0), _maxlen(0) { SetLength(n); }
-   vec_GF2(const vec_GF2& a) : _len(0), _maxlen(0) { *this = a; }
+   Vec() : _len(0), _maxlen(0) {}
+   Vec(INIT_SIZE_TYPE, long n) : _len(0), _maxlen(0) { SetLength(n); }
+   Vec(const Vec<GF2>& a) : _len(0), _maxlen(0) { *this = a; }
 
-   vec_GF2& operator=(const vec_GF2& a);
+   Vec& operator=(const Vec<GF2>& a);
 
-   ~vec_GF2() {}
+   ~Vec() {}
 
    void kill();
 
@@ -79,87 +54,46 @@ public:
    long fixed() const { return _maxlen & 1; }
 
 
-   vec_GF2(vec_GF2& x, INIT_TRANS_TYPE) : 
+   Vec(Vec<GF2>& x, INIT_TRANS_TYPE) : 
       rep(x.rep, INIT_TRANS), _len(x._len), _maxlen(x._maxlen) { }
 
-   GF2 get(long i) const;
+   const GF2 get(long i) const;
    void put(long i, GF2 a);
    void put(long i, long a) { put(i, to_GF2(a)); }
 
-   subscript_GF2 operator[](long i) 
-      { return subscript_GF2(*this, i); }
+   ref_GF2 operator[](long i); 
 
-   subscript_GF2 operator()(long i) 
-      { return subscript_GF2(*this, i-1); }
+   ref_GF2 operator()(long i) 
+      { return (*this)[i-1]; }
 
-   const_subscript_GF2 operator[](long i) const 
-      { return const_subscript_GF2(*this, i); }
+   const GF2 operator[](long i) const 
+      { return get(i); }
 
-   const_subscript_GF2 operator()(long i) const 
-      { return const_subscript_GF2(*this, i-1); }
+   const GF2 operator()(long i) const 
+      { return get(i-1); }
+
+
+
+// Some partial STL compatibility...also used
+// to interface with the Matrix template class
+
+   typedef GF2 value_type;
+   typedef ref_GF2 reference;
+   typedef const GF2 const_reference;
 
 };
 
-inline subscript_GF2::operator GF2() const
-{
-   return v.get(i);
-}
+typedef Vec<GF2> vec_GF2;
 
-inline const_subscript_GF2::operator GF2() const
-{
-   return v.get(i);
-}
 
-inline const subscript_GF2& 
-   subscript_GF2::operator=(const subscript_GF2& a) const
-   { v.put(i, a.v.get(a.i));  return *this; }
+// sepcialized conversion
 
-inline const subscript_GF2& 
-   subscript_GF2::operator=(GF2 a) const
-   { v.put(i, a);  return *this; }
+inline void conv(vec_GF2& x, const vec_GF2& a)
+{  x = a; }
 
-inline const subscript_GF2& 
-   subscript_GF2::operator=(long a) const
-   { v.put(i, a);  return *this; }
-
-inline const subscript_GF2& operator+=(const subscript_GF2& x, GF2 b)
-   { x = x + b; return x; }  
-
-inline const subscript_GF2& operator+=(const subscript_GF2& x, long b)
-   { x = x + b; return x; }  
-
-inline const subscript_GF2& operator-=(const subscript_GF2& x, GF2 b)
-   { x = x - b; return x; }  
-
-inline const subscript_GF2& operator-=(const subscript_GF2& x, long b)
-   { x = x - b; return x; }  
-
-inline const subscript_GF2& operator*=(const subscript_GF2& x, GF2 b)
-   { x = x * b; return x; }  
-
-inline const subscript_GF2& operator*=(const subscript_GF2& x, long b)
-   { x = x * b; return x; }  
-
-inline const subscript_GF2& operator/=(const subscript_GF2& x, GF2 b)
-   { x = x / b; return x; }  
-
-inline const subscript_GF2& operator/=(const subscript_GF2& x, long b)
-   { x = x / b; return x; }  
-
-inline const subscript_GF2& operator++(const subscript_GF2& x) 
-   { x = x + 1; return x; }
-
-inline void operator++(const subscript_GF2& x, int) 
-   { x = x + 1; }
-
-inline const subscript_GF2& operator--(const subscript_GF2& x) 
-   { x = x - 1; return x; }
-
-inline void operator--(const subscript_GF2& x, int) 
-   { x = x - 1; }
 
 void swap(vec_GF2& x, vec_GF2& y);
-void append(vec_GF2& v, GF2 a);
+void append(vec_GF2& v, const GF2& a);
 void append(vec_GF2& v, const vec_GF2& a);
 
 long operator==(const vec_GF2& a, const vec_GF2& b);
@@ -207,7 +141,7 @@ void clear(vec_GF2& x);
 inline void negate(vec_GF2& x, const vec_GF2& a)
    { x = a; }
 
-inline void InnerProduct(GF2& x, const vec_GF2& a, const vec_GF2& b)
+inline void InnerProduct(ref_GF2 x, const vec_GF2& a, const vec_GF2& b)
    { x = to_GF2(InnerProduct(a.rep, b.rep)); }
 
 long IsZero(const vec_GF2& a);

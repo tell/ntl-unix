@@ -375,7 +375,7 @@ but for single-precision <tt>p</tt>
 <a href="matrix.txt"><tt>matrix</tt></a>
 
 </b> <td>
-template-like macros for 
+template class for
 dynamic-size 2-dimensional arrays
 
 <!-- ----------- mat_GF2.txt ----------- -->
@@ -515,7 +515,7 @@ polynomial of a <tt>mat_zz_p</tt>
 <a href="pair.txt"><tt>pair</tt></a>
 
 </b> <td>
-template-like macros for 
+template class for 
 pairs
 
 
@@ -544,7 +544,7 @@ versions of <tt>min()</tt> and <tt>max()</tt>
 <a href="vector.txt"><tt>vector</tt></a>
 
 </b> <td>
-template-like macros for 
+template class for 
 dynamic-size vectors
 
 <!-- ----------- vec_GF2.txt ----------- -->
@@ -667,11 +667,20 @@ not explicitly documented elsewhere:
 
 These decalarations are found in "<tt>.h</tt>" files with
 corresponding names.
+These header files simply provide typedefs for the
+corresponding template types, mainly for
+backward compatibility,
+e.g.,
+<tt>vec_double</tt> is a typedef for
+<tt>Vec&lt;double&gt;</tt>,
+and <tt>vec_vec_RR</tt> is a typedef for
+<tt>Vec&lt; Vec&lt;RR&gt; &gt;</tt>.
 No additional functionality is provided.
 
 <p>
 All of the header files for polynomial classes <tt>ZZ_pX</tt>,
-<tt>ZZX</tt>, etc., declare generic vectors <tt>vec_ZZ_pX</tt>,
+<tt>ZZX</tt>, etc., declare typedefs for the corresponding
+vectors of polynomials <tt>vec_ZZ_pX</tt>,
 <tt>vec_ZZX</tt>, etc.
 
 <p>
@@ -694,8 +703,14 @@ not explicitly documented elsewhere:
 
 These decalarations are found in "<tt>.h</tt>" files with
 corresponding names.
-These files also declare corresponding generic vector types
-<tt>vec_pair_GF2EX_long</tt>, etc.
+Again, these files mainly exist for backward compatibilty,
+and provide typedefs for the corresponding template types, 
+e.g., <tt>pair_GF2EX_long</tt> is a typedef for
+<tt>Pair&lt;GF2EX,long&gt;</tt>.
+These files also give typedefs for the corresponding vector types,
+e.g.,
+<tt>vec_pair_GF2EX_long</tt> is a typedef for
+<tt>Vec&lt; <tt>Pair&lt;GF2EX,long&gt; &gt;</tt>.
 No additional functionality is provided.
 
 

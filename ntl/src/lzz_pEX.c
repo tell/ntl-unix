@@ -4,6 +4,7 @@
 
 #include <NTL/lzz_pEX.h>
 #include <NTL/vec_vec_lzz_p.h>
+#include <NTL/ZZX.h>
 
 #include <NTL/new.h>
 
@@ -309,6 +310,27 @@ void conv(zz_pEX& x, const vec_zz_pE& a)
    x.rep = a;
    x.normalize();
 }
+
+
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+void conv(zz_pEX& x, const ZZX& a)
+{
+   long n = a.rep.length();
+   long i;
+
+   x.rep.SetLength(n);
+   for (i = 0; i < n; i++)
+      conv(x.rep[i], a.rep[i]);
+
+   x.normalize();
+}
+
+
+/* ------------------------------------- */
+
 
 
 void add(zz_pEX& x, const zz_pEX& a, const zz_pEX& b)
@@ -1967,11 +1989,6 @@ void XGCD(zz_pEX& d, zz_pEX& s, zz_pEX& t, const zz_pEX& a, const zz_pEX& b)
    mul(t, t, z);
 }
 
-NTL_vector_impl(zz_pEX,vec_zz_pEX)
-
-NTL_eq_vector_impl(zz_pEX,vec_zz_pEX)
-
-NTL_io_vector_impl(zz_pEX,vec_zz_pEX)
 
 void IterBuild(zz_pE* a, long n)
 {
@@ -3084,9 +3101,8 @@ void PlainResultant(zz_pE& rres, const zz_pEX& a, const zz_pEX& b)
             break;
          }
       }
-
-      rres = res;
    }
+   rres = res;
 }
 
 void resultant(zz_pE& rres, const zz_pEX& a, const zz_pEX& b)

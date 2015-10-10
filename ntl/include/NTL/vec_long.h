@@ -6,11 +6,7 @@
 
 NTL_OPEN_NNS
 
-NTL_vector_decl(long,vec_long)
-
-NTL_io_vector_decl(long,vec_long)
-
-NTL_eq_vector_decl(long,vec_long)
+typedef Vec<long> vec_long;
 
 NTL_CLOSE_NNS
 

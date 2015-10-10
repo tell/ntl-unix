@@ -6,7 +6,7 @@ make CanZassTest
 echo "running CanZassTest"
 ./CanZassTest < CanZassTestIn > XXX
 sh RemoveProg CanZassTest
-if diff XXX CanZassTestOut
+if diff -b XXX CanZassTestOut
 then
 echo "CanZassTest OK"
 else
@@ -20,7 +20,7 @@ make BerlekampTest
 echo "running BerlekampTest"
 ./BerlekampTest < BerlekampTestIn > XXX
 sh RemoveProg BerlekampTest
-if diff XXX BerlekampTestOut
+if diff -b XXX BerlekampTestOut
 then
 echo "BerlekampTest OK"
 else
@@ -35,7 +35,7 @@ make ZZXFacTest
 echo "running ZZXFacTest"
 ./ZZXFacTest < ZZXFacTestIn > XXX
 sh RemoveProg ZZXFacTest
-if diff XXX ZZXFacTestOut
+if diff -b XXX ZZXFacTestOut
 then
 echo "ZZXFacTest OK"
 else
@@ -74,7 +74,7 @@ make MatrixTest
 echo "running MatrixTest"
 ./MatrixTest < MatrixTestIn > XXX
 sh RemoveProg MatrixTest
-if diff XXX MatrixTestOut
+if diff -b XXX MatrixTestOut
 then
 echo "MatrixTest OK"
 else
@@ -88,7 +88,7 @@ make CharPolyTest
 echo "running CharPolyTest"
 ./CharPolyTest < CharPolyTestIn > XXX
 sh RemoveProg CharPolyTest
-if diff XXX CharPolyTestOut
+if diff -b XXX CharPolyTestOut
 then
 echo "CharPolyTest OK"
 else
@@ -111,7 +111,7 @@ make RRTest
 echo "running RRTest"
 ./RRTest < RRTestIn > XXX
 sh RemoveProg RRTest
-if diff XXX RRTestOut
+if diff -b XXX RRTestOut
 then
 echo "RRTest OK"
 else
@@ -125,7 +125,7 @@ make QuadTest
 echo "running QuadTest"
 ./QuadTest < QuadTestIn > XXX
 sh RemoveProg QuadTest
-if diff XXX QuadTestOut
+if diff -b XXX QuadTestOut
 then
 echo "QuadTest OK"
 else
@@ -140,7 +140,7 @@ make LLLTest
 echo "running LLLTest"
 ./LLLTest < LLLTestIn > XXX
 sh RemoveProg LLLTest
-if diff XXX LLLTestOut
+if diff -b XXX LLLTestOut
 then
 echo "LLLTest OK"
 else

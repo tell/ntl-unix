@@ -416,7 +416,7 @@ inline long operator!=(long a, const GF2E& b) { return !(a == b); }
 
 // ****** trace
 
-inline void trace(GF2& x, const GF2E& a)
+inline void trace(ref_GF2 x, const GF2E& a)
    { TraceMod(x, a._GF2E__rep, GF2E::modulus()); }
 inline GF2 trace(const GF2E& a)
    { return TraceMod(a._GF2E__rep, GF2E::modulus()); }
@@ -444,6 +444,23 @@ NTL_SNS istream& operator>>(NTL_SNS istream& s, GF2E& x);
 
 inline GF2E& GF2E::operator=(long a) { conv(*this, a); return *this; }
 inline GF2E& GF2E::operator=(GF2 a) { conv(*this, a); return *this; }
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(GF2X& x, const GF2E& a) { x = rep(a); }
+inline void conv(GF2E& x, const GF2E& a) { x = a; }
+
+
+/* ------------------------------------- */
+
+
+// overload these functions for Vec<GF2E>.
+// They are defined in vec_GF2E.c
+void BlockConstruct(GF2E* p, long n);
+void BlockDestroy(GF2E* p, long n);
+
+
 
 NTL_CLOSE_NNS
 

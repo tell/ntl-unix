@@ -6,12 +6,7 @@
 
 NTL_OPEN_NNS
 
-NTL_vector_decl(GF2E,vec_GF2E)
-
-NTL_io_vector_decl(GF2E,vec_GF2E)
-
-NTL_eq_vector_decl(GF2E,vec_GF2E)
-
+typedef Vec<GF2E> vec_GF2E;
 
 void mul(vec_GF2E& x, const vec_GF2E& a, const GF2E& b);
 inline void mul(vec_GF2E& x, const GF2E& a, const vec_GF2E& b)

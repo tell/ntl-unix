@@ -1,6 +1,6 @@
 # This is a perl script, invoked from a shell
 
-# use warnings;  # this doesn't work on older versions of perl
+use warnings;  # this doesn't work on older versions of perl
 
 
 sub GenConfigHeader {
@@ -89,6 +89,8 @@ system("make InitSettings");
 'NTL_GF2X_ALTCODE'     => 0,
 'NTL_GF2X_ALTCODE1'    => 0,
 'NTL_GF2X_NOINLINE'    => 0,
+'NTL_FFT_BIGTAB'       => 0,
+'NTL_FFT_LAZYMUL'      => 0,
 
 'WIZARD_HACK'          => '#define NTL_WIZARD_HACK',
 
@@ -104,36 +106,74 @@ foreach $line (@lines) {
 
 
 
-#  set AVOID_BRANCHING and SPMM flags...try all pairs
+#  set AVOID_BRANCHING, SPMM, and FFT flags...try all combinations 
 
 
 $time = "999999999999999";
 $aflag = "default";
 $bflag = "default";
+$cflag = "default";
+$dflag = "default";
+
 
 foreach $aflag1 ("default", "NTL_AVOID_BRANCHING") {
    foreach $bflag1 ("default", "NTL_SPMM_UL", "NTL_SPMM_ULL", "NTL_SPMM_ASM") {
+      foreach $cflag1 ("default", "NTL_FFT_BIGTAB") {
+         foreach $dflag1 ("default", "NTL_FFT_LAZYMUL") {
 
-      $Config{$aflag1} = 1;
-      $Config{$bflag1} = 1;
-      GenConfigHeader();
-      $time1 = RunProg("Poly1TimeTest");
 
-      if ($time1 < $time) {
-	 $aflag = $aflag1;
-	 $bflag = $bflag1;
-	 $time = $time1;
+            $Config{$aflag1} = 1;
+            $Config{$bflag1} = 1;
+            $Config{$cflag1} = 1;
+            $Config{$dflag1} = 1;
+
+
+            if ($Config{"NTL_FFT_LAZYMUL"}) {
+
+               if ($Config{"NTL_FFT_BIGTAB"} == 0 ||
+                   ($Config{"NTL_SPMM_ULL"} == 0 && $Config{"NTL_SPMM_ASM"} == 0)) {
+
+                  $Config{$aflag1} = 0;
+                  $Config{$bflag1} = 0;
+                  $Config{$cflag1} = 0;
+                  $Config{$dflag1} = 0;
+
+                  print "skip: $aflag1 $bflag1 $cflag1 $dflag1\n";
+                  next;
+               }
+              
+            }
+
+            print "run: $aflag1 $bflag1 $cflag1 $dflag1\n";
+            GenConfigHeader();
+            $time1 = RunProg("Poly1TimeTest");
+
+            if ($time1 < $time) {
+               $aflag = $aflag1;
+               $bflag = $bflag1;
+               $cflag = $cflag1;
+               $dflag = $dflag1;
+               $time = $time1;
+            }
+
+            $Config{$aflag1} = 0;
+            $Config{$bflag1} = 0;
+            $Config{$cflag1} = 0;
+            $Config{$dflag1} = 0;
+            unlink("FFT.o");  
+            unlink("ZZ_pX.o");  
+         }
       }
-
-      $Config{$aflag1} = 0;
-      $Config{$bflag1} = 0;
-      unlink("FFT.o");  
    }
 }
 
 $Config{$aflag} = 1;
 $Config{$bflag} = 1;
+$Config{$cflag} = 1;
+$Config{$dflag} = 1;
 unlink("lip.o");   #  AVOID_BRANCHING affects this too
+unlink("ZZ_pX.o");   # FFT_BIGTABS and FFT_LAZYMUL affect this
+unlink("lzz_pX.o");   # FFT_BIGTABS and FFT_LAZYMUL affect this
 
 
 # set the flags GF2X_NOINLINE and GF2X_ALTCODE...try all pairs

@@ -895,13 +895,6 @@ void interpolate(ZZ_pX& f, const vec_ZZ_p& a, const vec_ZZ_p& b)
    f.rep = res;
 }
 
-NTL_vector_impl(ZZ_pX,vec_ZZ_pX)
-
-NTL_eq_vector_impl(ZZ_pX,vec_ZZ_pX)
-
-NTL_io_vector_impl(ZZ_pX,vec_ZZ_pX)
-
-
 
    
 void InnerProduct(ZZ_pX& x, const vec_ZZ_p& v, long low, long high, 
@@ -1681,9 +1674,9 @@ void PlainResultant(ZZ_p& rres, const ZZ_pX& a, const ZZ_pX& b)
             break;
          }
       }
-
-      rres = res;
    }
+
+   rres = res;
 }
 
 

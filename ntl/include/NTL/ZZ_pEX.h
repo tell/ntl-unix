@@ -46,6 +46,17 @@ void kill()
 
    { rep.kill(); }
 
+
+
+typedef ZZ_pE coeff_type;
+void SetLength(long n) { rep.SetLength(n); }
+ZZ_pE& operator[](long i) { return rep[i]; }
+const ZZ_pE& operator[](long i) const { return rep[i]; }
+
+
+
+
+
 static const ZZ_pEX& zero();
 
 inline ZZ_pEX(long i, const ZZ_pE& c);
@@ -241,6 +252,25 @@ inline ZZ_pEX& ZZ_pEX::operator=(const ZZ_p& a)
 
 inline ZZ_pEX& ZZ_pEX::operator=(const ZZ_pE& a)
    { conv(*this, a); return *this; }
+
+
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(ZZ_pEX& x, const ZZ_pEX& a)
+   { x = a; }
+
+inline void conv(vec_ZZ_pE& x, const ZZ_pEX& a)
+   { x = a.rep; }
+
+class ZZX;
+void conv(ZZ_pEX& x, const ZZX& a);
+
+
+/* ------------------------------------- */
+
+
 
 
 /*************************************************************
@@ -706,11 +736,7 @@ inline ZZ_pEX& operator/=(ZZ_pEX& x, const ZZ_pEXModulus& F)
 
 
 
-NTL_vector_decl(ZZ_pEX,vec_ZZ_pEX)
-
-NTL_eq_vector_decl(ZZ_pEX,vec_ZZ_pEX)
-
-NTL_io_vector_decl(ZZ_pEX,vec_ZZ_pEX)
+typedef Vec<ZZ_pEX> vec_ZZ_pEX;
 
 
 

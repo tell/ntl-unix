@@ -281,6 +281,19 @@ quad_float to_quad_float(const char *s);
 inline void conv(quad_float& x, const char *s)
    { x = to_quad_float(s); }
 
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(unsigned int& x, const quad_float& a)
+   { long z; conv(z, a); conv(x, z); }
+
+inline void conv(unsigned long& x, const quad_float& a)
+   { long z; conv(z, a); conv(x, z); }
+
+
+/* ------------------------------------- */
+
 long IsFinite(quad_float *x);
 
 long PrecisionOK();

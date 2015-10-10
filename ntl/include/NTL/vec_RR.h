@@ -7,11 +7,7 @@
 
 NTL_OPEN_NNS
 
-NTL_vector_decl(RR,vec_RR)
-
-NTL_eq_vector_decl(RR,vec_RR)
-
-NTL_io_vector_decl(RR,vec_RR)
+typedef Vec<RR> vec_RR;
 
 void mul(vec_RR& x, const vec_RR& a, const RR& b);
 inline void mul(vec_RR& x, const RR& a, const vec_RR& b)

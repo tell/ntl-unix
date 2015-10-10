@@ -511,6 +511,10 @@ extern "C" {
 ***********************************************************************/
 
 
+    long _ntl_zmaxalloc(_ntl_verylong x); 
+      /* max allocation request, possibly rounded up a bit */
+
+
     void _ntl_zsetlength(_ntl_verylong *v, long len);
        /* Allocates enough space to hold a len-digit number,
           where each digit has NTL_NBITS bits.
@@ -627,6 +631,7 @@ extern int _ntl_gmp_hack;
 #define NTL_zscompare _ntl_zscompare
 #define NTL_zsdiv _ntl_zsdiv
 #define NTL_zsetbit _ntl_zsetbit
+#define NTL_zmaxalloc _ntl_zmaxalloc
 #define NTL_zsetlength _ntl_zsetlength
 #define NTL_zsign _ntl_zsign
 #define NTL_zsize _ntl_zsize

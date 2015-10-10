@@ -9,13 +9,8 @@ Defines the class vec_ZZ.
 
 \**************************************************************************/
 
-NTL_vector_decl(ZZ,vec_ZZ)
 
-NTL_eq_vector_decl(ZZ,vec_ZZ)
-// == and !=
-
-NTL_io_vector_decl(ZZ,vec_ZZ)
-// I/O operators
+typedef Vec<ZZ> vec_ZZ; // backward compatibility
 
 void mul(vec_ZZ& x, const vec_ZZ& a, const ZZ& b);
 void mul(vec_ZZ& x, const vec_ZZ& a, long b);

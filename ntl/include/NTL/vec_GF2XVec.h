@@ -7,7 +7,7 @@
 
 NTL_OPEN_NNS
 
-NTL_vector_decl(GF2XVec,vec_GF2XVec)
+typedef Vec<GF2XVec> vec_GF2XVec;
 
 NTL_CLOSE_NNS
 

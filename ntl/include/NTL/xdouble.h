@@ -217,6 +217,19 @@ inline void conv(xdouble& x, float a) { x = to_xdouble(a); }
 inline void conv(xdouble& x, double a) { x = to_xdouble(a); }
 inline void conv(xdouble& x, const char *a) { x = to_xdouble(a); }
 
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+
+inline void conv(unsigned int& x, const xdouble& a)
+   { long z; conv(z, a); conv(x, z); }
+
+inline void conv(unsigned long& x, const xdouble& a)
+   { long z; conv(z, a); conv(x, z); }
+
+/* ------------------------------------- */
+
 NTL_SNS ostream& operator<<(NTL_SNS ostream& s, const xdouble& a);
 
 NTL_SNS istream& operator>>(NTL_SNS istream& s, xdouble& x);

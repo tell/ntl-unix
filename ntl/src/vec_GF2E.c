@@ -1,15 +1,8 @@
 
-
 #include <NTL/vec_GF2E.h>
 
-#include <NTL/new.h>
 
 NTL_START_IMPL
-
-
-
-
-
 
 void BlockConstruct(GF2E* x, long n)
 {
@@ -46,13 +39,6 @@ void BlockDestroy(GF2E* x, long n)
    }
 }
 
-
-
-NTL_vector_impl_plain(GF2E,vec_GF2E)
-
-NTL_io_vector_impl(GF2E,vec_GF2E)
-
-NTL_eq_vector_impl(GF2E,vec_GF2E)
 
 
 void InnerProduct(GF2E& x, const vec_GF2E& a, const vec_GF2E& b)

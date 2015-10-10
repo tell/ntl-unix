@@ -5,11 +5,6 @@
 
 NTL_START_IMPL
 
-NTL_matrix_impl(ZZ,vec_ZZ,vec_vec_ZZ,mat_ZZ)
-NTL_io_matrix_impl(ZZ,vec_ZZ,vec_vec_ZZ,mat_ZZ)
-NTL_eq_matrix_impl(ZZ,vec_ZZ,vec_vec_ZZ,mat_ZZ)
-
-
 
 void add(mat_ZZ& X, const mat_ZZ& A, const mat_ZZ& B)  
 {  

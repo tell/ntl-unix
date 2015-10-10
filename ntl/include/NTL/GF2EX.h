@@ -55,6 +55,16 @@ void kill()
 
    { rep.kill(); }
 
+
+
+typedef GF2E coeff_type;
+void SetLength(long n) { rep.SetLength(n); }
+GF2E& operator[](long i) { return rep[i]; }
+const GF2E& operator[](long i) const { return rep[i]; }
+
+
+
+
 static const GF2EX& zero();
 
 
@@ -241,7 +251,7 @@ inline GF2EX to_GF2EX(const ZZ& a)
    { GF2EX x; conv(x, a); NTL_OPT_RETURN(GF2EX, x); }
 
 #ifndef NTL_TRANSITION
-inline GF2EX to_GF2EX(GF2X& a)
+inline GF2EX to_GF2EX(const GF2X& a)
    { GF2EX x; conv(x, a); NTL_OPT_RETURN(GF2EX, x); }
 #endif
 
@@ -251,6 +261,24 @@ inline GF2EX to_GF2EX(const vec_GF2E& a)
 inline GF2EX& GF2EX::operator=(const GF2E& a) { conv(*this, a); return *this; }
 inline GF2EX& GF2EX::operator=(GF2 a) { conv(*this, a); return *this; }
 inline GF2EX& GF2EX::operator=(long a) { conv(*this, a); return *this; }
+
+
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(GF2EX& x, const GF2EX& a)
+   { x = a; }
+
+inline void conv(vec_GF2E& x, const GF2EX& a)
+   { x = a.rep; }
+
+class ZZX;
+void conv(GF2EX& x, const ZZX& a);
+
+
+/* ------------------------------------- */
+
 
 
 
@@ -700,13 +728,7 @@ inline GF2EX& operator/=(GF2EX& x, const GF2EXModulus& F)
 
 
 
-NTL_vector_decl(GF2EX,vec_GF2EX)
-
-NTL_eq_vector_decl(GF2EX,vec_GF2EX)
-
-NTL_io_vector_decl(GF2EX,vec_GF2EX)
-
-
+typedef Vec<GF2EX> vec_GF2EX;
 
 
 

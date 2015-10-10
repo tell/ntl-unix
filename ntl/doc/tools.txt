@@ -91,6 +91,7 @@ void swap(int& a, int& b);
 // int, long, float, double.  See conversions.txt for complete details.
 
 
+
 // The following platform-dependent macros are defined:
 
 #define NTL_BITS_PER_LONG      (...)  /* bits in a long */

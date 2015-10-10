@@ -30,13 +30,11 @@ NTL_verylong rep; // This is currently public for "emergency" situations
                    // May be private in future versions.
 
 
-ZZ() 
+ZZ() : rep(0) { }
 // initial value is 0.
 
-{ rep = 0; }
 
-
-ZZ(INIT_SIZE_TYPE, long k)
+ZZ(INIT_SIZE_TYPE, long k) : rep(0)
 // initial value is 0, but space is pre-allocated so that numbers
 // x with x.size() <= k can be stored without re-allocation.
 // Call with ZZ(INIT_SIZE, k).
@@ -45,24 +43,22 @@ ZZ(INIT_SIZE_TYPE, long k)
 
 
 {
-   rep = 0;
    NTL_zsetlength(&rep, k); 
 }
 
-ZZ(const ZZ& a)
+ZZ(const ZZ& a) : rep(0)
 // initial value is a.
 
 {
-   rep = 0;
    NTL_zcopy(a.rep, &rep);
 }
 
 
-ZZ(INIT_VAL_TYPE, long a) { rep = 0; NTL_zintoz(a, &rep); }
-ZZ(INIT_VAL_TYPE, int a) { rep = 0; NTL_zintoz(a, &rep); }
+ZZ(INIT_VAL_TYPE, long a) : rep(0) { NTL_zintoz(a, &rep); }
+ZZ(INIT_VAL_TYPE, int a) : rep(0) { NTL_zintoz(a, &rep); }
 
-ZZ(INIT_VAL_TYPE, unsigned long a) { rep = 0; NTL_zuintoz(a, &rep); }
-ZZ(INIT_VAL_TYPE, unsigned int a) { rep = 0; NTL_zuintoz((unsigned long) a, &rep); }
+ZZ(INIT_VAL_TYPE, unsigned long a) : rep(0) { NTL_zuintoz(a, &rep); }
+ZZ(INIT_VAL_TYPE, unsigned int a) : rep(0) { NTL_zuintoz((unsigned long) a, &rep); }
 
 inline ZZ(INIT_VAL_TYPE, const char *);
 inline ZZ(INIT_VAL_TYPE, float);
@@ -89,9 +85,16 @@ void SetSize(long k)
 { NTL_zsetlength(&rep, k); }
 
 long size() const
+// returns the number of (NTL_ZZ_NBIT-bit) digits of |a|; the size of 0 is 0.
    { return NTL_zsize(rep); }
 
-// returns the number of (NTL_ZZ_NBIT-bit) digits of |a|; the size of 0 is 0.
+long null() const
+// test of rep is null
+   { return !rep; }
+
+long MaxAlloc() const
+// returns max allocation request, possibly rounded up a bit...
+   { return NTL_zmaxalloc(rep); }
 
 
 long SinglePrecision() const
@@ -166,15 +169,15 @@ inline void conv(ZZ& x, unsigned int a) { NTL_zuintoz((unsigned long)(a), &x.rep
 inline ZZ to_ZZ(unsigned int a) { return ZZ(INIT_VAL, a); }
 
 void conv(ZZ& x, const char *s);
-inline ZZ::ZZ(INIT_VAL_TYPE, const char *s) {  rep = 0; conv(*this, s); }
+inline ZZ::ZZ(INIT_VAL_TYPE, const char *s) : rep(0) { conv(*this, s); }
 inline ZZ to_ZZ(const char *s) { return ZZ(INIT_VAL, s); }
 
 inline void conv(ZZ& x, double a) { NTL_zdoubtoz(a, &x.rep); }
-inline ZZ::ZZ(INIT_VAL_TYPE, double a) { rep = 0; conv(*this, a); }
+inline ZZ::ZZ(INIT_VAL_TYPE, double a) : rep(0) { conv(*this, a); }
 inline ZZ to_ZZ(double a) { return ZZ(INIT_VAL, a); }
 
 inline void conv(ZZ& x, float a) { NTL_zdoubtoz(double(a), &x.rep); }
-inline ZZ::ZZ(INIT_VAL_TYPE, float a) { rep = 0; conv(*this, a); }
+inline ZZ::ZZ(INIT_VAL_TYPE, float a) : rep(0) { conv(*this, a); }
 inline ZZ to_ZZ(float a) { return ZZ(INIT_VAL, a); }
 
 inline void conv(long& x, const ZZ& a) { x = NTL_ztoint(a.rep); }
@@ -1723,7 +1726,7 @@ static inline long MulDivRem(long& qq, long a, long b, long n, double bninv)
 // significantly faster.  There are four possible implementations:
 //  - default: uses MulMod2 above (lots of floating point)
 //  - NTL_SPMM_ULL: uses unsigned long long (if possible)
-//  - NTL_SMPP_ASM: uses assembly language (if possible)
+//  - NTL_SPMM_ASM: uses assembly language (if possible)
 //  - NTL_SPMM_UL: uses only unsigned long arithmetic (portable, slower).
 
 #if (!defined(NTL_SINGLE_MUL) && (defined(NTL_SPMM_ULL) || defined(NTL_SPMM_ASM)))
@@ -2013,6 +2016,32 @@ long InvMod(long a, long n);
 
 long PowerMod(long a, long e, long n);
 // computes a^e mod n, e >= 0
+
+
+inline
+void VectorMulModPrecon(long k, long *x, const long *a, long b, long n, 
+                        mulmod_precon_t bninv)
+{
+   for (long i = 0; i < k; i++)
+      x[i] = MulModPrecon(a[i], b, n, bninv);
+}
+
+inline
+void VectorMulMod(long k, long *x, const long *a, long b, long n, 
+                  double ninv)
+{
+   mulmod_precon_t bninv;
+   bninv = PrepMulModPrecon(b, n, ninv);
+   VectorMulModPrecon(k, x, a, b, n, bninv);
+}
+
+
+inline 
+void VectorMulMod(long k, long *x, const long *a, long b, long n)
+{
+   double ninv = 1/((double) n);
+   VectorMulMod(k, x, a, b, n, ninv);
+}
 
 
 NTL_CLOSE_NNS

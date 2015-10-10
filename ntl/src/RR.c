@@ -276,7 +276,7 @@ void negate(RR& z, const RR& a)
    negate(z.x, z.x);
 }
 
-void NegatePrec(RR& x, const RR& a, const RR& b, long p)
+void NegatePrec(RR& x, const RR& a, long p)
 {
    if (p < 1 || NTL_OVERFLOW(p, 1, 0))
       Error("NegatePrec: bad precsion");
@@ -293,7 +293,7 @@ void abs(RR& z, const RR& a)
    abs(z.x, z.x);
 }
 
-void AbsPrec(RR& x, const RR& a, const RR& b, long p)
+void AbsPrec(RR& x, const RR& a, long p)
 {
    if (p < 1 || NTL_OVERFLOW(p, 1, 0))
       Error("AbsPrec: bad precsion");
@@ -335,7 +335,7 @@ void sqr(RR& z, const RR& a)
    xcopy(z, t);
 }
 
-void SqrPrec(RR& x, const RR& a, const RR& b, long p)
+void SqrPrec(RR& x, const RR& a, long p)
 {
    if (p < 1 || NTL_OVERFLOW(p, 1, 0))
       Error("SqrPrec: bad precsion");
@@ -479,7 +479,7 @@ void trunc(RR& z, const RR& a)
    }
 }
 
-void TruncPrec(RR& x, const RR& a, const RR& b, long p)
+void TruncPrec(RR& x, const RR& a, long p)
 {
    if (p < 1 || NTL_OVERFLOW(p, 1, 0))
       Error("TruncPrec: bad precsion");
@@ -505,7 +505,7 @@ void floor(RR& z, const RR& a)
    }
 }
 
-void FloorPrec(RR& x, const RR& a, const RR& b, long p)
+void FloorPrec(RR& x, const RR& a, long p)
 {
    if (p < 1 || NTL_OVERFLOW(p, 1, 0))
       Error("FloorPrec: bad precsion");
@@ -531,7 +531,7 @@ void ceil(RR& z, const RR& a)
    }
 }
 
-void CeilPrec(RR& x, const RR& a, const RR& b, long p)
+void CeilPrec(RR& x, const RR& a, long p)
 {
    if (p < 1 || NTL_OVERFLOW(p, 1, 0))
       Error("CeilPrec: bad precsion");
@@ -570,7 +570,7 @@ void round(RR& z, const RR& a)
    xcopy(z, t);
 }
 
-void RoundPrec(RR& x, const RR& a, const RR& b, long p)
+void RoundPrec(RR& x, const RR& a, long p)
 {
    if (p < 1 || NTL_OVERFLOW(p, 1, 0))
       Error("RoundPrec: bad precsion");
@@ -767,8 +767,12 @@ void RoundToZZ(ZZ& z, const RR& a)
 void conv(long& z, const RR& a)
 {
    ZZ t;
-   conv(t, a);
-   conv(z, t);
+   if (a.e >= NTL_BITS_PER_LONG)
+      z = 0;
+   else {
+      conv(t, a);
+      conv(z, t);
+   }
 }
 
 void conv(double& z, const RR& aa)
@@ -782,6 +786,8 @@ void conv(double& z, const RR& aa)
    conv(x, a.x);
    z = _ntl_ldexp(x, a.e);
 }
+
+
 
 
 void add(RR& z, const RR& a, double b)

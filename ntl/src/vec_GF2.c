@@ -126,7 +126,7 @@ void vec_GF2::FixLength(long n)
    _maxlen |= 1;
 }
 
-GF2 vec_GF2::get(long i) const
+const GF2 vec_GF2::get(long i) const
 {
    const vec_GF2& v = *this;
 
@@ -141,6 +141,20 @@ GF2 vec_GF2::get(long i) const
    else
       return to_GF2(0);
 }
+
+ref_GF2 vec_GF2::operator[](long i)
+{
+   vec_GF2& v = *this;
+
+   if (i < 0 || i >= v.length()) 
+      Error("vec_GF2: subscript out of range");
+
+   long q = i/NTL_BITS_PER_LONG;
+   long p =  i - q*NTL_BITS_PER_LONG;
+   return ref_GF2(INIT_LOOP_HOLE, &v.rep[q], p);
+}
+
+
 
 static
 void SetBit(vec_GF2& v, long i)
@@ -188,7 +202,7 @@ void swap(vec_GF2& x, vec_GF2& y)
 }
 
 
-void append(vec_GF2& v, GF2 a)
+void append(vec_GF2& v, const GF2& a)
 {
    long n = v.length();
    v.SetLength(n+1);

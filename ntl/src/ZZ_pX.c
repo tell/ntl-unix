@@ -1421,9 +1421,6 @@ ZZ_pXModRep::~ZZ_pXModRep()
 
 
 static vec_long ModularRepBuf;
-static vec_long FFTBuf;
-
-
 
 
 void ToModularRep(vec_long& x, const ZZ_p& a)
@@ -1497,7 +1494,6 @@ void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
 
    long n, i, j, m, j1;
    vec_long& t = ModularRepBuf;
-   vec_long& s = FFTBuf;
    ZZ_p accum;
 
 
@@ -1536,15 +1532,9 @@ void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
    }
 
 
-   s.SetLength(n);
-   long *sp = s.elts();
-
    for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
-      long *Root = &RootTable[i][0];
       long *yp = &y.tbl[i][0];
-      FFT(sp, yp, y.k, FFTPrime[i], Root);
-      for (j = 0; j < n; j++)
-         yp[j] = sp[j];
+      FFTFwd(yp, yp, k, i);
    }
 }
 
@@ -1560,7 +1550,6 @@ void RevToFFTRep(FFTRep& y, const vec_ZZ_p& x,
 
    long n, i, j, m, j1;
    vec_long& t = ModularRepBuf;
-   vec_long& s = FFTBuf;
    ZZ_p accum;
 
    if (k > ZZ_pInfo->MaxRoot) 
@@ -1603,18 +1592,10 @@ void RevToFFTRep(FFTRep& y, const vec_ZZ_p& x,
    }
 
 
-   s.SetLength(n);
-   long *sp = s.elts();
-
    for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
-      long *Root = &RootInvTable[i][0];
       long *yp = &y.tbl[i][0];
-      long w = TwoInvTable[i][k];
-      long q = FFTPrime[i];
-      double qinv = ((double) 1)/((double) q);
-      FFT(sp, yp, y.k, q, Root);
-      for (j = 0; j < n; j++)
-         yp[j] = MulMod(sp[j], w, q, qinv);
+      FFTRev(yp, yp, k, i);
+      FFTMulTwoInv(yp, yp, k, i);
    }
 
 }
@@ -1631,26 +1612,17 @@ void FromFFTRep(ZZ_pX& x, FFTRep& y, long lo, long hi)
    long k, n, i, j, l;
 
    vec_long& t = ModularRepBuf;
-   vec_long& s = FFTBuf;;
 
    t.SetLength(ZZ_pInfo->NumPrimes);
 
    k = y.k;
    n = (1L << k);
 
-   s.SetLength(n);
-   long *sp = s.elts();
 
    for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
       long *yp = &y.tbl[i][0];
-      long q = FFTPrime[i];
-      double qinv = ((double) 1)/((double) q);
-      long w = TwoInvTable[i][k];
-      long *Root = &RootInvTable[i][0];
-
-      FFT(sp, yp, k, q, Root);
-
-      for (j = 0; j < n; j++) yp[j] = MulMod(sp[j], w, q, qinv);
+      FFTRev(yp, yp, k, i);
+      FFTMulTwoInv(yp, yp, k, i);
    }
 
    hi = min(hi, n-1);
@@ -1681,23 +1653,15 @@ void RevFromFFTRep(vec_ZZ_p& x, FFTRep& y, long lo, long hi)
    long k, n, i, j, l;
 
    vec_long& t = ModularRepBuf;
-   vec_long& s = FFTBuf;
 
    k = y.k;
    n = (1L << k);
 
    t.SetLength(ZZ_pInfo->NumPrimes);
-   s.SetLength(n);
-   long *sp = s.elts();
 
    for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
       long *yp = &y.tbl[i][0];
-      long q = FFTPrime[i];
-      long *Root = &RootTable[i][0];
-
-      FFT(sp, yp, k, q, Root);
-      for (j = 0; j < n; j++)
-         yp[j] = sp[j];
+      FFTFwd(yp, yp, k, i);
    }
 
    hi = min(hi, n-1);
@@ -1729,14 +1693,10 @@ void NDFromFFTRep(ZZ_pX& x, const FFTRep& y, long lo, long hi, FFTRep& z)
 
    for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
       long *zp = &z.tbl[i][0];
-      long q = FFTPrime[i];
-      double qinv = ((double) 1)/((double) q);
-      long w = TwoInvTable[i][k];
-      long *Root = &RootInvTable[i][0];
+      const long *yp = &y.tbl[i][0];
 
-      FFT(zp, &y.tbl[i][0], k, q, Root);
-
-      for (j = 0; j < n; j++) zp[j] = MulMod(zp[j], w, q, qinv);
+      FFTRev(zp, yp, k, i);
+      FFTMulTwoInv(zp, zp, k, i);
    }
 
    hi = min(hi, n-1);
@@ -1772,25 +1732,16 @@ void FromFFTRep(ZZ_p* x, FFTRep& y, long lo, long hi)
    long k, n, i, j;
 
    vec_long& t = ModularRepBuf;
-   vec_long& s = FFTBuf;
 
    k = y.k;
    n = (1L << k);
 
    t.SetLength(ZZ_pInfo->NumPrimes);
-   s.SetLength(n);
-   long *sp = s.elts();
 
    for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
       long *yp = &y.tbl[i][0];
-      long q = FFTPrime[i];
-      double qinv = ((double) 1)/((double) q);
-      long w = TwoInvTable[i][k];
-      long *Root = &RootInvTable[i][0];
-
-      FFT(sp, yp, k, q, Root);
-
-      for (j = 0; j < n; j++) yp[j] = MulMod(sp[j], w, q, qinv);
+      FFTRev(yp, yp, k, i);
+      FFTMulTwoInv(yp, yp, k, i);
    }
 
    for (j = lo; j <= hi; j++) {
@@ -1984,7 +1935,6 @@ void ToFFTRep(FFTRep& x, const ZZ_pXModRep& a, long k, long lo, long hi)
    long NumPrimes = ZZ_pInfo->NumPrimes;
 
    for (i = 0; i < NumPrimes; i++) {
-      long *Root = &RootTable[i][0];
       long *xp = &x.tbl[i][0];
       long *ap = (m == 0 ? 0 : &a.tbl[i][0]);
       for (j = 0; j < m; j++)
@@ -1992,7 +1942,7 @@ void ToFFTRep(FFTRep& x, const ZZ_pXModRep& a, long k, long lo, long hi)
       for (j = m; j < n; j++)
          sp[j] = 0;
       
-      FFT(xp, sp, k, FFTPrime[i], Root);
+      FFTFwd(xp, sp, k, i);
    }
 }
 

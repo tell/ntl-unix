@@ -58,6 +58,16 @@ void kill()
 
    { rep.kill(); }
 
+
+
+typedef ZZ coeff_type;
+void SetLength(long n) { rep.SetLength(n); }
+ZZ& operator[](long i) { return rep[i]; }
+const ZZ& operator[](long i) const { return rep[i]; }
+
+
+
+
 static const ZZX& zero();
 
 inline ZZX(long i, const ZZ& c);
@@ -281,6 +291,20 @@ inline ZZX to_ZZX(const ZZ_pX& a)
 void conv(ZZX& x, const zz_pX& a);
 inline ZZX to_ZZX(const zz_pX& a)
    { ZZX x; conv(x, a); NTL_OPT_RETURN(ZZX, x); }
+
+
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(ZZX& x, const ZZX& a)
+   { x = a; }
+
+inline void conv(vec_ZZ& x, const ZZX& a)
+   { x = a.rep; }
+
+
+/* ------------------------------------- */
 
 
 
@@ -712,13 +736,8 @@ long CRT(ZZX& a, ZZ& prod, const ZZ_pX& A);
 
 
 
-// vectors
+typedef Vec<ZZX> vec_ZZX;
 
-NTL_vector_decl(ZZX,vec_ZZX)
-
-NTL_eq_vector_decl(ZZX,vec_ZZX)
-
-NTL_io_vector_decl(ZZX,vec_ZZX)
 
 NTL_CLOSE_NNS
 

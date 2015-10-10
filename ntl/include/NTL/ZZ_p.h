@@ -429,6 +429,29 @@ NTL_SNS istream& operator>>(NTL_SNS istream& s, ZZ_p& x);
 
 inline ZZ_p& ZZ_p::operator=(long a) { conv(*this, a); return *this; }
 
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(int& x, const ZZ_p& a) { conv(x, rep(a)); }
+inline void conv(unsigned int& x, const ZZ_p& a) { conv(x, rep(a)); }
+inline void conv(long& x, const ZZ_p& a) { conv(x, rep(a)); }
+inline void conv(unsigned long& x, const ZZ_p& a) { conv(x, rep(a)); }
+inline void conv(ZZ& x, const ZZ_p& a) { conv(x, rep(a)); }
+
+inline void conv(ZZ_p& x, const ZZ_p& a) { x = a; }
+
+/* ------------------------------------- */
+
+
+
+
+// overload these functions for Vec<ZZ_p>.
+// They are defined in vec_ZZ_p.c
+void BlockConstruct(ZZ_p* p, long n);
+void BlockDestroy(ZZ_p* p, long n);
+
+
 NTL_CLOSE_NNS
 
 #endif

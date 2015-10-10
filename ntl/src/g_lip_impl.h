@@ -356,6 +356,14 @@ void ghalt(char *c)
 }
 
 
+long _ntl_gmaxalloc(_ntl_gbigint x)
+{
+   if (!x)
+      return 0;
+   else
+      return (ALLOC(x) >> 2) - 1;
+}
+
 #define MIN_SETL	(4)
    /* _ntl_gsetlength allocates a multiple of MIN_SETL digits */
 
@@ -414,8 +422,8 @@ void _ntl_gsetlength(_ntl_gbigint *v, long len)
       }
    }
    else {
-      len++;
-      len = ((len+(MIN_SETL-1))/MIN_SETL)*MIN_SETL;
+      len++;  /* as above, always allocate one more than explicitly reqested */
+      len = ((len+(MIN_SETL-1))/MIN_SETL)*MIN_SETL; 
 
       /* test len again */
       if (NTL_OVERFLOW(len, NTL_ZZ_NBITS, 0))
@@ -4189,7 +4197,7 @@ void _ntl_gcrt_struct_init(void **crt_struct, long n, _ntl_gbigint p,
    c = (struct crt_body *) NTL_MALLOC(1, sizeof(struct crt_body), 0);
    if (!c) ghalt("out of memory");
 
-   if (n >= 600) {
+   if (n >= 600) { 
       struct crt_body_gmp1 *C = &c->U.G1;
       long *q;
       long i, j;
@@ -4276,16 +4284,48 @@ void _ntl_gcrt_struct_init(void **crt_struct, long n, _ntl_gbigint p,
       for (i = (1L << (levels-1)) - 2; i >= 0; i--)
          _ntl_gmul(prod_vec[2*i+1], prod_vec[2*i+2], &prod_vec[i]);
 
+     /*** new asymptotically fast code to compute inv_vec ***/
 
+      _ntl_gone(&rem_vec[0]);
+      for (i = 0; i < (1L << (levels-1)) - 1; i++) {
+         _ntl_gmod(rem_vec[i], prod_vec[2*i+1], &temps[0]);
+         _ntl_gmul(temps[0], prod_vec[2*i+2], &temps[1]);
+         _ntl_gmod(temps[1], prod_vec[2*i+1], &rem_vec[2*i+1]);
+
+         _ntl_gmod(rem_vec[i], prod_vec[2*i+2], &temps[0]);
+         _ntl_gmul(temps[0], prod_vec[2*i+1], &temps[1]);
+         _ntl_gmod(temps[1], prod_vec[2*i+2], &rem_vec[2*i+2]);
+      }
+
+      for (i = (1L << (levels-1)) - 1; i < vec_len; i++) {
+         for (j = index_vec[i]; j < index_vec[i+1]; j++) {
+            long tt, tt1, tt2;
+            _ntl_gsdiv(prod_vec[i], q[j], &temps[0]);
+            tt = _ntl_gsmod(temps[0], q[j]);
+            tt1 = _ntl_gsmod(rem_vec[i], q[j]);
+            SP_MUL_MOD(tt2, tt, tt1, q[j]);
+            inv_vec[j] = sp_inv_mod(tt2, q[j]);
+         }
+      }
+
+
+
+#if 0
       /* the following is asymptotically the bottleneck...but it
        * it probably doesn't matter. */
 
+      fprintf(stderr, "checking in lip\n");
       for (i = 0; i < n; i++) {
          long tt;
          _ntl_gsdiv(prod_vec[0], q[i], &temps[0]);
          tt = mpn_mod_1(DATA(temps[0]), SIZE(temps[0]), q[i]);
-         inv_vec[i] = sp_inv_mod(tt, q[i]);
+         if (inv_vec[i] != sp_inv_mod(tt, q[i])) 
+            fprintf(stderr, "oops in lip\n");
+
+         /* inv_vec[i] = sp_inv_mod(tt, q[i]); */
+
       }
+#endif
 
       c->strategy = 2;
       C->n = n;

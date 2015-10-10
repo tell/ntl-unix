@@ -117,7 +117,7 @@ void SquareFreeDecomp(vec_pair_ZZX_long& u, const ZZX& ff)
    GCD(d, f, t1);
 
    if (deg(d) == 0) {
-      append(u, cons(f, 1));
+      append(u, cons(f, 1L));
       return;
    }
 

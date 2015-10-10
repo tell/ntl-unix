@@ -3,8 +3,9 @@
 #ifndef NTL_FFT__H
 #define NTL_FFT__H
 
-#include <NTL/vec_long.h>
 #include <NTL/ZZ.h>
+#include <NTL/vector.h>
+#include <NTL/vec_long.h>
 
 NTL_OPEN_NNS
 
@@ -32,29 +33,57 @@ NTL_OPEN_NNS
 // This can be increased, with a slight performance penalty.
 
 
+// New interface
+
+class FFTMultipliers {
+public:
+   long MaxK;
+   Vec< Vec<long> > wtab_precomp;
+   Vec< Vec<mulmod_precon_t> > wqinvtab_precomp;
+
+   FFTMultipliers() : MaxK(-1) { }
+};
+
+
+struct FFTPrimeInfo {
+   long q;   // the prime itself
+   double qinv;   // 1/((double) q)
+
+   Vec<long> RootTable;
+   //   RootTable[j] = w^{2^{MaxRoot-j}},
+   //                  where w is a primitive 2^MaxRoot root of unity
+   //                  for q
+
+   Vec<long> RootInvTable;
+   // RootInvTable[j] = 1/RootTable[j] mod q
+
+   Vec<long> TwoInvTable;
+   // TwoInvTable[j] = 1/2^j mod q
+
+   Vec<mulmod_precon_t> TwoInvPreconTable;
+   // mulmod preconditioning data
+
+   FFTMultipliers MulTab;
+   FFTMultipliers InvMulTab;
+
+};
+
+
+#define NTL_FFT_BIGTAB_LIMIT (256)
+// big tables are only used for the first NTL_FFT_BIGTAB_LIMIT primes
+// TODO: maybe we should have a similar limit for the degree of
+// the convolution as well.
+
+
+extern FFTPrimeInfo *FFTTables;
+
+
+// legacy interface
 
 extern long NumFFTPrimes;
-
 extern long *FFTPrime;
-extern long **RootTable;
-extern long **RootInvTable;
-extern long **TwoInvTable;
 extern double *FFTPrimeInv;
 
-/****************
-
-   RootTable[i][j] = w^{2^{MaxRoot-j}},
-                     where w is a primitive 2^MaxRoot root of unity
-                     for FFTPrime[i]
-
-   RootInvTable[i][j] = 1/RootTable[i][j] mod FFTPrime[i]
-
-   TwoInvTable[i][j] = 1/2^j mod FFTPrime[i]
-
-   These tables are allocated and initialized at run-time
-   with UseFFTPrime(i).
-
-*****************/
 
 
 long CalcMaxRoot(long p);
@@ -67,6 +96,51 @@ void UseFFTPrime(long index);
 void FFT(long* A, const long* a, long k, long q, const long* root);
 // the low-level FFT routine.
 // computes a 2^k point FFT modulo q, using the table root for the roots.
+// A and a may overlap.
+
+void FFT(long* A, const long* a, long k, long q, const long* root, FFTMultipliers& tab);
+
+
+inline
+void FFTFwd(long* A, const long *a, long k, long i)
+// Slightly higher level interface...using the ith FFT prime
+// A and a cannot overlap
+{
+   FFTPrimeInfo& info = FFTTables[i];
+#ifdef NTL_FFT_BIGTAB
+   if (i < NTL_FFT_BIGTAB_LIMIT)
+      FFT(A, a, k, info.q, &info.RootTable[0], info.MulTab);
+   else
+      FFT(A, a, k, info.q, &info.RootTable[0]);
+#else
+   FFT(A, a, k, info.q, &info.RootTable[0]);
+#endif
+}
+
+inline
+void FFTRev(long* A, const long *a, long k, long i)
+// Slightly higher level interface...using the ith FFT prime
+// A and a cannot overlap
+{
+   FFTPrimeInfo& info = FFTTables[i];
+#ifdef NTL_FFT_BIGTAB
+   if (i < NTL_FFT_BIGTAB_LIMIT)
+      FFT(A, a, k, info.q, &info.RootInvTable[0], info.InvMulTab);
+   else
+      FFT(A, a, k, info.q, &info.RootInvTable[0]);
+#else
+   FFT(A, a, k, info.q, &info.RootInvTable[0]);
+#endif
+}
+
+inline
+void FFTMulTwoInv(long* A, const long *a, long k, long i)
+{
+   FFTPrimeInfo& info = FFTTables[i];
+   VectorMulModPrecon(1L << k, A, a, info.TwoInvTable[k], info.q, 
+                      info.TwoInvPreconTable[k]);
+}
+
 
 NTL_CLOSE_NNS
 

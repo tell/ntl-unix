@@ -1920,7 +1920,7 @@ void NewDDF(vec_pair_zz_pX_long& factors,
 
    if (deg(f) == 1) {
       factors.SetLength(0);
-      append(factors, cons(f, 1));
+      append(factors, cons(f, 1L));
       return;
    }
 

@@ -19,6 +19,81 @@ A Tour of NTL: Summary of Changes
 
 <p> <hr> <p>
 <h3>
+2013.02.15: Changes between NTL 5.5.2 and 6.0
+</h3>
+
+<ul>
+<li>
+Replaced the old template-like macros for vectors, matrices,
+and pairs with true template classes: <tt>Vec&lt;T&gt;</tt>,
+<tt>Mat&lt;T&gt;</tt>, and <tt>Pair&lt;S,T&gt;</tt>.
+
+<p>
+For backwards compatibilty, all the names that were used
+in previous versions (e.g., <tt>vec_ZZ_p</tt>, <tt>mat_ZZ_p</tt>)
+have been replaced with appropriate typedefs.
+
+<p>
+For many years, I resisted the temptation of using templates,
+because compiler support was very inconsistent.
+But that no longer seems to be the case.
+
+<p>
+This change, while rather sweeping, should create very few,
+if any, incompatibilities with existing software.
+The biggest issue would be for software that uses the
+old template-like macros: such macro invocations can simply be
+replaced with appropriate typedefs.
+
+<p>
+<li>
+Made the conversion interface more complete and uniform.
+Also, using template notation, one can and should now write
+<tt>conv&lt;ZZ&gt;(a)</tt> instead of <tt>to_ZZ(a)</tt>
+(for backward compatibility, all the old names <tt>to_XXX</tt>
+are still there, but many new conversions are not available
+under these old names).
+
+
+<p>
+There are many new conversions provided.
+Moreover, whenever there is a conversion from a ring <i>R</i>
+to a ring <i>S</i>, there is a corresponding, coefficiet-wise
+conversion from the polynomial ring <i>R[X]</i> to the
+polynomial ring <i>R[X]</i>.
+
+<p>
+In addition, using the template mechanism, there are
+generic conversions for vectors and matrices.
+For example, if there is a conversion from <tt>S</tt> to <tt>T</tt>,
+then there is automatically a corresponding component-wise
+conversion from <tt>Vec&lt;S&gt;</tt> to <tt>Vec&lt;T&gt;</tt>.
+
+
+<p>
+<li>
+Introduced a more general mechanism for accessing <tt>GF2</tt>'s
+in packed structures via indexing (see the class 
+<tt>ref_GF2</tt> in the <tt>GF2</tt> module).
+
+<p>
+<li>
+Employed ideas from David Harvey to make the single-precision 
+FFT faster (about twice as fast in many cases).
+This speeds up many higher-level operations.
+
+
+<p>
+<li>
+Fixed all known bugs.
+
+
+</ul>
+
+
+
+<p> <hr> <p>
+<h3>
 2009.08.14: Changes between NTL 5.5.1 and 5.5.2
 </h3>
 

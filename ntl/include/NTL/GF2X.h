@@ -36,6 +36,16 @@ void kill() { xrep.kill(); }
 
 void SetMaxLength(long n);
 
+
+
+typedef GF2 coeff_type;
+void SetLength(long n);
+ref_GF2 operator[](long i);
+const GF2 operator[](long i) const;
+
+
+
+
 static long HexOutput;
 
 inline GF2X(long i, GF2 c);
@@ -52,11 +62,11 @@ long IsOne(const GF2X& a);
 
 long IsX(const GF2X& a);
 
-GF2 coeff(const GF2X& a, long i);
+const GF2 coeff(const GF2X& a, long i);
 
-GF2 LeadCoeff(const GF2X& a);
+const GF2 LeadCoeff(const GF2X& a);
 
-GF2 ConstTerm(const GF2X& a);
+const GF2 ConstTerm(const GF2X& a);
 
 
 inline void clear(GF2X& x) 
@@ -243,12 +253,7 @@ inline GF2X power(const GF2X& a, long e)
 
 
 
-NTL_vector_decl(GF2X,vec_GF2X)
-
-NTL_io_vector_decl(GF2X,vec_GF2X)
-
-NTL_eq_vector_decl(GF2X,vec_GF2X)
-
+typedef Vec<GF2X> vec_GF2X;
 
 void LeftShift(GF2X& c, const GF2X& a, long n);
 inline GF2X LeftShift(const GF2X& a, long n)
@@ -515,6 +520,24 @@ inline GF2X to_GF2X(const ZZ& a)
 inline vec_GF2 to_vec_GF2(const GF2X& a)
    { vec_GF2 x; conv(x, a); NTL_OPT_RETURN(vec_GF2, x); }
 
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(GF2X& x, const GF2X& a)
+   { x = a; }
+
+class ZZX;
+void conv(GF2X& x, const ZZX& a);
+void conv(ZZX& x, const GF2X& a);
+
+
+/* ------------------------------------- */
+
+
+
+
+
 inline GF2X& GF2X::operator=(long a)
    { conv(*this, a); return *this; }
 
@@ -619,7 +642,7 @@ inline vec_GF2 UpdateMap(const vec_GF2& a,
                        const GF2XTransMultiplier& B, const GF2XModulus& F)
    { vec_GF2 x; UpdateMap(x, a, B, F); NTL_OPT_RETURN(vec_GF2, x); }
 
-inline void project(GF2& x, const vec_GF2& a, const GF2X& b)
+inline void project(ref_GF2 x, const vec_GF2& a, const GF2X& b)
    { x = to_GF2(InnerProduct(a.rep, b.xrep)); }
 
 inline GF2 project(const vec_GF2& a, const GF2X& b)
@@ -648,12 +671,12 @@ inline vec_GF2 TraceVec(const GF2X& f)
    { vec_GF2 x; TraceVec(x, f); NTL_OPT_RETURN(vec_GF2, x); }
 
 
-void TraceMod(GF2& x, const GF2X& a, const GF2XModulus& F);
+void TraceMod(ref_GF2 x, const GF2X& a, const GF2XModulus& F);
 
 inline GF2 TraceMod(const GF2X& a, const GF2XModulus& F)
    { GF2 x; TraceMod(x, a, F); return x; }
 
-void TraceMod(GF2& x, const GF2X& a, const GF2X& f);
+void TraceMod(ref_GF2 x, const GF2X& a, const GF2X& f);
 
 inline GF2 TraceMod(const GF2X& a, const GF2X& f)
    { GF2 x; TraceMod(x, a, f); return x; }

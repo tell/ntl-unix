@@ -8,127 +8,6 @@
 NTL_START_IMPL
 
 
-mat_GF2::mat_GF2(const mat_GF2& a)  
-{  
-   _mat_GF2__numcols = 0;  
-   SetDims(a.NumRows(), a.NumCols());  
-   _mat_GF2__rep = a._mat_GF2__rep;  
-}  
-  
-mat_GF2& mat_GF2::operator=(const mat_GF2& a)  
-{  
-   SetDims(a.NumRows(), a.NumCols());  
-   _mat_GF2__rep = a._mat_GF2__rep;  
-   return *this;
-}  
-  
-  
-mat_GF2::mat_GF2(INIT_SIZE_TYPE, long n, long m)  
-{  
-   _mat_GF2__numcols = 0;  
-   SetDims(n, m);  
-}  
-  
-void mat_GF2::kill()  
-{  
-   _mat_GF2__numcols = 0;  
-   _mat_GF2__rep.kill();  
-}  
-  
-void mat_GF2::SetDims(long n, long m)  
-{  
-   if (n < 0 || m < 0)  
-      Error("SetDims: bad args");  
-  
-   if (m != _mat_GF2__numcols) {  
-      _mat_GF2__rep.kill();  
-      _mat_GF2__numcols = m;  
-   }  
-        
-   long oldmax = _mat_GF2__rep.MaxLength();  
-   long i;  
-   _mat_GF2__rep.SetLength(n);  
-  
-   for (i = oldmax; i < n; i++)  
-      _mat_GF2__rep[i].FixLength(m);  
-}  
-     
-        
-void conv(mat_GF2& x, const vec_vec_GF2& a)  
-{  
-   long n = a.length();  
-  
-   if (n == 0) {  
-      x.SetDims(0, 0);  
-      return;  
-   }  
-  
-   long m = a[0].length();  
-   long i;  
-  
-   for (i = 1; i < n; i++)  
-      if (a[i].length() != m)  
-         Error("nonrectangular matrix");  
-  
-   x.SetDims(n, m);  
-   for (i = 0; i < n; i++)  
-      x[i] = a[i];  
-}  
-  
-void swap(mat_GF2& X, mat_GF2& Y)  
-{  
-   swap(X._mat_GF2__numcols, Y._mat_GF2__numcols);  
-   swap(X._mat_GF2__rep, Y._mat_GF2__rep);  
-}  
-  
-
-
-long operator==(const mat_GF2& a, const mat_GF2& b)  
-{  
-   if (a.NumCols() != b.NumCols())  
-      return 0;  
-  
-   if (a.NumRows() != b.NumRows())  
-      return 0;  
-  
-   long n = a.NumRows();  
-   long i;  
-  
-   for (i = 0; i < n; i++)  
-      if (a[i] != b[i])  
-         return 0;  
-  
-   return 1;  
-}  
-  
-  
-long operator!=(const mat_GF2& a, const mat_GF2& b)  
-{  
-   return !(a == b);  
-}  
-
-istream& operator>>(istream& s, mat_GF2& x)  
-{  
-   vec_vec_GF2 buf;  
-   s >> buf;  
-   conv(x, buf);  
-   return s;  
-}  
-  
-ostream& operator<<(ostream& s, const mat_GF2& a)  
-{  
-   long n = a.NumRows();  
-   long i;  
-   s << "[";  
-   for (i = 0; i < n; i++) {
-      s << a[i];  
-      s << "\n";
-   }
-   s << "]";  
-   return s;  
-}  
-
-
 void add(mat_GF2& X, const mat_GF2& A, const mat_GF2& B)  
 {  
    long n = A.NumRows();  
@@ -273,7 +152,7 @@ void ident(mat_GF2& X, long n)
 } 
 
 
-void determinant(GF2& d, const mat_GF2& M_in)
+void determinant(ref_GF2 d, const mat_GF2& M_in)
 {
    long k, n;
    long i, j;
@@ -436,7 +315,7 @@ void transpose(mat_GF2& X, const mat_GF2& A)
 
    
 
-void solve(GF2& d, vec_GF2& X, const mat_GF2& A, const vec_GF2& b)
+void solve(ref_GF2 d, vec_GF2& X, const mat_GF2& A, const vec_GF2& b)
 
 {
    long n = A.NumRows();
@@ -521,7 +400,7 @@ void solve(GF2& d, vec_GF2& X, const mat_GF2& A, const vec_GF2& b)
 
 
 
-void inv(GF2& d, mat_GF2& X, const mat_GF2& A)
+void inv(ref_GF2 d, mat_GF2& X, const mat_GF2& A)
 {
    long n = A.NumRows();
    if (A.NumCols() != n)

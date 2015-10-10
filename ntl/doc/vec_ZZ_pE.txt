@@ -13,13 +13,7 @@ Provides vectors over ZZ_pE, along with some related operations.
 #include <NTL/vec_ZZ.h>
 #include <NTL/vector.h>
 
-NTL_vector_decl(ZZ_pE,vec_ZZ_pE)
-
-NTL_io_vector_decl(ZZ_pE,vec_ZZ_pE)
-// I/O operators are defined
-
-NTL_eq_vector_decl(ZZ_pE,vec_ZZ_pE)
-// operators == and != are defined
+typedef Vec<ZZ_pE> vec_ZZ_pE; // backward compatibility
 
 void mul(vec_ZZ_pE& x, const vec_ZZ_pE& a, const ZZ_pE& b);
 void mul(vec_ZZ_pE& x, const vec_ZZ_pE& a, const ZZ_p& b);

@@ -1,16 +1,8 @@
 
 #include <NTL/vec_ZZ.h>
 
-#include <NTL/new.h>
-
 NTL_START_IMPL
 
-
-NTL_vector_impl(ZZ,vec_ZZ)
-
-NTL_eq_vector_impl(ZZ,vec_ZZ)
-
-NTL_io_vector_impl(ZZ,vec_ZZ)
 
 void InnerProduct(ZZ& xx, const vec_ZZ& a, const vec_ZZ& b)
 {

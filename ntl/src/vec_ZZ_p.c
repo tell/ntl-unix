@@ -2,8 +2,6 @@
 
 #include <NTL/vec_ZZ_p.h>
 
-#include <NTL/new.h>
-
 NTL_START_IMPL
 
 
@@ -40,13 +38,6 @@ void BlockDestroy(ZZ_p* x, long n)
       i += m;
    }
 }
-
-
-NTL_vector_impl_plain(ZZ_p,vec_ZZ_p)
-
-NTL_io_vector_impl(ZZ_p,vec_ZZ_p)
-
-NTL_eq_vector_impl(ZZ_p,vec_ZZ_p)
 
 
 void conv(vec_ZZ_p& x, const vec_ZZ& a)

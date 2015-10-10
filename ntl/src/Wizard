@@ -49,7 +49,6 @@ cp lip_gmp_aux_impl.h small/src
 cp tools.c small/src
 cp vec_ZZ.c small/src
 cp vec_ZZ_p.c small/src
-cp vec_long.c small/src
 cp GF2.c small/src
 cp WordVector.c small/src
 cp vec_GF2.c small/src

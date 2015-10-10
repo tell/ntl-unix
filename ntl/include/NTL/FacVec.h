@@ -17,7 +17,7 @@ struct IntFactor {
 };
 
 
-NTL_vector_decl(IntFactor,vec_IntFactor)
+typedef Vec<IntFactor> vec_IntFactor;
 typedef vec_IntFactor FacVec;
 
 void FactorInt(FacVec& fvec, long n);

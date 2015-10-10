@@ -3,6 +3,12 @@
 #include <NTL/GF2X.h>
 #include <NTL/vec_long.h>
 
+#ifndef NTL_WIZARD_HACK
+
+#include <NTL/ZZX.h>
+
+#endif
+
 #include <NTL/new.h>
 
 #if (defined(NTL_WIZARD_HACK) && defined(NTL_GF2X_LIB))
@@ -2472,6 +2478,37 @@ void conv(vec_GF2& x, const GF2X& a)
    VectorCopy(x, a, deg(a)+1);
 }
 
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+#ifndef NTL_WIZARD_HACK
+void conv(GF2X& x, const ZZX& a)
+{
+   long n = deg(a) + 1;
+   long i;
+
+   x.SetLength(n);
+   for (i = 0; i < n; i++)
+      conv(x[i], a[i]);
+   x.normalize();
+}
+
+void conv(ZZX& x, const GF2X& a)
+{
+   long n = deg(a) + 1;
+   long i;
+
+   x.rep.SetLength(n);
+   for (i = 0; i < n; i++)
+      x.rep[i] = rep(coeff(a, i));
+
+   x.normalize();
+}
+#endif
+
+/* ------------------------------------- */
+
 void VectorCopy(vec_GF2& x, const GF2X& a, long n)
 {
    if (n < 0) Error("VectorCopy: negative length"); 
@@ -3238,7 +3275,7 @@ void ComputeTraceVec(const GF2XModulus& F)
    }
 }
 
-void TraceMod(GF2& x, const GF2X& a, const GF2XModulus& F)
+void TraceMod(ref_GF2 x, const GF2X& a, const GF2XModulus& F)
 {
    long n = F.n;
 
@@ -3251,7 +3288,7 @@ void TraceMod(GF2& x, const GF2X& a, const GF2XModulus& F)
    project(x, F.tracevec, a);
 }
 
-void TraceMod(GF2& x, const GF2X& a, const GF2X& f)
+void TraceMod(ref_GF2 x, const GF2X& a, const GF2X& f)
 {
    if (deg(a) >= deg(f) || deg(f) <= 0)
       Error("trace: bad args");

@@ -1,15 +1,7 @@
 
 #include <NTL/vec_lzz_p.h>
 
-#include <NTL/new.h>
-
 NTL_START_IMPL
-
-NTL_vector_impl(zz_p,vec_zz_p)
-
-NTL_io_vector_impl(zz_p,vec_zz_p)
-
-NTL_eq_vector_impl(zz_p,vec_zz_p)
 
 void conv(vec_zz_p& x, const vec_ZZ& a)
 {

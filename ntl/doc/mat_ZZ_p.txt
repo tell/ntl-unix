@@ -13,9 +13,8 @@ Defines the class mat_ZZ_p.
 #include <NTL/matrix.h>
 #include <NTL/vec_vec_ZZ_p.h>
 
-NTL_matrix_decl(ZZ_p,vec_ZZ_p,vec_vec_ZZ_p,mat_ZZ_p)
-NTL_io_matrix_decl(ZZ_p,vec_ZZ_p,vec_vec_ZZ_p,mat_ZZ_p)
-NTL_eq_matrix_decl(ZZ_p,vec_ZZ_p,vec_vec_ZZ_p,mat_ZZ_p)
+
+typedef mat_ZZ_p mat_ZZ_p; // backward compatibility
 
 void add(mat_ZZ_p& X, const mat_ZZ_p& A, const mat_ZZ_p& B); 
 // X = A + B

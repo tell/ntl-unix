@@ -1806,6 +1806,14 @@ void zsubmul(long lams, long *lama, long *lamb)
 #endif
 
 
+long _ntl_zmaxalloc(_ntl_verylong x)
+{
+   if (!x) 
+      return 0; 
+   else
+      return (x[-1] >> 1) - 1;
+}
+      
 
 void _ntl_zsetlength(_ntl_verylong *v, long len)
 {
@@ -1858,8 +1866,8 @@ void _ntl_zsetlength(_ntl_verylong *v, long len)
       }
    }
    else {
-      len++;
-      len = ((len+(MIN_SETL-1))/MIN_SETL)*MIN_SETL;
+      len++; /* as above, always allocate one more than requested */
+      len = ((len+(MIN_SETL-1))/MIN_SETL)*MIN_SETL; 
 
       /* test len again */
       if (NTL_OVERFLOW(len, NTL_NBITS, 0))

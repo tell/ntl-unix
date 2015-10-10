@@ -9,9 +9,7 @@
 
 NTL_OPEN_NNS
 
-NTL_matrix_decl(ZZ,vec_ZZ,vec_vec_ZZ,mat_ZZ)
-NTL_io_matrix_decl(ZZ,vec_ZZ,vec_vec_ZZ,mat_ZZ)
-NTL_eq_matrix_decl(ZZ,vec_ZZ,vec_vec_ZZ,mat_ZZ)
+typedef Mat<ZZ> mat_ZZ;
 
 
 void add(mat_ZZ& X, const mat_ZZ& A, const mat_ZZ& B); 

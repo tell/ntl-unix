@@ -7,7 +7,7 @@
 
 NTL_OPEN_NNS
 
-NTL_vector_decl(ZZVec,vec_ZZVec)
+typedef Vec<ZZVec> vec_ZZVec;
 
 NTL_CLOSE_NNS
 

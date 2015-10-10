@@ -32,7 +32,7 @@ NTL_CLIENT
 
 int main()
 {
-   ZZ_p::init(to_ZZ(17)); // define GF(17)
+   ZZ_p::init(conv&lt;ZZ&gt;(17)); // define GF(17)
 
    ZZ_pX P;
    BuildIrred(P, 10); // generate an irreducible polynomial P

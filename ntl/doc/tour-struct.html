@@ -169,14 +169,14 @@ the return type is simply appended to its name:
 
 Third, there are a number of conversion functions (see below), whose name
 in procedural form is <tt>conv</tt>, but whose name in 
-functioanl form is <tt>to_T</tt>, where <tt>T</tt> is the return type:
+functional form is <tt>conv&lt;T&gt;</tt>, where <tt>T</tt> is the return type:
 
 <pre>
    ZZ x;  
    double a;
 
-   x = to_ZZ(a);  // functional form
-   conv(x, a);    // procedural form
+   x = conv&lt;ZZ&gt;(a);  // functional form
+   conv(x, a);       // procedural form
 </pre>
 
 
@@ -207,65 +207,28 @@ Conversions and Promotions
 </h3>
 <p>
 
-NTL does not provide automatic conversions from, say,
-<tt>int</tt> to <tt>ZZ</tt>.
-Most <tt>C++</tt> experts consider such automatic conversions
-bad form in library design, and I would agree with them.
-Some earlier versions of NTL had automatic conversions,
-but they caused too much trouble, so I took them out.
-Indeed, combining function overloading and automatic conversions
-is generally considered  by programming language experts
-to be a bad idea (but that did not stop
-the designers of <tt>C++</tt> from doing it).
-It makes it very difficult to figure out which function
-ought to be called.
-<tt>C++</tt> has an incredibly complex set of rules for doing this;
-moreover, these rules have been changing over time,
-and no two compilers seem to implement exactly the same
-set of rules.
-And if a compiler has a hard time doing this, imagine what it
-is like for a programmer.
-In fact, the rules have become so complicated, that the latest
-edition of Stroustrup's <tt>C++</tt> book does not even explain them,
-although
-earlier verisons did.
-Possible explanations:
-<em>(a)</em> Stroustrup thinks his readers are 
-too stupid to understand the rules, or
-<em>(b)</em> Stroustrup does not understand the rules, or
-<em>(c)</em> the rules are so complicated that Stroustrup finds it embarassing
-to talk about them.
-
-<p>
-Now it should be more clear why I didn't just implement,
-say, the <tt>int</tt> to <tt>ZZ</tt> conversion function
-as a <tt>ZZ</tt> constructor taking an argument of type <tt>int</tt>,
-instead of calling it <tt>to_ZZ</tt>.
-This would have introduced an automatic conversion, which I
-wanted to avoid for the reasons explained above.
-"OK.  But why not make the constructor <tt>explict</tt>?" you ask.
-The main reason is that this is a fairly recently introduced
-language feature that is not universally available.
-And even if it were, what about, say, the <tt>ZZ</tt> to <tt>int</tt>
-conversion routine?
-How would you name <em>that</em>?
-The strategy I chose is simple, consistent, and portable.
-
-
-<p>
-
 As mentioned above, there are numerous explicit conversion routines,
 which come in both functional and procedural forms.
 A complete list of these can be found in 
 <a href="conversions.txt">conversions.txt</a>.
 This is the only place these are documented; they do not appear
-in the ".txt" files.
+in the other ".txt" files.
+
+<p>
+It is worth mentioning here, however, that generic conversion operators
+are provided for vectors and matrices, which act component-wise.
+For example, since there is a conversion from <tt>ZZ</tt> to <tt>RR</tt>,
+there is automatically a conversion from 
+<tt>Vec&lt;ZZ&gt;</tt> to <tt>Vec&lt;RR&gt</tt>.
+
+
+
+
 
 <p>
 
-Even though there are no automatic conversions, users
-of NTL can still have most of their benefits, while
-avoiding their pitfalls.
+Even though there are no implicity conversions, users
+of NTL can still have most of their benefits.
 This is because all of the basic arithmetic operations 
 (in both their functional and procedural forms),
 comparison operators, and assignment are overloaded
@@ -297,8 +260,8 @@ ZZ operator+(const ZZ&amp; a, const ZZ&amp; b);
 This means that in addition to the declared function, there
 are two other functions that are logically equivalent to the following:
 <pre>
-ZZ operator+(long a, const ZZ&amp; b) { return to_ZZ(a) + b; }
-ZZ operator+(const ZZ&amp; a, long b) { return a + to_ZZ(b); }
+ZZ operator+(long a, const ZZ&amp; b) { return conv&lt;ZZ&gt;(a) + b; }
+ZZ operator+(const ZZ&amp; a, long b) { return a + conv&lt;ZZ&gt;(b); }
 </pre>
 
 <p>
@@ -309,7 +272,7 @@ It is in generally more efficient to write
 </pre>
 than it is to write
 <pre>
-   x = y + to_ZZ(2);
+   x = y + conv&lt;ZZ&gt;(2);
 </pre>
 The former notation avoids the creation and destruction
 of a temporary <tt>ZZ</tt>
@@ -366,7 +329,7 @@ Here is the complete list:
    ZZ_p:        long
    ZZ_pX:       long, ZZ_p
    zz_p:        long
-   ZZ_pX:       long, zz_p
+   zz_pX:       long, zz_p
    ZZX:         long, ZZ
    GF2:         long
    GF2X:        long, GF2
@@ -434,7 +397,7 @@ promotes the denominator only. E.g.,
 Matrix by scalar and vector by scalar multiplication promote the scalar.
 E.g.,
 <pre>
-   vec_ZZ v, w;
+   Vec&lt;ZZ&gt; v, w;
       ...
    v = w*2;
    v = 2*w;
@@ -496,7 +459,7 @@ This is equivialent to
 </pre>
 One could also use an explicit conversion function:
 <pre>
-   a = a + to_ZZ(x);
+   a = a + conv&lt;ZZ&gt;(x);
 </pre>
 The second version guarantees that there is no loss of precision,
 and also guarantees that the floor of <tt>x</tt> is computed.
@@ -524,7 +487,7 @@ no loss of precision will occur.
 
 <p>
 
-Another pitfall too avoid is initialzing <tt>ZZ</tt>s
+Another pitfall too avoid is initialzing <tt>ZZ</tt>'s
 with integer constants that are too big.
 Consider the following:
 <pre>
@@ -538,7 +501,7 @@ The easiest way to introduce such large constants into your
 program is as follows:
 <pre>
    ZZ x;
-   x = to_ZZ("1234567890123456789012");
+   x = conv&lt;ZZ&gt;("1234567890123456789012");
 </pre>
 Conversion functions are provided for converting <tt>C</tt> character strings
 to  the types <tt>ZZ</tt>, <tt>RR</tt>, <tt>quad_float</tt>, 
@@ -547,7 +510,7 @@ and <tt>xdouble</tt>.
 <p>
 One should also be careful when converting to <tt>RR</tt>.
 All of these conversions round to the current working precision, which is
-usually, but not always what one wants.
+usually, but not always, what one wants.
 
 <p>
 <p>
@@ -557,11 +520,16 @@ Aliasing
 <p>
 
 An important feature of NTL is that aliasing of input and output
-parameters is <i>always</i> allowed.  For example, if you
+parameters is generally allowed.  For example, if you
 write <tt>mul(x, a, b)</tt>, then <tt>a</tt> or <tt>b</tt>
 may alias (have the same address as) <tt>x</tt>
 (or any object that <tt>x</tt> contains, e.g., scalar/vector
 or scalar/polynomial multiplication).
+
+<p>
+One exception to this rule:
+the generic conversions provided for vectors and
+matrices assume that their inputs do not alias their outputs.
 
 
 <p>
@@ -615,7 +583,7 @@ as long as one uses only the default constructor.
 For example, the global declarations
 <pre>
    ZZ global_integer;
-   vec_ZZ_p global_vector;
+   Vec&lt;ZZ_p&gt; global_vector;
 </pre>
 should always work, since their initialization only involves
 setting a pointer to 0.
@@ -636,7 +604,7 @@ should not matter too much.
 There is, however, one possible exception to this.
 A programmer might want to have a global constant initialized like this:
 <pre>
-   const quad_float Pi = to_quad_float("3.1415926535897932384626433832795029");
+   const quad_float Pi = conv&lt;quad_float&gt;("3.1415926535897932384626433832795029");
 </pre>
 While this probably will work fine on most platforms, 
 it may not be an entirely portable construction,
@@ -649,7 +617,7 @@ reference:
    const quad_float&amp; Pi()
    {
       static quad_float pi = 
-         to_quad_float("3.1415926535897932384626433832795029");
+         conv&lt;quad_float&gt;("3.1415926535897932384626433832795029");
       return pi;
    }
 </pre>

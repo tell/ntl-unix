@@ -244,6 +244,43 @@ inline double to_double(float a) { return double(a); }
 inline double to_double(double a) { return a; }
 
 
+
+/* additional legacy conversions for v6 conversion regime */
+
+
+inline void conv(unsigned int& x, int a) { x = ((unsigned int)(a)); }
+inline void conv(unsigned int& x, long a) { x = ((unsigned int)(a)); }
+inline void conv(unsigned int& x, unsigned a) { x = a; }
+inline void conv(unsigned int& x, unsigned long a) { x = ((unsigned int)(a)); }
+inline void conv(unsigned int& x, float a) { x = ((unsigned int) to_long(a)); }
+inline void conv(unsigned int& x, double a) { x = ((unsigned int) to_long(a)); }
+
+inline void conv(unsigned long& x, int a) { x = ((unsigned long)(a)); }
+inline void conv(unsigned long& x, long a) { x = ((unsigned long)(a)); }
+inline void conv(unsigned long& x, unsigned a) { x = ((unsigned long)(a)); }
+inline void conv(unsigned long& x, unsigned long a) { x = a; }
+inline void conv(unsigned long& x, float a) { x = ((unsigned int) to_long(a)); }
+inline void conv(unsigned long& x, double a) { x = ((unsigned int) to_long(a)); }
+
+
+/* ------------------------------------- */
+
+
+// new style converson function
+//   example: ZZ x = conv<ZZ>(1);
+//   note: modern C++ compilers should implemented 
+//     "named return value optimization", so the
+//     result statement should not create a temporary
+
+template<class T, class S>
+T conv(const S& a)
+{
+   T x;
+   conv(x, a);
+   return x;
+}
+
+
 long SkipWhiteSpace(NTL_SNS istream& s);
 long IsWhiteSpace(long c);
 long IsEOFChar(long c);
@@ -274,6 +311,21 @@ inline void ForceToMem(double *p) { }
 
 
 void PrintTime(NTL_SNS ostream& s, double t);
+
+
+
+#if (defined(__GNUC__) && (__GNUC__ >= 4))
+
+// on relative modern versions of gcc, we can 
+// decalare "restricted" pointers in C++
+
+#define NTL_RESTRICT __restrict
+
+#else
+
+#define NTL_RESTRICT
+
+#endif
 
 NTL_CLOSE_NNS
 

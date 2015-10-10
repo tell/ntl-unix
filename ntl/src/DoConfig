@@ -73,6 +73,8 @@
 'NTL_CLEAN_INT'         => 'off',
 'NTL_CLEAN_PTR'         => 'off',
 'NTL_RANGE_CHECK'       => 'off',
+'NTL_FFT_BIGTAB'        => 'off',
+'NTL_FFT_LAZYMUL'       => 'off',
 
 );
 

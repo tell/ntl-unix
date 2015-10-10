@@ -101,6 +101,16 @@ void kill()
 
    { rep.kill(); }
 
+
+
+typedef zz_p coeff_type;
+void SetLength(long n) { rep.SetLength(n); }
+zz_p& operator[](long i) { return rep[i]; }
+const zz_p& operator[](long i) const { return rep[i]; }
+
+
+
+
 static const zz_pX& zero();
 
 zz_pX(zz_pX& x, INIT_TRANS_TYPE) : rep(x.rep, INIT_TRANS) { }
@@ -145,16 +155,16 @@ inline long deg(const zz_pX& a) { return a.rep.length() - 1; }
 // degree of a polynomial.
 // note that the zero polynomial has degree -1.
 
-zz_p coeff(const zz_pX& a, long i);
+const zz_p coeff(const zz_pX& a, long i);
 // zero if i not in range
 
 void GetCoeff(zz_p& x, const zz_pX& a, long i);
 // x = a[i], or zero if i not in range
 
-zz_p LeadCoeff(const zz_pX& a);
+const zz_p LeadCoeff(const zz_pX& a);
 // zero if a == 0
 
-zz_p ConstTerm(const zz_pX& a);
+const zz_p ConstTerm(const zz_pX& a);
 // zero if a == 0
 
 void SetCoeff(zz_pX& x, long i, zz_p a);
@@ -300,6 +310,18 @@ inline zz_pX& zz_pX::operator=(zz_p a)
 
 inline zz_pX& zz_pX::operator=(long a)
    { conv(*this, a); return *this; }
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(zz_pX& x, const zz_pX& a)
+   { x = a; }
+
+inline void conv(vec_zz_p& x, const zz_pX& a)
+   { x = a.rep; }
+
+
+/* ------------------------------------- */
 
 
 
@@ -534,9 +556,9 @@ public:
 
    void SetSize(long NewK);
 
-   fftRep() { k = MaxK = -1; NumPrimes = zz_pInfo->NumPrimes; }
+   fftRep() { k = MaxK = -1; NumPrimes = 0; }
    fftRep(INIT_SIZE_TYPE, long InitK) 
-   { k = MaxK = -1; NumPrimes = zz_pInfo->NumPrimes; SetSize(InitK); }
+   { k = MaxK = -1; NumPrimes = 0; SetSize(InitK); }
    ~fftRep();
 };
 
@@ -986,12 +1008,7 @@ inline zz_pX interpolate(const vec_zz_p& a, const vec_zz_p& b)
 
 *****************************************************************/
 
-NTL_vector_decl(zz_pX,vec_zz_pX)
-
-NTL_eq_vector_decl(zz_pX,vec_zz_pX)
-
-NTL_io_vector_decl(zz_pX,vec_zz_pX)
-
+typedef Vec<zz_pX> vec_zz_pX;
 
 
 /**********************************************************
@@ -1237,6 +1254,9 @@ void CharPolyMod(zz_pX& g, const zz_pX& a, const zz_pX& f);
 
 inline zz_pX CharPolyMod(const zz_pX& a, const zz_pX& f)
    { zz_pX x; CharPolyMod(x, a, f); NTL_OPT_RETURN(zz_pX, x); }
+
+
+
 
 
 NTL_CLOSE_NNS

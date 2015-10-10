@@ -93,6 +93,13 @@ void kill()
 
    { rep.kill(); }
 
+
+typedef ZZ_p coeff_type;
+void SetLength(long n) { rep.SetLength(n); }
+ZZ_p& operator[](long i) { return rep[i]; }
+const ZZ_p& operator[](long i) const { return rep[i]; }
+
+
 static const ZZ_pX& zero();
 
 
@@ -286,6 +293,21 @@ inline ZZ_pX to_ZZ_pX(const ZZ_p& a)
 
 inline ZZ_pX to_ZZ_pX(const vec_ZZ_p& a)
    { ZZ_pX x; conv(x, a); NTL_OPT_RETURN(ZZ_pX, x); }
+
+
+
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(ZZ_pX& x, const ZZ_pX& a)
+   { x = a; }
+
+inline void conv(vec_ZZ_p& x, const ZZ_pX& a)
+   { x = a.rep; }
+
+
+/* ------------------------------------- */
 
 
 
@@ -996,11 +1018,7 @@ inline ZZ_pX interpolate(const vec_ZZ_p& a, const vec_ZZ_p& b)
 
 *****************************************************************/
 
-NTL_vector_decl(ZZ_pX,vec_ZZ_pX)
-
-NTL_eq_vector_decl(ZZ_pX,vec_ZZ_pX)
-
-NTL_io_vector_decl(ZZ_pX,vec_ZZ_pX)
+typedef Vec<ZZ_pX> vec_ZZ_pX;
 
 
 

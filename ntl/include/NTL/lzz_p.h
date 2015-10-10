@@ -341,11 +341,27 @@ inline zz_p random_zz_p()
    { zz_p x; random(x); return x; }
 
 
+
 // ****** input/output
 
 NTL_SNS ostream& operator<<(NTL_SNS ostream& s, zz_p a);
    
 NTL_SNS istream& operator>>(NTL_SNS istream& s, zz_p& x);
+
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(int& x, zz_p a) { conv(x, rep(a)); }
+inline void conv(unsigned int& x, zz_p a) { conv(x, rep(a)); }
+inline void conv(long& x, zz_p a) { conv(x, rep(a)); }
+inline void conv(unsigned long& x, zz_p a) { conv(x, rep(a)); }
+inline void conv(ZZ& x, zz_p a) { conv(x, rep(a)); }
+
+
+inline void conv(zz_p& x, zz_p a) { x = a; }
+
+/* ------------------------------------- */
+
 
 
 NTL_CLOSE_NNS

@@ -54,6 +54,65 @@ void GF2X::normalize()
    xrep.QuickSetLength(n);
 }
 
+
+
+void GF2X::SetLength(long n)
+{
+   if (n < 0) {
+      Error("SetLength: negative index");
+      return;
+   }
+
+   long w = (n + NTL_BITS_PER_LONG - 1)/NTL_BITS_PER_LONG;
+   long old_w = xrep.length();
+
+   xrep.SetLength(w);
+
+   long i;
+
+   if (w > old_w) {
+      // zero out new words
+
+      for (i = old_w; i < w; i++)
+         xrep[i] = 0;
+   }
+   else {
+      // zero out high order bits of last word
+
+
+     long wi = n/NTL_BITS_PER_LONG;
+     long bi = n - wi*NTL_BITS_PER_LONG;
+
+     if (bi == 0) return;
+     unsigned long mask = (1UL << bi) - 1UL;
+     xrep[wi] &= mask;
+   }
+}
+
+
+ref_GF2 GF2X::operator[](long i)
+{
+   if (i < 0) Error("GF2X: subscript out of range");
+   long wi = i/NTL_BITS_PER_LONG;
+   if (wi >= xrep.length())  Error("GF2X: subscript out of range");
+   long bi = i - wi*NTL_BITS_PER_LONG;
+   return ref_GF2(INIT_LOOP_HOLE, &xrep[wi], bi);
+}
+
+
+const GF2 GF2X::operator[](long i) const
+{
+   if (i < 0) Error("GF2X: subscript out of range");
+   long wi = i/NTL_BITS_PER_LONG;
+   if (wi >= xrep.length())  Error("GF2X: subscript out of range");
+   long bi = i - wi*NTL_BITS_PER_LONG;
+   return to_GF2((xrep[wi] & (1UL << bi)) != 0);
+}
+
+
+
+
+
 long IsZero(const GF2X& a) 
    { return a.xrep.length() == 0; }
 
@@ -71,7 +130,7 @@ long IsX(const GF2X& a)
    return a.xrep.length() == 1 && a.xrep[0] == 2;
 }
 
-GF2 coeff(const GF2X& a, long i)
+const GF2 coeff(const GF2X& a, long i)
 {
    if (i < 0) return to_GF2(0);
    long wi = i/NTL_BITS_PER_LONG;
@@ -81,7 +140,7 @@ GF2 coeff(const GF2X& a, long i)
    return to_GF2((a.xrep[wi] & (1UL << bi)) != 0);
 }
 
-GF2 LeadCoeff(const GF2X& a)
+const GF2 LeadCoeff(const GF2X& a)
 {
    if (IsZero(a))
       return to_GF2(0);
@@ -89,7 +148,7 @@ GF2 LeadCoeff(const GF2X& a)
       return to_GF2(1);
 }
 
-GF2 ConstTerm(const GF2X& a)
+const GF2 ConstTerm(const GF2X& a)
 {
    if (IsZero(a))
       return to_GF2(0);
@@ -162,7 +221,7 @@ void SetCoeff(GF2X& x, long i, long val)
    long bi = i - wi*NTL_BITS_PER_LONG;
 
    x.xrep[wi] &= ~(1UL << bi);
-   if (wi == n-1) x.normalize();
+   if (wi == n-1 && !x.xrep[wi]) x.normalize();
 }
 
 void SetCoeff(GF2X& x, long i, GF2 a)
@@ -1493,17 +1552,6 @@ void trunc(GF2X& x, const GF2X& a, long m)
    }
 }
       
-
-/****** implementation of vec_GF2X ******/
-
-
-NTL_vector_impl(GF2X,vec_GF2X)
-
-NTL_io_vector_impl(GF2X,vec_GF2X)
-
-NTL_eq_vector_impl(GF2X,vec_GF2X)
-
-
 
 void MulByX(GF2X& x, const GF2X& a)
 {

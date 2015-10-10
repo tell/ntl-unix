@@ -424,6 +424,18 @@ inline void FloorToZZ(ZZ& z, const RR& a) { conv(z, a); }
 inline ZZ FloorToZZ(const RR& a)
    { ZZ z; conv(z, a); NTL_OPT_RETURN(ZZ, z); }
 
+
+/* additional legacy conversions for v6 conversion regime */
+
+inline void conv(unsigned int& x, const RR& a)
+   { long z; conv(z, a); conv(x, z); }
+
+inline void conv(unsigned long& x, const RR& a)
+   { long z; conv(z, a); conv(x, z); }
+
+
+/* ------------------------------------- */
+
 void MakeRR(RR& z, const ZZ& a,  long e);
 inline RR MakeRR(const ZZ& a,  long e)
    { RR z; MakeRR(z, a, e); NTL_OPT_RETURN(RR, z); }

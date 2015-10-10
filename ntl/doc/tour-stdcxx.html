@@ -621,48 +621,19 @@ Standard C++ and the Real World
 </h3>
 
 <p>
-Compilers still vary in their ability to correctly implement
-Standard C++ in all its glory.
+The first C++ standard was set in 1998, with some
+revisions in 2003.
+As I write this update in 2013, I believe it is safe
+to say that most compileres released in the last
+few years do a pretty good job of implementing the standard.
 
 <p>
-NTL  compiles correctly in in either Traditional or ISO
-mode using recent versions (2.95 and later)
- of the <i>GNU</i> compiler (which is free).
-
-
-<p>
-It has also been reported that
-NTL compiles correctly in ISO mode using the
-Metroworks CodeWarrior Pro 5, v. 5.3 compiler on a PowerMac 7500 running
-on a 200MHz 604e.
-
-<p>
-NTL cannot be used with Microsoft Visual C++ versions 5 or 6
-in ISO mode, although this compiler still works with NTL in Traditional mode.
-I have tested NTL with  Microsoft Visual C++ version 6,
-and found that one can use the <tt>NTL_PSTD_NNS</tt> to useful effect,
-especially if one wants to use the STL.
-So one can wrap NTL in a namespace.
-However, the <tt>NTL_PSTD_NHF</tt> still does not work:
-MSVC++ 6 is very inconsistent about the location of a number of
-names; even when one uses the new header files, some names
-in the standard library are in namespace <tt>std</tt>,
-while others are in the global namespace.
-Further, it appears that Koenig lookup is not properly
-implemented in MSVC++ 6, but luckily, NTL does not rely on this.
-
-<p>
-It appears that some later versions of Microsoft C++ are much
-more standards compliant, and may in fact work with NTL in ISO mode.
-
-
-<p>
-As usual, 
-NTL should continue to work in Traditional mode on just about any
-available <tt>C++</tt> compiler.
-
-<p>
-
+However, a new revision to tne standard appeared in 2011.
+This new revision contains many new language and library 
+features.
+Surely, it will be a number of years until 
+support for all these new feautures will be uniformly 
+available.
 
 
 
