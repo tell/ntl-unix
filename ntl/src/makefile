@@ -68,7 +68,9 @@ CPPFLAGS=
 LIBTOOL=libtool
 # libtool command
 
-PREFIX=/usr/local
+DEF_PREFIX=/usr/local
+
+PREFIX=$(DEF_PREFIX)
 LIBDIR=$(PREFIX)/lib
 INCLUDEDIR=$(PREFIX)/include
 DOCDIR=$(PREFIX)/share/doc
@@ -77,8 +79,7 @@ DOCDIR=$(PREFIX)/share/doc
 ###############################################################
 #
 #  Second, if you want to use GMP (the GNU Multi-Precision library),
-#  define the variables GMP_INCDIR, GMP_LIBDIR, GMP_LIB below.
-#  Otherwise, leave these defined as empty.
+#  define the variables GMP_OPT_INCDIR, GMP_OPT_LIBDIR, GMP_OPT_LIB below.
 #  You also will have to set either NTL_GMP_LIP or NTL_GMP_HACK
 #  in the config.h file.
 #
@@ -91,40 +92,43 @@ DOCDIR=$(PREFIX)/share/doc
 ###############################################################
 
 
-GMP_INCDIR=
-# Set to -I<directory containing gmp.h> if using GMP and GMP
-# is not installed in a standard system directory, empty otherwise
+GMP_PREFIX=$(DEF_PREFIX)
 
-GMP_LIBDIR=
-# Set to -L<directory containing libgmp.a> if using GMP and GMP
-# is not installed in a standard system directory, empty otherwise
+GMP_INCDIR=$(GMP_PREFIX)/include
+# directory containing gmp.h if using GMP 
 
-GMP_LIB=
-# Set to -lgmp if using GMP, empty otherwise
+GMP_LIBDIR=$(GMP_PREFIX)/lib
+# directory containing libgmp.a if using GMP 
+
+GMP_OPT_INCDIR=# -I$(GMP_INCDIR) # GMP
+GMP_OPT_LIBDIR=# -L$(GMP_LIBDIR) # GMP
+GMP_OPT_LIB=# -lgmp # GMP
+# uncomment these if using GMP
 
 
 ###############################################################
 #
-#  Second, if you want to use gf2x (a library for fast
-#  multiplication over GF(2)[X], you need to
-#  define the variables GF2X_INCDIR, GF2X_LIBDIR, GF2X_LIB below.
-#  Otherwise, leave these defined as empty.
+#  Third, if you want to use gf2x (a library for fast
+#  multiplication over GF(2)[X]), you need to
+#  define the variables GF2X_OPT_INCDIR, GF2X_OPT_LIBDIR, GF2X_OPT_LIB below.
 #  You also will have to set NTL_GF2X_LIB 
 #  in the config.h file.
 #
 ###############################################################
 
+GF2X_PREFIX=$(DEF_PREFIX)
 
-GF2X_INCDIR=
-# Set to -I<directory containing gmp.h> if using gf2x and gf2x
-# is not installed in a standard system directory, empty otherwise
+GF2X_INCDIR=$(GF2X_PREFIX)/include
+# directory containing gf2x.h if using gf2x
 
-GF2X_LIBDIR=
-# Set to -L<directory containing libgmp.a> if using gf2x and gf2x
-# is not installed in a standard system directory, empty otherwise
+GF2X_LIBDIR=$(GF2X_PREFIX)/lib
+# directory containing libgf2x.a
 
-GF2X_LIB=
-# Set to -lgf2x if using gf2x, empty otherwise
+GF2X_OPT_INCDIR=# -I$(GF2X_INCDIR) # GF2X
+GF2X_OPT_LIBDIR=# -L$(GF2X_LIBDIR) # GF2X
+GF2X_OPT_LIB=# -lgf2x # GF2X
+# uncomment these if using gf2x
+
 
 ###############################################################
 #
@@ -352,9 +356,9 @@ setup2:
 # When these flags are not set, empty files are produced.
 
 setup3:
-	$(LINK) $(GMP_INCDIR) -o gen_lip_gmp_aux gen_lip_gmp_aux.c $(GMP_LIBDIR) $(GMP_LIB) $(LDLIBS)
+	$(LINK) $(GMP_OPT_INCDIR) -o gen_lip_gmp_aux gen_lip_gmp_aux.c $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
 	./gen_lip_gmp_aux > lip_gmp_aux_impl.h
-	$(LINK) $(GMP_INCDIR) -o gen_gmp_aux gen_gmp_aux.c $(GMP_LIBDIR) $(GMP_LIB) $(LDLIBS)
+	$(LINK) $(GMP_OPT_INCDIR) -o gen_gmp_aux gen_gmp_aux.c $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
 	./gen_gmp_aux > ../include/NTL/gmp_aux.h
 
 # setup4 runs the wizard
@@ -366,13 +370,13 @@ setup4:
 ntl.a:	$(OBJ) 
 	$(AR) $(ARFLAGS) ntl.a $(OBJ) #LSTAT
 	- $(RANLIB) ntl.a #LSTAT
-# 	$(LIBTOOL) --mode=link $(LINK_CXX) -o libntl.la $(OBJ:.o=.lo) $(GMP_LIBDIR) $(GMP_LIB) $(GF2X_LIBDIR) $(GF2X_LIB) $(LDLIBS_CXX) -rpath $(LIBDIR) -version-info `cat VERSION_INFO` #LSHAR
+# 	$(LIBTOOL) --mode=link $(LINK_CXX) -o libntl.la $(OBJ:.o=.lo) $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(GF2X_OPT_LIBDIR) $(GF2X_OPT_LIB) $(LDLIBS_CXX) -rpath $(LIBDIR) -version-info `cat VERSION_INFO` #LSHAR
 
 LCOMP= #LSTAT
 # LCOMP=$(LIBTOOL) --mode=compile #LSHAR
 
 lip.o:	lip.c g_lip_impl.h c_lip_impl.h lip_gmp_aux_impl.h
-	$(LCOMP) $(COMPILE) $(GMP_INCDIR) lip.c
+	$(LCOMP) $(COMPILE) $(GMP_OPT_INCDIR) lip.c
 
 ctools.o:	ctools.c
 	$(LCOMP) $(COMPILE) ctools.c
@@ -384,10 +388,10 @@ GetTime.o: GetTime.c
 
 
 .c.o: 
-	$(LCOMP) $(COMPILE_CXX) $(GF2X_INCDIR) $<
+	$(LCOMP) $(COMPILE_CXX) $(GF2X_OPT_INCDIR) $<
 
 .c: 
-	$(LINK_CXX) -o $@ $< ntl.a $(GMP_LIBDIR) $(GMP_LIB) $(GF2X_LIBDIR) $(GF2X_LIB) $(LDLIBS_CXX) #LSTAT
+	$(LINK_CXX) -o $@ $< ntl.a $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(GF2X_OPT_LIBDIR) $(GF2X_OPT_LIB) $(LDLIBS_CXX) #LSTAT
 # 	$(LIBTOOL) --mode=link $(LINK_CXX) -o $@ $< libntl.la #LSHAR
 
 #################################################################
@@ -398,6 +402,7 @@ GetTime.o: GetTime.c
 #################################################################
 
 check:
+	sh RemoveProg $(PROGS)
 	make QuickTest
 	./QuickTest
 	sh RemoveProg QuickTest
@@ -522,17 +527,17 @@ wntl.a:	$(WOBJ)
 	- $(RANLIB) wntl.a
 
 MulTimeTest:
-	$(LINK_CXX) -o MulTimeTest MulTimeTest.c wntl.a  $(GMP_LIBDIR) $(GMP_LIB)  $(LDLIBS_CXX)
+	$(LINK_CXX) -o MulTimeTest MulTimeTest.c wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB)  $(LDLIBS_CXX)
 
 PolyTimeTest:
-	$(LINK_CXX) -o PolyTimeTest PolyTimeTest.c wntl.a  $(GMP_LIBDIR) $(GMP_LIB) $(LDLIBS_CXX)
+	$(LINK_CXX) -o PolyTimeTest PolyTimeTest.c wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS_CXX)
 
 Poly1TimeTest:
-	$(LINK_CXX) -o Poly1TimeTest Poly1TimeTest.c wntl.a  $(GMP_LIBDIR) $(GMP_LIB) $(LDLIBS_CXX)
+	$(LINK_CXX) -o Poly1TimeTest Poly1TimeTest.c wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS_CXX)
 
 
 GF2XTimeTest:
-	$(LINK_CXX) -o GF2XTimeTest GF2XTimeTest.c wntl.a  $(GMP_LIBDIR) $(GMP_LIB) $(LDLIBS_CXX)
+	$(LINK_CXX) -o GF2XTimeTest GF2XTimeTest.c wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS_CXX)
 
 InitSettings:
 	$(LINK_CXX) -o InitSettings InitSettings.c  $(LDLIBS_CXX)

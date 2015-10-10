@@ -26,18 +26,21 @@ use warnings;  # this doesn't work on older versions of perl
 'LDLIBS'      => '-lm',
 'LDLIBS_CXX'  => '$(LDLIBS)',
 'CPPFLAGS'    => '',
-'PREFIX'      => '/usr/local',
+
+'DEF_PREFIX'  => '/usr/local',
+
+'PREFIX'      => '$(DEF_PREFIX)',
 'LIBDIR'      => '$(PREFIX)/lib',
 'INCLUDEDIR'  => '$(PREFIX)/include',
 'DOCDIR'      => '$(PREFIX)/share/doc',
 
-'GMP_PREFIX'  => undef,
-'GMP_INCDIR'  => undef,
-'GMP_LIBDIR'  => undef,
+'GMP_PREFIX'  => '$(DEF_PREFIX)',
+'GMP_INCDIR'  => '$(GMP_PREFIX)/include',
+'GMP_LIBDIR'  => '$(GMP_PREFIX)/lib',
 
-'GF2X_PREFIX'  => undef,
-'GF2X_INCDIR'  => undef,
-'GF2X_LIBDIR'  => undef,
+'GF2X_PREFIX'  => '$(DEF_PREFIX)',
+'GF2X_INCDIR'  => '$(GF2X_PREFIX)/include',
+'GF2X_LIBDIR'  => '$(GF2X_PREFIX)/lib',
 
 );
 
@@ -135,82 +138,26 @@ if ($MakeFlag{'SHARED'} eq 'off') {
 
 }
 
+# a special MakeVal value that is determined by NTL_GMP_LIP 
+# and NTL_GMP_HACK
 
-
-
-
-
-# some special logic to set GMP_INCDIR, GMP_LIBDIR, and GMP_LIB.
-# note that GMP_PREFIX is not really a variable in the makefile template
 
 if ($ConfigFlag{'NTL_GMP_LIP'} eq 'on' || $ConfigFlag{'NTL_GMP_HACK'} eq 'on') {
-
-   if (defined($MakeVal{'GMP_PREFIX'})) {
-      if (!defined($MakeVal{'GMP_INCDIR'})) {
-         $MakeVal{'GMP_INCDIR'} = "-I$MakeVal{'GMP_PREFIX'}/include";
-      }
-
-      if (!defined($MakeVal{'GMP_LIBDIR'})) {
-         $MakeVal{'GMP_LIBDIR'} = "-L$MakeVal{'GMP_PREFIX'}/lib";
-      }
-   }
-   else {
-      if (!defined($MakeVal{'GMP_INCDIR'})) {
-         $MakeVal{'GMP_INCDIR'} = '';
-      }
-
-      if (!defined($MakeVal{'GMP_LIBDIR'})) {
-         $MakeVal{'GMP_LIBDIR'} = '';
-      }
-   }
-   
-   $MakeVal{'GMP_LIB'} = '-lgmp';
+   $MakeVal{'GMP'} = '';
 }
 else {
-
-   $MakeVal{'GMP_INCDIR'} = '';
-   $MakeVal{'GMP_LIBDIR'} = '';
-   $MakeVal{'GMP_LIB'} = '';
-
+   $MakeVal{'GMP'} = '# ';
 }
 
-# some special logic to set GF2X_INCDIR, GF2X_LIBDIR, and GF2X_LIB.
-# note that GF2X_PREFIX is not really a variable in the makefile template
+# a special MakeVal value that is determined by NTL_GF2X_LIB
+
 
 if ($ConfigFlag{'NTL_GF2X_LIB'} eq 'on') {
-
-   if (defined($MakeVal{'GF2X_PREFIX'})) {
-      if (!defined($MakeVal{'GF2X_INCDIR'})) {
-         $MakeVal{'GF2X_INCDIR'} = "-I$MakeVal{'GF2X_PREFIX'}/include";
-      }
-
-      if (!defined($MakeVal{'GF2X_LIBDIR'})) {
-         $MakeVal{'GF2X_LIBDIR'} = "-L$MakeVal{'GF2X_PREFIX'}/lib";
-      }
-   }
-   else {
-      if (!defined($MakeVal{'GF2X_INCDIR'})) {
-         $MakeVal{'GF2X_INCDIR'} = '';
-      }
-
-      if (!defined($MakeVal{'GF2X_LIBDIR'})) {
-         $MakeVal{'GF2X_LIBDIR'} = '';
-      }
-   }
-
-   $MakeVal{'GF2X_LIB'} = '-lgf2x';
-
+   $MakeVal{'GF2X'} = '';
 }
 else {
-
-   $MakeVal{'GF2X_INCDIR'} = '';
-   $MakeVal{'GF2X_LIBDIR'} = '';
-   $MakeVal{'GF2X_LIB'} = '';
-
+   $MakeVal{'GF2X'} = '# ';
 }
-
-
-
 
 
 # copy %MakeVal and %MakeFlag as is into %MakeSub

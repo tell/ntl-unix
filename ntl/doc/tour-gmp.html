@@ -137,6 +137,14 @@ you execute:
 <pre>
    % ./configure PREFIX=$HOME/sw NTL_GMP_LIP=on  GMP_PREFIX=$HOME/sw
 </pre>
+You can write this more simply as 
+<pre>
+   % ./configure DEF_PREFIX=$HOME/sw NTL_GMP_LIP=on 
+</pre>
+Here, <tt>DEF_PREFIX</tt> is a variable that is used
+to specify the location of all software,
+and it defaults to <tt>/usr/local</tt>.
+
 
 <p>
 If you installed GMP in <tt>/usr/local</tt> (or some other

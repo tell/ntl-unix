@@ -64,10 +64,18 @@ above as
    % ./configure PREFIX=$HOME/sw NTL_GMP_LIP=on
 </pre>
 and if GMP is installed somewhere else, say <tt>$HOME/sw</tt>, then
+either
 <pre>
    % ./configure PREFIX=$HOME/sw NTL_GMP_LIP=on GMP_PREFIX=$HOME/sw
 </pre>
+or, more simply,
+<pre>
+   % ./configure DEF_PREFIX=$HOME/sw NTL_GMP_LIP=on 
+</pre>
 does the job.
+Here, <tt>DEF_PREFIX</tt> is a variable that is used
+to specify the location of all software,
+and it defaults to <tt>/usr/local</tt>.
 <a href="tour-gmp.html">This page</a> provides more
 details.
 
@@ -165,24 +173,26 @@ Here are the most important variables, and their default values.
 
 <p>
 <pre>
-   CC=gcc               # The C compiler
-   CXX=g++              # The C++ compiler
-   CFLAGS=-O2           # C complilation flags
-   CXXFLAGS=$(CFLAGS)   # C++ compilation flags (by default, same as CFLAGS)
+CC=gcc               # The C compiler
+CXX=g++              # The C++ compiler
+CFLAGS=-O2           # C complilation flags
+CXXFLAGS=$(CFLAGS)   # C++ compilation flags (by default, same as CFLAGS)
 
-   PREFIX=/usr/local    # Directory in which to install NTL library components
+DEF_PREFIX=/usr/local # Default software directory
+PREFIX=$(DEF_PREFIX) # Directory in which to install NTL library components
+SHARED=off           # Generate a shared library (as well as static)
 
-   NTL_STD_CXX=on       # ISO Mode switch
+NTL_STD_CXX=on       # ISO Mode switch
 
-   NTL_GMP_LIP=off      # Switch 'on' to enable the use of GMP as the primary
-                        # long integer package
+NTL_GMP_LIP=off      # Switch to enable the use of GMP as primary 
+                     #   long integer package
 
-   GMP_PREFIX=undef     # Directory in which GMP components have been installed
+GMP_PREFIX=$(DEF_PREFIX) # Directory in which GMP components are installed
 
-   NTL_GF2X_LIB=off     # Switch to enable the use of the gf2x package
-                        #   for faster arithmetic over GF(2)[X]
+NTL_GF2X_LIB=off     # Switch to enable the use of the gf2x package
+                     #   for faster arithmetic over GF(2)[X]
 
-   GF2X_PREFIX=undef    # Directory in which gf2x components have been installed
+GF2X_PREFIX=$(DEF_PREFIX) # Directory in which gf2x components are installed
 </pre>
 
 <p>
