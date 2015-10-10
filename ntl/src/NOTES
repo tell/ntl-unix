@@ -3,8 +3,6 @@ These are basically notes to myself on preparing a new
 distribution of NTL.
 
 
-Notes on making a new distribution
-
 - change version numbers in ../include/NTL/version.h, DIRNAME, and WINDIR
 
 - change the libtool soname in VERSION_INFO. See:
@@ -15,15 +13,16 @@ http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
   make sure these changes are implemented in the template files 
   mfile and cfile, and then run:
 
-- update ../README and ../doc/copying.txt
-
 ./configure
 cp makefile def_makefile
 cp ../include/NTL/config.h ../include/NTL/def_config.h
+
+- update ../README and ../doc/copying.txt
 
 - run:  
 
 make package
 make winpack
+
 
 

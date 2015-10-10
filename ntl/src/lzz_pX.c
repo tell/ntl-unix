@@ -1572,9 +1572,9 @@ void TofftRep(fftRep& y, const zz_pX& x, long k, long lo, long hi)
 
    const zz_p *xx = x.rep.elts();
 
-   long index = zz_pInfo->index;
+   FFTPrimeInfo *p_info = zz_pInfo->p_info;
 
-   if (index >= 0) {
+   if (p_info) {
       for (j = 0; j < n; j++) {
          if (j >= m) {
             y.tbl[0][j] = 0;
@@ -1608,9 +1608,9 @@ void TofftRep(fftRep& y, const zz_pX& x, long k, long lo, long hi)
    }
    
 
-   if (index >= 0) {
+   if (p_info) {
       long *yp = &y.tbl[0][0];
-      FFTFwd(yp, yp, k, index);
+      FFTFwd(yp, yp, k, *p_info);
    } 
    else {
       for (i = 0; i < zz_pInfo->NumPrimes; i++) {
@@ -1648,11 +1648,11 @@ void RevTofftRep(fftRep& y, const vec_zz_p& x,
 
    const zz_p *xx = x.elts();
 
-   long index = zz_pInfo->index;
+   FFTPrimeInfo *p_info = zz_pInfo->p_info;
 
    offset = offset & (n-1);
 
-   if (index >= 0) {
+   if (p_info) {
       for (j = 0; j < n; j++) {
          if (j >= m) {
             y.tbl[0][offset] = 0;
@@ -1688,16 +1688,14 @@ void RevTofftRep(fftRep& y, const vec_zz_p& x,
    }
 
 
-   if (index >= 0) {
+   if (p_info) {
       long *yp = &y.tbl[0][0];
-      FFTRev(yp, yp, k, index);
-      FFTMulTwoInv(yp, yp, k, index);
+      FFTRev1(yp, yp, k, *p_info);
    }
    else {
       for (i = 0; i < zz_pInfo->NumPrimes; i++) {
          long *yp = &y.tbl[i][0];
-         FFTRev(yp, yp, k, i);
-         FFTMulTwoInv(yp, yp, k, i);
+         FFTRev1(yp, yp, k, i);
       }
    }
 }
@@ -1717,18 +1715,16 @@ void FromfftRep(zz_pX& x, fftRep& y, long lo, long hi)
    k = y.k;
    n = (1L << k);
 
-   long index = zz_pInfo->index;
+   FFTPrimeInfo *p_info = zz_pInfo->p_info;
 
-   if (index >= 0) {
+   if (p_info) {
       long *yp = &y.tbl[0][0];
-      FFTRev(yp, yp, k, index);
-      FFTMulTwoInv(yp, yp, k, index);
+      FFTRev1(yp, yp, k, *p_info);
    }
    else {
       for (i = 0; i < NumPrimes; i++) {
          long *yp = &y.tbl[i][0];
-         FFTRev(yp, yp, k, i);
-         FFTMulTwoInv(yp, yp, k, i);
+         FFTRev1(yp, yp, k, i);
       }
    }
 
@@ -1737,7 +1733,7 @@ void FromfftRep(zz_pX& x, fftRep& y, long lo, long hi)
    l = max(l, 0);
    x.rep.SetLength(l);
 
-   if (index >= 0) {
+   if (p_info) {
       zz_p *xp = x.rep.elts();
       long *yp = &y.tbl[0][0];
       for (j = 0; j < l; j++) 
@@ -1771,11 +1767,11 @@ void RevFromfftRep(vec_zz_p& x, fftRep& y, long lo, long hi)
    k = y.k;
    n = (1L << k);
 
-   long index = zz_pInfo->index;
+   FFTPrimeInfo *p_info = zz_pInfo->p_info;
 
-   if (index >= 0) {
+   if (p_info) {
       long *yp = &y.tbl[0][0];
-      FFTFwd(yp, yp, k, index);
+      FFTFwd(yp, yp, k, *p_info);
    }
    else {
       for (i = 0; i < NumPrimes; i++) {
@@ -1789,7 +1785,7 @@ void RevFromfftRep(vec_zz_p& x, fftRep& y, long lo, long hi)
    l = max(l, 0);
    x.SetLength(l);
 
-   if (index >= 0) {
+   if (p_info) {
       zz_p *xp = x.elts();
       long *yp = &y.tbl[0][0];
       for (j = 0; j < l; j++) 
@@ -1817,20 +1813,18 @@ void NDFromfftRep(zz_pX& x, const fftRep& y, long lo, long hi, fftRep& z)
 
    z.SetSize(k);
 
-   long index = zz_pInfo->index;
+   FFTPrimeInfo *p_info = zz_pInfo->p_info;
 
-   if (index >= 0) {
+   if (p_info) {
       long *zp = &z.tbl[0][0];
       const long *yp = &y.tbl[0][0];
-      FFTRev(zp, yp, k, index);
-      FFTMulTwoInv(zp, zp, k, index);
+      FFTRev1(zp, yp, k, *p_info);
    }
    else {
       for (i = 0; i < NumPrimes; i++) {
          long *zp = &z.tbl[i][0];
          const long *yp = &y.tbl[i][0];
-         FFTRev(zp, yp, k, i);
-         FFTMulTwoInv(zp, zp, k, i);
+         FFTRev1(zp, yp, k, i);
       }
    }
 
@@ -1839,7 +1833,7 @@ void NDFromfftRep(zz_pX& x, const fftRep& y, long lo, long hi, fftRep& z)
    l = max(l, 0);
    x.rep.SetLength(l);
 
-   if (index >= 0) {
+   if (p_info) {
       zz_p *xp = x.rep.elts();
       long *zp = &z.tbl[0][0];
       for (j = 0; j < l; j++) 
@@ -1878,11 +1872,11 @@ void FromfftRep(zz_p* x, fftRep& y, long lo, long hi)
    k = y.k;
    n = (1L << k);
 
-   long index = zz_pInfo->index;
-   if (index >= 0) {
+   FFTPrimeInfo *p_info = zz_pInfo->p_info;
+
+   if (p_info) {
       long *yp = &y.tbl[0][0];
-      FFTRev(yp, yp, k, index);
-      FFTMulTwoInv(yp, yp, k, index);
+      FFTRev1(yp, yp, k, *p_info);
 
       for (j = lo; j <= hi; j++) {
          if (j >= n)
@@ -1895,8 +1889,7 @@ void FromfftRep(zz_p* x, fftRep& y, long lo, long hi)
    else {
       for (i = 0; i < NumPrimes; i++) {
          long *yp = &y.tbl[i][0];
-         FFTRev(yp, yp, k, i);
-         FFTMulTwoInv(yp, yp, k, i);
+         FFTRev1(yp, yp, k, i);
       }
    
       for (j = lo; j <= hi; j++) {
@@ -1924,14 +1917,14 @@ void mul(fftRep& z, const fftRep& x, const fftRep& y)
 
    z.SetSize(k);
 
-   long index = zz_pInfo->index;
+   FFTPrimeInfo *p_info = zz_pInfo->p_info;
 
-   if (index >= 0) {
+   if (p_info) {
       long *zp = &z.tbl[0][0];
       const long *xp = &x.tbl[0][0];
       const long *yp = &y.tbl[0][0];
-      long q = FFTPrime[index];
-      double qinv = FFTPrimeInv[index];
+      long q = p_info->q;
+      double qinv = p_info->qinv;
 
       for (j = 0; j < n; j++)
          zp[j] = MulMod(xp[j], yp[j], q, qinv);
@@ -1961,13 +1954,13 @@ void sub(fftRep& z, const fftRep& x, const fftRep& y)
 
    z.SetSize(k);
 
-   long index = zz_pInfo->index;
+   FFTPrimeInfo *p_info = zz_pInfo->p_info;
 
-   if (index >= 0) {
+   if (p_info) {
       long *zp = &z.tbl[0][0];
       const long *xp = &x.tbl[0][0];
       const long *yp = &y.tbl[0][0];
-      long q = FFTPrime[index];
+      long q = p_info->q;
 
       for (j = 0; j < n; j++)
          zp[j] = SubMod(xp[j], yp[j], q);
@@ -1996,13 +1989,13 @@ void add(fftRep& z, const fftRep& x, const fftRep& y)
 
    z.SetSize(k);
 
-   long index = zz_pInfo->index;
+   FFTPrimeInfo *p_info = zz_pInfo->p_info;
 
-   if (index >= 0) {
+   if (p_info) {
       long *zp = &z.tbl[0][0];
       const long *xp = &x.tbl[0][0];
       const long *yp = &y.tbl[0][0];
-      long q = FFTPrime[index];
+      long q = p_info->q;
 
       for (j = 0; j < n; j++)
          zp[j] = AddMod(xp[j], yp[j], q);
@@ -2055,10 +2048,10 @@ void AddExpand(fftRep& x, const fftRep& a)
 
    if (l < k) Error("AddExpand: bad args");
 
-   long index = zz_pInfo->index;
+   FFTPrimeInfo *p_info = zz_pInfo->p_info;
    
-   if (index >= 0) {
-      long q = FFTPrime[index];
+   if (p_info) {
+      long q = p_info->q;
       const long *ap = &a.tbl[0][0];
       long *xp = &x.tbl[0][0];
       for (j = 0; j < n; j++) {

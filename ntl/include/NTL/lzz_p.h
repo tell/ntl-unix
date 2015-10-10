@@ -15,7 +15,8 @@ private:
    void operator=(const zz_pInfoT&); // disabled
 public:
    zz_pInfoT(long NewP, long maxroot);
-   zz_pInfoT(long Index);
+   zz_pInfoT(INIT_FFT_TYPE, long index);
+   zz_pInfoT(INIT_USER_FFT_TYPE, long q);
    ~zz_pInfoT();
 
    long ref_count;
@@ -23,10 +24,14 @@ public:
    long p;
    double pinv;
 
-   long index;        // index >= 0 means we are directly using
-                     // an FFT prime
+   FFTPrimeInfo* p_info; // non-null means we are directly using 
+                        // an FFT prime
 
-   long PrimeCnt;     // 0 for FFT prime;  otherwise same as NumPrimes
+   long p_own;     // flag to indicate if info object is owened
+                   // by this
+
+
+   long PrimeCnt;    // 0 for FFT prime;  otherwise same as NumPrimes
                      // used for establishing crossover points
 
    long NumPrimes;
@@ -60,6 +65,7 @@ void restore() const;
 zz_pContext() { ptr = 0; }
 zz_pContext(long p, long maxroot=NTL_FFTMaxRoot);
 zz_pContext(INIT_FFT_TYPE, long index);
+zz_pContext(INIT_USER_FFT_TYPE, long q);
 
 zz_pContext(const zz_pContext&); 
 
@@ -101,6 +107,7 @@ long _zz_p__rep;
 
 static void init(long NewP, long maxroot=NTL_FFTMaxRoot);
 static void FFTInit(long index);
+static void UserFFTInit(long q);
 
 
 

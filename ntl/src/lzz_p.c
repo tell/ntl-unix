@@ -22,7 +22,8 @@ zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
 
    pinv = 1/double(p);
 
-   index = -1;
+   p_info = 0;
+   p_own = 0;
 
    conv(P, p);
 
@@ -72,11 +73,9 @@ zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
    }
 }
 
-zz_pInfoT::zz_pInfoT(long Index)
+zz_pInfoT::zz_pInfoT(INIT_FFT_TYPE, long index)
 {
    ref_count = 1;
-
-   index = Index;
 
    if (index < 0)
       Error("bad FFT prime index");
@@ -90,6 +89,37 @@ zz_pInfoT::zz_pInfoT(long Index)
    p = FFTPrime[index];
    pinv = FFTPrimeInv[index];
 
+   p_info = FFTTables[index];
+   p_own = 0;
+
+   NumPrimes = 1;
+   PrimeCnt = 0;
+
+   MaxRoot = CalcMaxRoot(p);
+}
+
+zz_pInfoT::zz_pInfoT(INIT_USER_FFT_TYPE, long q)
+{
+   ref_count = 1;
+
+
+   long w;
+   if (!IsFFTPrime(q, w)) Error("invalid user supplied prime");
+
+   p = q;
+   pinv = 1/((double) q);
+
+   p_info = NTL_NEW_OP FFTPrimeInfo();
+   if (!p_info) Error("out of memory");
+
+   long bigtab = 0;
+#ifdef NTL_FFT_BIGTAB
+   bigtab = 1;
+#endif
+   InitFFTPrimeInfo(*p_info, q, w, bigtab); 
+
+   p_own = 1;
+
    NumPrimes = 1;
    PrimeCnt = 0;
 
@@ -98,13 +128,15 @@ zz_pInfoT::zz_pInfoT(long Index)
 
 
 
-
 zz_pInfoT::~zz_pInfoT()
 {
-   if (index < 0) {
+   if (!p_info) {
       free(CoeffModP);
       free(x);
       free(u);
+   }
+   else {
+      if (p_own) delete p_info;
    }
 }
 
@@ -152,6 +184,12 @@ void zz_p::FFTInit(long index)
    c.restore();
 }
 
+void zz_p::UserFFTInit(long q)
+{
+   zz_pContext c(INIT_USER_FFT, q);
+   c.restore();
+}
+
 zz_pContext::zz_pContext(long p, long maxroot)
 {
    ptr = NTL_NEW_OP zz_pInfoT(p, maxroot);
@@ -159,7 +197,12 @@ zz_pContext::zz_pContext(long p, long maxroot)
 
 zz_pContext::zz_pContext(INIT_FFT_TYPE, long index)
 {
-   ptr = NTL_NEW_OP zz_pInfoT(index);
+   ptr = NTL_NEW_OP zz_pInfoT(INIT_FFT, index);
+}
+
+zz_pContext::zz_pContext(INIT_USER_FFT_TYPE, long q)
+{
+   ptr = NTL_NEW_OP zz_pInfoT(INIT_USER_FFT, q);
 }
 
 zz_pContext::zz_pContext(const zz_pContext& a)

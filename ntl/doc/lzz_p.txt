@@ -316,6 +316,14 @@ static void zz_p::FFTInit(long i);
 // of 2 that divides p-1 gets smaller, thus placing a more severe
 // restriction on the degrees of the polynomials to be multiplied.
 
+static void zz_p::UserFFTInit(long p);
+// set the modulus to a user-provided FFT prime p. To be useful,
+// p-1 should be divisibly by a high power of 2. 
+// The function "long CalcMaxRoot(long p)" is a utility routine
+// that may be used to calculate this value. 
+// If you are going to perform arithmetic modulo a degree n polynomial, 
+// you will want CalcMaxRoot(p) >= NextPowerOfTwo(n)+1. 
+
 zz_pContext::zz_pContext(long p, long maxroot);
 // constructor for a zz_pContext with same semantics
 // as zz_p::init(p, maxroot) above.
@@ -323,5 +331,9 @@ zz_pContext::zz_pContext(long p, long maxroot);
 zz_pContext::zz_pContext(INIT_FFT_TYPE, long i);
 // constructor for a zz_pContext with same semantics
 // as zz_p::FFTInit(i) above; invoke as zz_pContext(INIT_FFT, i).
+
+zz_pContext::zz_pContext(INIT_USER_FFT_TYPE, long p);
+// constructor for a zz_pContext with same semantics
+// as zz_p::UserFFTInit(p) above; invoke as zz_pContext(INIT_USER_FFT, p).
 
 

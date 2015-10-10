@@ -7,8 +7,8 @@
 NTL_START_IMPL
 
 
-FFTPrimeInfo *FFTTables = 0;
-Vec<FFTPrimeInfo> FFTTables_store;
+FFTPrimeInfo **FFTTables = 0;
+Vec<FFTPrimeInfo*> FFTTables_store;
 
 long *FFTPrime = 0;
 Vec<long> FFTPrime_store;
@@ -27,11 +27,15 @@ long NumFFTPrimes = 0;
 
 
 
-static
 long IsFFTPrime(long n, long& w)
 {
    long  m, x, y, z;
    long j, k;
+
+
+   if (n <= 1 || n >= NTL_SP_BOUND) return 0;
+
+   if (n % 2 == 0) return 0;
 
    if (n % 3 == 0) return 0;
 
@@ -140,30 +144,11 @@ long CalcMaxRoot(long p)
 }
 
 
-
-void UseFFTPrime(long index)
+void InitFFTPrimeInfo(FFTPrimeInfo& info, long q, long w, long bigtab)
 {
-   long numprimes = FFTTables_store.length();
-
-   if (index < 0 || index > numprimes)
-      Error("invalid FFT prime index");
-
-   if (index < numprimes) return;
-
-   // index == numprimes
-
-   long q, w;
-
-   NextFFTPrime(q, w);
-
    double qinv = 1/((double) q);
 
    long mr = CalcMaxRoot(q);
-
-   FFTTables_store.SetLength(numprimes+1);
-   FFTTables = FFTTables_store.elts();
-
-   FFTPrimeInfo& info = FFTTables[numprimes];
 
    info.q = q;
    info.qinv = qinv;
@@ -197,6 +182,41 @@ void UseFFTPrime(long index)
    for (j = 0; j <= mr; j++)
       tipt[j] = PrepMulModPrecon(tit[j], q, qinv);
 
+   info.bigtab = bigtab;
+}
+
+
+void UseFFTPrime(long index)
+{
+   long numprimes = FFTTables_store.length();
+
+   if (index < 0 || index > numprimes)
+      Error("invalid FFT prime index");
+
+   if (index < numprimes) return;
+
+   // index == numprimes
+
+   long q, w;
+
+   NextFFTPrime(q, w);
+
+
+   FFTTables_store.SetLength(numprimes+1);
+   FFTTables = FFTTables_store.elts();
+   FFTTables[numprimes] = NTL_NEW_OP FFTPrimeInfo();
+   if (!FFTTables[numprimes]) Error("out of memory in UseFFTPrime");
+
+   FFTPrimeInfo& info = *FFTTables[numprimes];
+
+   long bigtab = 0;
+
+#ifdef NTL_FFT_BIGTAB
+   if (index < NTL_FFT_BIGTAB_LIMIT)
+      bigtab = 1;
+#endif
+
+   InitFFTPrimeInfo(info, q, w, bigtab);
 
    // initialize data structures for the legacy inteface
 
@@ -208,7 +228,7 @@ void UseFFTPrime(long index)
 
    FFTPrimeInv_store.SetLength(NumFFTPrimes);
    FFTPrimeInv = FFTPrimeInv_store.elts();
-   FFTPrimeInv[NumFFTPrimes-1] = qinv;
+   FFTPrimeInv[NumFFTPrimes-1] = 1/((double) q);
 }
 
 

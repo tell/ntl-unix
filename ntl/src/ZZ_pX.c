@@ -1594,8 +1594,7 @@ void RevToFFTRep(FFTRep& y, const vec_ZZ_p& x,
 
    for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
       long *yp = &y.tbl[i][0];
-      FFTRev(yp, yp, k, i);
-      FFTMulTwoInv(yp, yp, k, i);
+      FFTRev1(yp, yp, k, i);
    }
 
 }
@@ -1621,8 +1620,7 @@ void FromFFTRep(ZZ_pX& x, FFTRep& y, long lo, long hi)
 
    for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
       long *yp = &y.tbl[i][0];
-      FFTRev(yp, yp, k, i);
-      FFTMulTwoInv(yp, yp, k, i);
+      FFTRev1(yp, yp, k, i);
    }
 
    hi = min(hi, n-1);
@@ -1695,8 +1693,7 @@ void NDFromFFTRep(ZZ_pX& x, const FFTRep& y, long lo, long hi, FFTRep& z)
       long *zp = &z.tbl[i][0];
       const long *yp = &y.tbl[i][0];
 
-      FFTRev(zp, yp, k, i);
-      FFTMulTwoInv(zp, zp, k, i);
+      FFTRev1(zp, yp, k, i);
    }
 
    hi = min(hi, n-1);
@@ -1740,8 +1737,7 @@ void FromFFTRep(ZZ_p* x, FFTRep& y, long lo, long hi)
 
    for (i = 0; i < ZZ_pInfo->NumPrimes; i++) {
       long *yp = &y.tbl[i][0];
-      FFTRev(yp, yp, k, i);
-      FFTMulTwoInv(yp, yp, k, i);
+      FFTRev1(yp, yp, k, i);
    }
 
    for (j = lo; j <= hi; j++) {

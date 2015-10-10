@@ -19,6 +19,22 @@ A Tour of NTL: Summary of Changes
 
 <p> <hr> <p>
 <h3>
+2014.03.13: Changes between NTL 6.0 and 6.1
+</h3>
+
+<ul>
+Added support for "user defined" FFT primes for <tt>zz_p</tt>.
+See the functions
+<pre>
+   static void zz_p::UserFFTInit(long p);
+   zz_pContext::zz_pContext(INIT_USER_FFT_TYPE, long p);
+</pre>
+in the <tt>lzz_p</tt> module.
+
+</ul>
+
+<p> <hr> <p>
+<h3>
 2013.02.15: Changes between NTL 5.5.2 and 6.0
 </h3>
 
@@ -60,7 +76,7 @@ There are many new conversions provided.
 Moreover, whenever there is a conversion from a ring <i>R</i>
 to a ring <i>S</i>, there is a corresponding, coefficiet-wise
 conversion from the polynomial ring <i>R[X]</i> to the
-polynomial ring <i>R[X]</i>.
+polynomial ring <i>S[X]</i>.
 
 <p>
 In addition, using the template mechanism, there are
