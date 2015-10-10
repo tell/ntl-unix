@@ -1,6 +1,7 @@
 
 
-typedef long * _ntl_verylong;
+typedef long *_ntl_verylong;
+typedef long _ntl_verylong_body;
 
 #if (defined(NTL_AVOID_FLOAT) && defined(NTL_LONG_LONG))
 #error "at most one of NTL_AVOID_FLOAT NTL_LONG_LONG allowed"
@@ -99,13 +100,8 @@ typedef long * _ntl_verylong;
           if b does not divide a, then sign(*q) == sign(b) */
 
     void _ntl_zmultirem(_ntl_verylong a, long n, long* dd, long* rr);
-    void _ntl_zmultirem2(_ntl_verylong a, long n, long* dd, double **tbl, long* rr);
        /* rr[i] = a % dd[i], i = 0..n-1;
-          assumes a >= 0, 0 < dd[i] < NTL_RADIX
-          _ntl_zmultirem2 takes an extra argument, tbl, which contains
-          pre-computed residues of powers of RADIX */
-    void _ntl_zmultirem3(_ntl_verylong a, long n, long* dd, long **tbl, long* rr);
-       /* same as above, but tbl has different type */
+          assumes a >= 0, 0 < dd[i] < NTL_RADIX */
 
     long _ntl_zsfastrem(_ntl_verylong a, long d);
        /* return a % d;
@@ -482,49 +478,8 @@ long _ntl_zblock_destroy(_ntl_verylong x);
 long _ntl_zblock_storage(long d);
 
 
-
-void _ntl_crt_struct_init(void **crt_struct, long n, _ntl_verylong p,
-                          long (*primes)(long));
-void _ntl_crt_struct_insert(void *crt_struct, long i, _ntl_verylong m);
-void _ntl_crt_struct_free(void *crt_struct);
-void _ntl_crt_struct_eval(void *crt_struct, _ntl_verylong *t, const long *a,
-                          void *tmp_vec);
-long _ntl_crt_struct_special(void *crt_struct);
-
-void _ntl_rem_struct_init(void **rem_struct, long n, _ntl_verylong p, 
-                          long (*primes)(long));
-void _ntl_rem_struct_free(void *rem_struct);
-void _ntl_rem_struct_eval(void *rem_struct, long *x, _ntl_verylong a,
-                          void *tmp_vec);
-
-
-
-void _ntl_tmp_vec_free(void *tmp_vec);
-void *_ntl_crt_fetch_tmp(void *crt_struct);
-void *_ntl_crt_extract_tmp(void *crt_struct);
-void *_ntl_rem_fetch_tmp(void *rem_struct);
-
-
-
-
-
-
-
-#define NTL_crt_struct_eval _ntl_crt_struct_eval
-#define NTL_crt_struct_free _ntl_crt_struct_free
-#define NTL_crt_struct_init _ntl_crt_struct_init
-#define NTL_crt_struct_insert _ntl_crt_struct_insert
-#define NTL_crt_struct_special _ntl_crt_struct_special
-#define NTL_rem_struct_eval _ntl_rem_struct_eval
-#define NTL_rem_struct_free _ntl_rem_struct_free
-#define NTL_rem_struct_init _ntl_rem_struct_init
-
-#define NTL_tmp_vec_free _ntl_tmp_vec_free
-#define NTL_crt_fetch_tmp _ntl_crt_fetch_tmp
-#define NTL_crt_extract_tmp _ntl_crt_extract_tmp
-#define NTL_rem_fetch_tmp _ntl_rem_fetch_tmp
-
 #define NTL_verylong _ntl_verylong
+#define NTL_verylong_body _ntl_verylong_body
 #define NTL_z2log _ntl_z2log
 #define NTL_zabs _ntl_zabs
 #define NTL_zadd _ntl_zadd

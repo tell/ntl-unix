@@ -16,7 +16,7 @@ NTL_START_IMPL
 const string& CurrentThreadID()
 {
    NTL_THREAD_LOCAL static string ID;
-   bool initialized = false;
+   NTL_THREAD_LOCAL static bool initialized = false;
 
    if (!initialized) {
 #ifdef NTL_THREADS
@@ -24,7 +24,7 @@ const string& CurrentThreadID()
       ss << this_thread::get_id();
       ID = ss.str();
 #else
-      ID = "";
+      ID = "0";
 #endif
       initialized = true;
    }

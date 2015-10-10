@@ -385,8 +385,9 @@ static long GF2X::WordLength();
 // GF2E::size() returns # of words needed to store a polynomial of
 // degree < GF2E::degree()
 
+void GF2E::swap(GF2E& x);
 void swap(GF2E& x, GF2E& y);
-// swap x and y (done by "pointer swapping", if possible).
+// swap (done by "pointer swapping", if possible).
 
 static ZZ& GF2E::cardinality();
 // yields the cardinality, i.e., 2^{GF2E::degree()}

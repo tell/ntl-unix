@@ -133,10 +133,6 @@ explicit ZZ_pPush(const ZZ& p) { bak.save(); ZZ_pContext c(p); c.restore(); }
 
 };
 
-// FIXME: in a thread safe version, these reference counted
-// pointers should be replaced by shared_ptr's (which are
-// thread safe)
-
 
 class ZZ_pX; // forward declaration
 
@@ -204,7 +200,7 @@ static void install()
 static const ZZ_pFFTInfoT* GetFFTInfo() 
 { 
    install();
-   return &ZZ_pInfo->FFTInfo.value();
+   return ZZ_pInfo->FFTInfo.get();
 }
 
 static ZZ_pTmpSpaceT* GetTmpSpace()
@@ -218,6 +214,12 @@ ZZ_p(INIT_VAL_TYPE, const ZZ& a);
 ZZ_p(INIT_VAL_TYPE, long a);
 
 
+void swap(ZZ_p& x)
+{
+   _ZZ_p__rep.swap(x._ZZ_p__rep);
+}
+
+
 
 void allocate() 
 { 
@@ -228,7 +230,7 @@ void allocate()
 
 // mainly for internal consumption by the ZZ_pWatcher class below
 
-void release() { _ZZ_p__rep.release(); }
+void KillBig() { _ZZ_p__rep.KillBig(); }
 
 
 };
@@ -271,7 +273,7 @@ inline void set(ZZ_p& x)
 inline void swap(ZZ_p& x, ZZ_p& y)
 // swap x and y
 
-   { swap(x._ZZ_p__rep, y._ZZ_p__rep); }
+   { x.swap(y); }
 
 // ****** addition
 
@@ -512,14 +514,14 @@ void BlockDestroy(ZZ_p* p, long n);
 
 class ZZ_pWatcher {
 public:
-   ZZ_p *watched;
+   ZZ_p& watched;
    explicit
-   ZZ_pWatcher(ZZ_p *_watched) : watched(_watched) { watched->allocate(); }
+   ZZ_pWatcher(ZZ_p& _watched) : watched(_watched) { }
 
-   ~ZZ_pWatcher() { watched->release(); }
+   ~ZZ_pWatcher() { watched.KillBig(); }
 };
 
-#define NTL_ZZ_pRegister(x) NTL_THREAD_LOCAL static ZZ_p x; ZZ_pWatcher _WATCHER__ ## x(&x)
+#define NTL_ZZ_pRegister(x) NTL_THREAD_LOCAL static ZZ_p x; ZZ_pWatcher _WATCHER__ ## x(x); x.allocate()
 
 // FIXME: register variables that are allocated with respect to one modulus
 // and then reused with another modulus may have initial values that are

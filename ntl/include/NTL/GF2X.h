@@ -70,10 +70,15 @@ GF2X(GF2X& x, INIT_TRANS_TYPE) : xrep(x.xrep, INIT_TRANS) { }
 // that are not be subject to special memory management.
 
 
+void swap(GF2X& x) { xrep.swap(x.xrep); }
+
+
+
+
 
 // mainly for internal consumption by GF2XWatcher
 
-void release() { xrep.release(); }
+void KillBig() { xrep.KillBig(); }
 
 };
 
@@ -111,7 +116,7 @@ inline GF2X::GF2X(INIT_MONO_TYPE, long i, long a) { SetCoeff(*this, i, a); }
 inline GF2X::GF2X(INIT_MONO_TYPE, long i) { SetCoeff(*this, i); }
 
 
-void swap(GF2X& a, GF2X& b);
+inline void swap(GF2X& a, GF2X& b) { a.swap(b); }
 
 long deg(const GF2X& aa);
 
@@ -336,7 +341,6 @@ class GF2XModulus {
 
 public:
    GF2XModulus();
-   ~GF2XModulus();
 
    GF2XModulus(const GF2XModulus&);  
    GF2XModulus& operator=(const GF2XModulus&); 
@@ -365,14 +369,15 @@ public:
    long method; 
 
    vec_GF2X stab;
-   _ntl_ulong **stab_ptr;
-   long *stab_cnt;
 
-   _ntl_ulong *stab1;
+   UniqueArray<unsigned long *> stab_ptr;
+   UniqueArray<long> stab_cnt;
+   UniqueArray<unsigned long> stab1;
+
 
    GF2X h0, f0;
 
-   Lazy<vec_GF2> tracevec;
+   OptionalVal< Lazy<vec_GF2> > tracevec;
 
 }; 
 
@@ -726,16 +731,30 @@ inline long NumBytes(const GF2X& a)
 
 class GF2XWatcher {
 public:
-   GF2X *watched;
+   GF2X& watched;
    explicit
-   GF2XWatcher(GF2X *_watched) : watched(_watched) {}
+   GF2XWatcher(GF2X& _watched) : watched(_watched) {}
 
-   ~GF2XWatcher() { watched->release(); } 
+   ~GF2XWatcher() { watched.KillBig(); } 
 };
 
-#define NTL_GF2XRegister(x) NTL_THREAD_LOCAL static GF2X x; GF2XWatcher _WATCHER__ ## x(&x)
+#define NTL_GF2XRegister(x) NTL_THREAD_LOCAL static GF2X x; GF2XWatcher _WATCHER__ ## x(x)
 
 
+
+// RAII for HexOutput
+
+class GF2XHexOutputPush {
+private:
+   long OldHexOutput;
+
+   GF2XHexOutputPush(const GF2XHexOutputPush&); // disable
+   void operator=(const GF2XHexOutputPush&); // disable
+
+public:
+   GF2XHexOutputPush() : OldHexOutput(GF2X::HexOutput) { }
+   ~GF2XHexOutputPush() { GF2X::HexOutput = OldHexOutput; }
+};
 
 
 NTL_CLOSE_NNS

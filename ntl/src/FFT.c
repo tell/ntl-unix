@@ -87,7 +87,7 @@ long IsFFTPrime(long n, long& w)
 
 
 static
-void NextFFTPrime(long& q, long& w)
+void NextFFTPrime(long& q, long& w, long index)
 {
    static long m = NTL_FFTMaxRootBnd + 1;
    static long k = 0;
@@ -95,12 +95,31 @@ void NextFFTPrime(long& q, long& w)
    // all threads.  Access is protected by a critical section
    // guarding FFTTables
 
+   static long last_index = -1;
+   static long last_m = 0;
+   static long last_k = 0;
+
+   if (index == last_index) {
+      // roll back m and k...part of a simple error recovery
+      // strategy if an exception was thrown in the last 
+      // invocation of UseFFTPrime...probably of academic 
+      // interest only
+
+      m = last_m;
+      k = last_k;
+   }
+   else {
+      last_index = index;
+      last_m = m;
+      last_k = k;
+   }
+
    long t, cand;
 
    for (;;) {
       if (k == 0) {
          m--;
-         if (m < 5) Error("ran out of FFT primes");
+         if (m < 5) ResourceError("ran out of FFT primes");
          k = 1L << (NTL_SP_NBITS-m-2);
       }
 
@@ -185,8 +204,8 @@ SmartPtr<zz_pInfoT> Build_zz_pInfo(FFTPrimeInfo *info) { return 0; }
 
 void UseFFTPrime(long index)
 {
-   if (index < 0 || index >= NTL_MAX_FFTPRIMES)
-      Error("invalid FFT prime index");
+   if (index < 0) LogicError("invalud FFT prime index");
+   if (index >= NTL_MAX_FFTPRIMES) ResourceError("FFT prime index too large");
 
    do {  // NOTE: thread safe lazy init
       FFTTablesType::Builder bld(FFTTables, index+1);
@@ -198,11 +217,11 @@ void UseFFTPrime(long index)
 
       long i;
       for (i = first; i <= index; i++) {
-         bld.access(i).make();
-         FFTPrimeInfo& info = *bld.access(i);
+         UniquePtr<FFTPrimeInfo> info;
+         info.make();
 
          long q, w;
-         NextFFTPrime(q, w);
+         NextFFTPrime(q, w, i);
 
          bool bigtab = false;
 
@@ -211,8 +230,9 @@ void UseFFTPrime(long index)
             bigtab = true;
 #endif
 
-         InitFFTPrimeInfo(info, q, w, bigtab);
-         info.zz_p_context = Build_zz_pInfo(&info);
+         InitFFTPrimeInfo(*info, q, w, bigtab);
+         info->zz_p_context = Build_zz_pInfo(info.get());
+         bld.move(info);
       }
 
    } while (0);
@@ -701,17 +721,15 @@ void FFT(long* A, const long* a, long k, long q, const long* root)
 }
 
 
-
-#if (!defined(NTL_FFT_LAZYMUL) || \
-     (!defined(NTL_SPMM_ULL) && !defined(NTL_SPMM_ASM)))
+#if (!defined(NTL_FFT_LAZYMUL) || (!defined(NTL_SPMM_ULL) && !defined(NTL_SPMM_ASM)))
 
 // FFT with precomputed tables 
 
 
 static
-void PrecompFFTMultipliers(long k, long q, const long *root, FFTMultipliers& tab)
+void PrecompFFTMultipliers(long k, long q, const long *root, const FFTMultipliers& tab)
 {
-   if (k < 1) Error("PrecompFFTMultipliers: bad input");
+   if (k < 1) LogicError("PrecompFFTMultipliers: bad input");
 
    do {  // NOTE: thread safe lazy init
       FFTMultipliers::Builder bld(tab, k+1);
@@ -721,29 +739,40 @@ void PrecompFFTMultipliers(long k, long q, const long *root, FFTMultipliers& tab
       long first = k+1-amt;
       // initialize entries first..k
 
+
       double qinv = 1/((double) q);
 
-      if (first == 0) {
-         bld.access(1).wtab_precomp.SetLength(1);
-         bld.access(1).wqinvtab_precomp.SetLength(1);
-         bld.access(1).wtab_precomp[0] = 1;
-         bld.access(1).wqinvtab_precomp[0] = PrepMulModPrecon(1, q, qinv);
-         first = 2;
-      }
-
       for (long s = first; s <= k; s++) {
-         bld.access(s).wtab_precomp.SetLength(1L << (s-1));
-         bld.access(s).wqinvtab_precomp.SetLength(1L << (s-1));
+         UniquePtr<FFTVectorPair> item;
+
+         if (s == 0) {
+            bld.move(item); // position 0 not used
+            continue;
+         }
+
+         if (s == 1) {
+            item.make();
+            item->wtab_precomp.SetLength(1);
+            item->wqinvtab_precomp.SetLength(1);
+            item->wtab_precomp[0] = 1;
+            item->wqinvtab_precomp[0] = PrepMulModPrecon(1, q, qinv);
+            bld.move(item);
+            continue;
+         }
+
+         item.make();
+         item->wtab_precomp.SetLength(1L << (s-1));
+         item->wqinvtab_precomp.SetLength(1L << (s-1));
 
          long m = 1L << s;
          long m_half = 1L << (s-1);
          long m_fourth = 1L << (s-2);
 
-         const long *wtab_last = tab[s-1].wtab_precomp.elts();
-         const mulmod_precon_t *wqinvtab_last = tab[s-1].wqinvtab_precomp.elts();
+         const long *wtab_last = tab[s-1]->wtab_precomp.elts();
+         const mulmod_precon_t *wqinvtab_last = tab[s-1]->wqinvtab_precomp.elts();
 
-         long *wtab = bld.access(s).wtab_precomp.elts();
-         mulmod_precon_t *wqinvtab = bld.access(s).wqinvtab_precomp.elts();
+         long *wtab = item->wtab_precomp.elts();
+         mulmod_precon_t *wqinvtab = item->wqinvtab_precomp.elts();
 
          for (long i = 0; i < m_fourth; i++) {
             wtab[i] = wtab_last[i];
@@ -781,13 +810,15 @@ void PrecompFFTMultipliers(long k, long q, const long *root, FFTMultipliers& tab
 
             wqinvtab[1] = PrepMulModPrecon(wtab[1], q, qinv);
          }
+
+         bld.move(item);
       }
    } while (0);
 }
 
 
 
-void FFT(long* A, const long* a, long k, long q, const long* root, FFTMultipliers& tab)
+void FFT(long* A, const long* a, long k, long q, const long* root, const FFTMultipliers& tab)
 // performs a 2^k-point convolution modulo q
 
 {
@@ -836,8 +867,8 @@ void FFT(long* A, const long* a, long k, long q, const long* root, FFTMultiplier
       m_half = 1L << (s-1);
       m_fourth = 1L << (s-2);
 
-      const long* wtab = tab[s].wtab_precomp.elts();
-      const mulmod_precon_t *wqinvtab = tab[s].wqinvtab_precomp.elts();
+      const long* wtab = tab[s]->wtab_precomp.elts();
+      const mulmod_precon_t *wqinvtab = tab[s]->wqinvtab_precomp.elts();
 
       for (i = 0; i < n; i+= m) {
 
@@ -927,8 +958,8 @@ void FFT(long* A, const long* a, long k, long q, const long* root, FFTMultiplier
       m_half = 1L << (s-1);
       m_fourth = 1L << (s-2);
 
-      const long* wtab = tab[s].wtab_precomp.elts();
-      const mulmod_precon_t *wqinvtab = tab[s].wqinvtab_precomp.elts();
+      const long* wtab = tab[s]->wtab_precomp.elts();
+      const mulmod_precon_t *wqinvtab = tab[s]->wqinvtab_precomp.elts();
 
       for (i = 0; i < n; i+= m) {
 
@@ -1085,9 +1116,9 @@ unsigned long LazyReduce(unsigned long a, unsigned long q)
 
 
 static
-void LazyPrecompFFTMultipliers(long k, long q, const long *root, FFTMultipliers& tab)
+void LazyPrecompFFTMultipliers(long k, long q, const long *root, const FFTMultipliers& tab)
 {
-   if (k < 1) Error("LazyPrecompFFTMultipliers: bad input");
+   if (k < 1) LogicError("LazyPrecompFFTMultipliers: bad input");
 
    do { // NOTE: thread safe lazy init
       FFTMultipliers::Builder bld(tab, k+1);
@@ -1097,29 +1128,40 @@ void LazyPrecompFFTMultipliers(long k, long q, const long *root, FFTMultipliers&
       long first = k+1-amt;
       // initialize entries first..k
 
+
       double qinv = 1/((double) q);
 
-      if (first == 0) {
-         bld.access(1).wtab_precomp.SetLength(1);
-         bld.access(1).wqinvtab_precomp.SetLength(1);
-         bld.access(1).wtab_precomp[0] = 1;
-         bld.access(1).wqinvtab_precomp[0] = LazyPrepMulModPrecon(1, q, qinv);
-         first = 2;
-      }
-
       for (long s = first; s <= k; s++) {
-         bld.access(s).wtab_precomp.SetLength(1L << (s-1));
-         bld.access(s).wqinvtab_precomp.SetLength(1L << (s-1));
+         UniquePtr<FFTVectorPair> item;
+
+         if (s == 0) {
+            bld.move(item); // position 0 not used
+            continue;
+         }
+
+         if (s == 1) {
+            item.make();
+            item->wtab_precomp.SetLength(1);
+            item->wqinvtab_precomp.SetLength(1);
+            item->wtab_precomp[0] = 1;
+            item->wqinvtab_precomp[0] = LazyPrepMulModPrecon(1, q, qinv);
+            bld.move(item);
+            continue;
+         }
+
+         item.make();
+         item->wtab_precomp.SetLength(1L << (s-1));
+         item->wqinvtab_precomp.SetLength(1L << (s-1));
 
          long m = 1L << s;
          long m_half = 1L << (s-1);
          long m_fourth = 1L << (s-2);
 
-         const long *wtab_last = tab[s-1].wtab_precomp.elts();
-         const mulmod_precon_t *wqinvtab_last = tab[s-1].wqinvtab_precomp.elts();
+         const long *wtab_last = tab[s-1]->wtab_precomp.elts();
+         const mulmod_precon_t *wqinvtab_last = tab[s-1]->wqinvtab_precomp.elts();
 
-         long *wtab = bld.access(s).wtab_precomp.elts();
-         mulmod_precon_t *wqinvtab = bld.access(s).wqinvtab_precomp.elts();
+         long *wtab = item->wtab_precomp.elts();
+         mulmod_precon_t *wqinvtab = item->wqinvtab_precomp.elts();
 
          for (long i = 0; i < m_fourth; i++) {
             wtab[i] = wtab_last[i];
@@ -1157,6 +1199,8 @@ void LazyPrecompFFTMultipliers(long k, long q, const long *root, FFTMultipliers&
 
             wqinvtab[1] = LazyPrepMulModPrecon(wtab[1], q, qinv);
          }
+
+         bld.move(item);
       }
    } while (0);
 }
@@ -1164,7 +1208,7 @@ void LazyPrecompFFTMultipliers(long k, long q, const long *root, FFTMultipliers&
 
 
 
-void FFT(long* A, const long* a, long k, long q, const long* root, FFTMultipliers& tab)
+void FFT(long* A, const long* a, long k, long q, const long* root, const FFTMultipliers& tab)
 
 // performs a 2^k-point convolution modulo q
 
@@ -1220,8 +1264,8 @@ void FFT(long* A, const long* a, long k, long q, const long* root, FFTMultiplier
    // s = 2
 
    {
-      const long * NTL_RESTRICT wtab = tab[2].wtab_precomp.elts();
-      const mulmod_precon_t * NTL_RESTRICT wqinvtab = tab[2].wqinvtab_precomp.elts();
+      const long * NTL_RESTRICT wtab = tab[2]->wtab_precomp.elts();
+      const mulmod_precon_t * NTL_RESTRICT wqinvtab = tab[2]->wqinvtab_precomp.elts();
 
 
       for (i = 0; i < n; i += 4) {
@@ -1268,8 +1312,8 @@ void FFT(long* A, const long* a, long k, long q, const long* root, FFTMultiplier
       m_half = 1L << (s-1);
       m_fourth = 1L << (s-2);
 
-      const long* NTL_RESTRICT wtab = tab[s].wtab_precomp.elts();
-      const mulmod_precon_t * NTL_RESTRICT wqinvtab = tab[s].wqinvtab_precomp.elts();
+      const long* NTL_RESTRICT wtab = tab[s]->wtab_precomp.elts();
+      const mulmod_precon_t * NTL_RESTRICT wqinvtab = tab[s]->wqinvtab_precomp.elts();
 
       for (i = 0; i < n; i += m) {
 

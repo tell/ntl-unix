@@ -887,6 +887,9 @@ static const ZZ_pX& ZZ_pX::zero();
 void swap(ZZ_pX& x, ZZ_pX& y); 
 // swap x and y (via "pointer swapping")
 
+void ZZ_pX::swap(ZZ_pX& x);
+// swap member function
+
 
 ZZ_pX::ZZ_pX(long i, const ZZ_p& c);  
 ZZ_pX::ZZ_pX(long i, long c);

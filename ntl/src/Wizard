@@ -36,6 +36,7 @@ cp DispSettings.c small/src
 
 cp FFT.c small/src
 cp GetTime.c small/src
+cp GetPID.c small/src
 cp ctools.c small/src
 cp ZZ.c small/src
 cp ZZVec.c small/src
@@ -54,6 +55,7 @@ cp vec_GF2.c small/src
 cp GF2X.c small/src
 cp GF2X1.c small/src
 cp thread.c small/src
+cp fileio.c small/src
 
 
 
@@ -75,6 +77,7 @@ cp ../include/NTL/SmartPtr.h small/include/NTL
 cp ../include/NTL/Lazy.h small/include/NTL
 cp ../include/NTL/LazyTable.h small/include/NTL
 cp ../include/NTL/thread.h small/include/NTL
+cp ../include/NTL/fileio.h small/include/NTL
 cp ../include/NTL/tools.h small/include/NTL
 cp ../include/NTL/vec_ZZ.h small/include/NTL
 cp ../include/NTL/vec_ZZ_p.h small/include/NTL

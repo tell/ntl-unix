@@ -27,17 +27,18 @@
 
 #include <NTL/lip.h>
 
-#include <NTL/ctools.h>
+#include <NTL/tools.h>
+#include <NTL/vector.h>
+#include <NTL/SmartPtr.h>
 
 
-// FIXME: now that I'm in al all C++ environment, maybe
-// use the C++ headers 
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
+//#include <cstdlib>
+//#include <cstdio>
+#include <cmath>
 
 #include <gmp.h>
+
+NTL_CLIENT
 
 typedef mp_limb_t *_ntl_limb_t_ptr;
 
@@ -355,22 +356,16 @@ public:
    }
 };
 
-class _ntl_gbigint_wrapped {
+
+
+class _ntl_gbigint_deleter {
 public:
-   _ntl_gbigint data;
-
-   _ntl_gbigint_wrapped() : data(0) { }
-   void operator=(const _ntl_gbigint& _data)  { data = _data; }
-
-   ~_ntl_gbigint_wrapped() { _ntl_gfree(&data); } 
-
-   operator const _ntl_gbigint& () const { return data; }
-   operator _ntl_gbigint& () { return data; }
-
-   const _ntl_gbigint* operator&() const { return &data; }
-   _ntl_gbigint* operator&() { return &data; }
-
+   static void apply(_ntl_gbigint& p) { _ntl_gfree(&p); }
 };
+
+typedef WrappedPtr<_ntl_gbigint_body, _ntl_gbigint_deleter> _ntl_gbigint_wrapped;
+
+
 
 // GRegisters are used for local "scratch" variables.
 
@@ -430,16 +425,6 @@ void ForceNormal(_ntl_gbigint x)
 }
 
 
-static 
-void ghalt(const char *c)
-{
-   fprintf(stderr,"fatal error:\n   %s\nexit...\n",c);
-   fflush(stderr);
-   _ntl_abort();
-}
-
-
-
 #define MIN_SETL	(4)
    /* _ntl_gsetlength allocates a multiple of MIN_SETL digits */
 
@@ -450,15 +435,15 @@ void _ntl_gsetlength(_ntl_gbigint *v, long len)
    _ntl_gbigint x = *v;
 
    if (len < 0)
-      ghalt("negative size allocation in _ntl_zgetlength");
+      LogicError("negative size allocation in _ntl_zgetlength");
 
    if (NTL_OVERFLOW(len, NTL_ZZ_NBITS, 0))
-      ghalt("size too big in _ntl_gsetlength");
+      ResourceError("size too big in _ntl_gsetlength");
 
 #ifdef NTL_SMALL_MP_SIZE_T
    /* this makes sure that numbers don't get too big for GMP */
    if (len >= (1L << (NTL_BITS_PER_INT-4)))
-      ghalt("size too big for GMP");
+      ResourceError("size too big for GMP");
 #endif
 
 
@@ -469,7 +454,7 @@ void _ntl_gsetlength(_ntl_gbigint *v, long len)
 
       if (fixed) {
          if (len > oldlen) 
-            ghalt("internal error: can't grow this _ntl_gbigint");
+            LogicError("internal error: can't grow this _ntl_gbigint");
          else
             return;
       }
@@ -487,15 +472,15 @@ void _ntl_gsetlength(_ntl_gbigint *v, long len)
 
       /* test len again */
       if (NTL_OVERFLOW(len, NTL_ZZ_NBITS, 0))
-         ghalt("size too big in _ntl_gsetlength");
+         ResourceError("size too big in _ntl_gsetlength");
 
       if (STORAGE_OVF(len))
-         ghalt("reallocation failed in _ntl_gsetlength");
+         ResourceError("reallocation failed in _ntl_gsetlength");
 
-      ALLOC(x) = len << 2;
       if (!(x = (_ntl_gbigint)NTL_REALLOC((void *) x, 1, STORAGE(len), 0))) {
-         ghalt("reallocation failed in _ntl_gsetlength");
+         MemoryError();
       }
+      ALLOC(x) = len << 2;
    }
    else {
       len++;  /* as above, always allocate one more than explicitly reqested */
@@ -503,13 +488,13 @@ void _ntl_gsetlength(_ntl_gbigint *v, long len)
 
       /* test len again */
       if (NTL_OVERFLOW(len, NTL_ZZ_NBITS, 0))
-         ghalt("size too big in _ntl_gsetlength");
+         ResourceError("size too big in _ntl_gsetlength");
 
       if (STORAGE_OVF(len))
-         ghalt("reallocation failed in _ntl_gsetlength");
+         ResourceError("reallocation failed in _ntl_gsetlength");
 
       if (!(x = (_ntl_gbigint)NTL_MALLOC(1, STORAGE(len), 0))) {
-         ghalt("allocation failed in _ntl_gsetlength");
+         MemoryError();
       }
       ALLOC(x) = len << 2;
       SIZE(x) = 0;
@@ -527,7 +512,7 @@ void _ntl_gfree(_ntl_gbigint *xx)
       return;
 
    if (ALLOC(x) & 1)
-      ghalt("Internal error: can't free this _ntl_gbigint");
+      LogicError("Internal error: can't free this _ntl_gbigint");
 
    free((void*) x);
    *xx = 0;
@@ -537,19 +522,30 @@ void _ntl_gfree(_ntl_gbigint *xx)
 void
 _ntl_gswap(_ntl_gbigint *a, _ntl_gbigint *b)
 {
-   _ntl_gbigint c;
-
    if ((*a && (ALLOC(*a) & 1)) || (*b && (ALLOC(*b) & 1))) {
+      // one of the inputs points to an bigint that is 
+      // "pinned down" in memory, so we have to swap the data,
+      // not just the pointers
+
       GRegister(t);
+      long sz_a, sz_b, sz;
+
+      sz_a = _ntl_gsize(*a); 
+      sz_b = _ntl_gsize(*b); 
+      sz = (sz_a > sz_b) ? sz_a : sz_b;
+
+      _ntl_gsetlength(a, sz);
+      _ntl_gsetlength(b, sz);
+
+      // EXCEPTIONS: all of the above ensures that swap provides strong ES
+
       _ntl_gcopy(*a, &t);
       _ntl_gcopy(*b, a);
       _ntl_gcopy(t, b);
       return;
    }
 
-   c = *a;
-   *a = *b;
-   *b = c;
+   SWAP_BIGINT(*a, *b);
 }
 
 
@@ -710,7 +706,7 @@ long _ntl_gsetbit(_ntl_gbigint *a, long b)
    long i;
    mp_limb_t wh, *adata, tmp;
 
-   if (b<0) ghalt("_ntl_gsetbit: negative index");
+   if (b<0) LogicError("_ntl_gsetbit: negative index");
 
    if (ZEROP(*a)) {
       _ntl_gintoz(1, a);
@@ -751,7 +747,7 @@ long _ntl_gswitchbit(_ntl_gbigint *a, long b)
    long i;
    mp_limb_t wh, *adata, tmp;
 
-   if (b<0) ghalt("_ntl_gswitchbit: negative index");
+   if (b<0) LogicError("_ntl_gswitchbit: negative index");
 
 
    if (ZEROP(*a)) {
@@ -1381,7 +1377,7 @@ void _ntl_grshift(_ntl_gbigint n, long k, _ntl_gbigint *rres)
    }
 
    if (k < 0) {
-      if (k < -NTL_MAX_LONG) ghalt("overflow in _ntl_glshift");
+      if (k < -NTL_MAX_LONG) ResourceError("overflow in _ntl_glshift");
       _ntl_glshift(n, -k, rres);
       return;
    }
@@ -1806,7 +1802,7 @@ long _ntl_gsdiv(_ntl_gbigint a, long d, _ntl_gbigint *bb)
    long r;
 
    if (!d) {
-      ghalt("division by zero in _ntl_gsdiv");
+      ArithmeticError("division by zero in _ntl_gsdiv");
    }
 
    if (ZEROP(a)) {
@@ -1881,7 +1877,7 @@ long _ntl_gsmod(_ntl_gbigint a, long d)
    long r;
 
    if (!d) {
-      ghalt("division by zero in _ntl_gsmod");
+      ArithmeticError("division by zero in _ntl_gsmod");
    }
 
    if (ZEROP(a)) {
@@ -1929,13 +1925,13 @@ void _ntl_gdiv(_ntl_gbigint a, _ntl_gbigint d,
    GRegister(b);
    GRegister(rmem);
 
-   _ntl_gbigint r;
+   _ntl_gbigint *rp;
 
    long sa, aneg, sb, sd, dneg, sr, in_place;
    mp_limb_t *adata, *ddata, *bdata, *rdata;
 
    if (ZEROP(d)) {
-      ghalt("division by zero in _ntl_gdiv");
+      ArithmeticError("division by zero in _ntl_gdiv");
    }
 
    if (ZEROP(a)) {
@@ -1949,17 +1945,18 @@ void _ntl_gdiv(_ntl_gbigint a, _ntl_gbigint d,
 
    if (!aneg && !dneg && rr && *rr != a && *rr != d) {
       in_place = 1;
-      r = *rr;
+      rp = rr;
    }
    else {
       in_place = 0;
-      r = rmem;
+      rp = &rmem;
    }
+
 
    if (sa < sd) {
       _ntl_gzero(&b);
-      _ntl_gcopy(a, &r);
-      if (aneg) SIZE(r) = -SIZE(r);
+      _ntl_gcopy(a, rp);
+      if (aneg) SIZE(*rp) = -SIZE(*rp);
       goto done;
    }
 
@@ -1968,14 +1965,14 @@ void _ntl_gdiv(_ntl_gbigint a, _ntl_gbigint d,
       _ntl_gsetlength(&b, sb);
 
    sr = sd;
-   if (MustAlloc(r, sr))
-      _ntl_gsetlength(&r, sr);
+   if (MustAlloc(*rp, sr))
+      _ntl_gsetlength(rp, sr);
 
 
    adata = DATA(a);
    ddata = DATA(d);
    bdata = DATA(b);
-   rdata = DATA(r);
+   rdata = DATA(*rp);
 
    mpn_tdiv_qr(bdata, rdata, 0, adata, sa, ddata, sd);
 
@@ -1984,13 +1981,13 @@ void _ntl_gdiv(_ntl_gbigint a, _ntl_gbigint d,
    SIZE(b) = sb;
 
    STRIP(sr, rdata);
-   SIZE(r) = sr;
+   SIZE(*rp) = sr;
 
 done:
 
    if (aneg || dneg) {
       if (aneg != dneg) {
-         if (ZEROP(r)) {
+         if (ZEROP(*rp)) {
             SIZE(b) = -SIZE(b);
          }
          else {
@@ -2000,26 +1997,20 @@ done:
             }
             if (rr) {
                if (dneg)
-                  _ntl_gadd(r, d, &r);
+                  _ntl_gadd(*rp, d, rp);
                else
-                  _ntl_gsub(d, r, &r);
+                  _ntl_gsub(d, *rp, rp);
             }
          }
       }
       else
-         SIZE(r) = -SIZE(r);
+         SIZE(*rp) = -SIZE(*rp);
    }
 
    if (bb) _ntl_gcopy(b, bb);
 
-   if (in_place)
-      *rr = r;
-   else {
-      if (rr) _ntl_gcopy(r, rr);
-      rmem = r;
-   }
-
-
+   if (rr && !in_place)
+      _ntl_gcopy(*rp, rr);
 }
 
 
@@ -2091,7 +2082,7 @@ void _ntl_gsqrt(_ntl_gbigint n, _ntl_gbigint *rr)
    }
 
    sn = SIZE(n);
-   if (sn < 0) ghalt("negative argument to _ntl_sqrt");
+   if (sn < 0) ArithmeticError("negative argument to _ntl_sqrt");
 
    sr = (sn+1)/2;
    _ntl_gsetlength(&r, sr);
@@ -2121,7 +2112,7 @@ long _ntl_gsqrts(long n)
       return 0;
    }
 
-   if (n < 0) ghalt("negative argument to _ntl_sqrts");
+   if (n < 0) ArithmeticError("negative argument to _ntl_sqrts");
 
    ndata = n;
 
@@ -2549,7 +2540,7 @@ _ntl_gexteucl(
          SIZE(b) = sb;
          if (!ONEP(d)) {
             _ntl_gdiv(b, d, &b, &tmp);
-            if (!ZEROP(tmp)) ghalt("internal bug in _ntl_gexteucl");
+            if (!ZEROP(tmp)) TerminalError("internal bug in _ntl_gexteucl");
          }
 
          if (SIZE(xa) > 0) { /* xa positive */
@@ -2588,7 +2579,7 @@ _ntl_gexteucl(
       _ntl_gsub(d, tmp, &tmp);
       _ntl_gdiv(tmp, bin, &xb, &tmp);
 
-      if (!ZEROP(tmp)) ghalt("internal bug in _ntl_gexteucl");
+      if (!ZEROP(tmp)) TerminalError("internal bug in _ntl_gexteucl");
 
       if (rev) SWAP_BIGINT(xa, xb);
 
@@ -2611,15 +2602,15 @@ long _ntl_ginv(_ntl_gbigint ain, _ntl_gbigint nin, _ntl_gbigint *invv)
    mp_size_t su;
 
    if (_ntl_gscompare(nin, 1) <= 0) {
-      ghalt("InvMod: second input <= 1");
+      LogicError("InvMod: second input <= 1");
    }
 
    if (_ntl_gsign(ain) < 0) {
-      ghalt("InvMod: first input negative");
+      LogicError("InvMod: first input negative");
    }
 
    if (_ntl_gcompare(ain, nin) >= 0) {
-      ghalt("InvMod: first input too big");
+      LogicError("InvMod: first input too big");
    }
 
    sz = SIZE(nin) + 2;
@@ -2696,7 +2687,7 @@ _ntl_ginvmod(
 	)
 {
 	if (_ntl_ginv(a, n, c))
-		ghalt("undefined inverse in _ntl_ginvmod");
+		ArithmeticError("undefined inverse in _ntl_ginvmod");
 }
 
 
@@ -2932,7 +2923,7 @@ double _ntl_glog(_ntl_gbigint n)
    }
 
    if (_ntl_gsign(n) <= 0)
-      ghalt("log argument <= 0");
+      ArithmeticError("log argument <= 0");
 
    s = _ntl_g2log(n);
    shamt = s - NTL_DOUBLE_PRECISION;
@@ -2971,7 +2962,7 @@ void _ntl_gdoubtoz(double a, _ntl_gbigint *xx)
    a = floor(a);
 
    if (!_ntl_IsFinite(&a))
-      ghalt("_ntl_gdoubtoz: attempt to convert non-finite value");
+      ArithmeticError("_ntl_gdoubtoz: attempt to convert non-finite value");
 
    if (a < 0) {
       a = -a;
@@ -3009,7 +3000,7 @@ void _ntl_gdoubtoz(double a, _ntl_gbigint *xx)
       }
    }
 
-   if (i > sz) ghalt("bug in _ntl_gdoubtoz");
+   if (i > sz) TerminalError("bug in _ntl_gdoubtoz");
 
    _ntl_glshift(x, (sz-i)*NTL_SP_NBITS, xx);
    if (neg) _ntl_gnegate(xx);
@@ -3078,7 +3069,7 @@ _ntl_gxxratrecon(
    double dirt;
 
    if (_ntl_gsign(num_bound) < 0)
-      ghalt("rational reconstruction: bad numerator bound");
+      LogicError("rational reconstruction: bad numerator bound");
 
    if (!num_bound)
       snum = 0;
@@ -3086,15 +3077,15 @@ _ntl_gxxratrecon(
       snum = SIZE(num_bound);
 
    if (_ntl_gsign(den_bound) <= 0)
-      ghalt("rational reconstruction: bad denominator bound");
+      LogicError("rational reconstruction: bad denominator bound");
 
    sden = SIZE(den_bound);
 
    if (_ntl_gsign(nin) <= 0)
-      ghalt("rational reconstruction: bad modulus");
+      LogicError("rational reconstruction: bad modulus");
 
    if (_ntl_gsign(ain) < 0 || _ntl_gcompare(ain, nin) >= 0)
-      ghalt("rational reconstruction: bad residue");
+      LogicError("rational reconstruction: bad residue");
 
       
    e = SIZE(nin);
@@ -3360,7 +3351,7 @@ _ntl_gexp(
 	}
 
 	if (e < 0)
-		ghalt("negative exponent in _ntl_gexp");
+		ArithmeticError("negative exponent in _ntl_gexp");
 
 	if (_ntl_giszero(a))
 	{
@@ -3370,7 +3361,7 @@ _ntl_gexp(
 
 	len_a = _ntl_g2log(a);
 	if (len_a > (NTL_MAX_LONG-(NTL_ZZ_NBITS-1))/e)
-		ghalt("overflow in _ntl_gexp");
+		ResourceError("overflow in _ntl_gexp");
 
 	_ntl_gsetlength(&res, (len_a*e+NTL_ZZ_NBITS-1)/NTL_ZZ_NBITS);
 
@@ -3405,7 +3396,7 @@ _ntl_gexps(
 	}
 
 	if (e < 0)
-		ghalt("negative exponent in _ntl_zexps");
+		ArithmeticError("negative exponent in _ntl_zexps");
 
 	if (!a)
 	{
@@ -3415,7 +3406,7 @@ _ntl_gexps(
 
 	len_a = _ntl_g2logs(a);
 	if (len_a > (NTL_MAX_LONG-(NTL_ZZ_NBITS-1))/e)
-		ghalt("overflow in _ntl_gexps");
+		ResourceError("overflow in _ntl_gexps");
 
 	_ntl_gsetlength(&res, (len_a*e+NTL_ZZ_NBITS-1)/NTL_ZZ_NBITS);
 
@@ -3547,14 +3538,16 @@ void _ntl_gpowermod(_ntl_gbigint g, _ntl_gbigint e, _ntl_gbigint F,
 */
 
 {
-   _ntl_gbigint res, gg, *v, t;
+   _ntl_gbigint_wrapped res, gg, t;
+   Vec<_ntl_gbigint_wrapped> v;
+
    long n, i, k, val, cnt, m;
    long use_redc, sF;
    mp_limb_t inv;
 
    if (_ntl_gsign(g) < 0 || _ntl_gcompare(g, F) >= 0 || 
        _ntl_gscompare(F, 1) <= 0) 
-      ghalt("PowerMod: bad args");
+      LogicError("PowerMod: bad args");
 
    if (_ntl_gscompare(e, 0) == 0) {
       _ntl_gone(h);
@@ -3580,7 +3573,6 @@ void _ntl_gpowermod(_ntl_gbigint g, _ntl_gbigint e, _ntl_gbigint F,
       res = 0;
       _ntl_gsqmod(g, F, &res);
       _ntl_ginvmod(res, F, h);
-      _ntl_gfree(&res);
       return;
    }
 
@@ -3611,7 +3603,7 @@ void _ntl_gpowermod(_ntl_gbigint g, _ntl_gbigint e, _ntl_gbigint F,
    if (_ntl_gscompare(g, 2) == 0) {
       /* plain square-and-multiply algorithm, optimized for g == 2 */
 
-      _ntl_gbigint F1 = 0;
+      _ntl_gbigint_wrapped F1;
 
       if (use_redc) {
          long shamt;
@@ -3654,10 +3646,6 @@ void _ntl_gpowermod(_ntl_gbigint g, _ntl_gbigint e, _ntl_gbigint F,
       if (_ntl_gsign(e) < 0) _ntl_ginvmod(res, F, &res);
 
       _ntl_gcopy(res, h);
-      _ntl_gfree(&res);
-      _ntl_gfree(&gg);
-      _ntl_gfree(&t);
-      _ntl_gfree(&F1);
       return;
    }
 
@@ -3689,9 +3677,6 @@ void _ntl_gpowermod(_ntl_gbigint g, _ntl_gbigint e, _ntl_gbigint F,
       if (_ntl_gsign(e) < 0) _ntl_ginvmod(res, F, &res);
 
       _ntl_gcopy(res, h);
-      _ntl_gfree(&res);
-      _ntl_gfree(&gg);
-      _ntl_gfree(&t);
       return;
    }
 
@@ -3699,8 +3684,7 @@ void _ntl_gpowermod(_ntl_gbigint g, _ntl_gbigint e, _ntl_gbigint F,
 
    if (k > 5) k = 5;
 
-   v = (_ntl_gbigint *) NTL_MALLOC((1L << (k-1)), sizeof(_ntl_gbigint), 0);
-   if (!v) ghalt("out of memory");
+   v.SetLength(1L << (k-1));
    for (i = 0; i < (1L << (k-1)); i++) {
       v[i] = 0; 
       _ntl_gsetlength(&v[i], sF);
@@ -3765,13 +3749,6 @@ void _ntl_gpowermod(_ntl_gbigint g, _ntl_gbigint e, _ntl_gbigint F,
    if (_ntl_gsign(e) < 0) _ntl_ginvmod(res, F, &res);
 
    _ntl_gcopy(res, h);
-
-   _ntl_gfree(&res);
-   _ntl_gfree(&gg);
-   _ntl_gfree(&t);
-   for (i = 0; i < (1L << (k-1)); i++)
-      _ntl_gfree(&v[i]);
-   free(v);
 }
 
 long _ntl_gsize(_ntl_gbigint rep)
@@ -3979,29 +3956,29 @@ long _ntl_gblock_construct_alloc(_ntl_gbigint *x, long d, long n)
    /* check n value */
 
    if (n <= 0)
-      ghalt("block construct: n must be positive");
+      LogicError("block construct: n must be positive");
 
 
 
    /* check d value */
 
    if (d <= 0)
-      ghalt("block construct: d must be positive");
+      LogicError("block construct: d must be positive");
 
    if (NTL_OVERFLOW(d, NTL_ZZ_NBITS, NTL_ZZ_NBITS))
-      ghalt("block construct: d too large");
+      ResourceError("block construct: d too large");
 
    d1 = d + 1;
 
 #ifdef NTL_SMALL_MP_SIZE_T
    /* this makes sure that numbers don't get too big for GMP */
    if (d1 >= (1L << (NTL_BITS_PER_INT-4)))
-      ghalt("size too big for GMP");
+      ResourceError("size too big for GMP");
 #endif
 
 
    if (STORAGE_OVF(d1))
-      ghalt("block construct: d too large");
+      ResourceError("block construct: d too large");
 
 
 
@@ -4016,7 +3993,7 @@ long _ntl_gblock_construct_alloc(_ntl_gbigint *x, long d, long n)
       m = n;
 
    p = (char *) NTL_MALLOC(m, sz, 0);
-   if (!p) ghalt("out of memory in _ntl_gblock_construct");
+   if (!p) MemoryError();
 
    *x = (_ntl_gbigint) p;
 
@@ -4062,8 +4039,11 @@ long _ntl_gblock_destroy(_ntl_gbigint x)
    for (;;) {
       t = (_ntl_gbigint) p;
       alloc = ALLOC(t);
+
+      // NOTE: this must not throw 
       if ((alloc & 1) == 0) 
-         ghalt("corrupted memory detected in _ntl_gblock_destroy");
+         TerminalError("corrupted memory detected in _ntl_gblock_destroy");
+
       if ((alloc & 2) == 0) break;
       m++;
       p += sz;
@@ -4191,13 +4171,13 @@ void sp_ext_eucl(long *dd, long *ss, long *tt, long a, long b)
    long aneg = 0, bneg = 0;
 
    if (a < 0) {
-      if (a < -NTL_MAX_LONG) ghalt("integer overflow");
+      if (a < -NTL_MAX_LONG) ResourceError("integer overflow");
       a = -a;
       aneg = 1;
    }
 
    if (b < 0) {
-      if (b < -NTL_MAX_LONG) ghalt("integer overflow");
+      if (b < -NTL_MAX_LONG) ResourceError("integer overflow");
       b = -b;
       bneg = 1;
    }
@@ -4236,7 +4216,7 @@ long sp_inv_mod(long a, long n)
    long d, s, t;
 
    sp_ext_eucl(&d, &s, &t, a, n);
-   if (d != 1) ghalt("inverse undefined");
+   if (d != 1) ArithmeticError("inverse undefined");
    if (s < 0)
       return s + n;
    else
@@ -4244,171 +4224,85 @@ long sp_inv_mod(long a, long n)
 }
 
 
-struct tmp_vec_type {
-   long n; // number of tempraries
-   _ntl_gbigint *tmp;
 
-   long ni; // number of temporaries
-   long *tmpi;
+
+class _ntl_tmp_vec_crt_fast : public  _ntl_tmp_vec {
+public:
+   UniqueArray<_ntl_gbigint_wrapped> rem_vec;
+   UniqueArray<_ntl_gbigint_wrapped> temps;
+   UniqueArray<long> val_vec;
+
 };
 
-struct tmp_vec_type *_ntl_gtmp_vec_init(long n, long ni)
-{
-   struct tmp_vec_type *res;
 
-   // fprintf(stderr, "tmp_vec init %ld %ld\n", n, ni);
-
-   res = (struct tmp_vec_type *) NTL_MALLOC(1, sizeof(struct tmp_vec_type), 0);
-   if (!res) ghalt("out of memory");
-
-   res->n = n;
-   res->ni = ni;
-
-   if (n == 0) 
-      res->tmp = 0;
-   else {
-      long i;
-
-      res->tmp = (_ntl_gbigint *) NTL_MALLOC(n, sizeof(_ntl_gbigint), 0);
-      if (!res->tmp) ghalt("out of memory");
-
-      for (i = 0; i < n; i++)
-         res->tmp[i] = 0;
-   }
-
-   if (ni == 0) 
-      res->tmpi = 0;
-   else {
-      res->tmpi = (long *) NTL_MALLOC(ni, sizeof(long), 0);
-      if (!res->tmpi) ghalt("out of memory");
-   }
-
-   return res;
-}
-
-void _ntl_gtmp_vec_free(void *generic_tmp_vec)
-{
-   struct tmp_vec_type *tmp_vec = (struct tmp_vec_type *) generic_tmp_vec;
-   long n, ni;
-
-   // if (!tmp_vec) fprintf(stderr, "tmp_vec free NULL\n");
-
-   if (!tmp_vec) return;
-
-   // fprintf(stderr, "tmp_vec free %ld %ld\n", tmp_vec->n, tmp_vec->ni);
-   
-   n = tmp_vec->n;
-   if (n > 0) {
-      long i;
-      for (i = 0; i < n; i++)
-         _ntl_gfree(&tmp_vec->tmp[i]);
-
-      free(tmp_vec->tmp);
-   }
-
-   ni = tmp_vec->ni;
-   if (ni > 0) 
-      free(tmp_vec->tmpi);
-
-   free(tmp_vec);
-} 
-
-
-
-struct crt_body_gmp {
-   _ntl_gbigint *v;
+class _ntl_crt_struct_basic : public _ntl_crt_struct {
+public:
+   UniqueArray<_ntl_gbigint_wrapped> v;
    long sbuf;
    long n;
+
+   bool special();
+   void insert(long i, _ntl_gbigint m);
+   _ntl_tmp_vec *extract();
+   _ntl_tmp_vec *fetch();
+   void eval(_ntl_gbigint *x, const long *b, _ntl_tmp_vec *tmp_vec);
 };
 
-
-struct crt_body_gmp1 {
+class _ntl_crt_struct_fast : public _ntl_crt_struct {
+public:
    long n;
    long levels;
-   long *primes;
-   long *inv_vec;
-   long *index_vec;
-   _ntl_gbigint *prod_vec;
-   _ntl_gbigint *coeff_vec;
-   _ntl_gbigint modulus;
+   UniqueArray<long> primes;
+   UniqueArray<long> inv_vec;
+   UniqueArray<long> index_vec;
+   UniqueArray<_ntl_gbigint_wrapped> prod_vec;
+   UniqueArray<_ntl_gbigint_wrapped> coeff_vec;
+   _ntl_gbigint_wrapped modulus;
+   UniquePtr<_ntl_tmp_vec_crt_fast> stored_tmp_vec;
 
-   struct tmp_vec_type *tmp_vec;
+   bool special();
+   void insert(long i, _ntl_gbigint m);
+   _ntl_tmp_vec *extract();
+   _ntl_tmp_vec *fetch();
+   void eval(_ntl_gbigint *x, const long *b, _ntl_tmp_vec *tmp_vec);
 };
 
 
-struct crt_body {
-   long strategy;
-
-   union {
-      struct crt_body_gmp G;
-      struct crt_body_gmp1 G1;
-   } U;
-};
 
 
 #define GCRT_TMPS (2)
 
 
-void _ntl_gcrt_struct_init(void **crt_struct, long n, _ntl_gbigint p,
-                          long (*primes)(long))
+_ntl_crt_struct * 
+_ntl_crt_struct_build(long n, _ntl_gbigint p, long (*primes)(long))
 {
-   struct crt_body *c;
+   if (n >= 600) { 
+      UniqueArray<long> q;
+      UniqueArray<long> inv_vec;
+      UniqueArray<long> index_vec;
+      UniqueArray<_ntl_gbigint_wrapped> prod_vec, rem_vec, coeff_vec;
+      UniqueArray<_ntl_gbigint_wrapped> temps;
 
-   c = (struct crt_body *) NTL_MALLOC(1, sizeof(struct crt_body), 0);
-   if (!c) ghalt("out of memory");
-
-   if (n >= 600 ) { // 600  
-      /* strategy == 2 */
-
-      // fprintf(stderr, "CRT 2\n");
-
-      struct crt_body_gmp1 *C = &c->U.G1;
-      long *q;
       long i, j;
       long levels, vec_len;
-      long *inv_vec;
-      long *index_vec;
-      _ntl_gbigint *prod_vec, *rem_vec, *coeff_vec;
-      _ntl_gbigint *temps;
-
-      struct tmp_vec_type *tmp_vec;
 
       levels = 0;
       while ((n >> levels) >= 16) levels++;
       vec_len = (1L << levels) - 1;
 
-      tmp_vec = _ntl_gtmp_vec_init(GCRT_TMPS+vec_len, n);
+      temps.SetLength(GCRT_TMPS);
+      rem_vec.SetLength(vec_len);
 
-      temps = tmp_vec->tmp;
-      rem_vec = tmp_vec->tmp+GCRT_TMPS; 
-
-      C->modulus = 0;
-      _ntl_gcopy(p, &C->modulus);
-
-      q = (long *) NTL_MALLOC(n, sizeof(long), 0);
-      if (!q) ghalt("out of memory");
-
-      inv_vec = (long *) NTL_MALLOC(n, sizeof(long), 0);
-      if (!inv_vec) ghalt("out of memory");
-
+      q.SetLength(n);
       for (i = 0; i < n; i++)
          q[i] = primes(i);
 
-      index_vec = (long *) NTL_MALLOC((vec_len+1), sizeof(long), 0);
-      if (!index_vec) ghalt("out of memory");
-
-      prod_vec = (_ntl_gbigint *) NTL_MALLOC(vec_len, sizeof(_ntl_gbigint), 0);
-      if (!prod_vec) ghalt("out of memory");
+      inv_vec.SetLength(n);
 
 
-      coeff_vec = (_ntl_gbigint *) NTL_MALLOC(n, sizeof(_ntl_gbigint), 0);
-      if (!coeff_vec) ghalt("out of memory");
-
-      for (i = 0; i < vec_len; i++)
-         prod_vec[i] = 0;
-
-      for (i = 0; i < n; i++)
-         coeff_vec[i] = 0;
+      index_vec.SetLength(vec_len+1);
+      prod_vec.SetLength(vec_len);
+      coeff_vec.SetLength(n);
 
       index_vec[0] = 0;
       index_vec[1] = n;
@@ -4466,187 +4360,88 @@ void _ntl_gcrt_struct_init(void **crt_struct, long n, _ntl_gbigint p,
       }
 
 
-      c->strategy = 2;
+      UniquePtr<_ntl_crt_struct_fast> C;
+      C.make();
+
       C->n = n;
-      C->primes = q;
-      C->inv_vec = inv_vec;
+      C->primes.move(q);
+      C->inv_vec.move(inv_vec);
       C->levels = levels;
-      C->index_vec = index_vec;
-      C->prod_vec = prod_vec;
-      C->coeff_vec = coeff_vec;
+      C->index_vec.move(index_vec);
+      C->prod_vec.move(prod_vec);
+      C->coeff_vec.move(coeff_vec);
 
-      C->tmp_vec = tmp_vec;
+      _ntl_gcopy(p, &C->modulus);
 
-      *crt_struct = (void *) c;
-      return;
+      C->stored_tmp_vec.make();
+      C->stored_tmp_vec->rem_vec.move(rem_vec);
+      C->stored_tmp_vec->temps.move(temps);
+      C->stored_tmp_vec->val_vec.SetLength(n);
+
+      return C.release();
    }
 
    {
-      /* strategy == 1 */
+      UniquePtr<_ntl_crt_struct_basic> C;
+      C.make();
 
-      // fprintf(stderr, "CRT 1\n");
-
-      struct crt_body_gmp *C = &c->U.G;
       long i;
-      c->strategy = 1;
 
       C->n = n;
-      C->v = (_ntl_gbigint *) NTL_MALLOC(n, sizeof(_ntl_gbigint), 0);
-      if (!C->v) ghalt("out of memory");
-
-      for (i = 0; i < n; i++)
-         C->v[i] = 0;
-
+      C->v.SetLength(n);
       C->sbuf = SIZE(p)+2;
 
-      *crt_struct = (void *) c;
-      return;
+      return C.release();
    }
 }
 
 /* extracts existing tmp_vec, if possible -- read/write operation */
-void *_ntl_gcrt_extract_tmp(void *crt_struct) 
+
+_ntl_tmp_vec *_ntl_crt_struct_basic::extract()
 {
-   struct crt_body *c = (struct crt_body *) crt_struct;
+   return 0;
+}
 
-   // fprintf(stderr, "CRT extract\n");
-
-   switch (c->strategy) {
-   case 1: {
-      return 0;
-   }
-
-   case 2: {
-      struct crt_body_gmp1 *C = &c->U.G1;
-      void *res = C->tmp_vec;
-
-      if (res) 
-         C->tmp_vec = 0;
-      else {
-         long n = C->n;
-         long levels = C->levels;
-         long vec_len = (1L << levels) - 1;
-
-         res = _ntl_gtmp_vec_init(GCRT_TMPS+vec_len, n);
-      }
-
-      return res;
-   }
-
-   default:
-      ghalt("_ntl_gcrt_struct_extract_tmp: inconsistent strategy");
-      return 0;
-   }
+_ntl_tmp_vec *_ntl_crt_struct_fast::extract()
+{
+   if (stored_tmp_vec) 
+      return stored_tmp_vec.release();
+   else
+      return fetch();
 }
 
 
 /* read only operation */
-void *_ntl_gcrt_fetch_tmp(void *crt_struct) 
+
+_ntl_tmp_vec *_ntl_crt_struct_basic::fetch()
 {
-   struct crt_body *c = (struct crt_body *) crt_struct;
+   return 0;
+}
 
-   // fprintf(stderr, "CRT fetch\n");
+_ntl_tmp_vec *_ntl_crt_struct_fast::fetch()
+{
+   long vec_len = (1L << levels) - 1;
 
-   switch (c->strategy) {
-   case 1: {
-      return 0;
-   }
+   UniquePtr<_ntl_tmp_vec_crt_fast> res;
+   res.make();
+   res->temps.SetLength(GCRT_TMPS);
+   res->rem_vec.SetLength(vec_len);
+   res->val_vec.SetLength(n);
 
-   case 2: {
-      struct crt_body_gmp1 *C = &c->U.G1;
-      long n = C->n;
-      long levels = C->levels;
-      long vec_len = (1L << levels) - 1;
-      struct tmp_vec_type *tmp_vec = _ntl_gtmp_vec_init(GCRT_TMPS+vec_len, n);
-
-      return tmp_vec;
-   }
-
-   default:
-      ghalt("_ntl_gcrt_struct_fetch_tmp: inconsistent strategy");
-      return 0;
-   }
+   return res.release();
 }
 
 
-void _ntl_gcrt_struct_insert(void *crt_struct, long i, _ntl_gbigint m)
+void _ntl_crt_struct_basic::insert(long i, _ntl_gbigint m)
 {
-   struct crt_body *c = (struct crt_body *) crt_struct;
-
-   switch (c->strategy) {
-   case 1: {
-      _ntl_gcopy(m, &c->U.G.v[i]);
-      break;
-   }
-
-   default:
-      ghalt("_ntl_gcrt_struct_insert: inconsistent strategy");
-
-   } /* end switch */
+   _ntl_gcopy(m, &v[i]);
 }
 
-
-void _ntl_gcrt_struct_free(void *crt_struct)
+void _ntl_crt_struct_fast::insert(long i, _ntl_gbigint m)
 {
-   struct crt_body *c = (struct crt_body *) crt_struct;
-   if (!c) return;
-
-   switch (c->strategy) {
-   case 1: {
-      struct crt_body_gmp *C = &c->U.G;
-      long i, n;
-
-      n = C->n;
-
-      for (i = 0; i < n; i++)
-         _ntl_gfree(&C->v[i]);
-
-      free(C->v);
-      free(c);
-      break;
-   }
-
-   case 2: { 
-      struct crt_body_gmp1 *C = &c->U.G1;
-      long n = C->n;
-      long levels = C->levels;
-      long *primes = C->primes;
-      long *inv_vec = C->inv_vec;
-      long *index_vec = C->index_vec;
-      _ntl_gbigint *prod_vec = C->prod_vec;
-      _ntl_gbigint *coeff_vec = C->coeff_vec;
-      _ntl_gbigint modulus = C->modulus;
-
-      long vec_len = (1L << levels) - 1;
-
-      long i;
-
-      for (i = 0; i < vec_len; i++)
-         _ntl_gfree(&prod_vec[i]);
-
-      for (i = 0; i < n; i++)
-         _ntl_gfree(&coeff_vec[i]);
-
-      _ntl_gfree(&modulus);
-
-      free(primes);
-      free(inv_vec);
-      free(index_vec);
-      free(prod_vec);
-      free(coeff_vec);
-
-      _ntl_gtmp_vec_free(C->tmp_vec);
-
-      free(c);
-      break;
-   }
-
-   default:
-
-      ghalt("_ntl_gcrt_struct_free: inconsistent strategy");
-
-   } /* end case */
+   LogicError("insert called improperly");
 }
+
 
 static
 void gadd_mul_many(_ntl_gbigint *res, _ntl_gbigint *a, long *b, 
@@ -4691,200 +4486,244 @@ void gadd_mul_many(_ntl_gbigint *res, _ntl_gbigint *a, long *b,
    SIZE(*res) = sx;
 }
 
-void _ntl_gcrt_struct_eval(void *crt_struct, _ntl_gbigint *x, const long *b,
-                           void *generic_tmp_vec)
+void _ntl_crt_struct_basic::eval(_ntl_gbigint *x, const long *b, _ntl_tmp_vec *generic_tmp_vec)
 {
-   struct crt_body *c = (struct crt_body *) crt_struct;
-   struct tmp_vec_type *tmp_vec = (struct tmp_vec_type *) generic_tmp_vec;
+   mp_limb_t *xx, *yy; 
+   _ntl_gbigint *a;
+   _ntl_gbigint x1;
+   long i, sx;
+   long sy;
+   mp_limb_t carry;
 
-   switch (c->strategy) {
+   sx = sbuf;
+   _ntl_gsetlength(x, sx);
+   x1 = *x;
+   xx = DATA(x1);
 
-   case 1: {
-      struct crt_body_gmp *C = &c->U.G;
+   for (i = 0; i < sx; i++)
+      xx[i] = 0;
 
-      mp_limb_t *xx, *yy; 
-      _ntl_gbigint *a;
-      _ntl_gbigint x1;
-      long i, sx, n;
-      long sy;
-      mp_limb_t carry;
+   for (i = 0; i < n; i++) {
+      if (!v[i]) continue;
 
-      n = C->n;
-      sx = C->sbuf;
-      _ntl_gsetlength(x, sx);
-      x1 = *x;
-      xx = DATA(x1);
+      yy = DATA(v[i]);
+      sy = SIZE(v[i]); 
 
-      for (i = 0; i < sx; i++)
-         xx[i] = 0;
-   
-      a = C->v;
-   
-      for (i = 0; i < n; i++) {
-         if (!a[i]) continue;
+      if (!sy || !b[i]) continue;
 
-         yy = DATA(a[i]);
-         sy = SIZE(a[i]); 
-   
-         if (!sy || !b[i]) continue;
-   
-         carry = mpn_addmul_1(xx, yy, sy, b[i]);
-         yy = xx + sy;
-         *yy += carry;
+      carry = mpn_addmul_1(xx, yy, sy, b[i]);
+      yy = xx + sy;
+      *yy += carry;
 
-         if (*yy < carry) { /* unsigned comparison! */
-            do {
-               yy++;
-               *yy += 1;
-            } while (*yy == 0);
-         }
+      if (*yy < carry) { /* unsigned comparison! */
+         do {
+            yy++;
+            *yy += 1;
+         } while (*yy == 0);
       }
-   
-      while (sx > 0 && xx[sx-1] == 0) sx--;
-      SIZE(x1) = sx;
-      break;
    }
 
-   case 2: {
-      struct crt_body_gmp1 *C = &c->U.G1;
-
-      long n = C->n;
-      long levels = C->levels;
-      long *primes = C->primes;
-      long *inv_vec = C->inv_vec;
-      long *index_vec = C->index_vec;
-      _ntl_gbigint *prod_vec = C->prod_vec;
-      _ntl_gbigint *coeff_vec = C->coeff_vec;
+   while (sx > 0 && xx[sx-1] == 0) sx--;
+   SIZE(x1) = sx;
+}
 
 
-      long *val_vec = tmp_vec->tmpi;
-      _ntl_gbigint *temps = tmp_vec->tmp;
-      _ntl_gbigint *rem_vec = tmp_vec->tmp+GCRT_TMPS;
+void _ntl_crt_struct_fast::eval(_ntl_gbigint *x, const long *b, _ntl_tmp_vec *generic_tmp_vec)
+{
+   _ntl_tmp_vec_crt_fast *tmp_vec = static_cast<_ntl_tmp_vec_crt_fast*> (generic_tmp_vec);
 
-      long vec_len = (1L << levels) - 1;
+   long *val_vec = tmp_vec->val_vec.get();
+   _ntl_gbigint_wrapped *temps = tmp_vec->temps.get();
+   _ntl_gbigint_wrapped *rem_vec = tmp_vec->rem_vec.get();
 
-      long i;
+   long vec_len = (1L << levels) - 1;
 
-      for (i = 0; i < n; i++) {
-         SP_MUL_MOD(val_vec[i], b[i], inv_vec[i], primes[i]);
-      }
+   long i;
 
-      for (i = (1L << (levels-1)) - 1; i < vec_len; i++) {
-         long j1 = index_vec[i];
-         long j2 = index_vec[i+1];
-         gadd_mul_many(&rem_vec[i], &coeff_vec[j1], &val_vec[j1], j2-j1, 
-                          SIZE(prod_vec[i]));
-      }
+   for (i = 0; i < n; i++) {
+      SP_MUL_MOD(val_vec[i], b[i], inv_vec[i], primes[i]);
+   }
 
-      for (i = (1L << (levels-1)) - 2; i >= 0; i--) {
-         _ntl_gmul(prod_vec[2*i+1], rem_vec[2*i+2], &temps[0]);
-         _ntl_gmul(rem_vec[2*i+1], prod_vec[2*i+2], &temps[1]);
-         _ntl_gadd(temps[0], temps[1], &rem_vec[i]);
-      }
+   for (i = (1L << (levels-1)) - 1; i < vec_len; i++) {
+      long j1 = index_vec[i];
+      long j2 = index_vec[i+1];
+      gadd_mul_many(&rem_vec[i], &coeff_vec[j1], &val_vec[j1], j2-j1, 
+                       SIZE(prod_vec[i]));
+   }
 
-      /* temps[0] = rem_vec[0] mod prod_vec[0] (least absolute residue) */
-      _ntl_gmod(rem_vec[0], prod_vec[0], &temps[0]);
-      _ntl_gsub(temps[0], prod_vec[0], &temps[1]);
+   for (i = (1L << (levels-1)) - 2; i >= 0; i--) {
+      _ntl_gmul(prod_vec[2*i+1], rem_vec[2*i+2], &temps[0]);
+      _ntl_gmul(rem_vec[2*i+1], prod_vec[2*i+2], &temps[1]);
+      _ntl_gadd(temps[0], temps[1], &rem_vec[i]);
+   }
+
+   /* temps[0] = rem_vec[0] mod prod_vec[0] (least absolute residue) */
+   _ntl_gmod(rem_vec[0], prod_vec[0], &temps[0]);
+   _ntl_gsub(temps[0], prod_vec[0], &temps[1]);
+   _ntl_gnegate(&temps[1]);
+   if (_ntl_gcompare(temps[0], temps[1]) > 0) {
       _ntl_gnegate(&temps[1]);
-      if (_ntl_gcompare(temps[0], temps[1]) > 0) {
-         _ntl_gnegate(&temps[1]);
-         _ntl_gcopy(temps[1], &temps[0]);
-      }
-
-      _ntl_gmod(temps[0], C->modulus, &temps[1]);
-      _ntl_gcopy(temps[1], x);
-
-      break;
+      _ntl_gcopy(temps[1], &temps[0]);
    }
 
-   default:
-
-      ghalt("_crt_gstruct_eval: inconsistent strategy");
-
-   } /* end case */
-
+   _ntl_gmod(temps[0], modulus, &temps[1]);
+   _ntl_gcopy(temps[1], x);
 }
 
 
-long _ntl_gcrt_struct_special(void *crt_struct)
-{
-   struct crt_body *c = (struct crt_body *) crt_struct;
-   return (c->strategy == 2);
-}
+bool _ntl_crt_struct_basic::special()  { return false; }
+bool _ntl_crt_struct_fast::special()   { return true; }
 
 
 
 /* end crt code */
 
 
-struct rem_body_lip {
-   long n;
-   long *primes;
+
+class _ntl_tmp_vec_rem_impl : public  _ntl_tmp_vec {
+public:
+   UniqueArray<_ntl_gbigint_wrapped> rem_vec;
 };
 
-struct rem_body_gmp {
+
+
+
+
+
+class _ntl_rem_struct_basic : public _ntl_rem_struct {
+public:
+   long n;
+   UniqueArray<long> primes;
+
+   void eval(long *x, _ntl_gbigint a, _ntl_tmp_vec *tmp_vec);
+   _ntl_tmp_vec *fetch();
+};
+
+
+class _ntl_rem_struct_fast : public _ntl_rem_struct {
+public:
    long n;
    long levels;
-   long *primes;
-   long *index_vec;
-   _ntl_gbigint *prod_vec;
+   UniqueArray<long> primes;
+   UniqueArray<long> index_vec;
+   UniqueArray<_ntl_gbigint_wrapped> prod_vec;
    long modulus_size;
+
+   void eval(long *x, _ntl_gbigint a, _ntl_tmp_vec *tmp_vec);
+   _ntl_tmp_vec *fetch();
 };
 
 
-struct rem_body_gmp1 {
+class _ntl_rem_struct_medium : public _ntl_rem_struct {
+public:
    long n;
    long levels;
-   long *primes;
-   long *index_vec;
-   long *len_vec;
-   mp_limb_t *inv_vec;
-   long *corr_vec;
-   double *corraux_vec;
-   _ntl_gbigint *prod_vec;
-};
+   UniqueArray<long> primes;
+   UniqueArray<long> index_vec;
+   UniqueArray<long> len_vec;
+   UniqueArray<mp_limb_t> inv_vec;
+   UniqueArray<long> corr_vec;
+   UniqueArray<double> corraux_vec;
+   UniqueArray<_ntl_gbigint_wrapped> prod_vec;
 
-
-struct rem_body {
-   long strategy;
-
-   union {
-      struct rem_body_lip L;
-      struct rem_body_gmp G;
-      struct rem_body_gmp1 G1;
-   } U;
+   void eval(long *x, _ntl_gbigint a, _ntl_tmp_vec *tmp_vec);
+   _ntl_tmp_vec *fetch();
 };
 
 
 
+#ifdef NTL_TBL_REM
 
-void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
-                          long (*p)(long))
+class _ntl_rem_struct_tbl : public _ntl_rem_struct {
+public:
+   long n;
+   UniqueArray<long> primes;
+   Unique2DArray<mp_limb_t> tbl;
+
+   void eval(long *x, _ntl_gbigint a, _ntl_tmp_vec *tmp_vec);
+   _ntl_tmp_vec *fetch();
+
+};
+
+#endif
+
+
+
+_ntl_rem_struct *_ntl_rem_struct_build(long n, _ntl_gbigint modulus, long (*p)(long))
 {
-   struct rem_body *r;
+#ifdef NTL_TBL_REM
 
-   r = (struct rem_body *) NTL_MALLOC(1, sizeof(struct rem_body), 0);
-   if (!r) ghalt("out of memory");
+   if (n <= 800 
+          && sizeof(NTL_ULL_TYPE) == 2*sizeof(long) 
+          && NTL_ZZ_NBITS == NTL_BITS_PER_LONG
+          && SIZE(modulus) <= (1L << (NTL_ZZ_NBITS-NTL_SP_NBITS)) 
+          && SIZE(modulus) >= 4) { 
+
+      // NOTE: the typical case here is on a 64-bit machine,
+      // where we have 64-bit limbs, 50-bit SP integers,
+      // and 128-but ULL's.  This will allow us to accumulate
+      // 2^14 products before we overflow a ULL.
+      // We restrict to n <= 800 to prevent excessive memory
+      // for tables, switching to the asymptotically fast
+      // remaindering
+
+      // FIXME: this could be extended to cases where 
+      // NTL_ZZ_NBITS - NTL_SP_NBITS is smaller, such as
+      // 32-bit machines where this difference is 2.
+      // It would mean accumulating results using 3 limbs.
+
+      UniqueArray<long> q;
+      Unique2DArray<mp_limb_t> tbl;
+      long i, j;
+      long qq, t, t1;
+      long sz = SIZE(modulus);
+
+      q.SetLength(n);
+      for (i = 0; i < n; i++)
+         q[i] = p(i);
+
+
+      tbl.SetDims(n, sz);
+
+      for (i = 0; i < n; i++) {
+         qq = q[i];
+         t = 1;
+         for (j = 0; j < NTL_ZZ_NBITS; j++) {
+            t += t;
+            if (t >= qq) t -= qq;
+         }
+         t1 = 1;
+         tbl[i][0] = 1;
+         for (j = 1; j < sz; j++) {
+            SP_MUL_MOD(t1, t1, t, qq);
+            tbl[i][j] = t1;
+         }
+      }
+
+      UniquePtr<_ntl_rem_struct_tbl> R;
+      R.make();
+ 
+      R->n = n;
+      R->primes.move(q);
+      R->tbl.move(tbl);
+
+      return R.release();
+   }
+
+
+#endif
 
    if ( n >= 32 && n <= 256) {
-      /* strategy == 2 */
-
-      // fprintf(stderr, "REM 2\n");
-
-      struct rem_body_gmp1 *R = &r->U.G1;
-
-      long *q;
+      UniqueArray<long> q;
       long i, j;
       long levels, vec_len;
-      long *index_vec;
-      long *len_vec, *corr_vec;
-      double *corraux_vec;
-      mp_limb_t *inv_vec;
-      _ntl_gbigint *prod_vec;
+      UniqueArray<long> index_vec;
+      UniqueArray<long> len_vec, corr_vec;
+      UniqueArray<double> corraux_vec;
+      UniqueArray<mp_limb_t> inv_vec;
+      UniqueArray<_ntl_gbigint_wrapped> prod_vec;
    
-      q = (long *) NTL_MALLOC(n, sizeof(long), 0);
-      if (!q) ghalt("out of memory");
-   
+      q.SetLength(n);
       for (i = 0; i < n; i++)
          q[i] = p(i);
 
@@ -4893,25 +4732,14 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
 
       vec_len = (1L << levels) - 1;
 
-      index_vec = (long *) NTL_MALLOC((vec_len+1), sizeof(long), 0);
-      if (!index_vec) ghalt("out of memory");
+      index_vec.SetLength(vec_len+1);
+      len_vec.SetLength(vec_len);
+      inv_vec.SetLength(vec_len);
 
-      len_vec = (long *) NTL_MALLOC(vec_len, sizeof(long), 0);
-      if (!len_vec) ghalt("out of memory");
+      corr_vec.SetLength(n);
+      corraux_vec.SetLength(n);
 
-      inv_vec = (mp_limb_t *) NTL_MALLOC(vec_len, sizeof(mp_limb_t), 0);
-      if (!inv_vec) ghalt("out of memory");
-
-      corr_vec = (long *) NTL_MALLOC(n, sizeof(long), 0);
-      if (!corr_vec) ghalt("out of memory");
-
-      corraux_vec = (double *) NTL_MALLOC(n, sizeof(double), 0);
-      if (!corraux_vec) ghalt("out of memory");
-
-      prod_vec = (_ntl_gbigint *) NTL_MALLOC(vec_len, sizeof(_ntl_gbigint), 0);
-      if (!prod_vec) ghalt("out of memory");
-      for (i = 0; i < vec_len; i++)
-         prod_vec[i] = 0;
+      prod_vec.SetLength(vec_len);
 
       index_vec[0] = 0;
       index_vec[1] = n;
@@ -4967,37 +4795,31 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
 
 
 
+      UniquePtr<_ntl_rem_struct_medium> R;
+      R.make();
 
-
-      r->strategy = 2;
       R->n = n;
-      R->primes = q;
       R->levels = levels;
-      R->index_vec = index_vec;
-      R->len_vec = len_vec;
-      R->inv_vec = inv_vec;
-      R->corr_vec = corr_vec;
-      R->corraux_vec = corraux_vec;
-      R->prod_vec = prod_vec;
+      R->primes.move(q);
+      R->index_vec.move(index_vec);
+      R->len_vec.move(len_vec);
+      R->inv_vec.move(inv_vec);
+      R->corr_vec.move(corr_vec);
+      R->corraux_vec.move(corraux_vec);
+      R->prod_vec.move(prod_vec);
 
-      *rem_struct = (void *) r;
+      return R.release();
    }
-   else if (n >= 32) {
-      /* strategy == 1 */
 
-      // fprintf(stderr, "REM 1\n");
 
-      struct rem_body_gmp *R = &r->U.G;
-
-      long *q;
+   if (n >= 32) {
+      UniqueArray<long> q;
       long i, j;
       long levels, vec_len;
-      long *index_vec;
-      _ntl_gbigint *prod_vec;
+      UniqueArray<long> index_vec;
+      UniqueArray<_ntl_gbigint_wrapped> prod_vec;
    
-      q = (long *) NTL_MALLOC(n, sizeof(long), 0);
-      if (!q) ghalt("out of memory");
-   
+      q.SetLength(n);
       for (i = 0; i < n; i++)
          q[i] = p(i);
 
@@ -5006,14 +4828,8 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
 
       vec_len = (1L << levels) - 1;
 
-      index_vec = (long *) NTL_MALLOC((vec_len+1), sizeof(long), 0);
-      if (!index_vec) ghalt("out of memory");
-
-      prod_vec = (_ntl_gbigint *) NTL_MALLOC(vec_len, sizeof(_ntl_gbigint), 0);
-      if (!prod_vec) ghalt("out of memory");
-
-      for (i = 0; i < vec_len; i++)
-         prod_vec[i] = 0;
+      index_vec.SetLength(vec_len+1);
+      prod_vec.SetLength(vec_len);
 
       index_vec[0] = 0;
       index_vec[1] = n;
@@ -5042,317 +4858,246 @@ void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint modulus,
          _ntl_gmul(prod_vec[2*i+1], prod_vec[2*i+2], &prod_vec[i]);
 
 
-      r->strategy = 1;
+      
+      UniquePtr<_ntl_rem_struct_fast> R;
+      R.make();
+
       R->n = n;
-      R->primes = q;
       R->levels = levels;
-      R->index_vec = index_vec;
-      R->prod_vec = prod_vec;
+      R->primes.move(q);
+      R->index_vec.move(index_vec);
+      R->prod_vec.move(prod_vec);
       R->modulus_size = _ntl_gsize(modulus);
 
-      *rem_struct = (void *) r;
+      return R.release();
    }
-   else
+
    {
-      // fprintf(stderr, "REM 1\n");
+      // basic case
 
-      /* strategy == 0 */
-
-      struct rem_body_lip *R = &r->U.L;
-
-      long *q;
+      UniqueArray<long> q;
       long i;
 
-      r->strategy = 0;
+      UniquePtr<_ntl_rem_struct_basic> R;
+      R.make();
+
       R->n = n;
-      q = (long *) NTL_MALLOC(n, sizeof(long), 0);
-      if (!q) ghalt("out of memory");
-      R->primes = q;
-  
+      R->primes.SetLength(n);
       for (i = 0; i < n; i++)
-         q[i] = p(i);
-  
-      *rem_struct = (void *) r;
-   }
+         R->primes[i] = p(i);
 
+      return R.release();
+   }
 }
 
-void *_ntl_grem_fetch_tmp(void *rem_struct) 
+_ntl_tmp_vec *_ntl_rem_struct_basic::fetch()
 {
-   struct rem_body *r = (struct rem_body *) rem_struct;
-
-   switch (r->strategy) {
-
-   case 0: {
-      return 0;
-   }
-
-   case 1: {
-      struct rem_body_gmp *R = &r->U.G;
-      long modulus_size = R->modulus_size;
-      long levels = R->levels;
-      long vec_len = (1L << levels) - 1;
-      _ntl_gbigint *prod_vec = R->prod_vec;
-      struct tmp_vec_type *tmp_vec = _ntl_gtmp_vec_init(vec_len, 0);
-      _ntl_gbigint *rem_vec = tmp_vec->tmp;
-
-      long i;
-
-      /* allocate length in advance to streamline eval code */
-
-      _ntl_gsetlength(&rem_vec[1], modulus_size);
-      _ntl_gsetlength(&rem_vec[2], modulus_size);
-
-      for (i = 1; i < (1L << (levels-1)) - 1; i++) {
-         _ntl_gsetlength(&rem_vec[2*i+1], _ntl_gsize(prod_vec[2*i+1]));
-         _ntl_gsetlength(&rem_vec[2*i+2], _ntl_gsize(prod_vec[2*i+2]));
-      }
-
-      return tmp_vec;
-   }
-
-   case 2: {
-      struct rem_body_gmp1 *R = &r->U.G1;
-      long *len_vec = R->len_vec;
-      long levels = R->levels;
-      long vec_len = (1L << levels) - 1;
-      struct tmp_vec_type *tmp_vec = _ntl_gtmp_vec_init(vec_len, 0);
-      _ntl_gbigint *rem_vec = tmp_vec->tmp;
-
-      long i;
-
-      /* allocate length in advance to streamline eval code */
-
-      _ntl_gsetlength(&rem_vec[0], len_vec[1]); /* a special temp */
-
-      for (i = 1; i < vec_len; i++)
-         _ntl_gsetlength(&rem_vec[i], len_vec[i]);
-
-      return tmp_vec;
-   }
-
-   default: {
-      ghalt("_ntl_grem_fetch_tmp: inconsistent strategy");
-      return 0;
-   }
-
-   }
-
+   return 0;
 }
 
 
-void _ntl_grem_struct_free(void *rem_struct)
+#ifdef NTL_TBL_REM
+
+_ntl_tmp_vec *_ntl_rem_struct_tbl::fetch()
 {
-   struct rem_body *r = (struct rem_body *) rem_struct;
-   if (!r) return;
+   return 0;
+}
 
-   switch (r->strategy) {
+#endif
 
-   case 0: {
-      free(r->U.L.primes);
-      free(r);
-      break;
+_ntl_tmp_vec *_ntl_rem_struct_fast::fetch()
+{
+   long vec_len = (1L << levels) - 1;
+   UniquePtr<_ntl_tmp_vec_rem_impl> res;
+   res.make();
+   res->rem_vec.SetLength(vec_len);
+   _ntl_gbigint_wrapped *rem_vec = res->rem_vec.get();
+
+   long i;
+
+   /* allocate length in advance to streamline eval code */
+
+   _ntl_gsetlength(&rem_vec[1], modulus_size);
+   _ntl_gsetlength(&rem_vec[2], modulus_size);
+
+   for (i = 1; i < (1L << (levels-1)) - 1; i++) {
+      _ntl_gsetlength(&rem_vec[2*i+1], _ntl_gsize(prod_vec[2*i+1]));
+      _ntl_gsetlength(&rem_vec[2*i+2], _ntl_gsize(prod_vec[2*i+2]));
    }
 
-   case 1: {
-      struct rem_body_gmp *R = &r->U.G;
+   return res.release();
+}
 
-      long levels = R->levels;
-      long vec_len = (1L << levels) - 1;
-      long i;
+_ntl_tmp_vec *_ntl_rem_struct_medium::fetch()
+{
+   long vec_len = (1L << levels) - 1;
+   UniquePtr<_ntl_tmp_vec_rem_impl> res;
+   res.make();
+   res->rem_vec.SetLength(vec_len);
+   _ntl_gbigint_wrapped *rem_vec = res->rem_vec.get();
 
-      for (i = 0; i < vec_len; i++)
-         _ntl_gfree(&R->prod_vec[i]);
+   long i;
 
-      free(R->primes);
-      free(R->index_vec);
-      free(R->prod_vec);
+   /* allocate length in advance to streamline eval code */
 
-      free(r);
-      break;
-   }
+   _ntl_gsetlength(&rem_vec[0], len_vec[1]); /* a special temp */
 
-   case 2: {
-      struct rem_body_gmp1 *R = &r->U.G1;
+   for (i = 1; i < vec_len; i++)
+      _ntl_gsetlength(&rem_vec[i], len_vec[i]);
 
-      long levels = R->levels;
-      long vec_len = (1L << levels) - 1;
-      long i;
-
-      for (i = 0; i < vec_len; i++)
-         _ntl_gfree(&R->prod_vec[i]);
-
-      free(R->primes);
-      free(R->index_vec);
-      free(R->len_vec);
-      free(R->corr_vec);
-      free(R->inv_vec);
-      free(R->corraux_vec);
-      free(R->prod_vec);
-
-      free(r);
-      break;
-   }
-
-
-   default:
-      ghalt("_ntl_grem_struct_free: inconsistent strategy");
-
-   } /* end switch */
+   return res.release();
 }
 
 
+#ifdef NTL_TBL_REM
 
-
-void _ntl_grem_struct_eval(void *rem_struct, long *x, _ntl_gbigint a,
-                           void *generic_tmp_vec)
+void _ntl_rem_struct_tbl::eval(long *x, _ntl_gbigint a, 
+                                 _ntl_tmp_vec *generic_tmp_vec)
 {
-   struct rem_body *r = (struct rem_body *) rem_struct;
-   struct tmp_vec_type * tmp_vec = (struct tmp_vec_type *) generic_tmp_vec;
+   long i, j, sa;
+   mp_limb_t *adata, *tp;
+   NTL_ULL_TYPE acc;
 
-   switch (r->strategy) {
+   if (ZEROP(a)) {
+      for (i = 0; i < n; i++) x[i] = 0;
+      return;
+   }
 
-   case 0: {
-      struct rem_body_lip *R = &r->U.L;
-      long n = R->n;
-      long *q = R->primes;
+   sa = SIZE(a);
+   adata = DATA(a);
 
-      long j;
-      mp_limb_t *adata;
-      long sa;
+   for (i = 0; i < n; i++) {
+      tp = tbl[i];
 
-      if (!a) 
-         sa = 0;
-      else
-         sa = SIZE(a);
+      acc = adata[0];
 
-      if (sa == 0) {
-         for (j = 0; j < n; j++)
-            x[j] = 0;
+      for (j = 1; j < sa; j++)
+         acc += ((NTL_ULL_TYPE) adata[j]) * ((NTL_ULL_TYPE) tp[j]);
 
-         break;
-      }
+      mp_limb_t accvec[2];
+      accvec[0] = acc;
+      accvec[1] = acc >> NTL_ZZ_NBITS;
+      x[i] = mpn_mod_1(accvec, 2, primes[i]);
 
-      adata = DATA(a);
+      // x[i] = long(acc % ((unsigned long) primes[i]));
+   }
+}
 
+#endif
+
+void _ntl_rem_struct_basic::eval(long *x, _ntl_gbigint a, 
+                                 _ntl_tmp_vec *generic_tmp_vec)
+{
+   long *q = primes.get();
+
+   long j;
+   mp_limb_t *adata;
+   long sa;
+
+   if (!a) 
+      sa = 0;
+   else
+      sa = SIZE(a);
+
+   if (sa == 0) {
       for (j = 0; j < n; j++)
-         x[j] = mpn_mod_1(adata, sa, q[j]);
+         x[j] = 0;
 
-      break;
+      return;
    }
 
-   case 1: {
-      struct rem_body_gmp *R = &r->U.G;
+   adata = DATA(a);
 
-      long n = R->n;
-      long levels = R->levels;
-      long *q = R->primes;
-      long *index_vec = R->index_vec;
-      _ntl_gbigint *prod_vec = R->prod_vec;
+   for (j = 0; j < n; j++)
+      x[j] = mpn_mod_1(adata, sa, q[j]);
 
-      _ntl_gbigint *rem_vec = tmp_vec->tmp;
+}
 
-      long vec_len = (1L << levels) - 1;
+void _ntl_rem_struct_fast::eval(long *x, _ntl_gbigint a, 
+                                _ntl_tmp_vec *generic_tmp_vec)
+{
+   long *q = primes.get();
+   _ntl_gbigint_wrapped *rem_vec = 
+      (static_cast<_ntl_tmp_vec_rem_impl *> (generic_tmp_vec))->rem_vec.get();
+   long vec_len = (1L << levels) - 1;
 
-      long i, j;
+   long i, j;
 
-      if (ZEROP(a)) {
-         for (j = 0; j < n; j++)
+   if (ZEROP(a)) {
+      for (j = 0; j < n; j++)
+         x[j] = 0;
+
+      return;
+   }
+
+   _ntl_gcopy(a, &rem_vec[1]);
+   _ntl_gcopy(a, &rem_vec[2]);
+
+   for (i = 1; i < (1L << (levels-1)) - 1; i++) {
+      gmod_simple(rem_vec[i], prod_vec[2*i+1], &rem_vec[2*i+1]);
+      gmod_simple(rem_vec[i], prod_vec[2*i+2], &rem_vec[2*i+2]);
+   }
+
+   for (i = (1L << (levels-1)) - 1; i < vec_len; i++) {
+      long lo = index_vec[i];
+      long hi = index_vec[i+1];
+      mp_limb_t *s1p = DATA(rem_vec[i]);
+      long s1size = SIZE(rem_vec[i]);
+      if (s1size == 0) {
+         for (j = lo; j <hi; j++)
             x[j] = 0;
-
-         break;
       }
-
-      _ntl_gcopy(a, &rem_vec[1]);
-      _ntl_gcopy(a, &rem_vec[2]);
-
-      for (i = 1; i < (1L << (levels-1)) - 1; i++) {
-         gmod_simple(rem_vec[i], prod_vec[2*i+1], &rem_vec[2*i+1]);
-         gmod_simple(rem_vec[i], prod_vec[2*i+2], &rem_vec[2*i+2]);
+      else {
+         for (j = lo; j < hi; j++)
+            x[j] = mpn_mod_1(s1p, s1size, q[j]);
       }
+   }
+}
 
-      for (i = (1L << (levels-1)) - 1; i < vec_len; i++) {
-         long lo = index_vec[i];
-         long hi = index_vec[i+1];
-         mp_limb_t *s1p = DATA(rem_vec[i]);
-         long s1size = SIZE(rem_vec[i]);
-         if (s1size == 0) {
-            for (j = lo; j <hi; j++)
-               x[j] = 0;
-         }
-         else {
-            for (j = lo; j < hi; j++)
-               x[j] = mpn_mod_1(s1p, s1size, q[j]);
-         }
-      }
+void _ntl_rem_struct_medium::eval(long *x, _ntl_gbigint a, 
+                                  _ntl_tmp_vec *generic_tmp_vec)
+{
+   long *q = primes.get();
+   _ntl_gbigint_wrapped *rem_vec = 
+      (static_cast<_ntl_tmp_vec_rem_impl *> (generic_tmp_vec))->rem_vec.get();
+   long vec_len = (1L << levels) - 1;
 
-      break;
+   long i, j;
+
+   if (ZEROP(a)) {
+      for (j = 0; j < n; j++)
+         x[j] = 0;
+
+      return;
    }
 
-   case 2: {
-      struct rem_body_gmp1 *R = &r->U.G1;
+   _ntl_gcopy(a, &rem_vec[1]);
+   _ntl_gcopy(a, &rem_vec[2]);
 
-      long n = R->n;
-      long levels = R->levels;
-      long *q = R->primes;
-      long *index_vec = R->index_vec;
-      long *len_vec = R->len_vec;
-      long *corr_vec = R->corr_vec;
-      double *corraux_vec = R->corraux_vec;
-      mp_limb_t *inv_vec = R->inv_vec;
-      _ntl_gbigint *prod_vec = R->prod_vec;
+   for (i = 1; i < (1L << (levels-1)) - 1; i++) {
+      _ntl_gcopy(rem_vec[i], &rem_vec[0]);
+      redc(rem_vec[0], prod_vec[2*i+1], len_vec[i]-len_vec[2*i+1],
+           inv_vec[2*i+1], rem_vec[2*i+1]);
+      redc(rem_vec[i], prod_vec[2*i+2], len_vec[i]-len_vec[2*i+2],
+           inv_vec[2*i+2], rem_vec[2*i+2]);
+   }
 
-      _ntl_gbigint *rem_vec = tmp_vec->tmp;
-
-      long vec_len = (1L << levels) - 1;
-
-      long i, j;
-
-      if (ZEROP(a)) {
-         for (j = 0; j < n; j++)
+   for (i = (1L << (levels-1)) - 1; i < vec_len; i++) {
+      long lo = index_vec[i];
+      long hi = index_vec[i+1];
+      mp_limb_t *s1p = DATA(rem_vec[i]);
+      long s1size = SIZE(rem_vec[i]);
+      if (s1size == 0) {
+         for (j = lo; j <hi; j++)
             x[j] = 0;
-
-         break;
       }
-
-      _ntl_gcopy(a, &rem_vec[1]);
-      _ntl_gcopy(a, &rem_vec[2]);
-
-      for (i = 1; i < (1L << (levels-1)) - 1; i++) {
-         _ntl_gcopy(rem_vec[i], &rem_vec[0]);
-         redc(rem_vec[0], prod_vec[2*i+1], len_vec[i]-len_vec[2*i+1],
-              inv_vec[2*i+1], rem_vec[2*i+1]);
-         redc(rem_vec[i], prod_vec[2*i+2], len_vec[i]-len_vec[2*i+2],
-              inv_vec[2*i+2], rem_vec[2*i+2]);
-      }
-
-      for (i = (1L << (levels-1)) - 1; i < vec_len; i++) {
-         long lo = index_vec[i];
-         long hi = index_vec[i+1];
-         mp_limb_t *s1p = DATA(rem_vec[i]);
-         long s1size = SIZE(rem_vec[i]);
-         if (s1size == 0) {
-            for (j = lo; j <hi; j++)
-               x[j] = 0;
-         }
-         else {
-            for (j = lo; j < hi; j++) {
-               long t = mpn_mod_1(s1p, s1size, q[j]);
-               SP_MUL_MOD2(x[j], t, corr_vec[j], q[j], corraux_vec[j]);
-            }
+      else {
+         for (j = lo; j < hi; j++) {
+            long t = mpn_mod_1(s1p, s1size, q[j]);
+            SP_MUL_MOD2(x[j], t, corr_vec[j], q[j], corraux_vec[j]);
          }
       }
-
-      break;
    }
-
-   default:
-      ghalt("_ntl_grem_struct_eval: inconsistent strategy");
-
-
-   } /* end switch */
-
-
 }
 
 

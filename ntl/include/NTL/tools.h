@@ -2,12 +2,19 @@
 #ifndef NTL_tools__H
 #define NTL_tools__H
 
-#include <NTL/ctools.h>
+//#define NTL_TEST_EXCEPTIONS
 
+#include <NTL/ctools.h>
+#include <NTL/new.h>
+
+#include <iostream>
+#include <new>
+#include <stdexcept>
 
 #include <cstdlib>
 #include <cmath>
-#include <iostream>
+
+
 
 
 #define NTL_SNS std ::
@@ -61,6 +68,7 @@
 
 
 double _ntl_GetTime();
+unsigned long _ntl_GetPID();
 
 typedef unsigned long _ntl_ulong;
 typedef _ntl_ulong *_ntl_ulong_ptr;
@@ -68,6 +76,11 @@ typedef _ntl_ulong *_ntl_ulong_ptr;
 // (non-standard but common) definitions in standard headers.
 // Putting u_long inside namespace NTL only tends to creates ambiguities,
 // for no good reason.
+
+
+
+
+NTL_OPEN_NNS
 
 #ifndef NTL_LEGACY_INPUT_ERROR
 
@@ -89,7 +102,7 @@ typedef _ntl_ulong *_ntl_ulong_ptr;
 
 #define NTL_INPUT_ERROR(s, msg) \
    do {\
-      Error(msg);\
+      InputError(msg);\
    } while (0)\
 
 
@@ -98,7 +111,7 @@ typedef _ntl_ulong *_ntl_ulong_ptr;
 
 #define NTL_INPUT_CHECK_ERR(stmt) \
    do {\
-      if (!(stmt)) Error("bad input\n");\
+      if (!(stmt)) InputError("bad input\n");\
    } while (0)\
 
 
@@ -110,7 +123,6 @@ typedef _ntl_ulong *_ntl_ulong_ptr;
 
 
 
-NTL_OPEN_NNS
 
 
 #define NTL_FILE_THRESH (64000.0)
@@ -119,7 +131,6 @@ NTL_OPEN_NNS
 
 
 
-NTL_THREAD_LOCAL extern void (*ErrorCallback)();
 
 struct INIT_SIZE_STRUCT { };
 const INIT_SIZE_STRUCT INIT_SIZE = INIT_SIZE_STRUCT();
@@ -311,10 +322,10 @@ char IntValToChar(long a);
 
 
 
-void Error(const char *s);
 
 
 inline double GetTime() { return _ntl_GetTime(); }
+inline unsigned long GetPID() { return _ntl_GetPID(); }
 
 inline long IsFinite(double *p) { return _ntl_IsFinite(p); }
 
@@ -347,6 +358,183 @@ void PrintTime(NTL_SNS ostream& s, double t);
 #define NTL_RESTRICT
 
 #endif
+
+// A very lightly wrapped pointer than does nothing more than provide
+// auto cleanup in a destructor.  Use the UniquePtr class (in SmartPtr.h) 
+// for a class with more safety and convenience features.
+// This class is easiest to use to retrofit older code with RAII
+// semantics.
+
+// A call to Deleter::apply should free the pointed-to storage
+// and set the pointer itself to zero, so apply should
+// take an argument that is a reference to a T*.
+
+template<class T, class Deleter>
+class WrappedPtr {
+private:
+   WrappedPtr(const WrappedPtr&); // disable
+   void operator=(const WrappedPtr&); // disable
+public:
+   typedef T * raw_ptr;
+
+   raw_ptr rep;
+
+   WrappedPtr() : rep(0) { }
+   void operator=(const raw_ptr& _rep)  { rep = _rep; }
+
+   ~WrappedPtr() { Deleter::apply(rep); } 
+
+   operator const raw_ptr& () const { return rep; }
+   operator raw_ptr& () { return rep; }
+
+   const raw_ptr* operator&() const { return &rep; }
+   raw_ptr* operator&() { return &rep; }
+
+   void kill() { Deleter::apply(rep); }
+
+   void swap(WrappedPtr& other) { _ntl_swap(rep, other.rep); }
+
+};
+
+template<class T, class Deleter>
+void swap(WrappedPtr<T,Deleter>& x, WrappedPtr<T,Deleter>& y)
+{
+   x.swap(y);
+}
+
+
+
+// Error Handling
+
+
+
+class ErrorObject : public NTL_SNS runtime_error {
+public:
+   ErrorObject(const char *msg) : runtime_error(msg) { }
+};
+
+class LogicErrorObject : public ErrorObject {
+public: 
+   LogicErrorObject(const char *msg) : ErrorObject(msg) { }
+};
+
+class ArithmeticErrorObject : public ErrorObject {
+public: 
+   ArithmeticErrorObject(const char *msg) : ErrorObject(msg) { }
+};
+
+class ResourceErrorObject : public ErrorObject {
+public: 
+   ResourceErrorObject(const char *msg) : ErrorObject(msg) { }
+};
+
+class FileErrorObject : public ErrorObject {
+public: 
+   FileErrorObject(const char *msg) : ErrorObject(msg) { }
+};
+
+class InputErrorObject : public ErrorObject {
+public: 
+   InputErrorObject(const char *msg) : ErrorObject(msg) { }
+};
+
+
+
+NTL_THREAD_LOCAL extern void (*ErrorCallback)();
+
+void TerminalError(const char *s);
+
+#ifdef NTL_EXCEPTIONS
+
+inline void MemoryError() { throw NTL_SNS bad_alloc(); }
+inline void Error(const char *msg) { throw ErrorObject(msg); }
+inline void LogicError(const char *msg) { throw LogicErrorObject(msg); }
+inline void ArithmeticError(const char *msg) { throw ArithmeticErrorObject(msg); }
+inline void InvModError(const char *msg) { throw ArithmeticErrorObject(msg); }
+inline void ResourceError(const char *msg) { throw ResourceErrorObject(msg); }
+inline void FileError(const char *msg) { throw FileErrorObject(msg); }
+inline void InputError(const char *msg) { throw InputErrorObject(msg); }
+
+#else
+
+inline void MemoryError() { TerminalError("out of memory"); }
+inline void Error(const char *msg) { TerminalError(msg); }
+inline void LogicError(const char *msg) { TerminalError(msg); }
+inline void ArithmeticError(const char *msg) { TerminalError(msg); }
+inline void InvModError(const char *msg) { TerminalError(msg); }
+inline void ResourceError(const char *msg) { TerminalError(msg); }
+inline void FileError(const char *msg) { TerminalError(msg); }
+inline void InputError(const char *msg) { TerminalError(msg); }
+
+#endif
+
+
+
+
+
+
+#ifdef NTL_EXCEPTIONS
+
+
+template < typename F  >
+class scope_guard 
+{
+    typename std::remove_reference<F>::type f;
+    bool active;
+    const char *info;
+    
+public:
+    scope_guard(F&& _f, const char *_info) : 
+       f(std::forward<F>(_f)), active(true), info(_info) { }
+
+    ~scope_guard() {
+        if (active) {
+#ifdef NTL_TEST_EXCEPTIONS
+            NTL_SNS cerr << "*** ACTIVE SCOPE GUARD TRIGGERED: "
+                         <<  info << "\n";
+#endif
+            f();
+        }
+    }
+
+    void relax() { active = false; }
+};
+
+
+struct scope_guard_builder {  
+   const char *info;
+   scope_guard_builder(const char *_info) : info(_info) { }
+};
+
+template < typename F >
+scope_guard<F> 
+operator+(scope_guard_builder b, F&& f)
+{
+    return scope_guard<F>(std::forward<F>(f), b.info);
+}
+
+
+#define NTL_SCOPE(var) auto var =  \
+   scope_guard_builder(__FILE__ ":" NTL_STRINGIFY(__LINE__)) + [&]
+
+
+#else
+
+
+class DummyScopeGuard {
+public:
+   void relax() { }
+};
+
+#define NTL_SCOPE(var) DummyScopeGuard var; if (false)
+
+
+
+
+#endif
+
+
+
 
 NTL_CLOSE_NNS
 

@@ -63,15 +63,18 @@ GF2EInfoT::GF2EInfoT(const GF2X& NewP)
 
 const ZZ& GF2E::cardinality()
 {
-   if (!GF2EInfo) Error("GF2E::cardinality: undefined modulus");
+   if (!GF2EInfo) LogicError("GF2E::cardinality: undefined modulus");
 
    do { // NOTE: thread safe lazy init
       Lazy<ZZ>::Builder builder(GF2EInfo->_card);
-      if (!builder) break;
-      power(*builder, 2, GF2EInfo->_card_exp);
+      if (!builder()) break;
+      UniquePtr<ZZ> p;
+      p.make();
+      power(*p, 2, GF2EInfo->_card_exp);
+      builder.move(p);
    } while (0);
 
-   return GF2EInfo->_card.value();
+   return *GF2EInfo->_card;
 }
 
 

@@ -28,13 +28,15 @@ Usage:
       long amt = builder.amt();
       if (!amt) break;      
 
-      ... initialize elements i = n-amt..n-1 via builder.access(i)
+      ... initialize elements i = n-amt..n-1 
+          using builder.move(p), where p is a UnqiuePtr<T>
+          note that each move application appends one element
                              
    } while(0);               // When this scope closes, 
                              // the table is fully initialized to length n
 
 
-   T val = table[i];         // read-only access to table elements 0..n-1
+   const T* val = table[i];  // read-only access to table elements 0..n-1
                              
 
 It is important to follow this recipe carefully.  In particular,
@@ -47,42 +49,39 @@ class LazyTable {
 public:
    LazyTable();
 
-   LazyTable(const LazyTable&);             // "deep" copies
-   LazyTable& operator=(const LazyTable&);
 
-   const T& operator[] (long i) const;
+   const T * const  operator[] (long i) const;
 
    ~LazyTable();
 
    long length() const; 
 
-   kill();  // destroy and reset
-
    class Builder {
       Builder(const LazyTable&, long request); 
      ~Builder()
 
-      T& access (long i);
       long amt() const;
+      void move(UniquePtr<T>& p);
+private:
+   LazyTable(const LazyTable&);             // disabled
+   LazyTable& operator=(const LazyTable&);
 
-   };
+};
    
 
 
 ****************************************************************************/
 
-// FIXME: Right now, the builder mechanism is not exception safe.
-// Although the destructor will release the mutex (if any), it
-// mark the object as "constructed", even if it is not.
-// If we want exception safety, we may have to modify the
-// interface, so that we invoke builder.finalize(k) to 
-// signal (to the destructor) that builder[k] has been built.
-// Care would have to be taken to ensure that we "roll back"
-// to the right internal state in this case.
-
 
 // NOTE: For more on double-checked locking, see
 // http://preshing.com/20130930/double-checked-locking-is-fixed-in-cpp11/
+
+// NOTE: when compiled with the NTL_THREADS option, the LazyTable
+// class may contain data members from the standard library
+// that may not satisfy the requirements of the Vec class
+// (i.e., relocatability).  One can wrap it in a pointer 
+// class (e.g., OptionalVal) to deal with this.
+
 
 
 template<class T, long MAX>
@@ -91,48 +90,19 @@ private:
    mutable AtomicLong len; 
    mutable MutexProxy mtx;
 
-   mutable UniqueArray<T> data;
+   mutable UniqueArray< UniquePtr<T> > data;
+
+   LazyTable(const LazyTable&); // disabled
+   void operator=(const LazyTable&); // disabled
 
 public:
    LazyTable() : len(0) { }
 
-   void kill() 
-   { 
-      data.reset();
-      len = 0; 
-   }
-
-   LazyTable& operator=(const LazyTable& other) 
-   {
-      if (this == &other) return *this;
-
-      long olen = other.len;
-
-      if (olen == 0) {
-         data.reset();
-      }
-      else {
-         if (!data) data.make(MAX);
-
-         long i;
-         for (i = 0; i < olen; i++) data[i] = other.data[i];
-      }
-
-      len = olen;
-
-      return *this;
-   }
-   
-   LazyTable(const LazyTable& other) : len(0)
-   {
-      *this = other;
-   }
-
-   const T& operator[] (long i) const 
+   const T * const operator[] (long i) const 
    { 
       // FIXME: add optional range checking
 
-      return data[i]; 
+      return data[i].get(); 
    }
 
    long length() const { return len; }
@@ -144,37 +114,35 @@ public:
       GuardProxy guard;
 
       long amount;
-      T *p;
+      long curlen;
 
       Builder(const Builder&); // disabled
       void operator=(const Builder&); // disabled
 
    public:
       Builder(const LazyTable& _ref, long _request) 
-      : ref(_ref), request(_request), guard(_ref.mtx), amount(0), p(0)
+      : ref(_ref), request(_request), guard(_ref.mtx), amount(0), curlen(0)
       {
-         if (request < 0 || request >= MAX) 
-            NTL_NNS Error("request out of rangle in LazyTable::Builder"); 
+         if (request < 0 || request > MAX) 
+            LogicError("request out of range in LazyTable::Builder"); 
 
 
          // Double-checked locking
          if (request <= ref.len || (guard.lock(), request <= ref.len)) 
             return;
 
-         if (!ref.data) ref.data.make(MAX);
-         amount = request - ref.len;
-         p = ref.data.get();
+         curlen = ref.len;
+         amount = request - curlen;
+         if (!ref.data) ref.data.SetLength(MAX);
       }
 
-      ~Builder() { if (amount) ref.len = request; }
+      ~Builder() { if (amount) ref.len = curlen; }
 
-      T& access(long i) 
+      void move(UniquePtr<T>& p)
       {
-         // allow read/write access to elements request-amount..request-1
-         if (i < request-amount || i >= request)
-            NTL_NNS Error("index out if bounds in LazyTable::Builder::access");
-
-         return p[i];
+         if (!amount || curlen >= request) LogicError("LazyTable::Builder illegal move");
+         ref.data[curlen].move(p);
+         curlen++;
       }
 
       long amt() const { return amount; }

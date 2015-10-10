@@ -18,6 +18,7 @@
 #include <NTL/lip.h>
 #include <NTL/tools.h>
 #include <NTL/vector.h>
+#include <NTL/SmartPtr.h>
 
 NTL_OPEN_NNS
 
@@ -30,16 +31,23 @@ public:
 typedef ZZ_p residue_type;
 typedef ZZX poly_type;
 
-NTL_verylong rep; // This is currently public for "emergency" situations
-                   // May be private in future versions.
 
 
-ZZ() : rep(0) { }
-// initial value is 0.
+class Deleter {
+public:
+   static void apply(NTL_verylong& p) { NTL_zfree(&p); }
+};
 
-explicit ZZ(long a) : rep(0) { *this = a; }
+WrappedPtr<NTL_verylong_body, Deleter> rep;
+// This is currently public for "emergency" situations
+// May be private in future versions.
 
-ZZ(INIT_SIZE_TYPE, long k) : rep(0)
+ZZ() { }
+
+
+explicit ZZ(long a) { *this = a; }
+
+ZZ(INIT_SIZE_TYPE, long k) 
 // initial value is 0, but space is pre-allocated so that numbers
 // x with x.size() <= k can be stored without re-allocation.
 // Call with ZZ(INIT_SIZE, k).
@@ -51,7 +59,7 @@ ZZ(INIT_SIZE_TYPE, long k) : rep(0)
    NTL_zsetlength(&rep, k); 
 }
 
-ZZ(const ZZ& a) : rep(0)
+ZZ(const ZZ& a) 
 // initial value is a.
 
 {
@@ -59,11 +67,11 @@ ZZ(const ZZ& a) : rep(0)
 }
 
 
-ZZ(INIT_VAL_TYPE, long a) : rep(0) { NTL_zintoz(a, &rep); }
-ZZ(INIT_VAL_TYPE, int a) : rep(0) { NTL_zintoz(a, &rep); }
+ZZ(INIT_VAL_TYPE, long a)  { NTL_zintoz(a, &rep); }
+ZZ(INIT_VAL_TYPE, int a)  { NTL_zintoz(a, &rep); }
 
-ZZ(INIT_VAL_TYPE, unsigned long a) : rep(0) { NTL_zuintoz(a, &rep); }
-ZZ(INIT_VAL_TYPE, unsigned int a) : rep(0) { NTL_zuintoz((unsigned long) a, &rep); }
+ZZ(INIT_VAL_TYPE, unsigned long a)  { NTL_zuintoz(a, &rep); }
+ZZ(INIT_VAL_TYPE, unsigned int a)  { NTL_zuintoz((unsigned long) a, &rep); }
 
 inline ZZ(INIT_VAL_TYPE, const char *);
 inline ZZ(INIT_VAL_TYPE, float);
@@ -75,13 +83,15 @@ ZZ& operator=(const ZZ& a) { NTL_zcopy(a.rep, &rep); return *this; }
 ZZ& operator=(long a) { NTL_zintoz(a, &rep); return *this; }
 
 
-~ZZ() { NTL_zfree(&rep); }
-
 void kill()
 // force the space held by this ZZ to be released.
 // The value then becomes 0.
 
-{ NTL_zfree(&rep); }
+{ rep.kill(); }
+
+
+void swap(ZZ& x)
+{ NTL_zswap(&rep, &x.rep); }
 
 void SetSize(long k)
 // pre-allocates space for k-digit numbers (base 2^NTL_ZZ_NBITS);  
@@ -115,7 +125,7 @@ long WideSinglePrecision() const
 static const ZZ& zero();
 
 
-ZZ(ZZ& x, INIT_TRANS_TYPE) { rep = x.rep; x.rep = 0; }
+ZZ(ZZ& x, INIT_TRANS_TYPE) { rep.swap(x.rep); }
 // used to cheaply hand off memory management of return value,
 // without copying, assuming compiler implements the
 // "return value optimization".  This is probably obsolete by
@@ -127,21 +137,21 @@ ZZ(ZZ& x, INIT_TRANS_TYPE) { rep = x.rep; x.rep = 0; }
 
 // mainly for internal consumption by ZZWatcher
 
-void release() { if (MaxAlloc() > NTL_RELEASE_THRESH) kill(); }
+void KillBig() { if (MaxAlloc() > NTL_RELEASE_THRESH) kill(); }
 
 };
 
 
 class ZZWatcher {
 public:
-   ZZ *watched;
+   ZZ& watched;
    explicit
-   ZZWatcher(ZZ *_watched) : watched(_watched) {}
+   ZZWatcher(ZZ& _watched) : watched(_watched) {}
 
-   ~ZZWatcher() { watched->release(); }
+   ~ZZWatcher() { watched.KillBig(); }
 };
 
-#define NTL_ZZRegister(x) NTL_THREAD_LOCAL static ZZ x; ZZWatcher _WATCHER__ ## x(&x)
+#define NTL_ZZRegister(x) NTL_THREAD_LOCAL static ZZ x; ZZWatcher _WATCHER__ ## x(x)
 
 
 
@@ -164,7 +174,7 @@ inline void set(ZZ& x)
 inline void swap(ZZ& x, ZZ& y)
 // swap the values of x and y (swaps pointers only)
 
-   { NTL_zswap(&x.rep, &y.rep); }
+   { x.swap(y); }
 
 
 inline double log(const ZZ& a)
@@ -197,15 +207,15 @@ inline void conv(ZZ& x, unsigned int a) { NTL_zuintoz((unsigned long)(a), &x.rep
 inline ZZ to_ZZ(unsigned int a) { return ZZ(INIT_VAL, a); }
 
 void conv(ZZ& x, const char *s);
-inline ZZ::ZZ(INIT_VAL_TYPE, const char *s) : rep(0) { conv(*this, s); }
+inline ZZ::ZZ(INIT_VAL_TYPE, const char *s)  { conv(*this, s); }
 inline ZZ to_ZZ(const char *s) { return ZZ(INIT_VAL, s); }
 
 inline void conv(ZZ& x, double a) { NTL_zdoubtoz(a, &x.rep); }
-inline ZZ::ZZ(INIT_VAL_TYPE, double a) : rep(0) { conv(*this, a); }
+inline ZZ::ZZ(INIT_VAL_TYPE, double a)  { conv(*this, a); }
 inline ZZ to_ZZ(double a) { return ZZ(INIT_VAL, a); }
 
 inline void conv(ZZ& x, float a) { NTL_zdoubtoz(double(a), &x.rep); }
-inline ZZ::ZZ(INIT_VAL_TYPE, float a) : rep(0) { conv(*this, a); }
+inline ZZ::ZZ(INIT_VAL_TYPE, float a)  { conv(*this, a); }
 inline ZZ to_ZZ(float a) { return ZZ(INIT_VAL, a); }
 
 inline void conv(long& x, const ZZ& a) { x = NTL_ztoint(a.rep); }
@@ -484,109 +494,76 @@ MulSubFrom(ZZ& x, const ZZ& a, const ZZ& b)
 // These are verbose, but fairly boilerplate
 
 
+
 class ZZ_CRTStructAdapter;
 class ZZ_RemStructAdapter;
 
 class ZZ_TmpVecAdapter {
-private:
-   ZZ_TmpVecAdapter(const ZZ_TmpVecAdapter&); // delete
-   void operator=(const ZZ_TmpVecAdapter&); // delete
-
 public:
-   void *rep;
-
-   ZZ_TmpVecAdapter() : rep(0) { }
-   
-   ~ZZ_TmpVecAdapter()
-   {
-      NTL_tmp_vec_free(rep);
-   }
+   UniquePtr<_ntl_tmp_vec> rep;
 
    inline void fetch(const ZZ_CRTStructAdapter&);
    inline void fetch(ZZ_CRTStructAdapter&);
-
    inline void fetch(const ZZ_RemStructAdapter&);
 };
 
 
 class ZZ_CRTStructAdapter {
-private:
-   ZZ_CRTStructAdapter(const ZZ_CRTStructAdapter&); // delete
-   void operator=(const ZZ_CRTStructAdapter&); // delete
-
 public:
-   void *rep;
+   UniquePtr<_ntl_crt_struct> rep;
 
-   ZZ_CRTStructAdapter() : rep(0) { }
-
-   ~ZZ_CRTStructAdapter() 
-   { 
-      NTL_crt_struct_free(rep); 
-   }
-   
    void init(long n, const ZZ& p, long (*primes)(long))
    {
-      NTL_crt_struct_init(&rep, n, p.rep, primes);
+      rep.reset(_ntl_crt_struct_build(n, p.rep, primes));
    }
 
    void insert(long i, const ZZ& m)
    {
-       NTL_crt_struct_insert(rep, i, m.rep);
+       rep->insert(i, m.rep);
    }
 
    void eval(ZZ& t, const long *a, ZZ_TmpVecAdapter& tmp_vec) const
    {
-      NTL_crt_struct_eval(rep, &t.rep, a, tmp_vec.rep);
+      rep->eval(&t.rep, a, tmp_vec.rep.get());
    }
 
    bool special() const
    { 
-      return NTL_crt_struct_special(rep);
+      return rep->special();
    }
 };
 
 
 class ZZ_RemStructAdapter {
-private:
-   ZZ_RemStructAdapter(const ZZ_RemStructAdapter&); // delete
-   void operator=(const ZZ_RemStructAdapter&); // delete
-
 public:
-   void *rep;
+   UniquePtr<_ntl_rem_struct> rep;
 
-   ZZ_RemStructAdapter() : rep(0) { }
-
-   ~ZZ_RemStructAdapter() 
-   { 
-      NTL_rem_struct_free(rep); 
-   }
-   
    void init(long n, const ZZ& p, long (*primes)(long))
    {
-      NTL_rem_struct_init(&rep, n, p.rep, primes);
+      rep.reset(_ntl_rem_struct_build(n, p.rep, primes));
    }
 
    void eval(long *x, const ZZ& a, ZZ_TmpVecAdapter& tmp_vec) const
    {
-      NTL_rem_struct_eval(rep, x, a.rep, tmp_vec.rep);
+      rep->eval(x, a.rep, tmp_vec.rep.get());
    }
 };
 
 
 inline void ZZ_TmpVecAdapter::fetch(const ZZ_CRTStructAdapter& crt_struct)
 {
-   rep = NTL_crt_fetch_tmp(crt_struct.rep); 
+   rep.reset(crt_struct.rep->fetch()); 
 }
 
 inline void ZZ_TmpVecAdapter::fetch(ZZ_CRTStructAdapter& crt_struct)
 {
-   rep = NTL_crt_extract_tmp(crt_struct.rep); 
+   rep.reset(crt_struct.rep->extract()); // EXTRACT!!
 }
 
 
 inline void ZZ_TmpVecAdapter::fetch(const ZZ_RemStructAdapter& rem_struct)
 {
-   rep = NTL_rem_fetch_tmp(rem_struct.rep); 
+   rep.reset(rem_struct.rep->fetch()); 
 }
 
 
@@ -1225,11 +1202,8 @@ inline void SqrMod(ZZ& x, const ZZ& a, const ZZ& n)
 inline ZZ SqrMod(const ZZ& a, const ZZ& n)
    {  ZZ x; SqrMod(x, a, n); NTL_OPT_RETURN(ZZ, x); }
 
-inline void InvMod(ZZ& x, const ZZ& a, const ZZ& n)
-// x = a^{-1} mod n, 0 <= x < n
-// error is raised occurs if inverse not defined
-
-   { NTL_zinvmod(a.rep, n.rep, &x.rep); }
+void InvMod(ZZ& x, const ZZ& a, const ZZ& n);
+// defined in ZZ.c in terms of InvModStatus
 
 inline ZZ InvMod(const ZZ& a, const ZZ& n)
    {  ZZ x; InvMod(x, a, n); NTL_OPT_RETURN(ZZ, x); }
@@ -1242,7 +1216,10 @@ inline long InvModStatus(ZZ& x, const ZZ& a, const ZZ& n)
   { return NTL_zinv(a.rep, n.rep, &x.rep); }
 
 
-inline void PowerMod(ZZ& x, const ZZ& a, const ZZ& e, const ZZ& n)
+void PowerMod(ZZ& x, const ZZ& a, const ZZ& e, const ZZ& n);
+// defined in ZZ.c in terms of LowLevelPowerMod
+
+inline void LowLevelPowerMod(ZZ& x, const ZZ& a, const ZZ& e, const ZZ& n)
    { NTL_zpowermod(a.rep, e.rep, n.rep, &x.rep); }
 
 inline ZZ PowerMod(const ZZ& a, const ZZ& e, const ZZ& n)
@@ -1301,7 +1278,7 @@ inline ZZ SqrRootMod(const ZZ& a, const ZZ& n)
 
 class PrimeSeq {
 
-char *movesieve;
+const char *movesieve;
 Vec<char> movesieve_mem;
 long pindex;
 long pshift;
@@ -1944,6 +1921,44 @@ void VectorMulMod(long k, long *x, const long *a, long b, long n)
    VectorMulMod(k, x, a, b, n, ninv);
 }
 
+
+
+// Error handling
+
+#ifdef NTL_EXCEPTIONS
+
+class InvModErrorObject : public ArithmeticErrorObject {
+private:
+   SmartPtr<ZZ> a_ptr;
+   SmartPtr<ZZ> n_ptr;
+public:
+   InvModErrorObject(const char *s, const ZZ& a, const ZZ& n)
+      : ArithmeticErrorObject(s) , a_ptr(MakeSmart<ZZ>(a)),
+        n_ptr(MakeSmart<ZZ>(n)) { }
+
+   const ZZ& get_a() const { return *a_ptr; }
+   const ZZ& get_n() const { return *n_ptr; }
+};
+
+#else
+
+// We need this alt definition to keep pre-C++11 
+// compilers happy (NTL_EXCEPTIONS should only be used
+// with C++11 compilers).
+
+class InvModErrorObject : public ArithmeticErrorObject {
+public:
+   InvModErrorObject(const char *s, const ZZ& a, const ZZ& n)
+      : ArithmeticErrorObject(s) { }
+
+   const ZZ& get_a() const { return ZZ::zero(); }
+   const ZZ& get_n() const { return ZZ::zero(); }
+};
+
+#endif
+
+
+void InvModError(const char *s, const ZZ& a, const ZZ& n); 
 
 NTL_CLOSE_NNS
 

@@ -9,6 +9,7 @@
 #include <NTL/vec_ZZ_p.h>
 #include <NTL/FFT.h>
 #include <NTL/Lazy.h>
+#include <NTL/SmartPtr.h>
 
 NTL_OPEN_NNS
 
@@ -126,6 +127,12 @@ ZZ_pX& operator=(long a);
 ZZ_pX& operator=(const ZZ_p& a);
 
 
+void swap(ZZ_pX& x)
+{
+   rep.swap(x.rep);
+}
+
+
 };
 
 
@@ -212,7 +219,7 @@ inline void set(ZZ_pX& x)
 inline void swap(ZZ_pX& x, ZZ_pX& y)
 // swap x & y (only pointers are swapped)
 
-   { swap(x.rep, y.rep); }
+   { x.swap(y); }
 
 void random(ZZ_pX& x, long n);
 inline ZZ_pX random_ZZ_pX(long n)
@@ -551,18 +558,20 @@ class FFTRep {
 public:
    long k;                // a 2^k point representation
    long MaxK;             // maximum space allocated
-   long **tbl;
    long NumPrimes; 
+   Unique2DArray<long> tbl;
 
-   void SetSize(long NewK);
+   FFTRep() : k(-1), MaxK(-1), NumPrimes(0) { }
 
-   FFTRep(const FFTRep& R);
+   FFTRep(const FFTRep& R) : k(-1), MaxK(-1), NumPrimes(0)
+   { *this = R; }
+
+   FFTRep(INIT_SIZE_TYPE, long InitK) : k(-1), MaxK(-1), NumPrimes(0)
+   {  SetSize(InitK); }
+
    FFTRep& operator=(const FFTRep& R);
-
-   FFTRep() { k = MaxK = -1; tbl = 0; NumPrimes = 0; }
-   FFTRep(INIT_SIZE_TYPE, long InitK) 
-   { k = MaxK = -1; tbl = 0; NumPrimes = 0; SetSize(InitK); }
-   ~FFTRep();
+   void SetSize(long NewK);
+   void DoSetSize(long NewK, long NewNumPrimes);
 };
 
 
@@ -630,15 +639,14 @@ private:
 public:
    long n;
    long MaxN;
-   long **tbl;
    long NumPrimes; 
+   Unique2DArray<long> tbl;
 
    void SetSize(long NewN);
 
-   ZZ_pXModRep() { n = MaxN = 0; tbl = 0; NumPrimes = 0; }
-   ZZ_pXModRep(INIT_SIZE_TYPE, long k) 
-   { n = MaxN = 0; tbl = 0; NumPrimes = 0; SetSize(k); }
-   ~ZZ_pXModRep();
+   ZZ_pXModRep() : n(0), MaxN(0), NumPrimes(0) {  }
+   ZZ_pXModRep(INIT_SIZE_TYPE, long NewN) : n(0), MaxN(0), NumPrimes(0)
+   {  SetSize(NewN); }
 };
 
 
@@ -865,7 +873,10 @@ public:
    FFTRep FRep; // 2^k point rep of f
                 // H = rev((rev(f))^{-1} rem X^{n-1})
    FFTRep HRep; // 2^l point rep of H
-   Lazy<vec_ZZ_p> tracevec;
+
+   OptionalVal< Lazy<vec_ZZ_p> > tracevec;
+   // an extra level of indirection to ensure the class
+   // can be used in a Vec (there may be a mutex in the Lazy object)
 
    // but these will remain public
    ZZ_pXModulus(const ZZ_pX& ff);

@@ -4,6 +4,8 @@
 #if 1
 
 typedef void *_ntl_gbigint;
+typedef void _ntl_gbigint_body;
+
 
 #else
 
@@ -14,6 +16,8 @@ typedef void *_ntl_gbigint;
 
 struct _ntl_gbigint_is_opaque { long _x_; };
 typedef struct _ntl_gbigint_is_opaque * _ntl_gbigint;
+
+typedef _ntl_gbigint_is_opaque  _ntl_gbigint_body;
 
 #endif
 
@@ -442,46 +446,9 @@ long _ntl_gblock_destroy(_ntl_gbigint x);
 long _ntl_gblock_storage(long d);
 
 
-void _ntl_gcrt_struct_init(void **crt_struct, long n, _ntl_gbigint p,
-                          long (*primes)(long));
-void _ntl_gcrt_struct_insert(void *crt_struct, long i, _ntl_gbigint m);
-void _ntl_gcrt_struct_free(void *crt_struct);
-void _ntl_gcrt_struct_eval(void *crt_struct, _ntl_gbigint *t, const long *a,
-                           void *tmp_vec);
-long _ntl_gcrt_struct_special(void *crt_struct);
-
-
-void _ntl_grem_struct_init(void **rem_struct, long n, _ntl_gbigint p,
-                          long (*primes)(long));
-void _ntl_grem_struct_free(void *rem_struct);
-void _ntl_grem_struct_eval(void *rem_struct, long *x, _ntl_gbigint a,
-                           void *tmp_vec);
-
-
-
-void _ntl_gtmp_vec_free(void *tmp_vec);
-void *_ntl_gcrt_fetch_tmp(void *crt_struct); 
-void *_ntl_gcrt_extract_tmp(void *crt_struct); 
-void *_ntl_grem_fetch_tmp(void *rem_struct); 
-
-
-
-
-#define NTL_crt_struct_eval _ntl_gcrt_struct_eval
-#define NTL_crt_struct_free _ntl_gcrt_struct_free
-#define NTL_crt_struct_init _ntl_gcrt_struct_init
-#define NTL_crt_struct_insert _ntl_gcrt_struct_insert
-#define NTL_crt_struct_special _ntl_gcrt_struct_special
-#define NTL_rem_struct_eval _ntl_grem_struct_eval
-#define NTL_rem_struct_free _ntl_grem_struct_free
-#define NTL_rem_struct_init _ntl_grem_struct_init
-
-#define NTL_tmp_vec_free _ntl_gtmp_vec_free
-#define NTL_crt_fetch_tmp _ntl_gcrt_fetch_tmp
-#define NTL_crt_extract_tmp _ntl_gcrt_extract_tmp
-#define NTL_rem_fetch_tmp _ntl_grem_fetch_tmp
 
 #define NTL_verylong _ntl_gbigint
+#define NTL_verylong_body _ntl_gbigint_body
 #define NTL_z2log _ntl_g2log
 #define NTL_zabs _ntl_gabs
 #define NTL_zadd _ntl_gadd

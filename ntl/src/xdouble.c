@@ -17,7 +17,7 @@ void xdouble::SetOutputPrecision(long p)
    if (p < 1) p = 1;
 
    if (NTL_OVERFLOW(p, 1, 0)) 
-      Error("xdouble: output precision too big");
+      ResourceError("xdouble: output precision too big");
 
    oprec = p;
 }
@@ -36,10 +36,10 @@ void xdouble::normalize()
    }
 
    if (e >= NTL_OVFBND)
-      Error("xdouble: overflow");
+      ResourceError("xdouble: overflow");
 
    if (e <= -NTL_OVFBND)
-      Error("xdouble: underflow");
+      ResourceError("xdouble: underflow");
 }
    
 
@@ -54,7 +54,7 @@ xdouble to_xdouble(double a)
    }
 
    if (!IsFinite(&a))
-      Error("double to xdouble conversion: non finite value");
+      ArithmeticError("double to xdouble conversion: non finite value");
 
    xdouble z = xdouble(a, 0);
    z.normalize();
@@ -175,7 +175,7 @@ xdouble operator/(const xdouble& a, const xdouble& b)
 {
    xdouble z;
 
-   if (b.x == 0) Error("xdouble division by 0");
+   if (b.x == 0) ArithmeticError("xdouble division by 0");
 
    z.e = a.e - b.e;
    z.x = a.x / b.x;
@@ -268,7 +268,7 @@ xdouble ceil(const xdouble& aa)
 
 xdouble to_xdouble(const ZZ& a)
 {
-   long old_p = RR::precision();
+   RRPush push;
    RR::SetPrecision(NTL_DOUBLE_PRECISION);
    
    NTL_THREAD_LOCAL static RR t;
@@ -284,20 +284,19 @@ xdouble to_xdouble(const ZZ& a)
 
    res = y*z;
 
-   RR::SetPrecision(old_p);
-
    return res;
 }
 
 void conv(ZZ& x, const xdouble& a)
 {
    xdouble b = floor(a);
-   long old_p = RR::precision();
+
+   RRPush push;
    RR::SetPrecision(NTL_DOUBLE_PRECISION);
+
    NTL_THREAD_LOCAL static RR t;
    conv(t, b);
    conv(x, t);
-   RR::SetPrecision(old_p);
 }
 
 
@@ -316,7 +315,7 @@ xdouble sqrt(const xdouble& a)
       return to_xdouble(0);
 
    if (a < 0)
-      Error("xdouble: sqrt of negative number");
+      ArithmeticError("xdouble: sqrt of negative number");
 
    xdouble t;
 
@@ -392,10 +391,10 @@ void power2(xdouble& z, long e)
    }
 
    if (q >= NTL_OVFBND)
-      Error("xdouble: overflow");
+      ResourceError("xdouble: overflow");
 
    if (q <= -NTL_OVFBND)
-      Error("xdouble: underflow");
+      ResourceError("xdouble: underflow");
 
    double x = _ntl_ldexp(1.0, r);
 
@@ -516,7 +515,7 @@ double log(const xdouble& a)
 {
    NTL_THREAD_LOCAL static double LogBound = log(NTL_XD_BOUND);
    if (a.x <= 0) {
-      Error("log(xdouble): argument must be positive");
+      ArithmeticError("log(xdouble): argument must be positive");
    }
 
    return log(a.x) + a.e*LogBound;
@@ -530,10 +529,10 @@ xdouble xexp(double x)
    double iy = floor(y+0.5);
 
    if (iy >= NTL_OVFBND)
-      Error("xdouble: overflow");
+      ResourceError("xdouble: overflow");
 
    if (iy <= -NTL_OVFBND)
-      Error("xdouble: underflow");
+      ResourceError("xdouble: underflow");
 
 
    double fy = y - iy;
@@ -553,7 +552,7 @@ void ComputeLn10(RR&);
 
 long ComputeMax10Power()
 {
-   long old_p = RR::precision();
+   RRPush push;
    RR::SetPrecision(NTL_BITS_PER_LONG);
 
    RR ln2, ln10;
@@ -561,8 +560,6 @@ long ComputeMax10Power()
    ComputeLn10(ln10);
 
    long k = to_long( to_RR(NTL_OVFBND/2) * ln2 / ln10 );
-
-   RR::SetPrecision(old_p);
    return k;
 }
 
@@ -574,11 +571,10 @@ xdouble PowerOf10(const ZZ& e)
    NTL_THREAD_LOCAL static long k;
 
    if (!init) {
-      long old_p = RR::precision();
       k = ComputeMax10Power();
+      RRPush push;
       RR::SetPrecision(NTL_DOUBLE_PRECISION);
       v10k = to_xdouble(power(to_RR(10), k)); 
-      RR::SetPrecision(old_p);
       init = 1;
    }
 
@@ -599,10 +595,9 @@ xdouble PowerOf10(const ZZ& e)
 
    r = DivRem(q, e1, k);
 
-   long old_p = RR::precision();
+   RRPush push;
    RR::SetPrecision(NTL_DOUBLE_PRECISION);
    xdouble x1 = to_xdouble(power(to_RR(10), r));
-   RR::SetPrecision(old_p);
 
    xdouble x2 = power(v10k, q);
    xdouble x3 = x1*x2;
@@ -622,9 +617,8 @@ ostream& operator<<(ostream& s, const xdouble& a)
       return s;
    }
 
-   long old_p = RR::precision();
+   RRPush push;
    long temp_p = long(log(fabs(log(fabs(a))) + 1.0)/log(2.0)) + 10; 
-
    RR::SetPrecision(temp_p);
 
    RR ln2, ln10, log_2_10;
@@ -634,7 +628,6 @@ ostream& operator<<(ostream& s, const xdouble& a)
    ZZ log_10_a = to_ZZ(
   (to_RR(a.e)*to_RR(2*NTL_XD_HBOUND_LOG) + log(fabs(a.x))/log(2.0))/log_2_10);
 
-   RR::SetPrecision(old_p);
 
    xdouble b;
    long neg;
@@ -676,15 +669,15 @@ ostream& operator<<(ostream& s, const xdouble& a)
 
    long bp_len = xdouble::OutputPrecision()+10;
 
-   char *bp = NTL_NEW_OP char[bp_len];
-
-   if (!bp) Error("xdouble output: out of memory");
+   UniqueArray<char> bp_store;
+   bp_store.SetLength(bp_len);
+   char *bp = bp_store.get();
 
    long len, i;
 
    len = 0;
    do {
-      if (len >= bp_len) Error("xdouble output: buffer overflow");
+      if (len >= bp_len) LogicError("xdouble output: buffer overflow");
       bp[len] = IntValToChar(DivRem(B, B, 10));
       len++;
    } while (B > 0);
@@ -738,7 +731,6 @@ ostream& operator<<(ostream& s, const xdouble& a)
       }
    }
 
-   delete [] bp;
    return s;
 }
 
@@ -881,7 +873,7 @@ xdouble to_xdouble(const char *s)
    ZZ a, b;
    long i=0;
 
-   if (!s) Error("bad xdouble input");
+   if (!s) InputError("bad xdouble input");
 
    c = s[i];
    while (IsWhiteSpace(c)) {
@@ -939,7 +931,7 @@ xdouble to_xdouble(const char *s)
       }
    }
 
-   if (got_dot && !got1 && !got2)  Error("bad xdouble input");
+   if (got_dot && !got1 && !got2)  InputError("bad xdouble input");
 
    ZZ e;
 
@@ -967,7 +959,7 @@ xdouble to_xdouble(const char *s)
 
       cval = CharToIntVal(c);
 
-      if (cval < 0 || cval > 9) Error("bad xdouble input");
+      if (cval < 0 || cval > 9) InputError("bad xdouble input");
 
       e = 0;
       while (cval >= 0 && cval <= 9) {
@@ -979,7 +971,7 @@ xdouble to_xdouble(const char *s)
       }
    }
 
-   if (!got1 && !got2 && !got_e) Error("bad xdouble input");
+   if (!got1 && !got2 && !got_e) InputError("bad xdouble input");
 
    xdouble t1, t2, v;
 

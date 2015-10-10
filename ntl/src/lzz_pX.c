@@ -81,10 +81,10 @@ void SetCoeff(zz_pX& x, long i, zz_p a)
    long j, m;
 
    if (i < 0) 
-      Error("SetCoeff: negative index");
+      LogicError("SetCoeff: negative index");
 
    if (NTL_OVERFLOW(i, 1, 0))
-      Error("overflow in SetCoeff");
+      ResourceError("overflow in SetCoeff");
 
    m = deg(x);
 
@@ -112,10 +112,10 @@ void SetCoeff(zz_pX& x, long i)
    long j, m;
 
    if (i < 0) 
-      Error("coefficient index out of range");
+      LogicError("coefficient index out of range");
 
    if (NTL_OVERFLOW(i, 1, 0))
-      Error("overflow in SetCoeff");
+      ResourceError("overflow in SetCoeff");
 
    m = deg(x);
 
@@ -916,7 +916,7 @@ void PlainDivRem(zz_pX& q, zz_pX& r, const zz_pX& a, const zz_pX& b)
    da = deg(a);
    db = deg(b);
 
-   if (db < 0) Error("zz_pX: division by zero");
+   if (db < 0) ArithmeticError("zz_pX: division by zero");
 
    if (da < db) {
       r = a;
@@ -994,7 +994,7 @@ void PlainDiv(zz_pX& q, const zz_pX& a, const zz_pX& b)
    da = deg(a);
    db = deg(b);
 
-   if (db < 0) Error("zz_pX: division by zero");
+   if (db < 0) ArithmeticError("zz_pX: division by zero");
 
    if (da < db) {
       clear(q);
@@ -1067,7 +1067,7 @@ void PlainRem(zz_pX& r, const zz_pX& a, const zz_pX& b)
    da = deg(a);
    db = deg(b);
 
-   if (db < 0) Error("zz_pX: division by zero");
+   if (db < 0) ArithmeticError("zz_pX: division by zero");
 
    if (da < db) {
       r = a;
@@ -1253,7 +1253,7 @@ void PlainXGCD(zz_pX& d, zz_pX& s, zz_pX& t, const zz_pX& a, const zz_pX& b)
 void MulMod(zz_pX& x, const zz_pX& a, const zz_pX& b, const zz_pX& f)
 {
    if (deg(a) >= deg(f) || deg(b) >= deg(f) || deg(f) == 0) 
-      Error("MulMod: bad args");
+      LogicError("MulMod: bad args");
 
    zz_pX t;
 
@@ -1263,7 +1263,7 @@ void MulMod(zz_pX& x, const zz_pX& a, const zz_pX& b, const zz_pX& f)
 
 void SqrMod(zz_pX& x, const zz_pX& a, const zz_pX& f)
 {
-   if (deg(a) >= deg(f) || deg(f) == 0) Error("SqrMod: bad args");
+   if (deg(a) >= deg(f) || deg(f) == 0) LogicError("SqrMod: bad args");
 
    zz_pX t;
 
@@ -1274,18 +1274,20 @@ void SqrMod(zz_pX& x, const zz_pX& a, const zz_pX& f)
 
 void InvMod(zz_pX& x, const zz_pX& a, const zz_pX& f)
 {
-   if (deg(a) >= deg(f) || deg(f) == 0) Error("InvMod: bad args");
+   if (deg(a) >= deg(f) || deg(f) == 0) LogicError("InvMod: bad args");
 
-   zz_pX d, t;
+   zz_pX d, xx, t;
 
-   XGCD(d, x, t, a, f);
+   XGCD(d, xx, t, a, f);
    if (!IsOne(d))
-      Error("zz_pX InvMod: can't compute multiplicative inverse");
+      InvModError("zz_pX InvMod: can't compute multiplicative inverse");
+
+   x = xx;
 }
 
 long InvModStatus(zz_pX& x, const zz_pX& a, const zz_pX& f)
 {
-   if (deg(a) >= deg(f) || deg(f) == 0) Error("InvModStatus: bad args");
+   if (deg(a) >= deg(f) || deg(f) == 0) LogicError("InvModStatus: bad args");
 
    zz_pX d, t;
 
@@ -1313,7 +1315,7 @@ void MulByXModAux(zz_pX& h, const zz_pX& a, const zz_pX& f)
    n = deg(f);
    m = deg(a);
 
-   if (m >= n || n == 0) Error("MulByXMod: bad args");
+   if (m >= n || n == 0) LogicError("MulByXMod: bad args");
 
    if (m < 0) {
       clear(h);
@@ -1373,94 +1375,61 @@ void random(zz_pX& x, long n)
 
 
 
-void fftRep::SetSize(long NewK)
+void fftRep::DoSetSize(long NewK, long NewNumPrimes)
 {
-   if (NewK < -1 || NewK >= NTL_BITS_PER_LONG-1)
-      Error("bad arg to fftRep::SetSize()");
+   if (NewK < -1) LogicError("bad arg to fftRep::SetSize()");
+   
+   if (NewK >= NTL_BITS_PER_LONG-1)
+      ResourceError("bad arg to fftRep::SetSize()");
+
+   if (NewK == -1) {
+      k = -1;
+      return;
+   }
+
+   if (NewNumPrimes == 0) 
+      NewNumPrimes = zz_pInfo->NumPrimes;
+
+   if (MaxK >= 0 && NumPrimes != NewNumPrimes)
+      LogicError("fftRep: inconsistent use");
 
    if (NewK <= MaxK) {
       k = NewK;
       return;
    }
 
-   if (MaxK == -1) 
-      NumPrimes = zz_pInfo->NumPrimes;
-   else if (NumPrimes != zz_pInfo->NumPrimes)
-      Error("fftRep: inconsistent use");
+   UniqueArray<long> new_tbl[4];
+   long i;
 
-   long i, n;
- 
-   if (MaxK != -1) 
-      for (i = 0; i < zz_pInfo->NumPrimes; i++) 
-         free(tbl[i]);
+   for (i = 0; i < NewNumPrimes; i++) 
+      new_tbl[i].SetLength(1L << NewK);
 
-   n = 1L << NewK;
+   for (i = 0; i < NewNumPrimes; i++) 
+      tbl[i].move(new_tbl[i]);
 
-   for (i = 0; i < zz_pInfo->NumPrimes; i++) {
-      if ( !(tbl[i] = (long *) NTL_MALLOC(n, sizeof(long), 0)) )
-         Error("out of space in fftRep::SetSize()");
-   }
-
+   NumPrimes = NewNumPrimes;
    k = MaxK = NewK;
 }
 
-fftRep::fftRep(const fftRep& R)
+void fftRep::SetSize(long NewK)
 {
-   k = MaxK = R.k;
-   NumPrimes = 0;
-
-   if (k < 0) return;
-
-   NumPrimes = R.NumPrimes;
-
-   long i, j, n;
-
-   n = 1L << k;
-
-   for (i = 0; i < NumPrimes; i++) {
-      if ( !(tbl[i] = (long *) NTL_MALLOC(n, sizeof(long), 0)) )
-         Error("out of space in fftRep");
-
-      for (j = 0; j < n; j++)
-         tbl[i][j] = R.tbl[i][j];
-   }
+   DoSetSize(NewK, 0);
 }
+
 
 fftRep& fftRep::operator=(const fftRep& R)
 {
    if (this == &R) return *this;
 
    if (MaxK >= 0 && R.MaxK >= 0 && NumPrimes != R.NumPrimes)
-      Error("fftRep: inconsistent use");
+      LogicError("fftRep: inconsistent use");
 
    if (R.k < 0) {
       k = -1;
       return *this;
    }
 
-   NumPrimes = R.NumPrimes;
-
-   if (R.k > MaxK) {
-      long i, n;
-
-      if (MaxK != -1) {
-         for (i = 0; i < NumPrimes; i++)
-            free(tbl[i]);
-      }
-  
-      n = 1L << R.k;
-  
-      for (i = 0; i < NumPrimes; i++) {
-         if ( !(tbl[i] = (long *) NTL_MALLOC(n, sizeof(long), 0)) )
-            Error("out of space in fftRep");
-      }
-
-      k = MaxK = R.k;
-   }
-   else {
-      k = R.k;
-   }
-
+   DoSetSize(R.k, R.NumPrimes);
    long i, j, n;
 
    n = 1L << k;
@@ -1474,27 +1443,14 @@ fftRep& fftRep::operator=(const fftRep& R)
 
 
 
-fftRep::~fftRep()
-{
-   if (MaxK == -1)
-      return;
-
-   for (long i = 0; i < NumPrimes; i++)
-      free(tbl[i]);
-}
-
-
-
-
-
 void FromModularRep(zz_p& res, long *a)
 {
    long n = zz_pInfo->NumPrimes;
    long p = zz_pInfo->p;
    double pinv = zz_pInfo->pinv;
-   long *CoeffModP = zz_pInfo->CoeffModP;
-   double *x = zz_pInfo->x;
-   long *u = zz_pInfo->u;
+   long *CoeffModP = zz_pInfo->CoeffModP.elts();
+   double *x = zz_pInfo->x.elts();
+   long *u = zz_pInfo->u.elts();
    long MinusMModP = zz_pInfo->MinusMModP;
 
    long q, s, t;
@@ -1572,10 +1528,10 @@ void TofftRep(fftRep& y, const zz_pX& x, long k, long lo, long hi)
 
 
    if (k > zz_pInfo->MaxRoot) 
-      Error("Polynomial too big for FFT");
+      ResourceError("Polynomial too big for FFT");
 
    if (lo < 0)
-      Error("bad arg to TofftRep");
+      LogicError("bad arg to TofftRep");
 
    hi = min(hi, deg(x));
 
@@ -1648,10 +1604,10 @@ void RevTofftRep(fftRep& y, const vec_zz_p& x,
    long NumPrimes = zz_pInfo->NumPrimes;
 
    if (k > zz_pInfo->MaxRoot) 
-      Error("Polynomial too big for FFT");
+      ResourceError("Polynomial too big for FFT");
 
    if (lo < 0)
-      Error("bad arg to TofftRep");
+      LogicError("bad arg to TofftRep");
 
    hi = min(hi, x.length()-1);
 
@@ -1925,7 +1881,7 @@ void mul(fftRep& z, const fftRep& x, const fftRep& y)
 {
    long k, n, i, j;
 
-   if (x.k != y.k) Error("FFT rep mismatch");
+   if (x.k != y.k) LogicError("FFT rep mismatch");
 
    k = x.k;
    n = 1L << k;
@@ -1962,7 +1918,7 @@ void sub(fftRep& z, const fftRep& x, const fftRep& y)
 {
    long k, n, i, j;
 
-   if (x.k != y.k) Error("FFT rep mismatch");
+   if (x.k != y.k) LogicError("FFT rep mismatch");
 
    k = x.k;
    n = 1L << k;
@@ -1997,7 +1953,7 @@ void add(fftRep& z, const fftRep& x, const fftRep& y)
 {
    long k, n, i, j;
 
-   if (x.k != y.k) Error("FFT rep mismatch");
+   if (x.k != y.k) LogicError("FFT rep mismatch");
 
    k = x.k;
    n = 1L << k;
@@ -2040,7 +1996,7 @@ void reduce(fftRep& x, const fftRep& a, long k)
    l = a.k;
    n = 1L << k;
 
-   if (l < k) Error("reduce: bad operands");
+   if (l < k) LogicError("reduce: bad operands");
 
    x.SetSize(k);
 
@@ -2061,7 +2017,7 @@ void AddExpand(fftRep& x, const fftRep& a)
    k = a.k;
    n = 1L << k;
 
-   if (l < k) Error("AddExpand: bad args");
+   if (l < k) LogicError("AddExpand: bad args");
 
    FFTPrimeInfo *p_info = zz_pInfo->p_info;
    
@@ -2192,7 +2148,7 @@ void rem21(zz_pX& x, const zz_pX& a, const zz_pXModulus& F)
    n = F.n;
 
    if (da > 2*n-2)
-      Error("bad args to rem(zz_pX,zz_pX,zz_pXModulus)");
+      LogicError("bad args to rem(zz_pX,zz_pX,zz_pXModulus)");
 
 
    if (da < n) {
@@ -2247,7 +2203,7 @@ void DivRem21(zz_pX& q, zz_pX& x, const zz_pX& a, const zz_pXModulus& F)
    n = F.n;
 
    if (da > 2*n-2)
-      Error("bad args to rem(zz_pX,zz_pX,zz_pXModulus)");
+      LogicError("bad args to rem(zz_pX,zz_pX,zz_pXModulus)");
 
 
    if (da < n) {
@@ -2304,7 +2260,7 @@ void div21(zz_pX& x, const zz_pX& a, const zz_pXModulus& F)
    n = F.n;
 
    if (da > 2*n-2)
-      Error("bad args to rem(zz_pX,zz_pX,zz_pXModulus)");
+      LogicError("bad args to rem(zz_pX,zz_pX,zz_pXModulus)");
 
 
    if (da < n) {
@@ -2331,7 +2287,7 @@ void rem(zz_pX& x, const zz_pX& a, const zz_pXModulus& F)
    long da = deg(a);
    long n = F.n;
 
-   if (n < 0) Error("rem: uninitialized modulus");
+   if (n < 0) LogicError("rem: uninitialized modulus");
 
    if (da <= 2*n-2) {
       rem21(x, a, F);
@@ -2375,7 +2331,7 @@ void DivRem(zz_pX& q, zz_pX& r, const zz_pX& a, const zz_pXModulus& F)
    long da = deg(a);
    long n = F.n;
 
-   if (n < 0) Error("DivRem: uninitialized modulus");
+   if (n < 0) LogicError("DivRem: uninitialized modulus");
 
    if (da <= 2*n-2) {
       DivRem21(q, r, a, F);
@@ -2432,7 +2388,7 @@ void div(zz_pX& q, const zz_pX& a, const zz_pXModulus& F)
    long da = deg(a);
    long n = F.n;
 
-   if (n < 0) Error("div: uninitialized modulus");
+   if (n < 0) LogicError("div: uninitialized modulus");
 
    if (da <= 2*n-2) {
       div21(q, a, F);
@@ -2495,10 +2451,10 @@ void MulMod(zz_pX& x, const zz_pX& a, const zz_pX& b, const zz_pXModulus& F)
    db = deg(b);
    n = F.n;
 
-   if (n < 0) Error("MulMod: uninitialized modulus");
+   if (n < 0) LogicError("MulMod: uninitialized modulus");
 
    if (da >= n || db >= n)
-      Error("bad args to MulMod(zz_pX,zz_pX,zz_pX,zz_pXModulus)");
+      LogicError("bad args to MulMod(zz_pX,zz_pX,zz_pX,zz_pXModulus)");
 
    if (da < 0 || db < 0) {
       clear(x);
@@ -2545,10 +2501,10 @@ void SqrMod(zz_pX& x, const zz_pX& a, const zz_pXModulus& F)
    da = deg(a);
    n = F.n;
 
-   if (n < 0) Error("SqrMod: uninitialized modulus");
+   if (n < 0) LogicError("SqrMod: uninitialized modulus");
 
    if (da >= n) 
-      Error("bad args to SqrMod(zz_pX,zz_pX,zz_pXModulus)");
+      LogicError("bad args to SqrMod(zz_pX,zz_pX,zz_pXModulus)");
 
    if (!F.UseFFT || da <= NTL_zz_pX_MUL_CROSSOVER) {
       zz_pX P1;
@@ -2595,7 +2551,7 @@ void PlainInvTrunc(zz_pX& x, const zz_pX& a, long m)
 
    n = deg(a);
 
-   if (n < 0) Error("division by zero");
+   if (n < 0) ArithmeticError("division by zero");
 
    inv(s, ConstTerm(a));
 
@@ -2633,7 +2589,7 @@ void trunc(zz_pX& x, const zz_pX& a, long m)
 // x = a % X^m, output may alias input 
 
 {
-   if (m < 0) Error("trunc: bad args");
+   if (m < 0) LogicError("trunc: bad args");
 
    if (&x == &a) {
       if (x.rep.length() > m) {
@@ -2693,14 +2649,14 @@ void CyclicReduce(zz_pX& x, const zz_pX& a, long m)
 
 void InvTrunc(zz_pX& x, const zz_pX& a, long m)
 {
-   if (m < 0) Error("InvTrunc: bad args");
+   if (m < 0) LogicError("InvTrunc: bad args");
    if (m == 0) {
       clear(x);
       return;
    }
 
    if (NTL_OVERFLOW(m, 1, 0))
-      Error("overflow in InvTrunc");
+      ResourceError("overflow in InvTrunc");
 
    if (&x == &a) {
       zz_pX la;
@@ -2725,10 +2681,10 @@ void build(zz_pXModulus& x, const zz_pX& f)
    x.f = f;
    x.n = deg(f);
 
-   x.tracevec.kill();
+   x.tracevec.make();
 
    if (x.n <= 0)
-      Error("build: deg(f) must be at least 1");
+      LogicError("build: deg(f) must be at least 1");
 
    if (x.n <= NTL_zz_pX_MOD_CROSSOVER + 1) {
       x.UseFFT = 0;
@@ -2768,12 +2724,12 @@ void build(zz_pXMultiplier& x, const zz_pX& b,
    long db;
    long n = F.n;
 
-   if (n < 0) Error("build zz_pXMultiplier: uninitialized modulus"); 
+   if (n < 0) LogicError("build zz_pXMultiplier: uninitialized modulus"); 
 
    x.b = b;
    db = deg(b);
 
-   if (db >= n) Error("build zz_pXMultiplier: deg(b) >= deg(f)");
+   if (db >= n) LogicError("build zz_pXMultiplier: deg(b) >= deg(f)");
 
    if (!F.UseFFT || db <= NTL_zz_pX_MOD_CROSSOVER) {
       x.UseFFT = 0;
@@ -2804,7 +2760,7 @@ void MulMod(zz_pX& x, const zz_pX& a, const zz_pXMultiplier& B,
    da = deg(a);
 
    if (da >= n)
-      Error(" bad args to MulMod(zz_pX,zz_pX,zz_pXMultiplier,zz_pXModulus)");
+      LogicError(" bad args to MulMod(zz_pX,zz_pX,zz_pXMultiplier,zz_pXModulus)");
 
    if (da < 0) {
       clear(x);
@@ -2837,7 +2793,7 @@ void MulMod(zz_pX& x, const zz_pX& a, const zz_pXMultiplier& B,
 
 void PowerXMod(zz_pX& hh, const ZZ& e, const zz_pXModulus& F)
 {
-   if (F.n < 0) Error("PowerXMod: uninitialized modulus");
+   if (F.n < 0) LogicError("PowerXMod: uninitialized modulus");
 
    if (IsZero(e)) {
       set(hh);
@@ -2867,7 +2823,7 @@ void PowerXMod(zz_pX& hh, const ZZ& e, const zz_pXModulus& F)
 
 void PowerXPlusAMod(zz_pX& hh, zz_p a, const ZZ& e, const zz_pXModulus& F)
 {
-   if (F.n < 0) Error("PowerXPlusAMod: uninitialized modulus");
+   if (F.n < 0) LogicError("PowerXPlusAMod: uninitialized modulus");
 
    if (IsZero(e)) {
       set(hh);
@@ -2901,7 +2857,7 @@ void PowerXPlusAMod(zz_pX& hh, zz_p a, const ZZ& e, const zz_pXModulus& F)
 
 void PowerMod(zz_pX& h, const zz_pX& g, const ZZ& e, const zz_pXModulus& F)
 {
-   if (deg(g) >= F.n) Error("PowerMod: bad args");
+   if (deg(g) >= F.n) LogicError("PowerMod: bad args");
 
    if (IsZero(e)) {
       set(h);
@@ -3191,7 +3147,7 @@ long operator==(const zz_pX& a, zz_p b)
 void power(zz_pX& x, const zz_pX& a, long e)
 {
    if (e < 0) {
-      Error("power: negative exponent");
+      ArithmeticError("power: negative exponent");
    }
 
    if (e == 0) {
@@ -3212,7 +3168,7 @@ void power(zz_pX& x, const zz_pX& a, long e)
    }
 
    if (da > (NTL_MAX_LONG-1)/e)
-      Error("overflow in power");
+      ResourceError("overflow in power");
 
    zz_pX res;
    res.SetMaxLength(da*e + 1);
@@ -3234,7 +3190,7 @@ void reverse(zz_pX& x, const zz_pX& a, long hi)
 {
    if (hi < 0) { clear(x); return; }
    if (NTL_OVERFLOW(hi, 1, 0))
-      Error("overflow in reverse");
+      ResourceError("overflow in reverse");
 
    if (&x == &a) {
       zz_pX tmp;

@@ -29,6 +29,12 @@ int main()
    cout << "NTL_THREADS=0\n";
 #endif
 
+#ifdef NTL_EXCEPTIONS
+   cout << "NTL_EXCEPTIONS=1\n";
+#else
+   cout << "NTL_EXCEPTIONS=0\n";
+#endif
+
 #ifdef NTL_GMP_LIP
    cout << "NTL_GMP_LIP=1\n";
 #else

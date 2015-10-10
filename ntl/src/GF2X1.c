@@ -52,7 +52,7 @@ void PlainDivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2X& b)
    da = deg(a);
    db = deg(b);
 
-   if (db < 0) Error("GF2X: division by zero");
+   if (db < 0) ArithmeticError("GF2X: division by zero");
 
    if (da < db) {
       r = a;
@@ -69,6 +69,8 @@ void PlainDivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2X& b)
    sq = dq/NTL_BITS_PER_LONG + 1;
    posq = dq - NTL_BITS_PER_LONG*(sq-1);
 
+   WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
+
    _ntl_ulong *ap;
    if (&r == &a)
       ap = r.xrep.elts();
@@ -79,6 +81,13 @@ void PlainDivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2X& b)
 
    stab.SetLength(NTL_BITS_PER_LONG);
    long i;
+
+   NTL_SCOPE(guard) {
+      for (i = 0; i <= min(dq, NTL_BITS_PER_LONG-1); i++) {
+         WordVector& st = stab[((_ntl_ulong)(posb+i))%NTL_BITS_PER_LONG].xrep;
+         st.KillBig();
+      }
+   };
 
    stab[posb] = b;
    for (i = 1; i <= min(dq, NTL_BITS_PER_LONG-1); i++) 
@@ -138,10 +147,10 @@ void PlainDivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2X& b)
    }
    r.normalize();
 
-   GF2X_rembuf.release();
+   guard.relax();
    for (i = 0; i <= min(dq, NTL_BITS_PER_LONG-1); i++) {
       WordVector& st = stab[((_ntl_ulong)(posb+i))%NTL_BITS_PER_LONG].xrep;
-      st.release();
+      st.KillBig();
    }
 }
 
@@ -161,7 +170,7 @@ void PlainRem(GF2X& r, const GF2X& a, const GF2X& b)
    da = deg(a);
    db = deg(b);
 
-   if (db < 0) Error("GF2X: division by zero");
+   if (db < 0) ArithmeticError("GF2X: division by zero");
 
    if (da < db) {
       r = a;
@@ -173,6 +182,9 @@ void PlainRem(GF2X& r, const GF2X& a, const GF2X& b)
    sb = b.xrep.length();
    posb = db - NTL_BITS_PER_LONG*(sb-1);
 
+
+   WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
+
    _ntl_ulong *ap;
    if (&r == &a)
       ap = r.xrep.elts();
@@ -183,6 +195,13 @@ void PlainRem(GF2X& r, const GF2X& a, const GF2X& b)
 
    stab.SetLength(NTL_BITS_PER_LONG);
    long i;
+
+   NTL_SCOPE(guard) {
+      for (i = 0; i <= min(da-db, NTL_BITS_PER_LONG-1); i++) {
+         WordVector& st = stab[((_ntl_ulong)(posb+i))%NTL_BITS_PER_LONG].xrep;
+         st.KillBig();
+      }
+   };
 
    stab[posb] = b;
    for (i = 1; i <= min(da-db, NTL_BITS_PER_LONG-1); i++) 
@@ -230,10 +249,10 @@ void PlainRem(GF2X& r, const GF2X& a, const GF2X& b)
    }
    r.normalize();
 
-   GF2X_rembuf.release();
+   guard.relax();
    for (i = 0; i <= min(da-db, NTL_BITS_PER_LONG-1); i++) {
       WordVector& st = stab[((_ntl_ulong)(posb+i))%NTL_BITS_PER_LONG].xrep;
-      st.release();
+      st.KillBig();
    }
 }
 
@@ -313,10 +332,10 @@ void NewtonInvTrunc(GF2X& c, const GF2X& a, long e)
 void InvTrunc(GF2X& c, const GF2X& a, long e)
 {
    if (ConstTerm(a) == 0 || e < 0)
-      Error("inv: bad args");
+      LogicError("inv: bad args");
 
    if (NTL_OVERFLOW(e, 1, 0))
-      Error("overflow in InvTrunc");
+      ResourceError("overflow in InvTrunc");
 
    if (e == 0) {
       clear(c);
@@ -408,9 +427,9 @@ void build(GF2XModulus& F, const GF2X& f)
    long n = deg(f);
    long i;
 
-   if (n <= 0) Error("build(GF2XModulus,GF2X): deg(f) <= 0");
+   if (n <= 0) LogicError("build(GF2XModulus,GF2X): deg(f) <= 0");
 
-   F.tracevec.kill();
+   F.tracevec.make();
 
    F.f = f;
    F.n = n;
@@ -466,13 +485,11 @@ void build(GF2XModulus& F, const GF2X& f)
       
 
    if (F.method == GF2X_MOD_SPECIAL) {
-      if (!F.stab_cnt) F.stab_cnt = NTL_NEW_OP long[NTL_BITS_PER_LONG];
-      long *stab_cnt = F.stab_cnt;
-      if (!stab_cnt) Error("out of memory");
+      if (!F.stab_cnt) F.stab_cnt.SetLength(NTL_BITS_PER_LONG);
+      long *stab_cnt = F.stab_cnt.get();
 
-      if (!F.stab1) F.stab1 = NTL_NEW_OP _ntl_ulong[2*NTL_BITS_PER_LONG];
-      _ntl_ulong *stab1 = F.stab1;
-      if (!stab1) Error("out of memory");
+      if (!F.stab1) F.stab1.SetLength(2*NTL_BITS_PER_LONG);
+      _ntl_ulong *stab1 = F.stab1.get();
 
       stab1[posb<<1] = f.xrep[0];
       stab1[(posb<<1)+1] = 0;
@@ -498,13 +515,11 @@ void build(GF2XModulus& F, const GF2X& f)
       stab.SetLength(NTL_BITS_PER_LONG);
 
 
-      if (!F.stab_ptr) F.stab_ptr = NTL_NEW_OP _ntl_ulong_ptr[NTL_BITS_PER_LONG];
-      _ntl_ulong **stab_ptr = F.stab_ptr;
-      if (!stab_ptr) Error("out of memory");
+      if (!F.stab_ptr) F.stab_ptr.SetLength(NTL_BITS_PER_LONG);
+      _ntl_ulong **stab_ptr = F.stab_ptr.get();
 
-      if (!F.stab_cnt) F.stab_cnt = NTL_NEW_OP long[NTL_BITS_PER_LONG];
-      long *stab_cnt = F.stab_cnt;
-      if (!stab_cnt) Error("out of memory");
+      if (!F.stab_cnt) F.stab_cnt.SetLength(NTL_BITS_PER_LONG);
+      long *stab_cnt = F.stab_cnt.get();
       
    
       stab[posb] = f;
@@ -535,9 +550,6 @@ GF2XModulus::GF2XModulus()
 {
    n = -1;
    method = GF2X_MOD_PLAIN;
-   stab_ptr = 0;
-   stab_cnt = 0;
-   stab1 = 0;
 }
 
 
@@ -549,16 +561,14 @@ GF2XModulus::GF2XModulus(const GF2XModulus& F) :
    f(F.f), n(F.n), sn(F.sn), posn(F.posn), k3(F.k3), k2(F.k2), k1(F.k1),
    size(F.size), 
    msk(F.msk), method(F.method), stab(F.stab), h0(F.h0), f0(F.f0),
-   stab_cnt(0), stab_ptr(0), stab1(0), tracevec(F.tracevec)
+   tracevec(F.tracevec)
 {
    if (method == GF2X_MOD_SPECIAL) {
       long i;
-      stab1 = NTL_NEW_OP _ntl_ulong[2*NTL_BITS_PER_LONG];
-      if (!stab1) Error("GF2XModulus: out of memory");
+      stab1.SetLength(2*NTL_BITS_PER_LONG);
       for (i = 0; i < 2*NTL_BITS_PER_LONG; i++)
          stab1[i] = F.stab1[i];
-      stab_cnt = NTL_NEW_OP long[NTL_BITS_PER_LONG];
-      if (!stab_cnt) Error("GF2XModulus: out of memory");
+      stab_cnt.SetLength(NTL_BITS_PER_LONG);
       for (i = 0; i < NTL_BITS_PER_LONG; i++)
          stab_cnt[i] = F.stab_cnt[i];
    }
@@ -566,16 +576,13 @@ GF2XModulus::GF2XModulus(const GF2XModulus& F) :
       long i;
 
       if (F.stab_cnt) {
-         stab_cnt = NTL_NEW_OP long[NTL_BITS_PER_LONG];
-         if (!stab_cnt) Error("GF2XModulus: out of memory");
+         stab_cnt.SetLength(NTL_BITS_PER_LONG);
          for (i = 0; i < NTL_BITS_PER_LONG; i++)
             stab_cnt[i] = F.stab_cnt[i];
       }
 
       if (F.stab_ptr) {
-         stab_ptr = NTL_NEW_OP _ntl_ulong_ptr[NTL_BITS_PER_LONG];
-         if (!stab_ptr) Error("GF2XModulus: out of memory");
-      
+         stab_ptr.SetLength(NTL_BITS_PER_LONG);
          for (i = 0; i < NTL_BITS_PER_LONG; i++) {
             WordVector& st = stab[((_ntl_ulong)(posn+i))%NTL_BITS_PER_LONG].xrep;
             long k = st.length();
@@ -598,12 +605,10 @@ GF2XModulus& GF2XModulus::operator=(const GF2XModulus& F)
 
    if (method == GF2X_MOD_SPECIAL) {
       long i;
-      if (!stab1) stab1 = NTL_NEW_OP _ntl_ulong[2*NTL_BITS_PER_LONG];
-      if (!stab1) Error("GF2XModulus: out of memory");
+      if (!stab1) stab1.SetLength(2*NTL_BITS_PER_LONG);
       for (i = 0; i < 2*NTL_BITS_PER_LONG; i++)
          stab1[i] = F.stab1[i];
-      if (!stab_cnt) stab_cnt = NTL_NEW_OP long[NTL_BITS_PER_LONG];
-      if (!stab_cnt) Error("GF2XModulus: out of memory");
+      if (!stab_cnt) stab_cnt.SetLength(NTL_BITS_PER_LONG);
       for (i = 0; i < NTL_BITS_PER_LONG; i++)
          stab_cnt[i] = F.stab_cnt[i];
    }
@@ -611,15 +616,13 @@ GF2XModulus& GF2XModulus::operator=(const GF2XModulus& F)
       long i;
 
       if (F.stab_cnt) {
-         if (!stab_cnt) stab_cnt = NTL_NEW_OP long[NTL_BITS_PER_LONG];
-         if (!stab_cnt) Error("GF2XModulus: out of memory");
+         if (!stab_cnt) stab_cnt.SetLength(NTL_BITS_PER_LONG);
          for (i = 0; i < NTL_BITS_PER_LONG; i++)
             stab_cnt[i] = F.stab_cnt[i];
       }
 
       if (F.stab_ptr) {
-         if (!stab_ptr) stab_ptr = NTL_NEW_OP _ntl_ulong_ptr[NTL_BITS_PER_LONG];
-         if (!stab_ptr) Error("GF2XModulus: out of memory");
+         if (!stab_ptr) stab_ptr.SetLength(NTL_BITS_PER_LONG);
       
          for (i = 0; i < NTL_BITS_PER_LONG; i++) {
             WordVector& st = stab[((_ntl_ulong)(posn+i))%NTL_BITS_PER_LONG].xrep;
@@ -635,22 +638,11 @@ GF2XModulus& GF2XModulus::operator=(const GF2XModulus& F)
    
 
 
-GF2XModulus::~GF2XModulus() 
-{ 
-   delete [] stab_ptr; 
-   delete [] stab_cnt; 
-   delete [] stab1; 
-}
-
-
 
 GF2XModulus::GF2XModulus(const GF2X& ff)
 {
    n = -1;
    method = GF2X_MOD_PLAIN;
-   stab_ptr = 0;
-   stab_cnt = 0;
-   stab1 = 0;
 
    build(*this, ff);
 }
@@ -1021,7 +1013,7 @@ static
 void RightShiftAdd(GF2X& c, const GF2X& a, long n)
 {
    if (n < 0) {
-      Error("RightShiftAdd: negative shamt");
+      LogicError("RightShiftAdd: negative shamt");
    }
 
    if (n == 0) {
@@ -1264,7 +1256,7 @@ void rem(GF2X& r, const GF2X& a, const GF2XModulus& F)
 {
    long n = F.n;
 
-   if (n < 0) Error("rem: uninitialized modulus");
+   if (n < 0) LogicError("rem: uninitialized modulus");
 
    if (F.method == GF2X_MOD_TRI) {
       TrinomReduce(r, a, n, F.k3);
@@ -1289,6 +1281,8 @@ void rem(GF2X& r, const GF2X& a, const GF2XModulus& F)
          UseMulRemX1(r, a, F);
    }
    else if (F.method == GF2X_MOD_SPECIAL) {
+      WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
+
       long sa = a.xrep.length();
       long posa = da - NTL_BITS_PER_LONG*(sa-1);
    
@@ -1334,9 +1328,10 @@ void rem(GF2X& r, const GF2X& a, const GF2XModulus& F)
       r.normalize();
    }
    else {
+      WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
+
       long sa = a.xrep.length();
       long posa = da - NTL_BITS_PER_LONG*(sa-1);
-   
    
       _ntl_ulong *ap;
       if (&r == &a)
@@ -1378,7 +1373,6 @@ void rem(GF2X& r, const GF2X& a, const GF2XModulus& F)
       r.normalize();
    }
 
-   GF2X_rembuf.release();
 }
 
 void DivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2XModulus& F)
@@ -1386,7 +1380,7 @@ void DivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2XModulus& F)
    long da = deg(a);
    long n = F.n;
 
-   if (n < 0) Error("DivRem: uninitialized modulus");
+   if (n < 0) LogicError("DivRem: uninitialized modulus");
 
    if (da < n) {
       r = a;
@@ -1411,6 +1405,8 @@ void DivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2XModulus& F)
          UseMulDivRemX1(q, r, a, F);
    }
    else if (F.method == GF2X_MOD_SPECIAL) {
+      WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
+
       long sa = a.xrep.length();
       long posa = da - NTL_BITS_PER_LONG*(sa-1);
    
@@ -1475,6 +1471,8 @@ void DivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2XModulus& F)
       r.normalize();
    }
    else {
+      WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
+
       long sa = a.xrep.length();
       long posa = da - NTL_BITS_PER_LONG*(sa-1);
    
@@ -1535,8 +1533,6 @@ void DivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2XModulus& F)
       }
       r.normalize();
    }
-
-   GF2X_rembuf.release();
 }
 
 
@@ -1546,7 +1542,7 @@ void div(GF2X& q, const GF2X& a, const GF2XModulus& F)
    long da = deg(a);
    long n = F.n;
 
-   if (n < 0) Error("div: uninitialized modulus");
+   if (n < 0) LogicError("div: uninitialized modulus");
 
 
    if (da < n) {
@@ -1571,6 +1567,8 @@ void div(GF2X& q, const GF2X& a, const GF2XModulus& F)
          UseMulDivX1(q, a, F);
    }
    else if (F.method == GF2X_MOD_SPECIAL) {
+      WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
+
       long sa = a.xrep.length();
       long posa = da - NTL_BITS_PER_LONG*(sa-1);
    
@@ -1621,6 +1619,8 @@ void div(GF2X& q, const GF2X& a, const GF2XModulus& F)
       }
    }
    else {
+      WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
+
       long sa = a.xrep.length();
       long posa = da - NTL_BITS_PER_LONG*(sa-1);
    
@@ -1668,14 +1668,12 @@ void div(GF2X& q, const GF2X& a, const GF2XModulus& F)
          }
       }
    }
-
-   GF2X_rembuf.release();
 }
 
 
 void MulMod(GF2X& c, const GF2X& a, const GF2X& b, const GF2XModulus& F)
 {
-   if (F.n < 0) Error("MulMod: uninitialized modulus");
+   if (F.n < 0) LogicError("MulMod: uninitialized modulus");
 
    NTL_GF2XRegister(t);
    mul(t, a, b);
@@ -1685,7 +1683,7 @@ void MulMod(GF2X& c, const GF2X& a, const GF2X& b, const GF2XModulus& F)
 
 void SqrMod(GF2X& c, const GF2X& a, const GF2XModulus& F)
 {
-   if (F.n < 0) Error("SqrMod: uninitialized modulus");
+   if (F.n < 0) LogicError("SqrMod: uninitialized modulus");
 
    NTL_GF2XRegister(t);
    sqr(t, a);
@@ -1739,7 +1737,7 @@ long OptWinSize(long n)
 void PowerMod(GF2X& h, const GF2X& g, const ZZ& e, const GF2XModulus& F)
 // h = g^e mod f using "sliding window" algorithm
 {
-   if (deg(g) >= F.n) Error("PowerMod: bad args");
+   if (deg(g) >= F.n) LogicError("PowerMod: bad args");
 
    if (e == 0) {
       set(h);
@@ -1853,7 +1851,7 @@ void PowerMod(GF2X& h, const GF2X& g, const ZZ& e, const GF2XModulus& F)
 
 void PowerXMod(GF2X& hh, const ZZ& e, const GF2XModulus& F)
 {
-   if (F.n < 0) Error("PowerXMod: uninitialized modulus");
+   if (F.n < 0) LogicError("PowerXMod: uninitialized modulus");
 
    if (IsZero(e)) {
       set(hh);
@@ -2363,7 +2361,7 @@ void OldXGCD(GF2X& d, GF2X& s, GF2X& t, const GF2X& a, const GF2X& b)
 static
 void BaseInvMod(GF2X& d, GF2X& s, const GF2X& a, const GF2X& f)
 {
-   if (deg(a) >= deg(f) || deg(f) == 0) Error("InvMod: bad args");
+   if (deg(a) >= deg(f) || deg(f) == 0) LogicError("InvMod: bad args");
 
    long sa = a.xrep.length();
    long sf = f.xrep.length();
@@ -2388,7 +2386,7 @@ void InvMod(GF2X& c, const GF2X& a, const GF2X& f)
    NTL_GF2XRegister(s);
    BaseInvMod(d, s, a, f);
 
-   if (!IsOne(d)) Error("InvMod: inverse undefined");
+   if (!IsOne(d)) InvModError("InvMod: inverse undefined");
 
    c = s;
 }
@@ -2485,10 +2483,10 @@ void conv(ZZX& x, const GF2X& a)
 
 void VectorCopy(vec_GF2& x, const GF2X& a, long n)
 {
-   if (n < 0) Error("VectorCopy: negative length"); 
+   if (n < 0) LogicError("VectorCopy: negative length"); 
 
    if (NTL_OVERFLOW(n, 1, 0))
-      Error("overflow in VectorCopy");
+      ResourceError("overflow in VectorCopy");
 
    long wa = a.xrep.length();
    long wx = (n + NTL_BITS_PER_LONG - 1)/NTL_BITS_PER_LONG;
@@ -2660,7 +2658,7 @@ void CompMod(GF2X& x, const GF2X& g, const GF2XArgument& A, const GF2XModulus& F
 
 void build(GF2XArgument& A, const GF2X& h, const GF2XModulus& F, long m)
 {
-   if (m <= 0 || deg(h) >= F.n) Error("build GF2XArgument: bad args");
+   if (m <= 0 || deg(h) >= F.n) LogicError("build GF2XArgument: bad args");
 
    if (m > F.n) m = F.n;
 
@@ -2755,7 +2753,7 @@ void build(GF2XTransMultiplier& B, const GF2X& b, const GF2XModulus& F)
 {
    long db = deg(b);
 
-   if (db >= F.n) Error("build TransMultiplier: bad args");
+   if (db >= F.n) LogicError("build TransMultiplier: bad args");
 
    GF2X t;
 
@@ -2801,7 +2799,7 @@ void build(GF2XTransMultiplier& B, const GF2X& b, const GF2XModulus& F)
 void TransMulMod(GF2X& x, const GF2X& a, const GF2XTransMultiplier& B,
                const GF2XModulus& F)
 {
-   if (deg(a) >= F.n) Error("TransMulMod: bad args");
+   if (deg(a) >= F.n) LogicError("TransMulMod: bad args");
 
    NTL_GF2XRegister(t1);
    NTL_GF2XRegister(t2);
@@ -2853,8 +2851,11 @@ void ProjectPowers(GF2X& x, const GF2X& a, long k, const GF2XArgument& H,
 {
    long n = F.n;
 
-   if (deg(a) >= n || k < 0 || NTL_OVERFLOW(k, 1, 0)) 
-      Error("ProjectPowers: bad args");
+   if (deg(a) >= n || k < 0) 
+      LogicError("ProjectPowers: bad args");
+
+   if (NTL_OVERFLOW(k, 1, 0)) 
+      ResourceError("ProjectPowers: excessive parameter");
 
    long m = H.H.length()-1;
    long l = (k+m-1)/m - 1;
@@ -2892,7 +2893,7 @@ void ProjectPowers(vec_GF2& x, const vec_GF2& a, long k,
 void ProjectPowers(GF2X& x, const GF2X& a, long k, const GF2X& h, 
                    const GF2XModulus& F)
 {
-   if (deg(a) >= F.n || k < 0) Error("ProjectPowers: bad args");
+   if (deg(a) >= F.n || k < 0) LogicError("ProjectPowers: bad args");
 
    if (k == 0) {
       clear(x);
@@ -3033,8 +3034,8 @@ void DoMinPolyMod(GF2X& h, const GF2X& g, const GF2XModulus& F, long m,
 
 void MinPolySeq(GF2X& h, const vec_GF2& a, long m)
 {
-   if (m < 0 || NTL_OVERFLOW(m, 1, 0)) Error("MinPoly: bad args");
-   if (a.length() < 2*m) Error("MinPoly: sequence too short");
+   if (m < 0 || NTL_OVERFLOW(m, 1, 0)) LogicError("MinPoly: bad args");
+   if (a.length() < 2*m) LogicError("MinPoly: sequence too short");
    GF2X x;
    x.xrep = a.rep;
    x.normalize();
@@ -3044,7 +3045,7 @@ void MinPolySeq(GF2X& h, const vec_GF2& a, long m)
 void ProbMinPolyMod(GF2X& h, const GF2X& g, const GF2XModulus& F, long m)
 {
    long n = F.n;
-   if (m < 1 || m > n) Error("ProbMinPoly: bad args");
+   if (m < 1 || m > n) LogicError("ProbMinPoly: bad args");
 
    GF2X R;
    random(R, n);
@@ -3061,7 +3062,7 @@ void MinPolyMod(GF2X& hh, const GF2X& g, const GF2XModulus& F, long m)
 {
    GF2X h, h1;
    long n = F.n;
-   if (m < 1 || m > n) Error("MinPoly: bad args");
+   if (m < 1 || m > n) LogicError("MinPoly: bad args");
 
    /* probabilistically compute min-poly */
 
@@ -3094,7 +3095,7 @@ void MinPolyMod(GF2X& hh, const GF2X& g, const GF2XModulus& F, long m)
 
 void IrredPolyMod(GF2X& h, const GF2X& g, const GF2XModulus& F, long m)
 {
-   if (m < 1 || m > F.n) Error("IrredPoly: bad args");
+   if (m < 1 || m > F.n) LogicError("IrredPoly: bad args");
 
    GF2X R;
    set(R);
@@ -3122,7 +3123,7 @@ void MulByXMod(GF2X& c, const GF2X& a, const GF2XModulus& F)
 {
    long da = deg(a);
    long df = deg(F);
-   if (da >= df) Error("MulByXMod: bad args"); 
+   if (da >= df) LogicError("MulByXMod: bad args"); 
 
    MulByX(c, a);
 
@@ -3135,7 +3136,7 @@ void MulByXModAux(GF2X& c, const GF2X& a, const GF2X& f)
 {
    long da = deg(a);
    long df = deg(f);
-   if (da >= df) Error("MulByXMod: bad args"); 
+   if (da >= df) LogicError("MulByXMod: bad args"); 
 
    MulByX(c, a);
 
@@ -3160,7 +3161,7 @@ void MulByXMod(GF2X& h, const GF2X& a, const GF2X& f)
 void power(GF2X& x, const GF2X& a, long e)
 {
    if (e < 0) {
-      Error("power: negative exponent");
+      ArithmeticError("power: negative exponent");
    }
 
    if (e == 0) {
@@ -3176,7 +3177,7 @@ void power(GF2X& x, const GF2X& a, long e)
    long da = deg(a);
 
    if (da > (NTL_MAX_LONG-1)/e)
-      Error("overflow in power");
+      ResourceError("overflow in power");
 
    GF2X res;
    res.SetMaxLength(da*e + 1);
@@ -3200,7 +3201,7 @@ void FastTraceVec(vec_GF2& S, const GF2XModulus& f)
 {
    long n = deg(f);
 
-   if (n <= 0) Error("TraceVec: bad args");
+   if (n <= 0) LogicError("TraceVec: bad args");
 
    GF2X x = reverse(-LeftShift(reverse(diff(reverse(f)), n-1), n-1)/f, n-1);
 
@@ -3214,7 +3215,7 @@ void PlainTraceVec(vec_GF2& S, const GF2X& f)
    long n = deg(f);
 
    if (n <= 0) 
-      Error("TraceVec: bad args");
+      LogicError("TraceVec: bad args");
 
    if (n == 0) {
       S.SetLength(0);
@@ -3249,21 +3250,24 @@ void TraceMod(ref_GF2 x, const GF2X& a, const GF2XModulus& F)
    long n = F.n;
 
    if (deg(a) >= n)
-      Error("trace: bad args");
+      LogicError("trace: bad args");
 
    do { // NOTE: thread safe lazy init
-      Lazy<vec_GF2>::Builder builder(F.tracevec); 
-      if (!builder) break;
-      ComputeTraceVec(*builder, F);
+      Lazy<vec_GF2>::Builder builder(F.tracevec.val()); 
+      if (!builder()) break;
+      UniquePtr<vec_GF2> p;
+      p.make();
+      ComputeTraceVec(*p, F);
+      builder.move(p);
    } while (0);
 
-   project(x, F.tracevec.value(), a);
+   project(x, *F.tracevec.val(), a);
 }
 
 void TraceMod(ref_GF2 x, const GF2X& a, const GF2X& f)
 {
    if (deg(a) >= deg(f) || deg(f) <= 0)
-      Error("trace: bad args");
+      LogicError("trace: bad args");
 
    project(x, TraceVec(f), a);
 }

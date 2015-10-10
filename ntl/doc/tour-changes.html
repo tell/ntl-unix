@@ -16,6 +16,60 @@ A Tour of NTL: Summary of Changes
 </p>
 </h1>
 
+<p><hr><p>
+<h3>
+2014.12.24:
+Changed between NTL 7.0.2 and 8.0
+</h3>
+
+<ul>
+
+<p><li> <b> Exceptions! </b>
+<p> This is another major milestone for NTL, and hence the big
+version number bump (this will be the last of these big bumps
+for a while).
+
+<p>
+Prior to this version, error handling consisted of "abort with an error message".
+To enable exceptions in NTL, configure with <tt>NTL_EXCEPTIONS=on</tt>.
+You will also need a <tt>C++11</tt> compiler for this to work properly
+(and if you don't enable exceptions, any old <tt>C++98</tt> compiler will
+work, as always).
+
+<p>
+With exceptions enabled, errors are reported by throwing an appropriate
+exception.
+Of course, this was the easy part.
+The hard part was making NTL's code <i>exception safe</i>,
+which (among other things) means that no resources (i.e., memory)
+are leaked when an exception is thrown.
+This required a very painful top-to-bottom scrub of the whole library.
+
+<p>
+Despite major changes to the code base and many internal
+interfaces, the external (i.e., documented) interfaces remain
+completely unchanged.
+
+<p>
+More details are available <a href="tour-struct.html#except">here.</a>
+
+<p><li>
+Improved performance of <tt>ZZ_pX</tt> arithmetic for both classic
+and GMP-based long integer packages.
+
+<p><li>
+Made copy constructor and assignment operators
+for <tt>fftRep</tt> and <tt>FFTRep</tt> safe "out of context",
+which extends to the classes <tt>zz_pXModulus</tt> and <tt>ZZ_pXModulus</tt>.
+
+<p><li>
+Made mechanism for establishing "unique ID's" (used for temporary
+file name generation and default pseudo-random number seeds) 
+more robust.
+
+
+</ul>
+
 <p> <hr> <p>
 <h3>
 2014.12.15:
@@ -35,6 +89,7 @@ This bug also affected the new <tt>Vec</tt> constructor introduced in v7.0
 (and again, only for <tt>ZZ_p</tt> and <tt>GF2E</tt>).
 
 </ul>
+
 
 <p> <hr> <p>
 <h3>

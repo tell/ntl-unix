@@ -23,7 +23,7 @@ void RR::SetPrecision(long p)
       p = 53;
 
    if (NTL_OVERFLOW(p, 1, 0))
-      Error("RR: precision too high");
+      ResourceError("RR: precision too high");
 
    prec = p;
 }
@@ -37,7 +37,7 @@ void RR::SetOutputPrecision(long p)
       p = 1;
 
    if (NTL_OVERFLOW(p, 1, 0))
-      Error("RR: output precision too high");
+      ResourceError("RR: output precision too high");
 
    oprec = p;
 }
@@ -72,10 +72,10 @@ void normalize1(RR& z, const ZZ& y_x, long y_e, long prec, long residual)
       z.e += MakeOdd(z.x);
 
    if (z.e >= NTL_OVFBND)
-      Error("RR: overflow");
+      ResourceError("RR: overflow");
 
    if (z.e <= -NTL_OVFBND)
-      Error("RR: underflow");
+      ResourceError("RR: underflow");
 }
 
 void normalize(RR& z, const RR& y, long residual = 0)
@@ -86,23 +86,24 @@ void normalize(RR& z, const RR& y, long residual = 0)
 void MakeRR(RR& z, const ZZ& a,  long e)
 {
    if (e >= NTL_OVFBND)
-      Error("MakeRR: e too big");
+      ResourceError("MakeRR: e too big");
 
    if (e <= -NTL_OVFBND)
-      Error("MakeRR: e too small");
+      ResourceError("MakeRR: e too small");
 
    normalize1(z, a, e, RR::prec, 0);
 }
 
 void MakeRRPrec(RR& x, const ZZ& a, long e, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("MakeRRPrec: bad precsion");
+   if (p < 1)
+      LogicError("MakeRRPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("MakeRRPrec: precsion too big");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    MakeRR(x, a, e);
-   RR::prec = old_p;
 }
 
 void random(RR& z)
@@ -124,13 +125,14 @@ void xcopy(RR& x, const RR& a)
 
 void ConvPrec(RR& x, const RR& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("ConvPrec: bad precsion");
+   if (p < 1)
+      LogicError("ConvPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("ConvPrec: precsion too big");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    normalize(x, a);
-   RR::prec = old_p;
 }
 
 void RoundToPrecision(RR& x, const RR& a, long p)
@@ -216,13 +218,14 @@ void add(RR& z, const RR& a, const RR& b)
 
 void AddPrec(RR& x, const RR& a, const RR& b, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("AddPrec: bad precsion");
+   if (p < 1)
+      LogicError("AddPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("AddPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    add(x, a, b);
-   RR::prec = old_p;
 }
 
 void sub(RR& z, const RR& a, const RR& b)
@@ -270,13 +273,14 @@ void sub(RR& z, const RR& a, const RR& b)
 
 void SubPrec(RR& x, const RR& a, const RR& b, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("SubPrec: bad precsion");
+   if (p < 1)
+      LogicError("SubPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("SubPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    sub(x, a, b);
-   RR::prec = old_p;
 }
 
 void negate(RR& z, const RR& a)
@@ -287,13 +291,14 @@ void negate(RR& z, const RR& a)
 
 void NegatePrec(RR& x, const RR& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("NegatePrec: bad precsion");
+   if (p < 1)
+      LogicError("NegatePrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("NegatePrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    negate(x, a);
-   RR::prec = old_p;
 }
 
 void abs(RR& z, const RR& a)
@@ -304,13 +309,14 @@ void abs(RR& z, const RR& a)
 
 void AbsPrec(RR& x, const RR& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("AbsPrec: bad precsion");
+   if (p < 1)
+      LogicError("AbsPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("AbsPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    abs(x, a);
-   RR::prec = old_p;
 }
 
 
@@ -325,13 +331,14 @@ void mul(RR& z, const RR& a, const RR& b)
 
 void MulPrec(RR& x, const RR& a, const RR& b, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("MulPrec: bad precsion");
+   if (p < 1)
+      LogicError("MulPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("MulPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    mul(x, a, b);
-   RR::prec = old_p;
 }
 
 
@@ -346,13 +353,14 @@ void sqr(RR& z, const RR& a)
 
 void SqrPrec(RR& x, const RR& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("SqrPrec: bad precsion");
+   if (p < 1)
+      LogicError("SqrPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("SqrPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    sqr(x, a);
-   RR::prec = old_p;
 }
 
 
@@ -360,7 +368,7 @@ void SqrPrec(RR& x, const RR& a, long p)
 void div(RR& z, const RR& a, const RR& b)
 {
    if (IsZero(b))
-      Error("RR: division by zero");
+      ArithmeticError("RR: division by zero");
 
    if (IsZero(a)) {
       clear(z);
@@ -396,20 +404,21 @@ void div(RR& z, const RR& a, const RR& b)
 
 void DivPrec(RR& x, const RR& a, const RR& b, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("DivPrec: bad precsion");
+   if (p < 1)
+      LogicError("DivPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("DivPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    div(x, a, b);
-   RR::prec = old_p;
 }
 
 
 void SqrRoot(RR& z, const RR& a)
 {
    if (sign(a) < 0)
-      Error("RR: attempt to take square root of negative number");
+      ArithmeticError("RR: attempt to take square root of negative number");
 
    if (IsZero(a)) {
       clear(z);
@@ -443,23 +452,18 @@ void SqrRoot(RR& z, const RR& a)
 
 void SqrRootPrec(RR& x, const RR& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("SqrRootPrec: bad precsion");
+   if (p < 1)
+      LogicError("SqrRootPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("SqrRootPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    SqrRoot(x, a);
-   RR::prec = old_p;
 }
 
 
 
-
-void swap(RR& a, RR& b)
-{
-   swap(a.x, b.x);
-   swap(a.e, b.e);
-}
 
 long compare(const RR& a, const RR& b)
 {
@@ -492,13 +496,14 @@ void trunc(RR& z, const RR& a)
 
 void TruncPrec(RR& x, const RR& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("TruncPrec: bad precsion");
+   if (p < 1)
+      LogicError("TruncPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("TruncPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    trunc(x, a);
-   RR::prec = old_p;
 }
 
 void floor(RR& z, const RR& a)
@@ -518,13 +523,14 @@ void floor(RR& z, const RR& a)
 
 void FloorPrec(RR& x, const RR& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("FloorPrec: bad precsion");
+   if (p < 1)
+      LogicError("FloorPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("FloorPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    floor(x, a);
-   RR::prec = old_p;
 }
 
 void ceil(RR& z, const RR& a)
@@ -544,13 +550,14 @@ void ceil(RR& z, const RR& a)
 
 void CeilPrec(RR& x, const RR& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("CeilPrec: bad precsion");
+   if (p < 1)
+      LogicError("CeilPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("CeilPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    ceil(x, a);
-   RR::prec = old_p;
 }
 
 void round(RR& z, const RR& a)
@@ -583,13 +590,14 @@ void round(RR& z, const RR& a)
 
 void RoundPrec(RR& x, const RR& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("RoundPrec: bad precsion");
+   if (p < 1)
+      LogicError("RoundPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("RoundPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    round(x, a);
-   RR::prec = old_p;
 }
 
 
@@ -602,13 +610,14 @@ void conv(RR& z, const ZZ& a)
 
 void ConvPrec(RR& x, const ZZ& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("ConvPrec: bad precsion");
+   if (p < 1)
+      LogicError("ConvPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("ConvPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    conv(x, a);
-   RR::prec = old_p;
 }
 
 
@@ -631,13 +640,14 @@ void conv(RR& z, long a)
 
 void ConvPrec(RR& x, long a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("ConvPrec: bad precsion");
+   if (p < 1)
+      LogicError("ConvPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("ConvPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    conv(x, a);
-   RR::prec = old_p;
 }
 
 void conv(RR& z, unsigned long a)
@@ -659,13 +669,14 @@ void conv(RR& z, unsigned long a)
 
 void ConvPrec(RR& x, unsigned long a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("ConvPrec: bad precsion");
+   if (p < 1)
+      LogicError("ConvPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("ConvPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    conv(x, a);
-   RR::prec = old_p;
 }
 
 
@@ -682,7 +693,7 @@ void conv(RR& z, double a)
    }
 
    if (!IsFinite(&a))
-      Error("RR: conversion of a non-finite double");
+      ArithmeticError("RR: conversion of a non-finite double");
 
    int e;
    double f;
@@ -701,13 +712,14 @@ void conv(RR& z, double a)
 
 void ConvPrec(RR& x, double a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("ConvPrec: bad precsion");
+   if (p < 1)
+      LogicError("ConvPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("ConvPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    conv(x, a);
-   RR::prec = old_p;
 }
 
 
@@ -857,13 +869,14 @@ void inv(RR& z, const RR& a)
 
 void InvPrec(RR& x, const RR& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("InvPrec: bad precsion");
+   if (p < 1)
+      LogicError("InvPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("InvPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    inv(x, a);
-   RR::prec = old_p;
 }
 
 
@@ -894,6 +907,7 @@ void power(RR& z, const RR& a, long e)
 
    long n = NumBits(e);
 
+   RRPush push;
    long p = RR::precision();
    RR::SetPrecision(p + n + 10);
 
@@ -1032,6 +1046,7 @@ istream& operator>>(istream& s, RR& x)
 
       RR t1, t2;
 
+
       long old_p = RR::precision();
 
       if (got1 || got2) {
@@ -1049,7 +1064,7 @@ istream& operator>>(istream& s, RR& x)
          negate(v, v);
 
       if (got_e) {
-         if (e >= NTL_OVFBND) Error("RR input overflow");
+         if (e >= NTL_OVFBND) ResourceError("RR input overflow");
          long E;
          conv(E, e);
          if (e_sign < 0) E = -E;
@@ -1065,13 +1080,14 @@ istream& operator>>(istream& s, RR& x)
 
 istream& InputPrec(RR& x, istream& s, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("ConvPrec: bad precsion");
+   if (p < 1)
+      LogicError("InputPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("InputPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    s >> x;
-   RR::prec = old_p;
    return s;
 }
 
@@ -1081,29 +1097,30 @@ void conv(RR& z, const xdouble& a)
    conv(z, a.mantissa());
 
    if (a.exponent() >  ((2*NTL_OVFBND)/(2*NTL_XD_HBOUND_LOG))) 
-      Error("RR: overlow");
+      ResourceError("RR: overlow");
 
    if (a.exponent() < -((2*NTL_OVFBND)/(2*NTL_XD_HBOUND_LOG))) 
-      Error("RR: underflow");
+      ResourceError("RR: underflow");
 
    z.e += a.exponent()*(2*NTL_XD_HBOUND_LOG);
 
    if (z.e >= NTL_OVFBND)
-      Error("RR: overflow");
+      ResourceError("RR: overflow");
 
    if (z.e <= -NTL_OVFBND)
-      Error("RR: underflow");
+      ResourceError("RR: underflow");
 }
 
 void ConvPrec(RR& x, const xdouble& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("ConvPrec: bad precsion");
+   if (p < 1)
+      LogicError("ConvPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("ConvPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    conv(x, a);
-   RR::prec = old_p;
 }
 
 
@@ -1121,10 +1138,10 @@ void conv(xdouble& z, const RR& a)
 void power2(RR& z, long e)
 {
    if (e >= NTL_OVFBND)
-      Error("RR: overflow");
+      ResourceError("RR: overflow");
 
    if (e <= -NTL_OVFBND)
-      Error("RR: underflow");
+      ResourceError("RR: underflow");
 
    set(z.x); 
    z.e = e;
@@ -1144,22 +1161,20 @@ void conv(RR& z, const quad_float& a)
 
 void ConvPrec(RR& x, const quad_float& a, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("ConvPrec: bad precsion");
+   if (p < 1)
+      LogicError("ConvPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("ConvPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    conv(x, a);
-   RR::prec = old_p;
 }
 
 
 void conv(quad_float& z, const RR& a)
 {
-   long old_p;
    NTL_THREAD_LOCAL static RR a_hi, a_lo;
-
-   old_p = RR::prec;
 
    ConvPrec(a_hi, a, NTL_DOUBLE_PRECISION);  // high order bits
    SubPrec(a_lo, a, a_hi, NTL_DOUBLE_PRECISION);  // low order bits
@@ -1176,7 +1191,9 @@ void conv(RR& x, const char *s)
    ZZ a, b;
    long i = 0;
 
-   if (!s) Error("bad RR input");
+   if (!s) InputError("bad RR input");
+
+   RRPush push;
 
 
    c = s[i];
@@ -1235,7 +1252,7 @@ void conv(RR& x, const char *s)
       }
    }
 
-   if (got_dot && !got1 && !got2)  Error("bad RR input");
+   if (got_dot && !got1 && !got2)  InputError("bad RR input");
 
    ZZ e;
 
@@ -1264,7 +1281,7 @@ void conv(RR& x, const char *s)
 
       cval = CharToIntVal(c);
 
-      if (cval < 0 || cval > 9) Error("bad RR input");
+      if (cval < 0 || cval > 9) InputError("bad RR input");
 
       e = 0;
       while (cval >= 0 && cval <= 9) {
@@ -1276,7 +1293,7 @@ void conv(RR& x, const char *s)
       }
    }
 
-   if (!got1 && !got2 && !got_e) Error("bad RR input");
+   if (!got1 && !got2 && !got_e) InputError("bad RR input");
 
    RR t1, t2, v;
 
@@ -1297,7 +1314,7 @@ void conv(RR& x, const char *s)
       negate(v, v);
 
    if (got_e) {
-      if (e >= NTL_OVFBND) Error("RR input overflow");
+      if (e >= NTL_OVFBND) ResourceError("RR input overflow");
       long E;
       conv(E, e);
       if (e_sign < 0) E = -E;
@@ -1312,18 +1329,20 @@ void conv(RR& x, const char *s)
 
 void ConvPrec(RR& x, const char *s, long p)
 {
-   if (p < 1 || NTL_OVERFLOW(p, 1, 0))
-      Error("ConvPrec: bad precsion");
+   if (p < 1)
+      LogicError("ConvPrec: bad precsion");
+   if (NTL_OVERFLOW(p, 1, 0))
+      ResourceError("ConvPrec: bad precsion");
 
-   long old_p = RR::prec;
+   RRPush push;
    RR::prec = p;
    conv(x, s);
-   RR::prec = old_p;
 }
 
 
 void ReallyComputeE(RR& res)
 {
+   RRPush push;
    long p = RR::precision();
    RR::SetPrecision(p + NumBits(p) + 10);
 
@@ -1350,6 +1369,7 @@ void ComputeE(RR& res)
    NTL_THREAD_LOCAL static long prec = 0;
    NTL_THREAD_LOCAL static RR e;
 
+   RRPush push;
    long p = RR::precision();
 
    if (prec <= p + 10) {
@@ -1366,8 +1386,9 @@ void ComputeE(RR& res)
 void exp(RR& res, const RR& x)
 {
    if (x >= NTL_OVFBND || x <= -NTL_OVFBND)
-      Error("RR: overflow");
+      ResourceError("RR: overflow");
 
+   RRPush push;
    long p = RR::precision();
 
    // step 0: write x = n + f, n an integer and |f| <= 1/2
@@ -1422,6 +1443,7 @@ void exp(RR& res, const RR& x)
 
 void ReallyComputeLn2(RR& res)
 {
+   RRPush push;
    long p = RR::precision();
    RR::SetPrecision(p + NumBits(p) + 10);
 
@@ -1451,6 +1473,7 @@ void ComputeLn2(RR& res)
    NTL_THREAD_LOCAL static long prec = 0;
    NTL_THREAD_LOCAL static RR ln2;
 
+   RRPush push;
    long p = RR::precision();
 
    if (prec <= p + 10) {
@@ -1470,8 +1493,9 @@ long Lg2(const RR& x)
 
 void log(RR& res, const RR& x)
 {
-   if (x <= 0) Error("argument to log must be positive");
+   if (x <= 0) ArithmeticError("argument to log must be positive");
 
+   RRPush push;
    long p = RR::precision();
 
    RR::SetPrecision(p + NumBits(p) + 10);
@@ -1534,6 +1558,7 @@ void ComputeLn10(RR& res)
    NTL_THREAD_LOCAL static long prec = 0;
    NTL_THREAD_LOCAL static RR ln10;
 
+   RRPush push;
    long p = RR::precision();
 
    if (prec <= p + 10) {
@@ -1548,6 +1573,7 @@ void ComputeLn10(RR& res)
 
 void log10(RR& res, const RR& x)
 {
+   RRPush push;
    long p = RR::precision();
    RR::SetPrecision(p + 10);
 
@@ -1565,6 +1591,7 @@ void log10(RR& res, const RR& x)
 
 void expm1(RR& res, const RR& x)
 {
+   RRPush push;
    long p = RR::precision();
 
    if (x < -0.5 || x > 0.5) {
@@ -1606,6 +1633,7 @@ void expm1(RR& res, const RR& x)
 
 void log1p(RR& res, const RR& x)
 {
+   RRPush push;
    long p = RR::precision();
    RR y;
 
@@ -1650,6 +1678,7 @@ void log1p(RR& res, const RR& x)
 
 void pow(RR& res, const RR& x, const RR& y)
 {
+
    if (y == 0) {
       res = 1;
       return;
@@ -1666,9 +1695,10 @@ void pow(RR& res, const RR& x, const RR& y)
    }
 
    if (x < 0) {
-      Error("pow: sorry...first argument to pow must be nonnegative");
+      ArithmeticError("pow: sorry...first argument to pow must be nonnegative");
    }
 
+   RRPush push;
    long p = RR::precision();
 
    // calculate working precison...one could use p + NTL_BITS_PER_LONG + 10,
@@ -1688,7 +1718,7 @@ void pow(RR& res, const RR& x, const RR& y)
 
    k += Lg2(y);
 
-   if (k > NTL_BITS_PER_LONG+10) Error("RR: overflow");
+   if (k > NTL_BITS_PER_LONG+10) ResourceError("RR: overflow");
 
    if (k < 0) k = 0;
 
@@ -1707,6 +1737,7 @@ void pow(RR& res, const RR& x, const RR& y)
 
 void ReallyComputePi(RR& res)
 {
+   RRPush push;
    long p = RR::precision();
    RR::SetPrecision(p + NumBits(p) + 10);
 
@@ -1763,6 +1794,7 @@ void ComputePi(RR& res)
    NTL_THREAD_LOCAL static long prec = 0;
    NTL_THREAD_LOCAL static RR pi;
 
+   RRPush push;
    long p = RR::precision();
 
    if (prec <= p + 10) {
@@ -1785,8 +1817,9 @@ void sin(RR& res, const RR& x)
    }
 
    if (Lg2(x) > 1000) 
-      Error("sin: sorry...argument too large in absolute value");
+      ResourceError("sin: sorry...argument too large in absolute value");
 
+   RRPush push;
    long p = RR::precision();
 
    RR pi, t1, f;
@@ -1880,8 +1913,9 @@ void cos(RR& res, const RR& x)
    }
 
    if (Lg2(x) > 1000) 
-      Error("cos: sorry...argument too large in absolute value");
+      ResourceError("cos: sorry...argument too large in absolute value");
 
+   RRPush push;
    long p = RR::precision();
 
    RR pi, t1, f;
@@ -1957,7 +1991,7 @@ ostream& operator<<(ostream& s, const RR& a)
       return s;
    }
 
-   long old_p = RR::precision();
+   RRPush push;
 
    // we compute new_p and log_10_a precisely using sufficient
    // precision---this is necessary to achieve accuracy and
@@ -2017,15 +2051,15 @@ ostream& operator<<(ostream& s, const RR& a)
 
    long bp_len = RR::OutputPrecision()+10;
 
-   char *bp = NTL_NEW_OP char[bp_len];
-
-   if (!bp) Error("RR output: out of memory");
+   UniqueArray<char> bp_store;
+   bp_store.SetLength(bp_len);
+   char *bp = bp_store.get();
 
    long len, i;
 
    len = 0;
    do {
-      if (len >= bp_len) Error("RR output: buffer overflow");
+      if (len >= bp_len) LogicError("RR output: buffer overflow");
       bp[len] = IntValToChar(DivRem(B, B, 10));
       len++;
    } while (B > 0);
@@ -2075,8 +2109,6 @@ ostream& operator<<(ostream& s, const RR& a)
          s << bp[i];
    }
 
-   RR::SetPrecision(old_p);
-   delete [] bp;
    return s;
 }
 

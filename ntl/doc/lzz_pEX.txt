@@ -873,8 +873,9 @@ zz_pEX::zz_pEX(INIT_SIZE_TYPE, long n);
 static const zz_pEX& zero();
 // zz_pEX::zero() is a read-only reference to 0
 
+void zz_pEX::swap(zz_pEX& x);
 void swap(zz_pEX& x, zz_pEX& y); 
-// swap x and y (via "pointer swapping")
+// swap (via "pointer swapping")
 
 
 zz_pEX::zz_pEX(long i, const zz_pE& c); 

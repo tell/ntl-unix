@@ -804,8 +804,9 @@ GF2X::GF2X(INIT_SIZE_TYPE, long n);
 static const GF2X& zero();
 // GF2X::zero() is a read-only reference to 0
 
+void GF2X::swap(GF2X& x);
 void swap(GF2X& x, GF2X& y); 
-// swap x and y (via "pointer swapping")
+// swap (via "pointer swapping" -- if possible)
 
 GF2X::GF2X(long i, GF2 c); 
 GF2X::GF2X(long i, long c); 

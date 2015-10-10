@@ -862,7 +862,7 @@ void diff(ZZX& x, const ZZX& a)
 
 void HomPseudoDivRem(ZZX& q, ZZX& r, const ZZX& a, const ZZX& b)
 {
-   if (IsZero(b)) Error("division by zero");
+   if (IsZero(b)) ArithmeticError("division by zero");
 
    long da = deg(a);
    long db = deg(b);
@@ -991,7 +991,7 @@ void PlainPseudoDivRem(ZZX& q, ZZX& r, const ZZX& a, const ZZX& b)
    da = deg(a);
    db = deg(b);
 
-   if (db < 0) Error("ZZX: division by zero");
+   if (db < 0) ArithmeticError("ZZX: division by zero");
 
    if (da < db) {
       r = a;
@@ -1070,24 +1070,24 @@ void PlainPseudoRem(ZZX& r, const ZZX& a, const ZZX& b)
 
 void div(ZZX& q, const ZZX& a, long b)
 {
-   if (b == 0) Error("div: division by zero");
+   if (b == 0) ArithmeticError("div: division by zero");
 
-   if (!divide(q, a, b)) Error("DivRem: quotient undefined over ZZ");
+   if (!divide(q, a, b)) ArithmeticError("DivRem: quotient undefined over ZZ");
 }
 
 void div(ZZX& q, const ZZX& a, const ZZ& b)
 {
-   if (b == 0) Error("div: division by zero");
+   if (b == 0) ArithmeticError("div: division by zero");
 
-   if (!divide(q, a, b)) Error("DivRem: quotient undefined over ZZ");
+   if (!divide(q, a, b)) ArithmeticError("DivRem: quotient undefined over ZZ");
 }
 
 static
 void ConstDivRem(ZZX& q, ZZX& r, const ZZX& a, const ZZ& b)
 {
-   if (b == 0) Error("DivRem: division by zero");
+   if (b == 0) ArithmeticError("DivRem: division by zero");
 
-   if (!divide(q, a, b)) Error("DivRem: quotient undefined over ZZ");
+   if (!divide(q, a, b)) ArithmeticError("DivRem: quotient undefined over ZZ");
 
    r = 0;
 }
@@ -1095,7 +1095,7 @@ void ConstDivRem(ZZX& q, ZZX& r, const ZZX& a, const ZZ& b)
 static
 void ConstRem(ZZX& r, const ZZX& a, const ZZ& b)
 {
-   if (b == 0) Error("rem: division by zero");
+   if (b == 0) ArithmeticError("rem: division by zero");
 
    r = 0;
 }
@@ -1107,7 +1107,7 @@ void DivRem(ZZX& q, ZZX& r, const ZZX& a, const ZZX& b)
    long da = deg(a);
    long db = deg(b);
 
-   if (db < 0) Error("DivRem: division by zero");
+   if (db < 0) ArithmeticError("DivRem: division by zero");
 
    if (da < db) {
       r = a;
@@ -1133,8 +1133,8 @@ void DivRem(ZZX& q, ZZX& r, const ZZX& a, const ZZX& b)
       ZZ m;
       PseudoDivRem(q1, r1, a, b);
       power(m, LeadCoeff(b), da-db+1);
-      if (!divide(q, q1, m)) Error("DivRem: quotient not defined over ZZ");
-      if (!divide(r, r1, m)) Error("DivRem: remainder not defined over ZZ");
+      if (!divide(q, q1, m)) ArithmeticError("DivRem: quotient not defined over ZZ");
+      if (!divide(r, r1, m)) ArithmeticError("DivRem: remainder not defined over ZZ");
    }
 }
 
@@ -1143,7 +1143,7 @@ void div(ZZX& q, const ZZX& a, const ZZX& b)
    long da = deg(a);
    long db = deg(b);
 
-   if (db < 0) Error("div: division by zero");
+   if (db < 0) ArithmeticError("div: division by zero");
 
    if (da < db) {
       q = 0;
@@ -1170,7 +1170,7 @@ void div(ZZX& q, const ZZX& a, const ZZX& b)
       ZZ m;
       PseudoDiv(q1, a, b);
       power(m, LeadCoeff(b), da-db+1);
-      if (!divide(q, q1, m)) Error("div: quotient not defined over ZZ");
+      if (!divide(q, q1, m)) ArithmeticError("div: quotient not defined over ZZ");
    }
 }
 
@@ -1179,7 +1179,7 @@ void rem(ZZX& r, const ZZX& a, const ZZX& b)
    long da = deg(a);
    long db = deg(b);
 
-   if (db < 0) Error("rem: division by zero");
+   if (db < 0) ArithmeticError("rem: division by zero");
 
    if (da < db) {
       r = a;
@@ -1203,7 +1203,7 @@ void rem(ZZX& r, const ZZX& a, const ZZX& b)
       ZZ m;
       PseudoRem(r1, a, b);
       power(m, LeadCoeff(b), da-db+1);
-      if (!divide(r, r1, m)) Error("rem: remainder not defined over ZZ");
+      if (!divide(r, r1, m)) ArithmeticError("rem: remainder not defined over ZZ");
    }
 }
 
@@ -1709,7 +1709,7 @@ void trunc(ZZX& x, const ZZX& a, long m)
 // x = a % X^m, output may alias input
 
 {
-   if (m < 0) Error("trunc: bad args");
+   if (m < 0) LogicError("trunc: bad args");
 
    if (&x == &a) {
       if (x.rep.length() > m) {
@@ -1753,7 +1753,7 @@ void LeftShift(ZZX& x, const ZZX& a, long n)
    }
 
    if (NTL_OVERFLOW(n, 1, 0))
-      Error("overflow in LeftShift");
+      ResourceError("overflow in LeftShift");
 
    long m = a.rep.length();
 
@@ -1776,7 +1776,7 @@ void RightShift(ZZX& x, const ZZX& a, long n)
    }
 
    if (n < 0) {
-      if (n < -NTL_MAX_LONG) Error("overflow in RightShift");
+      if (n < -NTL_MAX_LONG) ResourceError("overflow in RightShift");
       LeftShift(x, a, -n);
       return;
    }
@@ -1805,7 +1805,7 @@ void RightShift(ZZX& x, const ZZX& a, long n)
 void TraceVec(vec_ZZ& S, const ZZX& ff)
 {
    if (!IsOne(LeadCoeff(ff)))
-      Error("TraceVec: bad args");
+      LogicError("TraceVec: bad args");
 
    ZZX f;
    f = ff;
@@ -1963,7 +1963,7 @@ void MinPolyMod(ZZX& gg, const ZZX& a, const ZZX& f)
 
 {
    if (!IsOne(LeadCoeff(f)) || deg(f) < 1 || deg(a) >= deg(f))
-      Error("MinPolyMod: bad args");
+      LogicError("MinPolyMod: bad args");
 
    if (IsZero(a)) {
       SetX(gg);
@@ -2150,7 +2150,7 @@ void XGCD(ZZ& rr, ZZX& ss, ZZX& tt, const ZZX& a, const ZZX& b,
 void NormMod(ZZ& x, const ZZX& a, const ZZX& f, long deterministic)
 {
    if (!IsOne(LeadCoeff(f)) || deg(a) >= deg(f) || deg(f) <= 0)
-      Error("norm: bad args");
+      LogicError("norm: bad args");
 
    if (IsZero(a)) {
       clear(x);
@@ -2163,7 +2163,7 @@ void NormMod(ZZ& x, const ZZX& a, const ZZX& f, long deterministic)
 void TraceMod(ZZ& res, const ZZX& a, const ZZX& f)
 {
    if (!IsOne(LeadCoeff(f)) || deg(a) >= deg(f) || deg(f) <= 0)
-      Error("trace: bad args");
+      LogicError("trace: bad args");
 
    vec_ZZ S;
 
@@ -2188,7 +2188,7 @@ void discriminant(ZZ& d, const ZZX& a, long deterministic)
    diff(a1, a);
    resultant(res, a, a1, deterministic);
    if (!divide(res, res, LeadCoeff(a)))
-      Error("discriminant: inexact division");
+      LogicError("discriminant: inexact division");
 
    m = m & 3;
    if (m >= 2)
@@ -2202,7 +2202,7 @@ void MulMod(ZZX& x, const ZZX& a, const ZZX& b, const ZZX& f)
 {
    if (deg(a) >= deg(f) || deg(b) >= deg(f) || deg(f) == 0 || 
        !IsOne(LeadCoeff(f)))
-      Error("MulMod: bad args");
+      LogicError("MulMod: bad args");
 
    ZZX t;
    mul(t, a, b);
@@ -2212,7 +2212,7 @@ void MulMod(ZZX& x, const ZZX& a, const ZZX& b, const ZZX& f)
 void SqrMod(ZZX& x, const ZZX& a, const ZZX& f)
 {
    if (deg(a) >= deg(f) || deg(f) == 0 || !IsOne(LeadCoeff(f)))
-      Error("MulMod: bad args");
+      LogicError("MulMod: bad args");
 
    ZZX t;
    sqr(t, a);
@@ -2235,7 +2235,7 @@ void MulByXModAux(ZZX& h, const ZZX& a, const ZZX& f)
    m = deg(a);
 
    if (m >= n || n == 0 || !IsOne(LeadCoeff(f)))
-      Error("MulByXMod: bad args");
+      LogicError("MulByXMod: bad args");
 
    if (m < 0) {
       clear(h);
@@ -2313,7 +2313,7 @@ long CharPolyBound(const ZZX& a, const ZZX& f)
 
 {
    if (IsZero(a) || IsZero(f))
-      Error("CharPolyBound: bad args");
+      LogicError("CharPolyBound: bad args");
 
    ZZ t1, t2, t;
    EuclLength1(t1, a);
@@ -2368,7 +2368,7 @@ void reverse(ZZX& x, const ZZX& a, long hi)
 {
    if (hi < 0) { clear(x); return; }
    if (NTL_OVERFLOW(hi, 1, 0))
-      Error("overflow in reverse");
+      ResourceError("overflow in reverse");
 
    if (&x == &a) {
       ZZX tmp;
@@ -2403,7 +2403,7 @@ void NewtonInvTrunc(ZZX& c, const ZZX& a, long e)
    else if (ConstTerm(a) == -1)
       x = -1;
    else
-      Error("InvTrunc: non-invertible constant term");
+      ArithmeticError("InvTrunc: non-invertible constant term");
 
    if (e == 1) {
       conv(c, x);
@@ -2457,7 +2457,7 @@ void NewtonInvTrunc(ZZX& c, const ZZX& a, long e)
 
 void InvTrunc(ZZX& c, const ZZX& a, long e)
 {
-   if (e < 0) Error("InvTrunc: bad args");
+   if (e < 0) LogicError("InvTrunc: bad args");
 
    if (e == 0) {
       clear(c);
@@ -2465,7 +2465,7 @@ void InvTrunc(ZZX& c, const ZZX& a, long e)
    }
 
    if (NTL_OVERFLOW(e, 1, 0))
-      Error("overflow in InvTrunc");
+      ResourceError("overflow in InvTrunc");
 
    NewtonInvTrunc(c, a, e);
 }

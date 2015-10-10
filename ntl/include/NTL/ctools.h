@@ -76,6 +76,14 @@
 /********************************************************/
 
 
+// The usual token pasting stuff...
+
+#define NTL_PASTE_TOKENS2(a,b) a ## b
+#define NTL_PASTE_TOKENS(a,b) NTL_PASTE_TOKENS2(a,b)
+
+#define NTL_STRINGIFY(x) NTL_STRINGIFY_AUX(x)
+#define NTL_STRINGIFY_AUX(x) #x
+
 
 
 
@@ -141,10 +149,25 @@
 
 
 
+#ifdef NTL_TEST_EXCEPTIONS
+
+extern unsigned long exception_counter;
+
+#define NTL_BASIC_MALLOC(n, a, b) \
+   (NTL_OVERFLOW1(n, a, b) ? ((void *) 0) : \
+    ((void *) malloc(((long)(n))*((long)(a)) + ((long)(b)))))
+
+#define NTL_MALLOC(n, a, b) \
+   (--exception_counter == 0 ? (void *) 0 : NTL_BASIC_MALLOC(n, a, b))
+
+#else
 
 #define NTL_MALLOC(n, a, b) \
    (NTL_OVERFLOW1(n, a, b) ? ((void *) 0) : \
     ((void *) malloc(((long)(n))*((long)(a)) + ((long)(b)))))
+
+
+#endif
 
 /*
  * NTL_MALLOC(n, a, b) returns 0 if a*n + b >= NTL_OVFBND1, and otherwise
@@ -154,13 +177,24 @@
  */
 
 
+#ifdef NTL_TEST_EXCEPTIONS
+
+#define NTL_BASIC_SNS_MALLOC(n, a, b) \
+   (NTL_OVERFLOW1(n, a, b) ? ((void *) 0) : \
+    ((void *) NTL_SNS malloc(((long)(n))*((long)(a)) + ((long)(b)))))
 
 
+#define NTL_SNS_MALLOC(n, a, b) \
+   (--exception_counter == 0 ? (void *) 0 : NTL_BASIC_SNS_MALLOC(n, a, b))
 
+
+#else
 
 #define NTL_SNS_MALLOC(n, a, b) \
    (NTL_OVERFLOW1(n, a, b) ? ((void *) 0) : \
     ((void *) NTL_SNS malloc(((long)(n))*((long)(a)) + ((long)(b)))))
+
+#endif
 
 /*
  * NTL_SNS_MALLOC is the same as NTL_MALLOC, except that the call
@@ -252,10 +286,6 @@
 
 #endif
 
-/* 
- * placeholder for now...it will eventually be defined as thread_local
- */
-
 
 #define NTL_RELEASE_THRESH (128)
 
@@ -289,7 +319,38 @@ void _ntl_abort_cxx_callback();
    EDIT: since changing over to all-C++, this is now moot.
 */
 
+
+#define NTL_DEFINE_SWAP(T)\
+inline void _ntl_swap(T& a, T& b)\
+{\
+   T t = a; a = b; b = t;\
+}
+
+NTL_DEFINE_SWAP(long)
+NTL_DEFINE_SWAP(int)
+NTL_DEFINE_SWAP(short)
+NTL_DEFINE_SWAP(char)
+
+NTL_DEFINE_SWAP(unsigned long)
+NTL_DEFINE_SWAP(unsigned int)
+NTL_DEFINE_SWAP(unsigned short)
+NTL_DEFINE_SWAP(unsigned char)
+
+NTL_DEFINE_SWAP(double)
+NTL_DEFINE_SWAP(float)
+
    
+template<class T>
+void _ntl_swap(T*& a, T*& b)
+{
+   T* t = a; a = b; b = t;
+}
+
+/* These are convenience routines.  I don't want it to overload
+   the std library's swap function, nor do I want to rely on the latter,
+   as the C++ standard is kind of broken on the issue of where
+   swap is defined. And I also only want it defined for built-in types.
+ */
    
 
 #endif

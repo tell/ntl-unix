@@ -13,10 +13,10 @@ SmartPtr<zz_pInfoT> Build_zz_pInfo(FFTPrimeInfo *info)
 
 zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
 {
-   if (maxroot < 0) Error("zz_pContext: maxroot may not be negative");
+   if (maxroot < 0) LogicError("zz_pContext: maxroot may not be negative");
 
-   if (NewP <= 1) Error("zz_pContext: p must be > 1");
-   if (NumBits(NewP) > NTL_SP_NBITS) Error("zz_pContext: modulus too big");
+   if (NewP <= 1) LogicError("zz_pContext: p must be > 1");
+   if (NumBits(NewP) > NTL_SP_NBITS) ResourceError("zz_pContext: modulus too big");
 
    ZZ P, B, M, M1, MinusM;
    long n, i;
@@ -27,7 +27,6 @@ zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
    pinv = 1/double(p);
 
    p_info = 0;
-   p_own = 0;
 
    conv(P, p);
 
@@ -43,7 +42,7 @@ zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
       mul(M, M, q);
    }
 
-   if (n > 4) Error("zz_pInit: too many primes");
+   if (n > 4) LogicError("zz_pInit: too many primes");
 
    NumPrimes = n;
    PrimeCnt = n;
@@ -55,14 +54,9 @@ zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
    negate(MinusM, M);
    MinusMModP = rem(MinusM, p);
 
-   if (!(CoeffModP = (long *) NTL_MALLOC(n, sizeof(long), 0)))
-      Error("out of space");
-
-   if (!(x = (double *) NTL_MALLOC(n, sizeof(double), 0)))
-      Error("out of space");
-
-   if (!(u = (long *) NTL_MALLOC(n, sizeof(long), 0)))
-      Error("out of space");
+   CoeffModP.SetLength(n);
+   x.SetLength(n);
+   u.SetLength(n);
 
    for (i = 0; i < n; i++) {
       q = GetFFTPrime(i);
@@ -83,7 +77,6 @@ zz_pInfoT::zz_pInfoT(INIT_FFT_TYPE, FFTPrimeInfo *info)
    pinv = info->qinv;
 
    p_info = info;
-   p_own = 0;
 
    NumPrimes = 1;
    PrimeCnt = 0;
@@ -96,21 +89,19 @@ zz_pInfoT::zz_pInfoT(INIT_FFT_TYPE, FFTPrimeInfo *info)
 zz_pInfoT::zz_pInfoT(INIT_USER_FFT_TYPE, long q)
 {
    long w;
-   if (!IsFFTPrime(q, w)) Error("invalid user supplied prime");
+   if (!IsFFTPrime(q, w)) LogicError("invalid user supplied prime");
 
    p = q;
    pinv = 1/((double) q);
 
-   p_info = NTL_NEW_OP FFTPrimeInfo();
-   if (!p_info) Error("out of memory");
+   p_info_owner.make();
+   p_info = p_info_owner.get();
 
-   long bigtab = false;
+   bool bigtab = false;
 #ifdef NTL_FFT_BIGTAB
    bigtab = true;
 #endif
    InitFFTPrimeInfo(*p_info, q, w, bigtab); 
-
-   p_own = 1;
 
    NumPrimes = 1;
    PrimeCnt = 0;
@@ -118,19 +109,6 @@ zz_pInfoT::zz_pInfoT(INIT_USER_FFT_TYPE, long q)
    MaxRoot = CalcMaxRoot(p);
 }
 
-
-
-zz_pInfoT::~zz_pInfoT()
-{
-   if (!p_info) {
-      free(CoeffModP);
-      free(x);
-      free(u);
-   }
-   else {
-      if (p_own) delete p_info;
-   }
-}
 
 
 NTL_THREAD_LOCAL SmartPtr<zz_pInfoT> zz_pInfo = 0;
@@ -163,7 +141,7 @@ zz_pContext::zz_pContext(long p, long maxroot) :
 zz_pContext::zz_pContext(INIT_FFT_TYPE, long index)
 {
    if (index < 0)
-      Error("bad FFT prime index");
+      LogicError("bad FFT prime index");
 
    UseFFTPrime(index);
 

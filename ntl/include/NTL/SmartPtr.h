@@ -4,7 +4,6 @@
 #define NTL_SmartPtr__H
 
 #include <NTL/tools.h>
-#include <NTL/new.h>
 #include <NTL/thread.h>
 
 
@@ -87,9 +86,15 @@ MakeRaw:
 
 One can also write T *p = MakeRaw<T>(x1, ..., xn) to create a 
 raw pointer.  This is the same as writing T *p = new T(x1, ..., xn),
-except that if the construction fails, NTL's Error routine will be called
+except that if the construction fails, NTL's error routine will be called
 (as opposed to an exception being thrown).  The same restrictions and
 limitations that apply to MakeSmart appy to MakeRaw.
+
+MakeRawArray:
+
+Another utility routine: one can write T *p = MakeRawArray<T>(n)
+to make a plain array of n T's.  NTL's error routine will be
+called if the allocation fails.
 
 Dynamic casting:
 
@@ -187,7 +192,6 @@ private:
    }
 
    class Dummy { };
-
    typedef void (SmartPtr::*fake_null_type)(Dummy) const;
    void fake_null_function(Dummy) const {}
 
@@ -197,7 +201,10 @@ public:
    {
       if (dp) {
          cp = NTL_NEW_OP SmartPtrControlDerived<T>(dp);
-         if (!cp) NTL_NNS Error("out of memory in SmartPtr");
+         if (!cp) {
+            delete dp; // if we throw an exception
+            MemoryError();
+         }
          AddRef();
       }
    }
@@ -221,10 +228,8 @@ public:
 
    SmartPtr& operator=(const SmartPtr& other)
    {
-      other.AddRef();
-      RemoveRef();
-      dp = other.dp;
-      cp = other.cp;
+      SmartPtr tmp(other);
+      tmp.swap(*this);
       return *this;
    }
 
@@ -240,10 +245,8 @@ public:
    template<class Y>
    SmartPtr& operator=(const SmartPtr<Y>& other)
    {
-      other.AddRef();
-      RemoveRef();
-      dp = other.dp;
-      cp = other.cp;
+      SmartPtr tmp(other);
+      tmp.swap(*this);
       return *this;
    }
 
@@ -255,8 +258,8 @@ public:
 
    void swap(SmartPtr& other)
    {
-      T *t_dp = dp; dp = other.dp; other.dp = t_dp; 
-      SmartPtrControl *t_cp = cp; cp = other.cp; other.cp = t_cp; 
+      _ntl_swap(dp, other.dp);
+      _ntl_swap(cp, other.cp);
    }
 
    SmartPtr(fake_null_type) : dp(0), cp(0) { }
@@ -372,7 +375,7 @@ public:
    CloneablePtrControl *clone() const 
    {
       CloneablePtrControl *q = NTL_NEW_OP CloneablePtrControlDerived<T>(d);
-      if (!q) NTL_NNS Error("out of mem in clone");
+      if (!q) MemoryError();
       return q;
    }
    void *get() { return &d; }
@@ -426,10 +429,8 @@ public:
 
    CloneablePtr& operator=(const CloneablePtr& other)
    {
-      other.AddRef();
-      RemoveRef();
-      dp = other.dp;
-      cp = other.cp;
+      CloneablePtr tmp(other);
+      tmp.swap(*this);
       return *this;
    }
 
@@ -445,10 +446,8 @@ public:
    template<class Y>
    CloneablePtr& operator=(const CloneablePtr<Y>& other)
    {
-      other.AddRef();
-      RemoveRef();
-      dp = other.dp;
-      cp = other.cp;
+      CloneablePtr tmp(other);
+      tmp.swap(*this);
       return *this;
    }
 
@@ -460,8 +459,8 @@ public:
 
    void swap(CloneablePtr& other)
    {
-      T *t_dp = dp; dp = other.dp; other.dp = t_dp; 
-      CloneablePtrControl *t_cp = cp; cp = other.cp; other.cp = t_cp; 
+      _ntl_swap(dp, other.dp);
+      _ntl_swap(cp, other.cp);
    }
 
    CloneablePtr(fake_null_type) : dp(0), cp(0) { }
@@ -643,7 +642,7 @@ template<class T NTL_MORE_ARGTYPES(n)>\
 SmartPtr<T> MakeSmart( NTL_VARARGS(n) ) { \
    MakeSmartAux##n<T NTL_MORE_PASSTYPES(n) > *cp = \
    NTL_NEW_OP MakeSmartAux##n<T NTL_MORE_PASSTYPES(n)>( NTL_PASSARGS(n) ); \
-   if (!cp) NTL_NNS Error("out of memory in MakeSmart");\
+   if (!cp) MemoryError();\
    return SmartPtr<T>(SmartPtrLoopHole(), &cp->d, cp);\
 };\
 
@@ -664,7 +663,7 @@ d( NTL_UNWRAPARGS(n) ) { }\
 CloneablePtrControl *clone() const \
 {\
    CloneablePtrControl *q = NTL_NEW_OP CloneablePtrControlDerived<T>(d);\
-   if (!q) NTL_NNS Error("out of mem in clone");\
+   if (!q) MemoryError();\
    return q;\
 }\
 void *get() { return &d; }\
@@ -674,7 +673,7 @@ template<class T NTL_MORE_ARGTYPES(n)>\
 CloneablePtr<T> MakeCloneable( NTL_VARARGS(n) ) { \
    MakeCloneableAux##n<T NTL_MORE_PASSTYPES(n) > *cp = \
    NTL_NEW_OP MakeCloneableAux##n<T NTL_MORE_PASSTYPES(n)>( NTL_PASSARGS(n) ); \
-   if (!cp) NTL_NNS Error("out of memory in MakeCloneable");\
+   if (!cp) MemoryError();\
    return CloneablePtr<T>(CloneablePtrLoopHole(), &cp->d, cp);\
 };\
 
@@ -685,14 +684,29 @@ NTL_FOREACH_ARG(NTL_DEFINE_MAKECLONEABLE)
 // ********************************
 
 
+#ifdef NTL_TEST_EXCEPTIONS
+
+#define NTL_DEFINE_MAKERAW(n)\
+template<class T  NTL_MORE_ARGTYPES(n)>\
+T* MakeRaw(NTL_VARARGS(n)) { \
+   T *p = 0; \
+   if (--exception_counter != 0) p =  NTL_NEW_OP T(NTL_UNWRAPARGS(n)); \
+   if (!p) MemoryError();\
+   return p;\
+};\
+
+
+#else
 
 #define NTL_DEFINE_MAKERAW(n)\
 template<class T  NTL_MORE_ARGTYPES(n)>\
 T* MakeRaw(NTL_VARARGS(n)) { \
    T *p = NTL_NEW_OP T(NTL_UNWRAPARGS(n)); \
-   if (!p) NTL_NNS Error("out of memory in MakeRaw");\
+   if (!p) MemoryError();\
    return p;\
 };\
+
+#endif
 
 
 NTL_FOREACH_ARG(NTL_DEFINE_MAKERAW)
@@ -701,6 +715,32 @@ NTL_FOREACH_ARG(NTL_DEFINE_MAKERAW)
 // ********************************
 
 
+#ifdef NTL_TEST_EXCEPTIONS
+
+template<class T>
+T *MakeRawArray(long n)
+{
+   if (n < 0) LogicError("negative length in MakeRawArray");
+   if (n == 0) return 0;
+   T *p = 0; 
+   if (--exception_counter != 0) p = new T[n];
+   if (!p) MemoryError();
+   return p;
+}
+
+#else
+
+template<class T>
+T *MakeRawArray(long n)
+{
+   if (n < 0) LogicError("negative length in MakeRawArray");
+   if (n == 0) return 0;
+   T *p = new T[n];
+   if (!p) MemoryError();
+   return p;
+}
+
+#endif
 
 
 
@@ -714,7 +754,7 @@ Constructors:
    UniquePtr<T> p1;     // initialize with null
 
    T* rp;
-   UniquePtr<T> p4(rp); // construct using raw pointer (explicit)
+   UniquePtr<T> p1(rp); // construct using raw pointer (explicit)
 
    p1 = 0;              // destroy's p1's referent and assigns null
 
@@ -776,12 +816,11 @@ public:
 
    void reset(T* p = 0)
    {
-      if (dp == p) return;
-      delete dp;
-      dp = p;
+      UniquePtr tmp(p);
+      tmp.swap(*this);
    }
 
-   UniquePtr& operator=(fake_null_type) { reset(); }
+   UniquePtr& operator=(fake_null_type) { reset(); return *this; }
 
    void make()
    {
@@ -807,7 +846,7 @@ public:
 
    void swap(UniquePtr& other)
    {
-      T *t_dp = dp; dp = other.dp; other.dp = t_dp; 
+      _ntl_swap(dp, other.dp);
    }
 
    UniquePtr(fake_null_type) : dp(0) { }
@@ -863,6 +902,107 @@ bool operator!=(const UniquePtr<X>& a, const UniquePtr<Y>& b)
 
 /**********************************************************************
 
+OptionalVal<T> -- unique pointer to object with copying enabled.
+
+Constructors:
+   OptionalVal<T> p1;     // initialize with null
+
+   T* rp;
+   OptionalVal<T> p1(rp); // construct using raw pointer (explicit)
+
+   OptionalVal<T> p2(p1); // construct a copy of p1's referrent
+
+    
+
+   p1.make(...);        // destroy's p1's referent and assigns
+                        // a fresh objected constructed via T(...),
+                        // using psuedo variadic templates
+                
+   p1.reset(rp);        // destroy's p1's referent and assign rp
+
+   if (p1.exists()) ... // test for null
+
+   p1.val()             // dereference
+
+   p1.move(p2);         // if p1 != p2 then:
+                        //    makes p1 point to p2's referent,
+                        //    setting p2 to NULL and destroying
+                        //    p1's referent
+
+   p1 = p2;             // if p1 != p2 then
+                        //   if p2 == NULL then
+                        //      reset p1
+                        //   else 
+                        //      p1.make(p2.val())
+
+   p1.swap(p2);         // fast swap
+   swap(p1, p2);
+
+   
+**********************************************************************/
+
+
+template<class T>
+class OptionalVal {
+private:
+   UniquePtr<T> dp;
+
+public:   
+   explicit OptionalVal(T *p) : dp(p) { }
+   OptionalVal() { }
+
+   OptionalVal(const OptionalVal& other) 
+   {
+      if (other.exists()) 
+         make(other.val());
+   }
+
+   OptionalVal& operator=(const OptionalVal& other)
+   {
+      if (this == &other) return *this;
+      OptionalVal tmp(other);
+      tmp.swap(*this);
+      return *this;
+   }
+
+   ~OptionalVal() {  }
+
+
+   void reset(T* p = 0) { dp.reset(p); }
+
+   void make() { dp.make(); }
+
+#define NTL_DEFINE_OPTIONAL_VAL_MAKE(n) \
+   template< NTL_ARGTYPES(n) >\
+   void make( NTL_VARARGS(n) )\
+   {\
+      dp.make( NTL_PASSARGS(n) );\
+   }\
+
+   NTL_FOREACH_ARG1(NTL_DEFINE_OPTIONAL_VAL_MAKE)
+
+   T& val() const { return *dp; }
+
+   bool exists() const { return dp != 0; } 
+
+   void move(OptionalVal& other) { dp.move(other.dp); }
+
+   void swap(OptionalVal& other) { dp.swap(other.dp); }
+
+};
+
+
+// free swap function
+template<class T>
+void swap(OptionalVal<T>& p, OptionalVal<T>& q) { p.swap(q); }
+
+
+
+
+
+
+/**********************************************************************
+
 UniqueArray<T> -- unique pointer to array of objects with copying disabled.
 Useful for pointers inside classes so that we can
 automatically destruct them.  
@@ -871,11 +1011,11 @@ Constructors:
    UniqueArray<T> p1;     // initialize with null
 
    T* rp;
-   UniqueArray<T> p4(rp); // construct using raw pointer (explicit)
+   UniqueArray<T> p1(rp); // construct using raw pointer (explicit)
 
    p1 = 0;              // destroy's p1's referent and assigns null
 
-   p1.make(n);          // destroy's p1's referent and assigns
+   p1.SetLength(n);     // destroy's p1's referent and assigns
                         // a fresh objected constructed via new T[n]
                 
    p1.reset(rp);        // destroy's p1's referent and assign rp
@@ -928,21 +1068,18 @@ public:
 
    ~UniqueArray() { delete[] dp; }
 
+
    void reset(T* p = 0)
    {
-      if (dp == p) return;
-      delete[] dp;
-      dp = p;
+      UniqueArray tmp(p);
+      tmp.swap(*this);
    }
 
-   UniqueArray& operator=(fake_null_type) { reset(); }
+   UniqueArray& operator=(fake_null_type) { reset(); return *this; }
 
-   void make(long n)
+   void SetLength(long n)
    {
-      if (n <= 0) NTL_NNS Error("argument to UniqueArray::make not positive");
-      T *p = NTL_NEW_OP T[n];
-      if (!p) NTL_NNS Error("out of mem in UniqueArray::make");
-      reset(p);
+      reset( MakeRawArray<T>(n) );
    }
 
    T& operator[](long i) const { return dp[i]; }
@@ -954,7 +1091,7 @@ public:
 
    void swap(UniqueArray& other)
    {
-      T *t_dp = dp; dp = other.dp; other.dp = t_dp; 
+      _ntl_swap(dp, other.dp);
    }
 
    UniqueArray(fake_null_type) : dp(0) { }
@@ -965,6 +1102,7 @@ public:
    }
 
 };
+
 
 
 // free swap function
@@ -1005,6 +1143,206 @@ bool operator!=(const UniqueArray<X>& a, const UniqueArray<Y>& b)
 {
    return a.cannot_compare_these_types();
 }
+
+
+
+
+
+/**********************************************************************
+
+Unique2DArray<T> -- unique pointer to array of arrays.
+
+This is very similar to UniqueArray< UniqueArray<T> >, except that 
+we can retrofit old code that excepts objects of type T**.
+
+Constructors:
+   Unique2DArray<T> p1;     // initialize with null
+
+   p1 = 0;              // destroy's p1's referent and assigns null
+   p1.reset();
+
+   p1.SetLength(n);     // destroy's p1's referent and assigns
+                        // a fresh array of null pointers
+
+   p1.SetDims(n, m)     // creates an n x m array
+                
+   if (!p1) ...         // test for null
+   if (p1 == 0) ...
+
+   if (p1) ...          // test for nonnull
+   if (p1 != 0) ...
+
+   if (p1 == p2) ...    // test for equality
+   if (p1 != p2) ...   
+
+   p1[i]                // array indexing
+
+   T **rp;
+   rp = p1.get();       // fetch raw pointer
+   rp = p1.release();   // fetch raw pointer, and set to NULL
+   p1.move(p2);         // if p1 != p2 then:
+                        //    makes p1 point to p2's referent,
+                        //    setting p2 to NULL and destroying
+                        //    p1's referent
+
+   p1.swap(p2);         // fast swap
+   swap(p1, p2);
+
+   
+**********************************************************************/
+
+
+template<class T>
+class Unique2DArray {
+public:
+   typedef T *T_ptr;
+
+private:
+   UniqueArray<T_ptr> dp;
+   long len;
+
+   class Dummy { };
+
+   typedef void (Unique2DArray::*fake_null_type)(Dummy) const;
+   void fake_null_function(Dummy) const {}
+
+   bool cannot_compare_these_types() const { return false; }
+
+   Unique2DArray(const Unique2DArray&); // disabled
+   void operator=(const Unique2DArray&); // disabled
+
+
+public:   
+
+   Unique2DArray() : len(0) { }
+
+   ~Unique2DArray()
+   {
+      if (dp) {
+         long i;
+         for (i = 0; i < len; i++) delete [] dp[i];
+      }
+   }
+
+   void reset()
+   {
+      Unique2DArray tmp;
+      tmp.swap(*this);
+   }
+
+   Unique2DArray& operator=(fake_null_type) { reset(); return *this; }
+
+   void SetLength(long n)
+   {
+      UniqueArray<T_ptr> tmp;
+      tmp.SetLength(n);
+
+      long i;
+      for (i = 0; i < n; i++) tmp[i] = 0;
+
+      reset();
+      dp.move(tmp);
+      len = n;
+   }
+
+   // EXCEPTIONS: strong ES
+   void SetDims(long n, long m) 
+   {
+      Unique2DArray tmp;
+      tmp.SetLength(n);
+      
+      long i;
+      for (i = 0; i < n; i++)
+         tmp[i] = MakeRawArray<T>(m);
+
+      this->move(tmp); 
+   }
+
+   // EXCEPTIONS: strong ES
+   // This is a special-purpose routine to help
+   // with some legacy code...only rows 1..n-1 are allocated
+   void SetDimsFrom1(long n, long m) 
+   {
+      Unique2DArray tmp;
+      tmp.SetLength(n);
+      
+      long i;
+      for (i = 1; i < n; i++)
+         tmp[i] = MakeRawArray<T>(m);
+
+      this->move(tmp); 
+   }
+
+   T_ptr& operator[](long i) const { return dp[i]; }
+
+   T_ptr* get() const { return dp.get(); }
+
+   T_ptr* release() { len = 0; return dp.release(); }
+
+
+   void move(Unique2DArray& other) 
+   { 
+      Unique2DArray tmp;
+      tmp.swap(other);
+      tmp.swap(*this);
+   }
+
+   void swap(Unique2DArray& other)
+   {
+      dp.swap(other.dp);
+      _ntl_swap(len, other.len);
+   }
+
+   Unique2DArray(fake_null_type) : dp(0), len(0) { }
+
+   operator fake_null_type() const 
+   {
+      return dp ?  &Unique2DArray::fake_null_function : 0;
+   }
+
+};
+
+
+// free swap function
+template<class T>
+void swap(Unique2DArray<T>& p, Unique2DArray<T>& q) { p.swap(q); }
+
+
+
+// Equality testing
+
+template<class X>
+bool operator==(const Unique2DArray<X>& a, const Unique2DArray<X>& b)
+{
+   return a.get() == b.get();
+}
+
+template<class X>
+bool operator!=(const Unique2DArray<X>& a, const Unique2DArray<X>& b)
+{
+   return a.get() != b.get();
+}
+
+
+// the following definitions of == and != prevent comparisons
+// on Unique2DArray's to different types...such comparisons
+// don't make sense...defining these here ensures the compiler
+// emits an error message...and a pretty readable one
+
+
+template<class X, class Y>
+bool operator==(const Unique2DArray<X>& a, const Unique2DArray<Y>& b)
+{
+   return a.cannot_compare_these_types();
+}
+
+template<class X, class Y>
+bool operator!=(const Unique2DArray<X>& a, const Unique2DArray<Y>& b)
+{
+   return a.cannot_compare_these_types();
+}
+
+
 
 
 

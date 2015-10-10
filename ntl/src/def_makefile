@@ -120,8 +120,8 @@ WIZARD=on
 # object files
 
 O01=FFT.o FacVec.o GF2.o GF2E.o GF2EX.o GF2EXFactoring.o GF2X.o GF2X1.o
-O02=$(O01) GF2XFactoring.o GF2XVec.o GetTime.o HNF.o ctools.o LLL.o LLL_FP.o
-O03=$(O02) LLL_QP.o LLL_RR.o LLL_XD.o RR.o WordVector.o ZZ.o ZZVec.o
+O02=$(O01) GF2XFactoring.o GF2XVec.o GetTime.o GetPID.o HNF.o ctools.o LLL.o 
+O03=$(O02) LLL_FP.o LLL_QP.o LLL_RR.o LLL_XD.o RR.o WordVector.o ZZ.o ZZVec.o
 O04=$(O03) ZZX.o ZZX1.o ZZXCharPoly.o ZZXFactoring.o ZZ_p.o ZZ_pE.o ZZ_pEX.o
 O05=$(O04) ZZ_pEXFactoring.o ZZ_pX.o ZZ_pX1.o ZZ_pXCharPoly.o ZZ_pXFactoring.o
 O06=$(O05) fileio.o lip.o lzz_p.o lzz_pE.o lzz_pEX.o lzz_pEXFactoring.o
@@ -214,12 +214,12 @@ TD = $(TD4)
 TS1=QuickTest.c BerlekampTest.c CanZassTest.c ZZXFacTest.c MoreFacTest.c LLLTest.c
 TS2=$(TS1) subset.c MatrixTest.c CharPolyTest.c RRTest.c QuadTest.c
 TS3=$(TS2) GF2XTest.c GF2EXTest.c BitMatTest.c ZZ_pEXTest.c lzz_pEXTest.c Timing.c
-TS4=$(TS3) ThreadTest.c
+TS4=$(TS3) ThreadTest.c ExceptionTest.c
 TS = $(TS4)
 
 # scripts
 
-SCRIPTS1=MakeGetTime TestScript dosify unixify RemoveProg 
+SCRIPTS1=MakeGetTime MakeGetPID TestScript dosify unixify RemoveProg 
 SCRIPTS2=$(SCRIPTS1) configure DoConfig mfile cfile ppscript
 
 SCRIPTS=$(SCRIPTS2)
@@ -230,12 +230,14 @@ MD=MakeDesc.c MakeDescAux.c newnames.c gen_gmp_aux.c
 
 GT=GetTime1.c GetTime2.c GetTime3.c GetTime4.c GetTime5.c TestGetTime.c
 
+GP=GetPID1.c GetPID2.c TestGetPID.c
+
 
 # documentation
 
 
 D01=copying.txt GF2.txt GF2E.txt GF2EX.txt GF2EXFactoring.txt GF2X.txt
-D02=$(D01) GF2XFactoring.txt GF2XVec.txt HNF.txt LLL.txt RR.txt
+D02=$(D01) GF2XFactoring.txt GF2XVec.txt HNF.txt Lazy.txt LazyTable.txt LLL.txt RR.txt SmartPtr.txt
 D03=$(D02) ZZ.txt ZZVec.txt ZZX.txt ZZXFactoring.txt ZZ_p.txt ZZ_pE.txt
 D04=$(D03) ZZ_pEX.txt ZZ_pEXFactoring.txt ZZ_pX.txt ZZ_pXFactoring.txt
 D05=$(D04) conversions.txt flags.txt lzz_p.txt lzz_pE.txt lzz_pEX.txt
@@ -254,7 +256,7 @@ D17=$(D16) tour-ex5.html tour-ex6.html arrow1.gif arrow2.gif arrow3.gif
 D18=$(D17) tour-gmp.html tour-gf2x.html tour-tips.html config.txt version.txt
 
 TX01=GF2.txt GF2E.txt GF2EX.txt GF2EXFactoring.txt GF2X.txt GF2XFactoring.txt
-TX02=GF2XVec.txt HNF.txt LLL.txt RR.txt ZZ.txt ZZVec.txt ZZX.txt ZZXFactoring.txt
+TX02=GF2XVec.txt HNF.txt Lazy.txt LazyTable.txt LLL.txt RR.txt SmartPtr.txt ZZ.txt ZZVec.txt ZZX.txt ZZXFactoring.txt
 TX03=ZZ_p.txt ZZ_pE.txt ZZ_pEX.txt ZZ_pEXFactoring.txt ZZ_pX.txt ZZ_pXFactoring.txt
 TX04=lzz_p.txt lzz_pE.txt lzz_pEX.txt lzz_pEXFactoring.txt lzz_pX.txt
 TX05=lzz_pXFactoring.txt mat_GF2.txt mat_GF2E.txt mat_RR.txt mat_ZZ.txt mat_ZZ_p.txt
@@ -266,7 +268,7 @@ TX09=vec_lzz_pE.txt vector.txt version.txt xdouble.txt
 TXFILES=$(TX01) $(TX02) $(TX03) $(TX04) $(TX05) $(TX06) $(TX07) $(TX08) $(TX09) 
 
 HT01=GF2.cpp.html GF2E.cpp.html GF2EX.cpp.html GF2EXFactoring.cpp.html GF2X.cpp.html GF2XFactoring.cpp.html
-HT02=GF2XVec.cpp.html HNF.cpp.html LLL.cpp.html RR.cpp.html ZZ.cpp.html ZZVec.cpp.html ZZX.cpp.html ZZXFactoring.cpp.html
+HT02=GF2XVec.cpp.html HNF.cpp.html Lazy.cpp.html LazyTable.cpp.html LLL.cpp.html RR.cpp.html SmartPtr.cpp.html ZZ.cpp.html ZZVec.cpp.html ZZX.cpp.html ZZXFactoring.cpp.html
 HT03=ZZ_p.cpp.html ZZ_pE.cpp.html ZZ_pEX.cpp.html ZZ_pEXFactoring.cpp.html ZZ_pX.cpp.html ZZ_pXFactoring.cpp.html
 HT04=lzz_p.cpp.html lzz_pE.cpp.html lzz_pEX.cpp.html lzz_pEXFactoring.cpp.html lzz_pX.cpp.html
 HT05=lzz_pXFactoring.cpp.html mat_GF2.cpp.html mat_GF2E.cpp.html mat_RR.cpp.html mat_ZZ.cpp.html mat_ZZ_p.cpp.html
@@ -291,7 +293,7 @@ PROGS = $(PROG3)
 
 # things to save to a tar file
 
-SFI1=makefile $(SRC) $(SINC) $(SCRIPTS) $(MD) $(GT) $(TS) $(TD) mach_desc.win 
+SFI1=makefile $(SRC) $(SINC) $(SCRIPTS) $(MD) $(GT) $(GP) $(TS) $(TD) mach_desc.win 
 SFI2=$(SFI1) MulTimeTest.c PolyTimeTest.c Poly1TimeTest.c GF2XTimeTest.c  
 SFI3=$(SFI2) InitSettings.c DispSettings.c  WizardAux Wizard def_makefile
 SFILES=$(SFI3)
@@ -335,10 +337,11 @@ setup1:
 	./MakeDesc
 	mv mach_desc.h ../include/NTL/mach_desc.h
 
-# setup2 generates the file GetTime.c
+# setup2 generates the file GetTime.c and GetPID.c
 
 setup2:
 	sh MakeGetTime "$(LINK)" "$(LDLIBS)"
+	sh MakeGetPID  "$(LINK)" "$(LDLIBS)"
 
 # setup3 generates the file ../include/NTL/gmp_aux.h
 # The file ../include/NTL/gmp_aux.h is included in ../include/NTL/lip.h
@@ -372,6 +375,9 @@ ctools.o:	ctools.c
 
 GetTime.o: GetTime.c 
 	$(LCOMP) $(COMPILE) GetTime.c
+
+GetPID.o: GetPID.c 
+	$(LCOMP) $(COMPILE) GetPID.c
 
 
 
@@ -449,9 +455,9 @@ uninstall:
 #################################################################
 
 clobber:	
-	rm -f ntl.a mach_desc.h ../include/NTL/mach_desc.h  GetTime.c 
+	rm -f ntl.a mach_desc.h ../include/NTL/mach_desc.h  GetTime.c GetPID.c
 	rm -f ../include/NTL/gmp_aux.h
-	sh RemoveProg $(PROGS) MakeDesc TestGetTime gen_gmp_aux
+	sh RemoveProg $(PROGS) MakeDesc TestGetTime TestGetPID gen_gmp_aux
 	rm -f *.o
 	rm -rf small
 	rm -f cfileout mfileout
@@ -459,7 +465,7 @@ clobber:
 	rm -f all
 
 clean:
-	sh RemoveProg MakeDesc TestGetTime gen_gmp_aux
+	sh RemoveProg MakeDesc TestGetTime TestGetPID gen_gmp_aux
 	rm -f *.o 
 	rm -rf small
 # 	- $(LIBTOOL) --mode=clean rm -f libntl.la *.lo #LSHAR
@@ -479,6 +485,9 @@ clean:
 
 ppdoc:
 	sh ppscript "$(TXFILES)"
+
+ppclean:
+	rm -f ../doc/*.cpp
 
 
 package:
@@ -509,9 +518,9 @@ winpack:
 #
 ######################################################################
 
-WO1 = FFT.o  GetTime.o ctools.o ZZ.o ZZVec.o ZZ_p.o ZZ_pX.o
+WO1 = FFT.o  GetTime.o GetPID.o ctools.o ZZ.o ZZVec.o ZZ_p.o ZZ_pX.o
 WO2 = $(WO1) ZZ_pX1.o lip.o tools.o vec_ZZ.o vec_ZZ_p.o 
-WO3 = $(WO2) GF2.o WordVector.o vec_GF2.o GF2X.o GF2X1.o thread.o
+WO3 = $(WO2) GF2.o WordVector.o vec_GF2.o GF2X.o GF2X1.o thread.o fileio.o
 
 WOBJ = $(WO3)
 

@@ -17,12 +17,12 @@ void vec_GF2::SetLength(long n)
 
    if (n == len) return;
 
-   if (n < 0) Error("negative length in vec_GF2::SetLength");
+   if (n < 0) LogicError("negative length in vec_GF2::SetLength");
 
    if (NTL_OVERFLOW(n, 1, 0))
-      Error("vec_GF2::SetLength: excessive length");
+      ResourceError("vec_GF2::SetLength: excessive length");
 
-   if (fixed()) Error("SetLength: can't change this vector's length");
+   if (fixed()) LogicError("SetLength: can't change this vector's length");
 
    long wdlen = (n+NTL_BITS_PER_LONG-1)/NTL_BITS_PER_LONG;
 
@@ -119,7 +119,7 @@ vec_GF2& vec_GF2::operator=(const vec_GF2& a)
 
 void vec_GF2::kill()
 {
-   if (fixed()) Error("can't kill this vec_GF2");
+   if (fixed()) LogicError("can't kill this vec_GF2");
    rep.kill();
    _len = _maxlen = 0;
 }
@@ -136,7 +136,7 @@ void vec_GF2::SetMaxLength(long n)
 
 void vec_GF2::FixLength(long n)
 {
-   if (MaxLength() > 0 || fixed()) Error("can't fix this vector");
+   if (MaxLength() > 0 || fixed()) LogicError("can't fix this vector");
 
    SetLength(n);
    _maxlen |= 1;
@@ -147,7 +147,7 @@ const GF2 vec_GF2::get(long i) const
    const vec_GF2& v = *this;
 
    if (i < 0 || i >= v.length()) 
-      Error("vec_GF2: subscript out of range");
+      LogicError("vec_GF2: subscript out of range");
 
    long q = i/NTL_BITS_PER_LONG;
    long p = i - q*NTL_BITS_PER_LONG;
@@ -163,7 +163,7 @@ ref_GF2 vec_GF2::operator[](long i)
    vec_GF2& v = *this;
 
    if (i < 0 || i >= v.length()) 
-      Error("vec_GF2: subscript out of range");
+      LogicError("vec_GF2: subscript out of range");
 
    long q = i/NTL_BITS_PER_LONG;
    long p =  i - q*NTL_BITS_PER_LONG;
@@ -176,7 +176,7 @@ static
 void SetBit(vec_GF2& v, long i)
 {
    if (i < 0 || i >= v.length())
-      Error("vec_GF2: subscript out of range");
+      LogicError("vec_GF2: subscript out of range");
 
    long q = i/NTL_BITS_PER_LONG;
    long p = i - q*NTL_BITS_PER_LONG;
@@ -188,7 +188,7 @@ static
 void ClearBit(vec_GF2& v, long i)
 {
    if (i < 0 || i >= v.length())
-      Error("vec_GF2: subscript out of range");
+      LogicError("vec_GF2: subscript out of range");
 
    long q = i/NTL_BITS_PER_LONG;
    long p = i - q*NTL_BITS_PER_LONG;
@@ -210,11 +210,11 @@ void vec_GF2::swap(vec_GF2& y)
    long yf = y.fixed();
 
    if (xf != yf || (xf && length() != y.length()))
-      Error("swap: can't swap these vec_GF2s");
+      LogicError("swap: can't swap these vec_GF2s");
 
-   ::swap(rep, y.rep);
-   ::swap(_len, y._len);
-   ::swap(_maxlen, y._maxlen);
+   rep.swap(y.rep);
+   _ntl_swap(_len, y._len);
+   _ntl_swap(_maxlen, y._maxlen);
 }
 
 
@@ -338,7 +338,7 @@ void add(vec_GF2& x, const vec_GF2& a, const vec_GF2& b)
 {
    long blen = a.length();
 
-   if (b.length() != blen) Error("vec_GF2 add: length mismatch");
+   if (b.length() != blen) LogicError("vec_GF2 add: length mismatch");
 
    x.SetLength(blen);
 
@@ -587,7 +587,7 @@ long weight(const vec_GF2& a)
 
 void random(vec_GF2& x, long n)
 {
-   if (n < 0) Error("random: bad arg");
+   if (n < 0) LogicError("random: bad arg");
 
    x.SetLength(n);
 
@@ -609,8 +609,8 @@ void random(vec_GF2& x, long n)
 
 void VectorCopy(vec_GF2& x, const vec_GF2& a, long n)
 {
-   if (n < 0) Error("VectorCopy: negative length");
-   if (NTL_OVERFLOW(n, 1, 0)) Error("overflow in VectorCopy");
+   if (n < 0) LogicError("VectorCopy: negative length");
+   if (NTL_OVERFLOW(n, 1, 0)) ResourceError("overflow in VectorCopy");
 
    long m = min(n, a.length());
 

@@ -1,5 +1,15 @@
 
 
+FIXME: maybe it would make more sense to take the +1/-1 logic
+out of [cg]_lip_impl block_construct routines and just put it in
+the caller: the ZZ_p and ZZVec BlockConstruct stuff: add 1 there...
+that would mean in the ZZ_p ConstructFromVec we don't do the -1 either...
+not critical...
+
+FIXME: maybe add a reserve method to Vec, for compatibility
+with STL vectors.
+
+
 TODO list:
      * speed up ZZX mul: faster HomMul and faster SSMul
      * speed up GF2X mul using new x86 instructions
@@ -38,6 +48,7 @@ cp ../include/NTL/config.h ../include/NTL/def_config.h
 - run:  
 
 make ppdoc
+make ppclean
 make package
 make winpack
 

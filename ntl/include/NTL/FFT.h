@@ -109,7 +109,7 @@ void InitFFTPrimeInfo(FFTPrimeInfo& info, long q, long w, bool bigtab);
 // coefficients, while the table itself takes 160KB.
 
 
-typedef LazyTable<UniquePtr< FFTPrimeInfo>, NTL_MAX_FFTPRIMES> FFTTablesType;
+typedef LazyTable<FFTPrimeInfo, NTL_MAX_FFTPRIMES> FFTTablesType;
 
 extern FFTTablesType FFTTables;
 // a truly GLOBAL variable, shared among all threads
@@ -138,11 +138,11 @@ void FFT(long* A, const long* a, long k, long q, const long* root);
 // the low-level FFT routine.
 // computes a 2^k point FFT modulo q, using the table root for the roots.
 
-void FFT(long* A, const long* a, long k, long q, const long* root, FFTMultipliers& tab);
+void FFT(long* A, const long* a, long k, long q, const long* root, const FFTMultipliers& tab);
 
 
 inline
-void FFTFwd(long* A, const long *a, long k, FFTPrimeInfo& info)
+void FFTFwd(long* A, const long *a, long k, const FFTPrimeInfo& info)
 // Slightly higher level interface...using the ith FFT prime
 {
 #ifdef NTL_FFT_BIGTAB
@@ -162,7 +162,7 @@ void FFTFwd(long* A, const long *a, long k, long i)
 }
 
 inline
-void FFTRev(long* A, const long *a, long k, FFTPrimeInfo& info)
+void FFTRev(long* A, const long *a, long k, const FFTPrimeInfo& info)
 // Slightly higher level interface...using the ith FFT prime
 {
 #ifdef NTL_FFT_BIGTAB
@@ -182,7 +182,7 @@ void FFTRev(long* A, const long *a, long k, long i)
 }
 
 inline
-void FFTMulTwoInv(long* A, const long *a, long k, FFTPrimeInfo& info)
+void FFTMulTwoInv(long* A, const long *a, long k, const FFTPrimeInfo& info)
 {
    VectorMulModPrecon(1L << k, A, a, info.TwoInvTable[k], info.q, 
                       info.TwoInvPreconTable[k]);
@@ -195,7 +195,7 @@ void FFTMulTwoInv(long* A, const long *a, long k, long i)
 }
 
 inline 
-void FFTRev1(long* A, const long *a, long k, FFTPrimeInfo& info)
+void FFTRev1(long* A, const long *a, long k, const FFTPrimeInfo& info)
 // FFTRev + FFTMulTwoInv
 {
    FFTRev(A, a, k, info);

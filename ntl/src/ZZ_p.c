@@ -18,7 +18,7 @@ NTL_THREAD_LOCAL bool ZZ_pInstalled = false;
 
 ZZ_pInfoT::ZZ_pInfoT(const ZZ& NewP)
 {
-   if (NewP <= 1) Error("ZZ_pContext: p must be > 1");
+   if (NewP <= 1) LogicError("ZZ_pContext: p must be > 1");
 
    p = NewP;
    size = p.size();
@@ -40,8 +40,11 @@ void ZZ_p::DoInstall()
    SmartPtr<ZZ_pTmpSpaceT> tmps = 0;
 
    do { // NOTE: thread safe lazy init 
-      Lazy<ZZ_pFFTInfoT>::Builder FFTInfo(ZZ_pInfo->FFTInfo);
-      if (!FFTInfo) break;
+      Lazy<ZZ_pFFTInfoT>::Builder builder(ZZ_pInfo->FFTInfo);
+      if (!builder()) break;
+
+      UniquePtr<ZZ_pFFTInfoT> FFTInfo;
+      FFTInfo.make();
 
       ZZ B, M, M1, M2, M3;
       long n, i;
@@ -89,7 +92,7 @@ void ZZ_p::DoInstall()
       double fn = double(n);
 
       if (8.0*fn*(fn+32) > NTL_FDOUBLE_PRECISION)
-         Error("modulus too big");
+         ResourceError("modulus too big");
 
 
       if (8.0*fn*(fn+32) > NTL_FDOUBLE_PRECISION/double(NTL_SP_BOUND))
@@ -140,10 +143,12 @@ void ZZ_p::DoInstall()
       tmps = MakeSmart<ZZ_pTmpSpaceT>();
       tmps->crt_tmp_vec.fetch(FFTInfo->crt_struct);
       tmps->rem_tmp_vec.fetch(FFTInfo->rem_struct);
+
+      builder.move(FFTInfo);
    } while (0);
 
    if (!tmps) {
-      const ZZ_pFFTInfoT *FFTInfo = &ZZ_pInfo->FFTInfo.value();
+      const ZZ_pFFTInfoT *FFTInfo = ZZ_pInfo->FFTInfo.get();
       tmps = MakeSmart<ZZ_pTmpSpaceT>();
       tmps->crt_tmp_vec.fetch(FFTInfo->crt_struct);
       tmps->rem_tmp_vec.fetch(FFTInfo->rem_struct);
@@ -247,15 +252,17 @@ void div(ZZ_p& x, const ZZ_p& a, const ZZ_p& b)
 
 void inv(ZZ_p& x, const ZZ_p& a)
 {
-   if (InvModStatus(x._ZZ_p__rep, a._ZZ_p__rep, ZZ_p::modulus())) {
-      if (IsZero(a._ZZ_p__rep))
-         Error("ZZ_p: division by zero");
+   NTL_ZZRegister(T);
 
-      if (ZZ_p::DivHandler)
+   if (InvModStatus(T, a._ZZ_p__rep, ZZ_p::modulus())) {
+      if (!IsZero(a._ZZ_p__rep) && ZZ_p::DivHandler)
          (*ZZ_p::DivHandler)(a);
 
-      Error("ZZ_p: division by non-invertible element");
+      InvModError("ZZ_p: division by non-invertible element",
+                   a._ZZ_p__rep, ZZ_p::modulus());
    }
+
+   x._ZZ_p__rep = T;
 }
 
 long operator==(const ZZ_p& a, long b)

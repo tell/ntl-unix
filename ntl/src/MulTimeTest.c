@@ -101,7 +101,7 @@ int main()
       }
    }
 
-   k = 16*NTL_ZZ_NBITS;
+   k = 1024;
 
    ZZ x1, x2, x3;
    double t;

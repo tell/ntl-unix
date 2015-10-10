@@ -878,8 +878,9 @@ GF2EX::GF2EX(INIT_SIZE_TYPE, long n);
 static const GF2EX& zero();
 // GF2EX::zero() is a read-only reference to 0
 
+void GF2EX::swap(GF2EX& x);
 void swap(GF2EX& x, GF2EX& y); 
-// swap x and y (via "pointer swapping")
+// swap (via "pointer swapping")
 
 GF2EX::GF2EX(long i, const GF2E& c); 
 GF2EX::GF2EX(long i, GF2 c); 

@@ -15,7 +15,7 @@ static void ExactDiv(ZZ& qq, const ZZ& a, const ZZ& b)
    if (!IsZero(r)) {
       cerr << "a = " << a << "\n";
       cerr << "b = " << b << "\n";
-      Error("ExactDiv: nonzero remainder");
+      LogicError("ExactDiv: nonzero remainder");
    }
    qq = q;
 }
@@ -84,7 +84,7 @@ static void MulSubDiv(vec_ZZ& c, const vec_ZZ& c1, const vec_ZZ& c2,
 
 {
    long n = c1.length();
-   if (c2.length() != n) Error("MulSubDiv: length mismatch");
+   if (c2.length() != n) LogicError("MulSubDiv: length mismatch");
    c.SetLength(n);
 
    long i;
@@ -101,7 +101,7 @@ static void RowTransform(vec_ZZ& c1, vec_ZZ& c2,
 
 {
    long n = c1.length();
-   if (c2.length() != n) Error("MulSubDiv: length mismatch");
+   if (c2.length() != n) LogicError("MulSubDiv: length mismatch");
    NTL_ZZRegister(t1);
    NTL_ZZRegister(t2);
    NTL_ZZRegister(t3);
@@ -153,7 +153,7 @@ static void MulSubFrom(vec_ZZ& c, const vec_ZZ& c2, const ZZ& x)
 
 {
    long n = c.length();
-   if (c2.length() != n) Error("MulSubFrom: length mismatch");
+   if (c2.length() != n) LogicError("MulSubFrom: length mismatch");
 
    long i;
    for (i = 1; i <= n; i++)
@@ -166,7 +166,7 @@ static void MulSubFrom(vec_ZZ& c, const vec_ZZ& c2, long x)
 
 {
    long n = c.length();
-   if (c2.length() != n) Error("MulSubFrom: length mismatch");
+   if (c2.length() != n) LogicError("MulSubFrom: length mismatch");
 
    long i;
    for (i = 1; i <= n; i++)
@@ -542,7 +542,7 @@ long LLL(ZZ& det, mat_ZZ& B, long verbose)
 
 long LLL(ZZ& det, mat_ZZ& B, mat_ZZ& U, long a, long b, long verbose)
 {
-   if (a <= 0 || b <= 0 || a > b || b/4 >= a) Error("LLL: bad args");
+   if (a <= 0 || b <= 0 || a > b || b/4 >= a) LogicError("LLL: bad args");
 
    vec_ZZ D;
    long s;
@@ -553,7 +553,7 @@ long LLL(ZZ& det, mat_ZZ& B, mat_ZZ& U, long a, long b, long verbose)
 
 long LLL(ZZ& det, mat_ZZ& B, long a, long b, long verbose)
 {
-   if (a <= 0 || b <= 0 || a > b || b/4 >= a) Error("LLL: bad args");
+   if (a <= 0 || b <= 0 || a > b || b/4 >= a) LogicError("LLL: bad args");
 
    vec_ZZ D;
    long s;
@@ -583,7 +583,7 @@ long LLL_plus(vec_ZZ& D_out, mat_ZZ& B, long verbose)
 
 long LLL_plus(vec_ZZ& D_out, mat_ZZ& B, mat_ZZ& U, long a, long b, long verbose)
 {
-   if (a <= 0 || b <= 0 || a > b || b/4 >= a) Error("LLL_plus: bad args");
+   if (a <= 0 || b <= 0 || a > b || b/4 >= a) LogicError("LLL_plus: bad args");
 
    vec_ZZ D;
    long s;
@@ -594,7 +594,7 @@ long LLL_plus(vec_ZZ& D_out, mat_ZZ& B, mat_ZZ& U, long a, long b, long verbose)
 
 long LLL_plus(vec_ZZ& D_out, mat_ZZ& B, long a, long b, long verbose)
 {
-   if (a <= 0 || b <= 0 || a > b || b/4 >= a) Error("LLL_plus: bad args");
+   if (a <= 0 || b <= 0 || a > b || b/4 >= a) LogicError("LLL_plus: bad args");
 
    vec_ZZ D;
    long s;
@@ -620,10 +620,10 @@ long LatticeSolve(vec_ZZ& x, const mat_ZZ& A, const vec_ZZ& y, long reduce)
    long m = A.NumCols();
 
    if (y.length() != m)
-      Error("LatticeSolve: dimension mismatch");
+      LogicError("LatticeSolve: dimension mismatch");
 
    if (reduce < 0 || reduce > 2)
-      Error("LatticeSolve: bad reduce parameter");
+      LogicError("LatticeSolve: bad reduce parameter");
 
    if (IsZero(y)) {
       x.SetLength(n);

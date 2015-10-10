@@ -35,17 +35,6 @@
 <font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp; ss&nbsp;&nbsp;or&nbsp;&nbsp;mm:ss&nbsp;&nbsp;or&nbsp;&nbsp;hh:mm:ss,</i></font><br>
 <font color="#0000ed"><i>// where the value t is first rounded to the nearest integer.</i></font><br>
 <br>
-<font color="#008b00"><b>void</b></font>&nbsp;Error(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*s);<br>
-<font color="#0000ed"><i>// print an error message and call abort</i></font><br>
-<br>
-<font color="#008b00"><b>extern</b></font>&nbsp;<font color="#008b00"><b>void</b></font>&nbsp;(*ErrorCallback)();<br>
-<font color="#0000ed"><i>// A pointer (initially NULL) to a callback function.</i></font><br>
-<font color="#0000ed"><i>// This function will be called by the Error function,</i></font><br>
-<font color="#0000ed"><i>// as well as other functions, before calling abort().</i></font><br>
-<font color="#0000ed"><i>// Note that the callback function is expected to have</i></font><br>
-<font color="#0000ed"><i>// C++ linkage, as it is called directly by a C++ function,</i></font><br>
-<font color="#0000ed"><i>// even though the latter function may be called from a</i></font><br>
-<font color="#0000ed"><i>// C function.</i></font><br>
 <br>
 <font color="#008b00"><b>long</b></font>&nbsp;IsWhiteSpace(<font color="#008b00"><b>long</b></font>&nbsp;c);<br>
 <font color="#0000ed"><i>// returns 1 if c is &quot;white space&quot; (as defined by isspace is the</i></font><br>
@@ -116,6 +105,77 @@
 <br>
 <font color="#1773cc">#define NTL_EXT_DOUBLE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (...)&nbsp;&nbsp;</font><font color="#0000ed"><i>/*</i></font><font color="#0000ed"><i>&nbsp;1 if platform has &quot;extended&quot; doubles;</i></font><br>
 <font color="#0000ed"><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0 otherwise </i></font><font color="#0000ed"><i>*/</i></font><br>
+<br>
+<br>
+<font color="#0000ed"><i>// ERROR HANDLING</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;TerminalError(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*s);<br>
+<font color="#0000ed"><i>// print an error message and call abort</i></font><br>
+<br>
+<font color="#008b00"><b>extern</b></font>&nbsp;<font color="#008b00"><b>void</b></font>&nbsp;(*ErrorCallback)();<br>
+<font color="#0000ed"><i>// A pointer (initially NULL) to a callback function.</i></font><br>
+<font color="#0000ed"><i>// This function will be called by the TerminalError function.</i></font><br>
+<font color="#0000ed"><i>// as well as other functions, before calling abort().</i></font><br>
+<br>
+<br>
+<font color="#0000ed"><i>// The following classes are defined even if exceptions are not</i></font><br>
+<font color="#0000ed"><i>// enabled with NTL_EXCEPTIONS</i></font><br>
+<br>
+<font color="#008b00"><b>class</b></font>&nbsp;ErrorObject : <font color="#b02f60"><b>public</b></font>&nbsp;runtime_error {<br>
+<font color="#b02f60"><b>public</b></font>:<br>
+&nbsp;&nbsp; ErrorObject(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+};<br>
+<br>
+<font color="#008b00"><b>class</b></font>&nbsp;LogicErrorObject : <font color="#b02f60"><b>public</b></font>&nbsp;ErrorObject {<br>
+<font color="#b02f60"><b>public</b></font>: <br>
+&nbsp;&nbsp; LogicErrorObject(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+};<br>
+<br>
+<font color="#008b00"><b>class</b></font>&nbsp;ArithmeticErrorObject : <font color="#b02f60"><b>public</b></font>&nbsp;ErrorObject {<br>
+<font color="#b02f60"><b>public</b></font>: <br>
+&nbsp;&nbsp; ArithmeticErrorObject(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+};<br>
+<br>
+<font color="#008b00"><b>class</b></font>&nbsp;ResourceErrorObject : <font color="#b02f60"><b>public</b></font>&nbsp;ErrorObject {<br>
+<font color="#b02f60"><b>public</b></font>: <br>
+&nbsp;&nbsp; ResourceErrorObject(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+};<br>
+<br>
+<font color="#008b00"><b>class</b></font>&nbsp;FileErrorObject : <font color="#b02f60"><b>public</b></font>&nbsp;ErrorObject {<br>
+<font color="#b02f60"><b>public</b></font>: <br>
+&nbsp;&nbsp; FileErrorObject(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+};<br>
+<br>
+<font color="#008b00"><b>class</b></font>&nbsp;InputErrorObject : <font color="#b02f60"><b>public</b></font>&nbsp;ErrorObject {<br>
+<font color="#b02f60"><b>public</b></font>: <br>
+&nbsp;&nbsp; InputErrorObject(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+};<br>
+<br>
+<br>
+<font color="#0000ed"><i>// The following functions throw the indicated exception if</i></font><br>
+<font color="#0000ed"><i>// exceptions are enabled with NTL_EXCEPTIONS; otherwise,</i></font><br>
+<font color="#0000ed"><i>// they simply invoke TerminalError.</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;MemoryError();<br>
+<font color="#0000ed"><i>// throws bad_alloc</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;Error(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+<font color="#0000ed"><i>// throws ErrorObject</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;LogicError(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+<font color="#0000ed"><i>// throws LogicErrorObject</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;ArithmeticError(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+<font color="#0000ed"><i>// throws ArithmeticErrorObject</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;ResourceError(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+<font color="#0000ed"><i>// throws ResourceErrorObject</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;FileError(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+<font color="#0000ed"><i>// throws FileErrorObject</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;InputError(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*msg);<br>
+<font color="#0000ed"><i>// throws InputErrorObject</i></font><br>
 <br>
 <br>
 <br>

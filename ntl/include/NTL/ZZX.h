@@ -84,6 +84,9 @@ inline ZZX& operator=(const ZZ& a);
 
 ZZX(ZZX& x, INIT_TRANS_TYPE) : rep(x.rep, INIT_TRANS) { }
 
+void swap(ZZX& x) { rep.swap(x.rep); }
+// swap with x (only pointers are swapped)
+
 };
 
 
@@ -171,7 +174,7 @@ inline void set(ZZX& x)
 inline void swap(ZZX& x, ZZX& y)
 // swap x & y (only pointers are swapped)
 
-   { swap(x.rep, y.rep); }
+   { x.swap(y); }
 
 void trunc(ZZX& x, const ZZX& a, long m);
 // x = a % X^m

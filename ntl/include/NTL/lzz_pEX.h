@@ -52,6 +52,8 @@ void kill()
 
    { rep.kill(); }
 
+void swap(zz_pEX& x) { rep.swap(x.rep); }
+
 
 
 void SetLength(long n) { rep.SetLength(n); }
@@ -145,7 +147,7 @@ inline void set(zz_pEX& x)
 inline void swap(zz_pEX& x, zz_pEX& y)
 // swap x & y (only pointers are swapped)
 
-   { swap(x.rep, y.rep); }
+   { x.swap(y); }
 
 void random(zz_pEX& x, long n);
 inline zz_pEX random_zz_pEX(long n)
@@ -668,7 +670,8 @@ public:
    zz_pE hlc;
    zz_pEX f0;
 
-   Lazy<vec_zz_pE> tracevec; 
+   OptionalVal< Lazy<vec_zz_pE> > tracevec; 
+   // extra level of indirection to ensure relocatability
 
 }; 
 

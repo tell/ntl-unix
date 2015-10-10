@@ -1,29 +1,14 @@
 
 #include <NTL/lip.h>
+#include <NTL/tools.h>
+#include <NTL/vector.h>
+#include <NTL/SmartPtr.h>
 
-#include <NTL/ctools.h>
-
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-
-
-
-
+NTL_CLIENT
 
 
 #define MustAlloc(c, len)  (!(c) || ((c)[-1] >> 1) < (len))
    /* Fast test to determine if allocation is necessary */
-
-
-static 
-void zhalt(const char *c)
-{
-   fprintf(stderr,"fatal error:\n   %s\nexit...\n",c);
-   fflush(stderr);
-   _ntl_abort();
-}
 
 
 class _ntl_verylong_watcher {
@@ -41,34 +26,16 @@ public:
 };
 
 
-
-class _ntl_verylong_wrapped {
+class _ntl_verylong_deleter {
 public:
-   _ntl_verylong data;
-
-   _ntl_verylong_wrapped() : data(0) { }
-   void operator=(const _ntl_verylong& _data)  { data = _data; }
-
-   ~_ntl_verylong_wrapped() { _ntl_zfree(&data); } 
-
-   operator const _ntl_verylong& () const { return data; }
-   operator _ntl_verylong& () { return data; }
-
-   const _ntl_verylong* operator&() const { return &data; }
-   _ntl_verylong* operator&() { return &data; }
-
+   static void apply(_ntl_verylong& p) { _ntl_zfree(&p); }
 };
 
+typedef WrappedPtr<long, _ntl_verylong_deleter> _ntl_verylong_wrapped;
 
 #define CRegister(x) NTL_THREAD_LOCAL static _ntl_verylong_wrapped x; _ntl_verylong_watcher _WATCHER__ ## x(&x)
 
 // #define CRegister(x) NTL_THREAD_LOCAL static _ntl_verylong x = 0; _ntl_verylong_watcher _WATCHER__ ## x(&x)
-
-// FIXME: when we implement thread safe code, we may want to define
-// this so that we also attach a thread-local watcher that unconditionally
-// releases memory when the thread terminates
-
-
 
 
 
@@ -1431,10 +1398,10 @@ void _ntl_zsetlength(_ntl_verylong *v, long len)
    _ntl_verylong x = *v;
 
    if (len < 0)
-      zhalt("negative size allocation in _ntl_zsetlength");
+      LogicError("negative size allocation in _ntl_zsetlength");
 
    if (NTL_OVERFLOW(len, NTL_NBITS, 0))
-      zhalt("size too big in _ntl_zsetlength");
+      ResourceError("size too big in _ntl_zsetlength");
 
    if (x) {
       long oldlen = x[-1];
@@ -1444,7 +1411,7 @@ void _ntl_zsetlength(_ntl_verylong *v, long len)
 
       if (fixed) {
          if (len > oldlen) 
-            zhalt("internal error: can't grow this _ntl_verylong");
+            LogicError("can't grow this _ntl_verylong");
          else
             return;
       }
@@ -1462,13 +1429,14 @@ void _ntl_zsetlength(_ntl_verylong *v, long len)
 
       /* test len again */
       if (NTL_OVERFLOW(len, NTL_NBITS, 0))
-         zhalt("size too big in _ntl_zsetlength");
+         ResourceError("size too big in _ntl_zsetlength");
 
-      x[-1] = len << 1;
-      if (!(x = (_ntl_verylong)NTL_REALLOC(&(x[-1]), 
+      x--;
+      if (!(x = (_ntl_verylong)NTL_REALLOC(x, 
                   len, sizeof(long), 2*sizeof(long)))) {
-         zhalt("reallocation failed in _ntl_zsetlength");
+         MemoryError();
       }
+      x[0] = len << 1;
    }
    else {
       len++; /* as above, always allocate one more than requested */
@@ -1476,12 +1444,12 @@ void _ntl_zsetlength(_ntl_verylong *v, long len)
 
       /* test len again */
       if (NTL_OVERFLOW(len, NTL_NBITS, 0))
-         zhalt("size too big in _ntl_zsetlength");
+         ResourceError("size too big in _ntl_zsetlength");
 
 
       if (!(x = (_ntl_verylong)NTL_MALLOC(len, 
                   sizeof(long), 2*sizeof(long)))) {
-         zhalt("allocation failed in _ntl_zsetlength");
+         MemoryError();
       }
       x[0] = len << 1;
       x[1] = 1;
@@ -1499,7 +1467,7 @@ void _ntl_zfree(_ntl_verylong *x)
       return;
 
    if ((*x)[-1] & 1)
-      zhalt("Internal error: can't free this _ntl_verylong");
+      LogicError("Internal error: can't free this _ntl_verylong");
 
    y = (*x - 1);
    free((void*)y);
@@ -1646,7 +1614,7 @@ double _ntl_zlog(_ntl_verylong n)
    }
 
    if (_ntl_zsign(n) <= 0)
-      zhalt("log argument <= 0");
+      ArithmeticError("log argument <= 0");
 
    s = _ntl_z2log(n);
    shamt = s - NTL_DOUBLE_PRECISION;
@@ -1676,7 +1644,7 @@ void _ntl_zdoubtoz(double a, _ntl_verylong *xx)
    a = floor(a);
 
    if (!_ntl_IsFinite(&a))
-      zhalt("_ntl_zdoubtoz: attempt to convert non-finite value");
+      ArithmeticError("_ntl_zdoubtoz: attempt to convert non-finite value");
 
 
    if (a < 0) {
@@ -2060,9 +2028,9 @@ _ntl_zadd(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *cc)
 
       if (MustAlloc(c, maxab+1)) {
          _ntl_zsetlength(&c, maxab + 1);
+         *cc = c;
          if (a_alias) a = c; 
          if (b_alias) b = c; 
-         *cc = c;
       }
 
       pc = c;
@@ -2115,14 +2083,24 @@ _ntl_zadd(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *cc)
       /* signs a and b are different...use _ntl_zsub */
 
       if (anegative) {
+         // FIXME: this is too ugly
          a[0] = -sa;
+         NTL_SCOPE(guard) { if (!a_alias) a[0] = sa; };
+
          _ntl_zsub(b, a, cc);
+
          if (!a_alias) a[0] = sa;
+         guard.relax();
       }
       else {
+         // FIXME: this is too ugly
          b[0] = -sb;
+         NTL_SCOPE(guard) {  if (!b_alias) b[0] = sb; };
+
          _ntl_zsub(a, b, cc);
+
          if (!b_alias) b[0] = sb;
+         guard.relax();
       }
    }
 }
@@ -2189,9 +2167,9 @@ _ntl_zsub(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *cc)
 
       if (MustAlloc(c, sa)) {
          _ntl_zsetlength(&c, sa);
+         *cc = c;
          /* must have !a_alias */
          if (b_alias) b = c;
-         *cc = c;
       }
 
       i = sb;
@@ -2241,16 +2219,27 @@ _ntl_zsub(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *cc)
       /* signs of a and b are different...use _ntl_zadd */
 
       if (anegative) {
+         // FIXME: this is too ugly
          a[0] = -sa;
+         NTL_SCOPE(guard) { if (!a_alias) a[0] = sa; };
+
          _ntl_zadd(a, b, cc);
+
          if (!a_alias) a[0] = sa;
+         guard.relax();
+
          c = *cc;
          c[0] = -c[0];
       }
       else {
+         // FIXME: this is too ugly
          b[0] = -sb;
+         NTL_SCOPE(guard) { if (!b_alias) b[0] = sb; };
+
          _ntl_zadd(a, b, cc);
+
          if (!b_alias) b[0] = sb;
+         guard.relax();
       }
    }
 }
@@ -2295,7 +2284,7 @@ _ntl_zsmul(_ntl_verylong a, long d, _ntl_verylong *bb)
 
    if ((sa = a[0]) < 0) {
       anegative = 1;
-      a[0] = sa = (-sa);
+      sa = (-sa);
       if (d < 0)
          d = (-d);
       else
@@ -2312,6 +2301,11 @@ _ntl_zsmul(_ntl_verylong a, long d, _ntl_verylong *bb)
       if (a_alias) a = b;
       *bb = b;
    }
+
+   // EXCEPTIONS: delay assignment to a[0] until after memory allocation,
+   // the remaining code is exception free
+
+   a[0] = sa;
 
    zsxmul(d, b+1, a);
 
@@ -2358,8 +2352,8 @@ void _ntl_zsubpos(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *cc)
 
    if (MustAlloc(c, sa)) {
       _ntl_zsetlength(&c, sa);
-      if (b_alias) b = c;
       *cc = c;
+      if (b_alias) b = c;
    }
 
    i = sb;
@@ -2406,37 +2400,10 @@ void _ntl_zsubpos(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *cc)
 }
 
 
-typedef long *_ntl_longptr;
-
-class _ntl_longptr_wrapped {
-public:
-   _ntl_longptr data;
-
-   _ntl_longptr_wrapped() : data(0) { }
-   void operator=(const _ntl_longptr& _data)  { data = _data; }
-
-   ~_ntl_longptr_wrapped() { free(data); } 
-
-   operator const _ntl_longptr& () const { return data; }
-   operator _ntl_longptr& () { return data; }
-
-   const _ntl_longptr* operator&() const { return &data; }
-   _ntl_longptr* operator&() { return &data; }
-
-};
 
 
-
-
-NTL_THREAD_LOCAL static _ntl_longptr_wrapped kmem;    
-/* globals for Karatsuba */
-
-NTL_THREAD_LOCAL static long max_kmem = 0;
-
-// FIXME: the above makes sure we release kmem when the
-// thread terminates.  It's a quick hack on top of legacy code.
-// We should maybe consider releasing this memory if it gets
-// too big.
+NTL_THREAD_LOCAL static Vec<long> kmem;
+/* storage for Karatsuba */
 
 
 /* These cross-over points were estimated using
@@ -2610,7 +2577,8 @@ void kar_mul(long *c, long *a, long *b, long *stk)
          T2 = stk;  stk += hsa + 2;
          T3 = stk;  stk += (hsa << 1) + 3;
 
-         if (stk-kmem > max_kmem) zhalt("internal error: kmem overflow");
+         if (stk-kmem.elts() > kmem.length()) 
+            TerminalError("internal error: kmem overflow");
 
          /* compute T1 = a_lo + a_hi */
 
@@ -2663,7 +2631,8 @@ void kar_mul(long *c, long *a, long *b, long *stk)
          
          T = stk;  stk += sb + hsa + 1;
 
-         if (stk-kmem > max_kmem) zhalt("internal error: kmem overflow");
+         if (stk-kmem.elts() > kmem.length()) 
+            TerminalError("internal error: kmem overflow");
 
          /* recursively compute b*a_hi into high part of c */
          {
@@ -2740,7 +2709,8 @@ void kar_sq(long *c, long *a, long *stk)
       T1 = stk;  stk += hsa + 2;
       T2 = stk;  stk += (hsa << 1) + 3;
 
-      if (stk-kmem > max_kmem) zhalt("internal error: kmem overflow");
+      if (stk-kmem.elts() > kmem.length()) 
+         TerminalError("internal error: kmem overflow");
 
       kar_fold(T1, a, hsa);
       kar_sq(T2, T1, stk);
@@ -2793,6 +2763,8 @@ void _ntl_zmul(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *cc)
          b = mem;
       }
 
+
+
       sa = *a;
       if (sa < 0) {
          *a = sa = -sa;
@@ -2808,6 +2780,12 @@ void _ntl_zmul(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *cc)
       }
       else
          bneg = 0;
+
+      // FIXME: this is really ugly
+      NTL_SCOPE(guard) { 
+         if (aneg) *a = - *a; 
+         if (bneg) *b = - *b; 
+      };
 
       sc = sa + sb;
       if (MustAlloc(c, sc)) {
@@ -2935,16 +2913,11 @@ void _ntl_zmul(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *cc)
          if (c[sc] == 0) sc--;
          if (aneg != bneg) sc = -sc;
          *c = sc;
+
          if (aneg) *a = -sa;
          if (bneg) *b = -sb;
-
-         return;
-         
       }
-
-
-
-      if (*a < KARX || *b < KARX) {
+      else if (*a < KARX || *b < KARX) {
          /* classic algorithm */
 
          long i, *pc;
@@ -2997,21 +2970,15 @@ void _ntl_zmul(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *cc)
             n = hn+1;
          } while (n >= KARX);
 
-         if (sp > max_kmem) {
-            if (max_kmem == 0) 
-               kmem = (long *) NTL_MALLOC(sp, sizeof(long), 0);
-            else
-               kmem = (long *) NTL_REALLOC(kmem, sp, sizeof(long), 0);
-
-            max_kmem = sp;
-            if (!kmem) zhalt("out of memory in karatsuba");
-         }
-
-         kar_mul(c, a, b, kmem);
+         kmem.SetLength(sp);
+         kar_mul(c, a, b, kmem.elts());
          if (aneg != bneg) *c = - *c;
+
          if (aneg) *a = - *a;
          if (bneg) *b = - *b;
       }
+
+      guard.relax();
    }
 }
 
@@ -3040,6 +3007,10 @@ void _ntl_zsq(_ntl_verylong a, _ntl_verylong *cc)
    }
    else
       aneg = 0;
+
+
+   // FIXME: this is really ugly
+   NTL_SCOPE(guard) { if (aneg) *a = - *a; };
 
    sc = (sa) << 1;
    if (MustAlloc(c, sc)) {
@@ -3095,12 +3066,8 @@ void _ntl_zsq(_ntl_verylong a, _ntl_verylong *cc)
       if (c[sc] == 0) sc--;
       *c = sc;
       if (aneg) *a = -sa;
-
-      return;
    }
-
-
-   if (sa < KARSX) {
+   else if (sa < KARSX) {
       /* classic algorithm */
 
       long carry, i, j, *pc;
@@ -3148,19 +3115,13 @@ void _ntl_zsq(_ntl_verylong a, _ntl_verylong *cc)
          n = hn+1;
       } while (n >= KARSX);
 
-      if (sp > max_kmem) {
-         if (max_kmem == 0) 
-            kmem = (long *) NTL_MALLOC(sp, sizeof(long), 0);
-         else
-            kmem = (long *) NTL_REALLOC(kmem, sp, sizeof(long), 0);
+      kmem.SetLength(sp);
+      kar_sq(c, a, kmem.elts());
 
-         max_kmem = sp;
-         if (!kmem) zhalt("out of memory in karatsuba");
-      }
-
-      kar_sq(c, a, kmem);
       if (aneg) *a = - *a;
    }
+
+   guard.relax();
 }
 
 
@@ -3172,7 +3133,7 @@ long _ntl_zsdiv(_ntl_verylong a, long d, _ntl_verylong *bb)
    _ntl_verylong b = *bb;
 
    if (!d) {
-      zhalt("division by zero in _ntl_zsdiv");
+      ArithmeticError("division by zero in _ntl_zsdiv");
    }
 
    if (!a) {
@@ -3261,7 +3222,7 @@ long _ntl_zsmod(_ntl_verylong a, long d)
    if (d == 2) return (a[1] & 1);
 
    if (!d) {
-      zhalt("division by zero in _ntl_zsdiv");
+      ArithmeticError("division by zero in _ntl_zsdiv");
    }
 
    if ((sa = a[0]) < 0)
@@ -3344,10 +3305,7 @@ void _ntl_zmultirem(_ntl_verylong a, long n, long* dd, long *rr)
 
 
 
-
-#if (defined(NTL_TBL_REM))
-
-#if (defined(NTL_LONG_LONG))
+#if (defined(NTL_TBL_REM_LL))
 
 /* This version uses the double-word long type directly.
  * It's a little faster that the other one.
@@ -3355,9 +3313,13 @@ void _ntl_zmultirem(_ntl_verylong a, long n, long* dd, long *rr)
  * a higher-level accumulator.
  */
 
+// I noticed that this can be significantly faster than the other
+// one, even if we are not using NTL_LONG_LONG.  So we introduce
+// another flag.
 
-
-void _ntl_zmultirem3(_ntl_verylong a, long n, long* dd, long **ttbl, long *rr)
+static
+void multirem3(_ntl_verylong a, long n, long* dd, 
+               long **ttbl, long *rr)
 {
    long sa, i, j, d, *tbl, ac0, ac1, ac2, *ap, *tp, k, carry;
    double dinv;
@@ -3419,9 +3381,14 @@ void _ntl_zmultirem3(_ntl_verylong a, long n, long* dd, long **ttbl, long *rr)
    }
 }
 
-#else
+#endif
 
-void _ntl_zmultirem3(_ntl_verylong a, long n, long* dd, long **ttbl, long *rr)
+
+#if (defined(NTL_TBL_REM))
+
+static
+void multirem3(_ntl_verylong a, long n, long* dd, 
+               long **ttbl, long *rr)
 {
    long sa, i, d, *tbl, ac0, ac1, ac2, *ap, *tp, k, t, carry;
    double dinv;
@@ -3468,13 +3435,6 @@ void _ntl_zmultirem3(_ntl_verylong a, long n, long* dd, long **ttbl, long *rr)
       rr[i] = carry;
    }
 }
-
-
-
-
-#endif
-
-
 
 #endif
 
@@ -3523,7 +3483,7 @@ void _ntl_zdiv(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *qq, _ntl_verylon
    CRegister(r);
 
    if (!b || (((sb=b[0]) == 1) && (!b[1]))) {
-      zhalt("division by zero in _ntl_zdiv");
+      ArithmeticError("division by zero in _ntl_zdiv");
    }
 
    if (!a || (((sa=a[0]) == 1) && (!a[1]))) {
@@ -3555,6 +3515,17 @@ void _ntl_zdiv(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *qq, _ntl_verylon
       b[0] = sb = -sb;
       sign |= 1;
    }
+
+
+   // FIXME: this is really ugly
+   NTL_SCOPE(guard) {
+      if (sign & 2)
+         a[0] = -sa;
+
+      if (sign & 1)
+         b[0] = -sb;
+   };
+
 
 
    sq = sa-sb+1;
@@ -3658,8 +3629,12 @@ done:
          b[0] = -sb;
    }
 
+   guard.relax(); 
+
    _ntl_zcopy(q, qq);
    if (rr) _ntl_zcopy(r, rr);
+
+
 }
 
 void
@@ -3673,7 +3648,7 @@ _ntl_zmod(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *rr)
    CRegister(r);
 
    if (!b || (((sb=b[0]) == 1) && (!b[1]))) {
-      zhalt("division by zero in _ntl_zdiv");
+      ArithmeticError("division by zero in _ntl_zdiv");
    }
 
    if (!a || (((sa=a[0]) == 1) && (!a[1]))) {
@@ -3702,6 +3677,15 @@ _ntl_zmod(_ntl_verylong a, _ntl_verylong b, _ntl_verylong *rr)
       b[0] = sb = -sb;
       sign |= 1;
    }
+
+
+   NTL_SCOPE(guard) {
+      if (sign & 2)
+         a[0] = -sa;
+
+      if (sign & 1)
+         b[0] = -sb;
+   };
 
 
    sq = sa-sb+1;
@@ -3791,7 +3775,10 @@ done:
 
       if (sign & 1)
          b[0] = -sb;
+
    }
+
+   guard.relax();
 
    _ntl_zcopy(r, rr);
 }
@@ -3985,7 +3972,7 @@ _ntl_zinvmod(
         )
 {
         if (_ntl_zinv(a, n, c))
-                zhalt("undefined inverse in _ntl_zinvmod");
+                ArithmeticError("undefined inverse in _ntl_zinvmod");
 }
 
 
@@ -4214,16 +4201,16 @@ _ntl_zinv(
 
 
         if (_ntl_zscompare(nin, 1) <= 0) {
-                zhalt("InvMod: second input <= 1");
+                LogicError("InvMod: second input <= 1");
         }
 
         sgn = _ntl_zsign(ain);
         if (sgn < 0) {
-                zhalt("InvMod: first input negative");
+                LogicError("InvMod: first input negative");
         }
 
         if (_ntl_zcompare(ain, nin) >= 0) {
-                zhalt("InvMod: first input too big");
+                LogicError("InvMod: first input too big");
         }
 
 
@@ -4289,7 +4276,7 @@ _ntl_zexteucl(
 
         if ((modcon[1]) || (modcon[0] != 1))
         {
-                zhalt("non-zero remainder in _ntl_zexteucl   BUG");
+                LogicError("non-zero remainder in _ntl_zexteucl   BUG");
         }
 done:
         if (anegative)
@@ -4365,7 +4352,7 @@ _ntl_zxxratrecon(
    double dirt;
 
    if (_ntl_zsign(num_bound) < 0)
-      zhalt("rational reconstruction: bad numerator bound");
+      LogicError("rational reconstruction: bad numerator bound");
 
    if (!num_bound)
       snum = 1;
@@ -4373,15 +4360,15 @@ _ntl_zxxratrecon(
       snum = num_bound[0];
 
    if (_ntl_zsign(den_bound) <= 0)
-      zhalt("rational reconstruction: bad denominator bound");
+      LogicError("rational reconstruction: bad denominator bound");
 
    sden = den_bound[0];
 
    if (_ntl_zsign(nin) <= 0)
-      zhalt("rational reconstruction: bad modulus");
+      LogicError("rational reconstruction: bad modulus");
 
    if (_ntl_zsign(ain) < 0 || _ntl_zcompare(ain, nin) >= 0)
-      zhalt("rational reconstruction: bad residue");
+      LogicError("rational reconstruction: bad residue");
 
       
    e = nin[0];
@@ -4671,7 +4658,7 @@ static
 void _ntl_zsppowermod(long a, _ntl_verylong e, _ntl_verylong n, 
                       _ntl_verylong *x)
 {
-   _ntl_verylong res;
+   _ntl_verylong_wrapped res;
    long i, k;
 
    if (_ntl_ziszero(e)) {
@@ -4694,7 +4681,6 @@ void _ntl_zsppowermod(long a, _ntl_verylong e, _ntl_verylong n,
    if (_ntl_zsign(e) < 0) _ntl_zinvmod(res, n, &res);
 
    _ntl_zcopy(res, x);
-   _ntl_zfree(&res);
 }
 
 
@@ -4703,7 +4689,7 @@ static
 void _ntl_ztwopowermod( _ntl_verylong e, _ntl_verylong n, 
                       _ntl_verylong *x)
 {
-   _ntl_verylong res;
+   _ntl_verylong_wrapped res;
    long i, k;
 
    if (_ntl_ziszero(e)) {
@@ -4726,7 +4712,6 @@ void _ntl_ztwopowermod( _ntl_verylong e, _ntl_verylong n,
    if (_ntl_zsign(e) < 0) _ntl_zinvmod(res, n, &res);
 
    _ntl_zcopy(res, x);
-   _ntl_zfree(&res);
 }
 
 
@@ -4740,12 +4725,14 @@ void _ntl_zpowermod(_ntl_verylong g, _ntl_verylong e, _ntl_verylong F,
 */
 
 {
-   _ntl_verylong res, *v, t;
+   _ntl_verylong_wrapped res, t;
+   Vec<_ntl_verylong_wrapped> v;
+
    long n, i, k, val, cnt, m;
 
    if (_ntl_zsign(g) < 0 || _ntl_zcompare(g, F) >= 0 || 
        _ntl_zscompare(F, 1) <= 0) 
-      zhalt("PowerMod: bad args");
+      LogicError("PowerMod: bad args");
 
 
    if (!g || g[0] == 1 || g[0] == -1) {
@@ -4781,7 +4768,6 @@ void _ntl_zpowermod(_ntl_verylong g, _ntl_verylong e, _ntl_verylong F,
       res = 0;
       _ntl_zsqmod(g, F, &res);
       _ntl_zinvmod(res, F, h);
-      _ntl_zfree(&res);
       return;
    }
 
@@ -4802,7 +4788,6 @@ void _ntl_zpowermod(_ntl_verylong g, _ntl_verylong e, _ntl_verylong F,
       if (_ntl_zsign(e) < 0) _ntl_zinvmod(res, F, &res);
 
       _ntl_zcopy(res, h);
-      _ntl_zfree(&res);
       return;
    }
 
@@ -4810,10 +4795,7 @@ void _ntl_zpowermod(_ntl_verylong g, _ntl_verylong e, _ntl_verylong F,
 
    if (k > 5) k = 5;
 
-   v = (_ntl_verylong *) NTL_MALLOC(1L << (k-1), sizeof(_ntl_verylong), 0);
-   if (!v) zhalt("out of memory");
-   for (i = 0; i < (1L << (k-1)); i++)
-      v[i] = 0; 
+   v.SetLength(1L << (k-1));
 
    _ntl_zcopy(g, &v[0]);
  
@@ -4824,7 +4806,6 @@ void _ntl_zpowermod(_ntl_verylong g, _ntl_verylong e, _ntl_verylong F,
       for (i = 1; i < (1L << (k-1)); i++)
          _ntl_zmulmod(v[i-1], t, F, &v[i]);
 
-      _ntl_zfree(&t);
    }
 
 
@@ -4860,11 +4841,6 @@ void _ntl_zpowermod(_ntl_verylong g, _ntl_verylong e, _ntl_verylong F,
    if (_ntl_zsign(e) < 0) _ntl_zinvmod(res, F, &res);
 
    _ntl_zcopy(res, h);
-
-   _ntl_zfree(&res);
-   for (i = 0; i < (1L << (k-1)); i++)
-      _ntl_zfree(&v[i]);
-   free(v);
 }
 
 
@@ -4904,7 +4880,7 @@ _ntl_zexp(
         }
 
         if (e < 0)
-                zhalt("negative exponent in _ntl_zexp");
+                ArithmeticError("negative exponent in _ntl_zexp");
 
         if (_ntl_ziszero(a))
         {
@@ -4914,7 +4890,7 @@ _ntl_zexp(
 
         len_a = _ntl_z2log(a);
         if (len_a > (NTL_MAX_LONG-(NTL_NBITS-1))/e)
-                zhalt("overflow in _ntl_zexp");
+                ResourceError("overflow in _ntl_zexp");
 
         _ntl_zsetlength(&res, (len_a*e+NTL_NBITS-1)/NTL_NBITS);
 
@@ -4949,7 +4925,7 @@ _ntl_zexps(
         }
 
         if (e < 0)
-                zhalt("negative exponent in _ntl_zexps");
+                ArithmeticError("negative exponent in _ntl_zexps");
 
         if (!a)
         {
@@ -4965,7 +4941,7 @@ _ntl_zexps(
 
         len_a = _ntl_z2logs(a);
         if (len_a > (NTL_MAX_LONG-(NTL_NBITS-1))/e)
-                zhalt("overflow in _ntl_zexps");
+                ResourceError("overflow in _ntl_zexps");
 
         _ntl_zsetlength(&res, (len_a*e+NTL_NBITS-1)/NTL_NBITS);
 
@@ -5015,8 +4991,8 @@ _ntl_z2mul(
         n_alias = (n == res);
 
         _ntl_zsetlength(&res, sn + 1);
-        if (n_alias) n = res;
         *rres = res;
+        if (n_alias) n = res;
 
         carry = 0;
 
@@ -5148,8 +5124,8 @@ _ntl_zlshift(
         if (small = k - big * NTL_NBITS)
         {
                 _ntl_zsetlength(&res, i + 1);
-                if (n_alias) n = res;
                 *rres = res;
+                if (n_alias) n = res;
 
                 res[i + 1] = n[sn] >> (cosmall = NTL_NBITS - small);
                 for (i = sn; i > 1; i--)
@@ -5163,8 +5139,8 @@ _ntl_zlshift(
         else
         {
                 _ntl_zsetlength(&res, i);
-                if (n_alias) n = res;
                 *rres = res;
+                if (n_alias) n = res;
 
                 for (i = sn; i; i--)
                         res[i + big] = n[i];
@@ -5215,7 +5191,7 @@ _ntl_zrshift(
 
         if (k < 0)
         {
-                if (k < -NTL_MAX_LONG) zhalt("overflow in _ntl_zrshift");
+                if (k < -NTL_MAX_LONG) ResourceError("overflow in _ntl_zrshift");
                 _ntl_zlshift(n, -k, rres);
                 return;
         }
@@ -5326,7 +5302,7 @@ _ntl_zsqrts(
         CRegister(rr);
 
         if (n < 0) 
-                zhalt("_ntl_zsqrts: negative argument");
+                ArithmeticError("_ntl_zsqrts: negative argument");
 
         if (n <= 0)
                 return (0);
@@ -5376,7 +5352,7 @@ void _ntl_zsqrt(_ntl_verylong n, _ntl_verylong *rr)
         }
 
         if ((i = n[0]) < 0)
-                zhalt("negative argument in _ntl_zsqrt");
+                ArithmeticError("negative argument in _ntl_zsqrt");
 
         if (i == 1) {
                 _ntl_zintoz(_ntl_zsqrts(n[1]), rr);
@@ -5476,6 +5452,14 @@ _ntl_zgcd(
         if (m2negative = (mm2[0] < 0))
                 mm2[0] = -mm2[0];
 
+        // FIXME: this is really ugly
+        NTL_SCOPE(guard) {
+           if (m1negative)
+                   mm1[0] = -mm1[0];
+           if (m2negative)
+                   mm2[0] = -mm2[0];
+        };
+
         if ((agrb = mm1[0]) < mm2[0])
                 agrb = mm2[0];
 
@@ -5554,6 +5538,9 @@ done:
                 mm1[0] = -mm1[0];
         if (m2negative)
                 mm2[0] = -mm2[0];
+
+        guard.relax();
+
         _ntl_zcopy(a, rres);
 }
 
@@ -5648,16 +5635,30 @@ _ntl_zswap(
         _ntl_verylong c;
 
         if ((*a && ((*a)[-1] & 1)) || (*b && ((*b)[-1] & 1))) {
+                // one of the inputs points to an bigint that is 
+                // "pinned down" in memory, so we have to swap the data,
+                // not just the pointers
+
                 CRegister(t);
+                long sz_a, sz_b, sz;
+
+                sz_a = _ntl_zsize(*a); 
+                sz_b = _ntl_zsize(*b); 
+                sz = (sz_a > sz_b) ? sz_a : sz_b;
+
+                _ntl_zsetlength(a, sz);
+                _ntl_zsetlength(b, sz);
+
+                // EXCEPTIONS: all of the above ensures that swap provides strong ES
+
+           
                 _ntl_zcopy(*a, &t);
                 _ntl_zcopy(*b, a);
                 _ntl_zcopy(t, b);
                 return;
         }
 
-        c = *a;
-        *a = *b;
-        *b = c;
+        _ntl_swap(*a, *b);
 }
 
 long
@@ -5838,9 +5839,9 @@ _ntl_zand(
         sm = (sa > sb ? sb : sa );
 
         _ntl_zsetlength(&c, sm);
+        *cc = c;
         if (a_alias) a = c;
         if (b_alias) b = c;
-        *cc = c;
 
         for (sa = 1; sa <= sm; sa ++) 
                 c[sa] = a[sa] & b[sa];
@@ -5897,9 +5898,9 @@ _ntl_zxor(
         }
 
         _ntl_zsetlength(&c, la);
+        *cc = c;
         if (a_alias) a = c;
         if (b_alias) b = c;
-        *cc = c;
 
         for (i = 1; i <= sm; i ++)
                 c[i] = a[i] ^ b[i];
@@ -5961,9 +5962,9 @@ _ntl_zor(
         }
 
         _ntl_zsetlength(&c, la);
+        *cc = c;
         if (a_alias) a = c;
         if (b_alias) b = c;
-        *cc = c;
 
         for (i = 1; i <= sm; i ++)
                 c[i] = a[i] | b[i];
@@ -5986,7 +5987,7 @@ _ntl_zsetbit(
         long wh;
         long sa;
 
-        if (b<0) zhalt("_ntl_zsetbit: negative index");
+        if (b<0) LogicError("_ntl_zsetbit: negative index");
 
         if (_ntl_ziszero(*a)) {
                 _ntl_zintoz(1,a);
@@ -6026,7 +6027,7 @@ _ntl_zswitchbit(
         long wh;
         long sa;
 
-        if (p < 0) zhalt("_ntl_zswitchbit: negative index");
+        if (p < 0) LogicError("_ntl_zswitchbit: negative index");
 
         if (_ntl_ziszero(*a)) {
                 _ntl_zintoz(1,a);
@@ -6147,7 +6148,7 @@ void _ntl_zfrombytes(_ntl_verylong *x, const unsigned char *p, long n)
    }
 
    if (n > (NTL_MAX_LONG-(NTL_NBITS-1))/8)
-      zhalt("ZZFromBytes: excessive length");
+      ResourceError("ZZFromBytes: excessive length");
 
    sz = (n*8 + NTL_NBITS-1)/NTL_NBITS;
 
@@ -6209,7 +6210,6 @@ void _ntl_zbytesfromz(unsigned char *p, _ntl_verylong a, long nn)
 }
 
 
-
 long _ntl_zblock_construct_alloc(_ntl_verylong *x, long d, long n)
 {
    long nwords, nbytes, AllocAmt, m, *p, *q, j;
@@ -6218,16 +6218,16 @@ long _ntl_zblock_construct_alloc(_ntl_verylong *x, long d, long n)
    /* check n value */
 
    if (n <= 0)
-      zhalt("block construct: n must be positive");
+      LogicError("block construct: n must be positive");
 
    /* check d value */
 
    if (d <= 0) 
-      zhalt("block construct: d must be positive");
+      LogicError("block construct: d must be positive");
 
    if (NTL_OVERFLOW(d, NTL_NBITS, NTL_NBITS) || 
        NTL_OVERFLOW(d, sizeof(long), 3*sizeof(long)))
-      zhalt("block construct: d too large");
+      ResourceError("block construct: d too large");
 
    nwords = d + 3;
    nbytes = nwords*sizeof(long);
@@ -6241,7 +6241,7 @@ long _ntl_zblock_construct_alloc(_ntl_verylong *x, long d, long n)
       m = n;
 
    p = (long *) NTL_MALLOC(m, nbytes, sizeof(long));
-   if (!p) zhalt("out of memory in block construct");
+   if (!p) MemoryError();
 
    *p = m;
 
@@ -6328,13 +6328,13 @@ void sp_ext_eucl(long *dd, long *ss, long *tt, long a, long b)
    long aneg = 0, bneg = 0;
 
    if (a < 0) {
-      if (a < -NTL_MAX_LONG) zhalt("integer overflow");
+      if (a < -NTL_MAX_LONG) ResourceError("integer overflow");
       a = -a;
       aneg = 1;
    }
 
    if (b < 0) {
-      if (b < -NTL_MAX_LONG) zhalt("integer overflow");
+      if (b < -NTL_MAX_LONG) ResourceError("integer overflow");
       b = -b;
       bneg = 1;
    }
@@ -6374,7 +6374,7 @@ long sp_inv_mod(long a, long n)
    long d, s, t;
 
    sp_ext_eucl(&d, &s, &t, a, n);
-   if (d != 1) zhalt("inverse undefined");
+   if (d != 1) ArithmeticError("inverse undefined");
    if (s < 0)
       return s + n;
    else
@@ -6388,188 +6388,101 @@ long sp_inv_mod(long a, long n)
  * the interface consistent with the GMP interface.
  */
 
-void _ntl_tmp_vec_free(void *tmp_vec) { }
-void *_ntl_crt_fetch_tmp(void *crt_struct) { return 0; }
-void *_ntl_crt_extract_tmp(void *crt_struct) { return 0; }
-void *_ntl_rem_fetch_tmp(void *rem_struct) { return 0; }
 
-
-struct crt_body_lip {
-   _ntl_verylong *v;
+class _ntl_crt_struct_impl : public  _ntl_crt_struct {
+public:
+   Vec<_ntl_verylong_wrapped> v;
    long sbuf;
    long n;
+
+   bool special();
+   void insert(long i, NTL_verylong m);
+   _ntl_tmp_vec *extract();
+   _ntl_tmp_vec *fetch(); 
+   void eval(NTL_verylong *x, const long *b, 
+                     _ntl_tmp_vec *tmp_vec);
 };
 
 
 
-struct crt_body {
-   long strategy;
-
-   union {
-      struct crt_body_lip L;
-
-   } U; // FIXME: don't need union any more
-};
-
-
-long _ntl_crt_struct_special(void *crt_struct)
+_ntl_crt_struct * 
+_ntl_crt_struct_build(long n, _ntl_verylong p, long (*primes)(long))
 {
-   struct crt_body *c = (struct crt_body *) crt_struct;
-   return (c->strategy == 2);
+   UniquePtr<_ntl_crt_struct_impl> res;
+   res.make();
+   res->v.SetLength(n);
+   res->sbuf = p[0]+3;
+   res->n = n;
+
+   return res.release();
 }
 
+bool _ntl_crt_struct_impl::special() { return false; }
 
-void _ntl_crt_struct_init(void **crt_struct, long n, _ntl_verylong p,
-                          long (*primes)(long))
+void _ntl_crt_struct_impl::insert(long i, _ntl_verylong m)
 {
-   struct crt_body *c;
-
-   c = (struct crt_body *) NTL_MALLOC(1, sizeof(struct crt_body), 0);
-   if (!c) zhalt("out of memory");
-
-
-   {
-      struct crt_body_lip *C = &c->U.L;
-      long i;
-      c->strategy = 0;
-   
-      C->n = n;
-   
-      C->v = (_ntl_verylong *) NTL_MALLOC(n, sizeof(_ntl_verylong), 0);
-      if (!C->v) zhalt("out of memory");
-   
-      for (i = 0; i < n; i++) 
-         C->v[i] = 0;
-   
-      C->sbuf = p[0]+3;
-   
-      *crt_struct = (void *) c;
-   }
-}
-
-void _ntl_crt_struct_insert(void *crt_struct, long i, _ntl_verylong m)
-{
-   struct crt_body *c = (struct crt_body *) crt_struct;
-
-   switch (c->strategy) {
-
-   case 0: {
-      _ntl_zcopy(m, &c->U.L.v[i]);
-      break;
-   }
-
-   default:
-      zhalt("_ntl_crt_struct_insert: inconsistent strategy");
-      
-   } /* end switch */
-}
-
-void _ntl_crt_struct_free(void *crt_struct)
-{
-   struct crt_body *c = (struct crt_body *) crt_struct;
-   if (!c) return;
-
-   switch (c->strategy) {
-
-   case 0: {
-      struct crt_body_lip *C = &c->U.L;
-      long i, n;
-
-      n = C->n;
-   
-      for (i = 0; i < n; i++) 
-         _ntl_zfree(&C->v[i]);
-
-      free(C->v);
-   
-      free(c);
-
-      break;
-   }
-
-
-   default:
-
-      zhalt("_ntl_crt_struct_free: inconsistent strategy");
-
-   } /* end case */
+   _ntl_zcopy(m, &v[i]);
 }
 
 
 
-
-void _ntl_crt_struct_eval(void *crt_struct, _ntl_verylong *x, const long *b,
-                          void *tmp_vec)
+void _ntl_crt_struct_impl::eval(_ntl_verylong *x, const long *b,
+                                _ntl_tmp_vec *tmp_vec)
 {
-   struct crt_body *c = (struct crt_body *) crt_struct;
+   _ntl_verylong xx, yy;
+   long i, sx;
 
-   switch (c->strategy) {
+   sx = sbuf;
 
-   case 0: {
-      struct crt_body_lip *C = &c->U.L;
+   _ntl_zsetlength(x, sx);
+   xx = *x;
 
-      _ntl_verylong xx, yy, *a;
-      long i, sx, n;
-   
-      n = C->n;
-      sx = C->sbuf;
-   
-      _ntl_zsetlength(x, sx);
-      xx = *x;
-   
-      a = C->v;
-   
-   
-      for (i = 1; i <= sx; i++)
-         xx[i] = 0;
-   
-      xx++;
-   
-      for (i = 0; i < n; i++) {
-         yy = a[i];
-   
-         if (!yy || !b[i]) continue;
-   
-         zaddmul(b[i], xx, yy);
-         yy = xx + yy[0];
-     
-         if ((*yy) >= NTL_RADIX) {
-            (*yy) -= NTL_RADIX;
+
+   for (i = 1; i <= sx; i++)
+      xx[i] = 0;
+
+   xx++;
+
+   for (i = 0; i < n; i++) {
+      yy = v[i];
+
+      if (!yy || !b[i]) continue;
+
+      zaddmul(b[i], xx, yy);
+      yy = xx + yy[0];
+  
+      if ((*yy) >= NTL_RADIX) {
+         (*yy) -= NTL_RADIX;
+         yy++;
+         while ((*yy) == NTL_RADIX-1) {
+            *yy = 0;
             yy++;
-            while ((*yy) == NTL_RADIX-1) {
-               *yy = 0;
-               yy++;
-            }
-            (*yy)++;
          }
+         (*yy)++;
       }
-   
-      xx--;
-      while (sx > 1 && xx[sx] == 0) sx--;
-      xx[0] = sx;
-
-      break;
    }
 
-
-   default:
-
-      zhalt("_crt_struct_eval: inconsistent strategy");
-
-   } /* end case */
+   xx--;
+   while (sx > 1 && xx[sx] == 0) sx--;
+   xx[0] = sx;
 }
 
-
-
+_ntl_tmp_vec *_ntl_crt_struct_impl::extract() { return 0; }
+_ntl_tmp_vec *_ntl_crt_struct_impl::fetch() { return 0; }
 
 
 
 /* Data structures and algorithms for multi-modulus remaindering */
 
 
-struct rem_body_lip {
+
+class _ntl_rem_struct_impl_basic : public _ntl_rem_struct  {
+public:
    long n;
-   long *primes;
+   Vec<long> primes;
+
+   void eval(long *x, _ntl_verylong a, _ntl_tmp_vec *tmp_vec);
+   _ntl_tmp_vec *fetch();
 };
 
 
@@ -6577,192 +6490,104 @@ struct rem_body_lip {
 
 
 
-#if (defined(NTL_TBL_REM))
 
-struct rem_body_tbl {
+#if (defined(NTL_TBL_REM) || defined(NTL_TBL_REM_LL))
+
+
+class _ntl_rem_struct_impl_tbl : public _ntl_rem_struct  {
+public:
    long n;
-   long *primes;
-   long **tbl;
+   Vec<long> primes;
+   Unique2DArray<long> tbl;
+
+   void eval(long *x, _ntl_verylong a, _ntl_tmp_vec *tmp_vec);
+   _ntl_tmp_vec *fetch();
 };
 
 #endif
 
-struct rem_body {
-   long strategy;
-
-   union {
-      struct rem_body_lip L;
-#if (defined(NTL_TBL_REM))
-      struct rem_body_tbl T;
-#endif
-   } U;
-};
 
 
-
-void _ntl_rem_struct_init(void **rem_struct, long n, _ntl_verylong modulus, 
-                          long (*p)(long))
+_ntl_rem_struct *
+_ntl_rem_struct_build(long n, _ntl_verylong modulus, long (*p)(long))
 {
-   struct rem_body *r;
-
-   r = (struct rem_body *) NTL_MALLOC(1, sizeof(struct rem_body), 0);
-   if (!r) zhalt("out of memory");
-   
-
-
-#if (defined(NTL_TBL_REM))
+#if (defined(NTL_TBL_REM) || defined(NTL_TBL_REM_LL))
 
    /* we should not use this for extremely large moduli,
       as the space is quadratic. On a 64-bit machine,
       the bound of 1000 limits table size to about 4MB,
       and allows moduli of up to about 25,000 bits. */
 
-   if (n < 1000) {
-      struct rem_body_tbl *R = &r->U.T;
+   if (n < 1000) { 
+      UniquePtr<_ntl_rem_struct_impl_tbl> res;
+      res.make();
 
-      long *qq;
+
       long i;
-      long **tbl;
       long t, t1, j, q;
-      long sz = modulus[0];
    
-      r->strategy = 3;
-      R->n = n;
-      qq = (long *) NTL_MALLOC(n, sizeof(long), 0);
-      if (!qq) zhalt("out of memory");
-      R->primes = qq;
+      long sz = modulus[0];
+      res->n = n;
+      res->primes.SetLength(n);
    
       for (i = 0; i < n; i++)
-         qq[i] = p(i);
+         res->primes[i] = p(i);
 
-      tbl = (long **) NTL_MALLOC(n, sizeof(long *), 0);
-      if (!tbl) zhalt("out of space");
+      res->tbl.SetDims(n, sz);
 
       for (i = 0; i < n; i++) {
-         tbl[i] = (long *) NTL_MALLOC(sz, sizeof(long), 0);
-         if (!tbl[i]) zhalt("out of space");
-      }
-      R->tbl = tbl;
-   
-   
-      for (i = 0; i < n; i++) {
-         q = qq[i];
+         q = res->primes[i];
          t = (((long)1) << NTL_NBITS) % q;
          t1 = 1;
-         tbl[i][0] = 1;
+         res->tbl[i][0] = 1;
          for (j = 1; j < sz; j++) {
             SP_MUL_MOD(t1, t1, t, q);
-            tbl[i][j] = t1;
+            res->tbl[i][j] = t1;
          }
       }
       
-      *rem_struct = (void *) r;
-      return;
+      return res.release();
    }
 
 #endif
 
 
    {
-      struct rem_body_lip *R = &r->U.L;
+      UniquePtr<_ntl_rem_struct_impl_basic> res;
+      res.make();
 
-      long *q;
       long i;
    
-      r->strategy = 0;
-      R->n = n;
-      q = (long *) NTL_MALLOC(n, sizeof(long), 0);
-      if (!q) zhalt("out of memory");
-      R->primes = q;
-   
+      res->n = n;
+      res->primes.SetLength(n);
       for (i = 0; i < n; i++)
-         q[i] = p(i);
-   
-      *rem_struct = (void *) r;
+         res->primes[i] = p(i);
+
+      return res.release();
    }
 }
 
-void _ntl_rem_struct_free(void *rem_struct)
+
+
+
+void _ntl_rem_struct_impl_basic::eval(long *x, _ntl_verylong a, _ntl_tmp_vec *tmp_vec)
 {
-   struct rem_body *r = (struct rem_body *) rem_struct;
-   if (!r) return;
-
-   switch (r->strategy) {
-
-   case 0: {
-      free(r->U.L.primes);
-      free(r);
-      break;
-   }
-
-
-
-
-
-#if (defined(NTL_TBL_REM))
-   
-   case 3: {
-      struct rem_body_tbl *R = &r->U.T;
-
-      long n = R->n;
-      long **tbl = R->tbl;
-      long i;
-
-      for (i = 0; i < n; i++)
-         free(tbl[i]);
-
-      free(tbl);
-
-      free(R->primes);
-      free(r);
-      break;
-   }
-
-
-#endif
-
-   default:
-      zhalt("_ntl_rem_struct_free: inconsistent strategy");
-
-   } /* end switch */
-
+   _ntl_zmultirem(a, n, &primes[0], x);
 }
 
+_ntl_tmp_vec *_ntl_rem_struct_impl_basic::fetch() { return 0; }
 
-void _ntl_rem_struct_eval(void *rem_struct, long *x, _ntl_verylong a,
-                          void *tmp_vec)
+
+
+
+#if (defined(NTL_TBL_REM) || defined(NTL_TBL_REM_LL))
+void _ntl_rem_struct_impl_tbl::eval(long *x, _ntl_verylong a, _ntl_tmp_vec *tmp_vec)
 {
-   struct rem_body *r = (struct rem_body *) rem_struct;
-
-   switch (r->strategy) {
-
-   case 0: {
-      struct rem_body_lip *R = &r->U.L;
-
-      _ntl_zmultirem(a, R->n, R->primes, x);
-      return;
-   }
-
-
-
-
-#if (defined(NTL_TBL_REM))
-
-   case 3: {
-      struct rem_body_tbl *R = &r->U.T;
-
-      _ntl_zmultirem3(a, R->n, R->primes, R->tbl, x);
-      break;
-   }
-
-#endif
-
-   default:
-      zhalt("_ntl_rem_struct_eval: inconsistent strategy");
-
-
-   } /* end switch */
+   multirem3(a, n, &primes[0], tbl.get(), x);
 }
+
+_ntl_tmp_vec *_ntl_rem_struct_impl_tbl::fetch() { return 0; }
+#endif
 
 
 

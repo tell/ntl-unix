@@ -94,6 +94,16 @@ using the configure script.
 #endif
 
 
+#if 0
+#define NTL_EXCEPTIONS
+
+/* Set if you want to compile NTL with exceptions enabled
+ *
+ * To re-build after changing this flag: rm *.o; make ntl.a
+ */
+
+#endif
+
 
 #if 0
 #define NTL_GMP_LIP
@@ -412,7 +422,7 @@ using the configure script.
 
 
 
-/* The next five flags NTL_AVOID_BRANCHING, NTL_TBL_REM,
+/* The next six flags NTL_AVOID_BRANCHING, NTL_TBL_REM, NTL_TBL_REM_LL,
  * NTL_GF2X_ALTCODE, NTL_GF2X_ALTCODE1, and NTL_GF2X_NOINLINE
  * are also set by the configuration wizard.  
  */
@@ -446,6 +456,20 @@ using the configure script.
  *   ZZ_pX multiplication routines.  If you use the NTL_AVOID_FLOAT 
  *   or NTL_LONG_LONG flags, then you should probably use this one too.
  *
+ *   To re-build after changing this flag: 
+ *      rm lip.o; make ntl.a
+ */
+
+#endif
+
+
+#if 0
+#define NTL_TBL_REM_LL
+
+/*
+ *
+ *   This forces the LONG_LONG version if TBL_REM
+ *
  *   Irrelevent when NTL_GMP_LIP is set.
  *
  *   To re-build after changing this flag: 
@@ -453,6 +477,7 @@ using the configure script.
  */
 
 #endif
+
 
 
 #if 0
@@ -498,11 +523,6 @@ using the configure script.
 
 
 
-/* The following flag is not set by the configuration wizard;  its use
- * is not generally recommended.
- */
-
- 
 
 
 

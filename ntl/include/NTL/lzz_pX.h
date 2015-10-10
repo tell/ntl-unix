@@ -125,6 +125,10 @@ zz_p& operator[](long i) { return rep[i]; }
 const zz_p& operator[](long i) const { return rep[i]; }
 
 
+void swap(zz_pX& x)
+{
+   rep.swap(x.rep);
+}
 
 
 static const zz_pX& zero();
@@ -218,7 +222,7 @@ inline void set(zz_pX& x)
 inline void swap(zz_pX& x, zz_pX& y)
 // swap x & y (only pointers are swapped)
 
-   { swap(x.rep, y.rep); }
+   { x.swap(y); }
 
 void random(zz_pX& x, long n);
 inline zz_pX random_zz_pX(long n)
@@ -566,18 +570,20 @@ class fftRep {
 public:
    long k;                // a 2^k point representation
    long MaxK;             // maximum space allocated
-   long *tbl[4];
    long NumPrimes;
+   UniqueArray<long> tbl[4];
 
-   fftRep(const fftRep&); 
+   fftRep() : k(-1), MaxK(-1), NumPrimes(0) { }
+
+   fftRep(const fftRep& R) : k(-1), MaxK(-1), NumPrimes(0)
+   { *this = R; }
+
+   fftRep(INIT_SIZE_TYPE, long InitK) : k(-1), MaxK(-1), NumPrimes(0)
+   { SetSize(InitK); }
+
    fftRep& operator=(const fftRep&); 
-
    void SetSize(long NewK);
-
-   fftRep() { k = MaxK = -1; NumPrimes = 0; }
-   fftRep(INIT_SIZE_TYPE, long InitK) 
-   { k = MaxK = -1; NumPrimes = 0; SetSize(InitK); }
-   ~fftRep();
+   void DoSetSize(long NewK, long NewNumPrimes);
 };
 
 
@@ -847,7 +853,9 @@ public:
    fftRep FRep; // 2^k point rep of f
                 // H = rev((rev(f))^{-1} rem X^{n-1})
    fftRep HRep; // 2^l point rep of H
-   Lazy<vec_zz_p> tracevec;  
+
+   OptionalVal< Lazy<vec_zz_p> > tracevec;  
+   // extra level of indirection to ensure relocatability
 
    zz_pXModulus(const zz_pX& ff);
 

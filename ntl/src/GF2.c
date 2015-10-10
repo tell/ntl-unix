@@ -13,7 +13,7 @@ GF2 power(GF2 a, long e)
    }
 
    if (e < 0 && IsZero(a)) 
-      Error("GF2: division by zero");
+      ArithmeticError("GF2: division by zero");
 
    return a;
 }

@@ -21,9 +21,9 @@ long GF2X::HexOutput = 0;
 
 void GF2X::SetMaxLength(long n)
 {
-   if (n < 0) Error("GF2X::SetMaxLength: negative length");
+   if (n < 0) LogicError("GF2X::SetMaxLength: negative length");
    if (NTL_OVERFLOW(n, 1, 0))
-      Error("GF2X::SetMaxLength: excessive length");
+      ResourceError("GF2X::SetMaxLength: excessive length");
    long w = (n + NTL_BITS_PER_LONG - 1)/NTL_BITS_PER_LONG;
    xrep.SetMaxLength(w);
 }
@@ -60,8 +60,8 @@ void GF2X::normalize()
 void GF2X::SetLength(long n)
 {
    if (n < 0) {
-      Error("SetLength: negative index");
-      return;
+      LogicError("SetLength: negative index");
+      return; // NOTE: this helps the compiler optimize
    }
 
    long w = (n + NTL_BITS_PER_LONG - 1)/NTL_BITS_PER_LONG;
@@ -93,9 +93,9 @@ void GF2X::SetLength(long n)
 
 ref_GF2 GF2X::operator[](long i)
 {
-   if (i < 0) Error("GF2X: subscript out of range");
+   if (i < 0) LogicError("GF2X: subscript out of range");
    long wi = i/NTL_BITS_PER_LONG;
-   if (wi >= xrep.length())  Error("GF2X: subscript out of range");
+   if (wi >= xrep.length())  LogicError("GF2X: subscript out of range");
    long bi = i - wi*NTL_BITS_PER_LONG;
    return ref_GF2(INIT_LOOP_HOLE, &xrep[wi], bi);
 }
@@ -103,9 +103,9 @@ ref_GF2 GF2X::operator[](long i)
 
 const GF2 GF2X::operator[](long i) const
 {
-   if (i < 0) Error("GF2X: subscript out of range");
+   if (i < 0) LogicError("GF2X: subscript out of range");
    long wi = i/NTL_BITS_PER_LONG;
-   if (wi >= xrep.length())  Error("GF2X: subscript out of range");
+   if (wi >= xrep.length())  LogicError("GF2X: subscript out of range");
    long bi = i - wi*NTL_BITS_PER_LONG;
    return to_GF2((xrep[wi] & (1UL << bi)) != 0);
 }
@@ -173,8 +173,8 @@ void SetX(GF2X& x)
 void SetCoeff(GF2X& x, long i)
 {
    if (i < 0) {
-      Error("SetCoeff: negative index");
-      return;
+      LogicError("SetCoeff: negative index");
+      return; // NOTE: helpse the compiler optimize
    }
 
    long n, j;
@@ -198,8 +198,8 @@ void SetCoeff(GF2X& x, long i)
 void SetCoeff(GF2X& x, long i, long val)
 {
    if (i < 0) {
-      Error("SetCoeff: negative index");
-      return;
+      LogicError("SetCoeff: negative index");
+      return; // NOTE: helps the compiler optimize
    }
 
    val = val & 1;
@@ -231,12 +231,6 @@ void SetCoeff(GF2X& x, long i, GF2 a)
 }
 
 
-void swap(GF2X& a, GF2X& b)
-{
-   swap(a.xrep, b.xrep);
-}
-
-
 
 long deg(const GF2X& aa)
 {
@@ -248,7 +242,7 @@ long deg(const GF2X& aa)
    _ntl_ulong a = aa.xrep[n-1];
    long i = 0;
 
-   if (a == 0) Error("GF2X: unnormalized polynomial detected in deg");
+   if (a == 0) LogicError("GF2X: unnormalized polynomial detected in deg");
 
    while (a>=256)
       i += 8, a >>= 8;
@@ -447,10 +441,10 @@ ostream& operator<<(ostream& s, const GF2X& a)
 
 void random(GF2X& x, long n)
 {
-   if (n < 0) Error("GF2X random: negative length");
+   if (n < 0) LogicError("GF2X random: negative length");
 
    if (NTL_OVERFLOW(n, 1, 0))
-      Error("GF2X random: excessive length");
+      ResourceError("GF2X random: excessive length");
 
    long wl = (n+NTL_BITS_PER_LONG-1)/NTL_BITS_PER_LONG;
 
@@ -1037,6 +1031,7 @@ void mul(GF2X& c, const GF2X& a, const GF2X& b)
 
 
    NTL_THREAD_LOCAL static WordVector mem;
+   WordVectorWatcher watch_mem(mem);
 
    const _ntl_ulong *ap = a.xrep.elts(), *bp = b.xrep.elts();
    _ntl_ulong *cp;
@@ -1062,7 +1057,6 @@ void mul(GF2X& c, const GF2X& a, const GF2X& b)
    }
 
    c.normalize();
-   mem.release();
 }
 #else
 void OldMul(GF2X& c, const GF2X& a, const GF2X& b)
@@ -1406,6 +1400,10 @@ void mul(GF2X& c, const GF2X& a, const GF2X& b)
    NTL_THREAD_LOCAL static WordVector stk;
    NTL_THREAD_LOCAL static WordVector vec;
 
+   WordVectorWatcher watch_mem(mem);
+   WordVectorWatcher watch_stk(stk);
+   WordVectorWatcher watch_vec(vec);
+
    const _ntl_ulong *ap, *bp;
    _ntl_ulong *cp;
 
@@ -1483,10 +1481,6 @@ void mul(GF2X& c, const GF2X& a, const GF2X& b)
       c.xrep = mem;
 
    c.normalize();
-
-   mem.release();
-   stk.release();
-   vec.release();
 }
 
 
@@ -1510,7 +1504,7 @@ void mul(GF2X& c, const GF2X& a, GF2 b)
 
 void trunc(GF2X& x, const GF2X& a, long m)
 {
-   if (m < 0) Error("trunc: bad args");
+   if (m < 0) LogicError("trunc: bad args");
 
    long n = a.xrep.length();
    if (n == 0 || m == 0) {
@@ -1678,7 +1672,7 @@ void LeftShift(GF2X& c, const GF2X& a, long n)
    }
 
    if (NTL_OVERFLOW(n, 1, 0))
-      Error("overflow in LeftShift");
+      ResourceError("overflow in LeftShift");
 
    if (n == 0) {
       c = a;
@@ -1721,7 +1715,7 @@ void LeftShift(GF2X& c, const GF2X& a, long n)
 void ShiftAdd(GF2X& c, const GF2X& a, long n)
 // c = c + a*X^n
 {
-   if (n < 0) Error("ShiftAdd: negative argument");
+   if (n < 0) LogicError("ShiftAdd: negative argument");
 
    if (n == 0) {
       add(c, c, a);
@@ -1729,7 +1723,7 @@ void ShiftAdd(GF2X& c, const GF2X& a, long n)
    }
 
    if (NTL_OVERFLOW(n, 1, 0))
-      Error("overflow in ShiftAdd");
+      ResourceError("overflow in ShiftAdd");
 
    long sa = a.xrep.length();
    if (sa <= 0) {
@@ -1780,7 +1774,7 @@ void RightShift(GF2X& c, const GF2X& a, long n)
    }
 
    if (n < 0) {
-      if (n < -NTL_MAX_LONG) Error("overflow in RightShift");
+      if (n < -NTL_MAX_LONG) ResourceError("overflow in RightShift");
       LeftShift(c, a, -n);
       return;
    }
@@ -1866,7 +1860,7 @@ void CopyReverse(GF2X& c, const GF2X& a, long hi)
    if (hi < 0) { clear(c); return; }
 
    if (NTL_OVERFLOW(hi, 1, 0))
-      Error("overflow in CopyReverse");
+      ResourceError("overflow in CopyReverse");
 
    long n = hi+1;
    long sa = a.xrep.length();
@@ -1917,7 +1911,7 @@ void CopyReverse(GF2X& c, const GF2X& a, long hi)
 void div(GF2X& q, const GF2X& a, GF2 b)
 {
    if (b == 0)
-      Error("div: division by zero");
+      ArithmeticError("div: division by zero");
 
    q = a;
 }
@@ -1925,7 +1919,7 @@ void div(GF2X& q, const GF2X& a, GF2 b)
 void div(GF2X& q, const GF2X& a, long b)
 {
    if ((b & 1) == 0)
-      Error("div: division by zero");
+      ArithmeticError("div: division by zero");
 
    q = a;
 }

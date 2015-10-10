@@ -384,8 +384,8 @@ zz_pContext&amp; <font color="#b02f60"><b>operator</b></font>=(<font color="#008
 <font color="#008b00"><b>static</b></font>&nbsp;<font color="#008b00"><b>void</b></font>&nbsp;zz_p::UserFFTInit(<font color="#008b00"><b>long</b></font>&nbsp;p);<br>
 <font color="#0000ed"><i>// set the modulus to a user-provided FFT prime p. To be useful,</i></font><br>
 <font color="#0000ed"><i>// p-1 should be divisibly by a high power of 2. </i></font><br>
-<font color="#0000ed"><i>// The function &quot;long CalcMaxRoot(long p)&quot; is a utility routine</i></font><br>
-<font color="#0000ed"><i>// that may be used to calculate this value. </i></font><br>
+<font color="#0000ed"><i>// The function is a utility routine that may be used to </i></font><br>
+<font color="#0000ed"><i>// calculate this value (see below). </i></font><br>
 <font color="#0000ed"><i>// If you are going to perform arithmetic modulo a degree n polynomial, </i></font><br>
 <font color="#0000ed"><i>// you will want CalcMaxRoot(p) &gt;= NextPowerOfTwo(n)+1. </i></font><br>
 <br>
@@ -409,6 +409,15 @@ zz_p::zz_p(INIT_ALLOC_TYPE);<br>
 <br>
 zz_p::allocate();<br>
 <font color="#0000ed"><i>// provided for consistency with other classes, no action</i></font><br>
+<br>
+<br>
+<br>
+<font color="#008b00"><b>long</b></font>&nbsp;CalcMaxRoot(<font color="#008b00"><b>long</b></font>&nbsp;p);<br>
+<font color="#0000ed"><i>// p is assumed to be an odd prime.</i></font><br>
+<font color="#0000ed"><i>// Returns the largest k such that 2^k divides p-1</i></font><br>
+<font color="#0000ed"><i>// and such that k does not exceed an implementation defined</i></font><br>
+<font color="#0000ed"><i>// constant.&nbsp;&nbsp;This represents the max power of two for which</i></font><br>
+<font color="#0000ed"><i>// an FFT mod p is supported.</i></font><br>
 <br>
 <br>
 <br>

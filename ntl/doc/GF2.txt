@@ -213,8 +213,9 @@ istream& operator>>(istream& s, GF2& x);
 void clear(GF2& x); // x = 0
 void set(GF2& x); // x = 1
 
+void GF2::swap(GF2& x);
 void swap(GF2& x, GF2& y);
-// swap x and y 
+// swap 
 
 static GF2 GF2::zero();
 // GF2::zero() yields a read-only reference to zero

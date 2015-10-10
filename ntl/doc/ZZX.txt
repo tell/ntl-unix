@@ -588,8 +588,9 @@ ZZX::ZZX(INIT_SIZE_TYPE, long n);
 static const ZZX& zero();
 // ZZX::zero() is a read-only reference to 0
 
+void ZZX::swap(ZZX& x);
 void swap(ZZX& x, ZZX& y); 
-// swap x & y (by swapping pointers)
+// swap (by swapping pointers)
 
 
 ZZX::ZZX(long i, const ZZ& c); 

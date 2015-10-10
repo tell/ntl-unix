@@ -84,18 +84,6 @@ since it is a very reasonable behavior, and since many programs
 implicitly rely on this behavior.
 
 <p>
-Making this "wrap around" assumption can lead to slightly more efficient code
-on some platforms.
-It seems fairly unlikely that one would ever have to turn the
-<tt>NTL_CLEAN_INT</tt> flag <i>on</i>, but it seems a good idea
-to make this possible, and at the very least 
-to identify and isolate the code that
-relies on this assumption.
-
-
-
-
-<p>
 Actually, with <tt>NTL_CLEAN_INT</tt> off, it is also assumed
 that right shifts of signed integers are consistent,
 in the sense that if it is sometimes an arithmetic shift,
@@ -103,21 +91,46 @@ then it is always an arithmetic shift (the installation
 scripts check if right shift appears to be arithmetic, and if so,
 this assumption is made elsewhere). 
 
+
 <p>
-It is hard to imagine that there is a platform existing today
-(or in the foreseeable future) where these assumptions
-are not met.
-However,
- as of version 5.4 of NTL, all of the most 
-performance-critical code now works almost as well
-with  <tt>NTL_CLEAN_INT</tt> set as without.
-The differences are not very significant (maybe 10%).
-Therefore, there is hardly any reason to not set this flag.
-Also, note that the only code affected by this flag
-is the traditional long integer package (which, if you use
+Making this "wrap around" assumption can lead to slightly more efficient code
+on some platforms.
+It seems fairly unlikely that one would ever have to turn the
+<tt>NTL_CLEAN_INT</tt> flag <i>on</i>, but it seems a good idea
+to make this possible, and at the very least 
+to identify and isolate the code that
+relies on this assumption.
+The only code affected by this flag
+is the traditional LIP long integer package (which, if you use
 GMP as the long integer package, is not involved),
 and the single-precision modular multiplication routines
 defined in <tt>ZZ.h</tt>.
+
+
+
+
+<p>
+Note that more recent versions of GCC do more aggressive
+optimizations that tend to violate the "wraparound assumption".
+However, it is very doubtful that these optimizations 
+will effect on NTL's correctness.
+If in doubt, turn on the <tt>NTL_CLEAN_INT</tt> flag. 
+It might 
+cost you 5-10% in performance when using the traditional LIP 
+long integer package, and even
+less, when using GMP.
+
+<p>
+Alternatively, with GCC, you can use the <tt>-fwrapv</tt>
+flag which will ensure "wraparound arithmetic";
+however, because of some inline functions in the NTL interface,
+you will have to use this flag in all client code as well.
+Using <tt>-fwrapv</tt> may also incur a performance cost, as well.
+It seems doubtful that this flag is all that useful,
+especially if using GMP.
+
+
+
 
 <p>
 
@@ -375,9 +388,13 @@ manner.
 
 <p>
 <li>
-For psuedo-random number generation, the current thread ID is 
-used as the default seed, and the internal state of the PRG 
-is thread local.
+For psuedo-random number generation, 
+the internal state of the PRG 
+is thread local,
+and the default initial seed is guaranteed to be unique
+among all threads in a given process (and an attempt is made to
+make the seed globally unique among all processes and threads,
+but this is hard to do in a portable way).
 
 
 </ul>
@@ -390,24 +407,37 @@ flag.
 
 <p>
 <h3>
-Error Handling
+Error Handling and Exceptions
 </h3>
 <p>
 
-NTL provides only a very crude form of error handling:
-print an error message and abort.
-For most NTL users, this is quite sufficient.
-The alternative would be to have NTL throw exceptions.
-Writing code that handles exceptions correctly is quite difficult.
-The easy part is throwing and catching exceptions.
-The hard part is writing code <i>through which</i> an exception
-can be safely and correctly thrown.
-Retrofitting NTL to throw exceptions 
-would be quite a challenge at this stage.
-Moreover, the GMP library suffers from the same problem,
-so even if I fix NTL, the problem won't go away.
-That said, I'd be interested in getting feedback
-on this issue.
+As of v8.0, NTL provides error handling through exceptions.
+To enable exptions, you have to configure
+NTL with <tt>NTL_EXCEPTIONS</tt> flag turned on.
+By default, exceptions are not enabled, and NTL
+reverts to its old error handling method:
+abort with an error message. 
+
+<p>
+If exceptions are enabled, then instead of aborting your
+program, and appropriate exception is thrown.
+More details ion the programming interface
+of this feature are available <a href="tour-struct.html#except">here</a>.
+
+<p>
+If you enable exceptions, you must use a <tt>C++11</tt> compiler.
+Specifically, your compiler will need support for lambdas
+(which are used to conveniently implement the "scope guard" idiom),
+and your compiler should implement the new default exception
+specification semantics (namely, that destructors are "noexcept" by 
+default).
+
+<p>
+Implementation of this required a top-to-bottom scrub of NTL's code,
+replacing a lot of old-fashioned code with more modern, RAII-oriented
+code (RAII = "resource acquisition is initialization").
+
+
 
 
 

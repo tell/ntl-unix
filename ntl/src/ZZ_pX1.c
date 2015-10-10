@@ -55,7 +55,7 @@ void RightShift(ZZ_pX& x, const ZZ_pX& a, long n)
    }
 
    if (n < 0) {
-      if (n < -NTL_MAX_LONG) Error("overflow in RightShift");
+      if (n < -NTL_MAX_LONG) ResourceError("overflow in RightShift");
       LeftShift(x, a, -n);
       return;
    }
@@ -96,7 +96,7 @@ void LeftShift(ZZ_pX& x, const ZZ_pX& a, long n)
    }
 
    if (NTL_OVERFLOW(n, 1, 0))
-      Error("overflow in LeftShift");
+      ResourceError("overflow in LeftShift");
 
    long m = a.rep.length();
 
@@ -832,7 +832,7 @@ void eval(vec_ZZ_p& b, const ZZ_pX& f, const vec_ZZ_p& a)
 void interpolate(ZZ_pX& f, const vec_ZZ_p& a, const vec_ZZ_p& b)
 {
    long m = a.length();
-   if (b.length() != m) Error("interpolate: vector length mismatch");
+   if (b.length() != m) LogicError("interpolate: vector length mismatch");
 
    if (m == 0) {
       clear(f);
@@ -958,7 +958,7 @@ void CompMod(ZZ_pX& x, const ZZ_pX& g, const ZZ_pXArgument& A,
 
 void build(ZZ_pXArgument& A, const ZZ_pX& h, const ZZ_pXModulus& F, long m)
 {
-   if (m <= 0 || deg(h) >= F.n) Error("build: bad args");
+   if (m <= 0 || deg(h) >= F.n) LogicError("build: bad args");
 
    if (m > F.n) m = F.n;
 
@@ -1118,7 +1118,7 @@ void UpdateMap(vec_ZZ_p& x, const vec_ZZ_p& aa,
    a = aa;
    StripZeroes(a);
 
-   if (a.length() > n) Error("UpdateMap: bad args");
+   if (a.length() > n) LogicError("UpdateMap: bad args");
 
    if (!B.UseFFT) {
       PlainUpdateMap(x, a, B.b, F.f);
@@ -1151,8 +1151,11 @@ void ProjectPowers(vec_ZZ_p& x, const vec_ZZ_p& a, long k,
 {
    long n = F.n;
 
-   if (a.length() > n || k < 0 || NTL_OVERFLOW(k, 1, 0)) 
-      Error("ProjectPowers: bad args");
+   if (a.length() > n || k < 0) 
+      LogicError("ProjectPowers: bad args");
+   if (NTL_OVERFLOW(k, 1, 0)) 
+      ResourceError("ProjectPowers: excessive args");
+
 
    long m = H.H.length()-1;
    long l = (k+m-1)/m - 1;
@@ -1182,7 +1185,7 @@ void ProjectPowers(vec_ZZ_p& x, const vec_ZZ_p& a, long k,
                    const ZZ_pX& h, const ZZ_pXModulus& F)
 
 {
-   if (a.length() > F.n || k < 0) Error("ProjectPowers: bad args");
+   if (a.length() > F.n || k < 0) LogicError("ProjectPowers: bad args");
 
    if (k == 0) {
       x.SetLength(0);
@@ -1290,8 +1293,9 @@ void GCDMinPolySeq(ZZ_pX& h, const vec_ZZ_p& x, long m)
 
 void MinPolySeq(ZZ_pX& h, const vec_ZZ_p& a, long m)
 {
-   if (m < 0 || NTL_OVERFLOW(m, 1, 0)) Error("MinPoly: bad args");
-   if (a.length() < 2*m) Error("MinPoly: sequence too short");
+   if (m < 0) LogicError("MinPoly: bad args");
+   if (NTL_OVERFLOW(m, 1, 0)) LogicError("MinPoly: bad args");
+   if (a.length() < 2*m) LogicError("MinPoly: sequence too short");
 
    if (m > NTL_ZZ_pX_BERMASS_CROSSOVER)
       GCDMinPolySeq(h, a, m);
@@ -1313,7 +1317,7 @@ void DoMinPolyMod(ZZ_pX& h, const ZZ_pX& g, const ZZ_pXModulus& F, long m,
 void ProbMinPolyMod(ZZ_pX& h, const ZZ_pX& g, const ZZ_pXModulus& F, long m) 
 {
    long n = F.n;
-   if (m < 1 || m > n) Error("ProbMinPoly: bad args");
+   if (m < 1 || m > n) LogicError("ProbMinPoly: bad args");
    
    long i;
    vec_ZZ_p R(INIT_SIZE, n);
@@ -1326,7 +1330,7 @@ void MinPolyMod(ZZ_pX& hh, const ZZ_pX& g, const ZZ_pXModulus& F, long m)
 {
    ZZ_pX h, h1;
    long n = F.n;
-   if (m < 1 || m > n) Error("MinPoly: bad args");
+   if (m < 1 || m > n) LogicError("MinPoly: bad args");
 
    /* probabilistically compute min-poly */
 
@@ -1363,7 +1367,7 @@ void MinPolyMod(ZZ_pX& hh, const ZZ_pX& g, const ZZ_pXModulus& F, long m)
 void IrredPolyMod(ZZ_pX& h, const ZZ_pX& g, const ZZ_pXModulus& F, long m) 
 {
    vec_ZZ_p R(INIT_SIZE, 1);
-   if (m < 1 || m > F.n) Error("IrredPoly: bad args");
+   if (m < 1 || m > F.n) LogicError("IrredPoly: bad args");
 
    set(R[0]);
    DoMinPolyMod(h, g, F, m, R);
@@ -1441,7 +1445,7 @@ void FFTMulTrunc(ZZ_pX& x, const ZZ_pX& a, const ZZ_pX& b, long n)
 
 void MulTrunc(ZZ_pX& x, const ZZ_pX& a, const ZZ_pX& b, long n)
 {
-   if (n < 0) Error("MulTrunc: bad args");
+   if (n < 0) LogicError("MulTrunc: bad args");
 
    if (deg(a) <= NTL_ZZ_pX_FFT_CROSSOVER || deg(b) <= NTL_ZZ_pX_FFT_CROSSOVER)
       PlainMulTrunc(x, a, b, n);
@@ -1479,7 +1483,7 @@ void FFTSqrTrunc(ZZ_pX& x, const ZZ_pX& a, long n)
 
 void SqrTrunc(ZZ_pX& x, const ZZ_pX& a, long n)
 {
-   if (n < 0) Error("SqrTrunc: bad args");
+   if (n < 0) LogicError("SqrTrunc: bad args");
 
    if (deg(a) <= NTL_ZZ_pX_FFT_CROSSOVER)
       PlainSqrTrunc(x, a, n);
@@ -1493,7 +1497,7 @@ void FastTraceVec(vec_ZZ_p& S, const ZZ_pX& f)
    long n = deg(f);
 
    if (n <= 0) 
-      Error("FastTraceVec: bad args");
+      LogicError("FastTraceVec: bad args");
 
    if (n == 0) {
       S.SetLength(0);
@@ -1535,7 +1539,7 @@ void FastTraceVec(vec_ZZ_p& S, const ZZ_pX& f)
 void PlainTraceVec(vec_ZZ_p& S, const ZZ_pX& ff)
 {
    if (deg(ff) <= 0)
-      Error("TraceVec: bad args");
+      LogicError("TraceVec: bad args");
 
    ZZ_pX f;
    f = ff;
@@ -1611,21 +1615,24 @@ void TraceMod(ZZ_p& x, const ZZ_pX& a, const ZZ_pXModulus& F)
    long n = F.n;
 
    if (deg(a) >= n)
-      Error("trace: bad args");
+      LogicError("trace: bad args");
 
    do { // NOTE: thread safe lazy init
-      Lazy<vec_ZZ_p>::Builder builder(F.tracevec);
-      if (!builder) break;
-      ComputeTraceVec(*builder, F);
+      Lazy<vec_ZZ_p>::Builder builder(F.tracevec.val());
+      if (!builder()) break;
+      UniquePtr<vec_ZZ_p> p;
+      p.make();
+      ComputeTraceVec(*p, F);
+      builder.move(p);
    } while (0);
       
-   InnerProduct(x, a.rep, F.tracevec.value());
+   InnerProduct(x, a.rep, *F.tracevec.val());
 }
 
 void TraceMod(ZZ_p& x, const ZZ_pX& a, const ZZ_pX& f)
 {
    if (deg(a) >= deg(f) || deg(f) <= 0)
-      Error("trace: bad args");
+      LogicError("trace: bad args");
 
    project(x, TraceVec(f), a);
 }
@@ -1940,7 +1947,7 @@ void resultant(ZZ_p& rres, const ZZ_pX& u, const ZZ_pX& v)
 void NormMod(ZZ_p& x, const ZZ_pX& a, const ZZ_pX& f)
 {
    if (deg(f) <= 0 || deg(a) >= deg(f)) 
-      Error("norm: bad args");
+      LogicError("norm: bad args");
 
    if (IsZero(a)) {
       clear(x);

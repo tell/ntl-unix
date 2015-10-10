@@ -135,6 +135,8 @@ zz_pE(zz_pE& x, INIT_TRANS_TYPE) : _zz_pE__rep(x._zz_pE__rep, INIT_TRANS) { }
 // You can always access the _zz_pE__representation directly...if you dare.
 zz_pX& LoopHole() { return _zz_pE__rep; }
 
+void swap(zz_pE& x) { _zz_pE__rep.swap(x._zz_pE__rep); }
+
 
 static const zz_pXModulus& modulus() { return zz_pEInfo->p; }
 
@@ -167,7 +169,7 @@ inline void set(zz_pE& x)
 inline void swap(zz_pE& x, zz_pE& y)
 // swap x and y
 
-   { swap(x._zz_pE__rep, y._zz_pE__rep); }
+   { x.swap(y); }
 
 // ****** addition
 

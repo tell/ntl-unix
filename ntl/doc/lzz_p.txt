@@ -376,8 +376,8 @@ static void zz_p::FFTInit(long i);
 static void zz_p::UserFFTInit(long p);
 // set the modulus to a user-provided FFT prime p. To be useful,
 // p-1 should be divisibly by a high power of 2. 
-// The function "long CalcMaxRoot(long p)" is a utility routine
-// that may be used to calculate this value. 
+// The function is a utility routine that may be used to 
+// calculate this value (see below). 
 // If you are going to perform arithmetic modulo a degree n polynomial, 
 // you will want CalcMaxRoot(p) >= NextPowerOfTwo(n)+1. 
 
@@ -401,6 +401,15 @@ zz_p::zz_p(INIT_ALLOC_TYPE);
 
 zz_p::allocate();
 // provided for consistency with other classes, no action
+
+
+
+long CalcMaxRoot(long p);
+// p is assumed to be an odd prime.
+// Returns the largest k such that 2^k divides p-1
+// and such that k does not exceed an implementation defined
+// constant.  This represents the max power of two for which
+// an FFT mod p is supported.
 
 
 

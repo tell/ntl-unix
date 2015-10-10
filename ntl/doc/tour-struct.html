@@ -23,9 +23,9 @@ NTL's programming interface.
 
 <p>
 <p>
-<h3>
+<h2>
 Basic Ring Classes
-</h3>
+</h2>
 <p>
 
 The basic ring classes are:
@@ -95,9 +95,9 @@ by a power of <tt>X</tt>.
 
 <p>
 <p>
-<h3>
+<h2>
 Floating Point Classes
-</h3>
+</h2>
 <p>
 
 In addition to the above ring classes, NTL also provides three
@@ -115,9 +115,9 @@ extended exponent range (for very large numbers);
 
 <p>
 <p>
-<h3>
+<h2>
 Vectors and Matrices
-</h3>
+</h2>
 <p>
 
 There are also vectors and matrices over 
@@ -128,9 +128,9 @@ which support the usual arithmetic operations.
 
 <p>
 <p>
-<h3>
+<h2>
 Functional and Procedural forms
-</h3>
+</h2>
 <p>
 
 Generally, for any function defined by NTL, there is 
@@ -231,7 +231,7 @@ such efficiencies, and the functional form is usually preferable
 because the resulting code is usually easier to understand.
 
 <p>
-The above rules converning procedural and functional forms apply
+The above rules governing procedural and functional forms apply
 to essentially all of the arithmetic classes supported by NTL,
 with the exception of
 <tt>xdouble</tt> and <tt>quad_float</tt>.
@@ -243,9 +243,9 @@ for arithmetic operations (but do support both forms for conversion).
 
 <p>
 <p>
-<h3>
+<h2>
 Conversions and Promotions
-</h3>
+</h2>
 <p>
 
 As mentioned above, there are numerous explicit conversion routines,
@@ -268,7 +268,7 @@ there is automatically a conversion from
 
 <p>
 
-Even though there are no implicity conversions, users
+Even though there are no implicit conversions, users
 of NTL can still have most of their benefits.
 This is because all of the basic arithmetic operations 
 (in both their functional and procedural forms),
@@ -652,7 +652,7 @@ the bit-wise <i>and</i>, <i>or</i>, and <i>xor</i> routines promote their argume
 There are also several other routines in module <tt>ZZ</tt>
 that have both <tt>ZZ</tt> and <tt>long</tt> versions, e.g.,
 <tt>NumBits</tt>, <tt>bit</tt>, <tt>weight</tt>.
-Check the documentation in <a href="ZZ.cpp.html"><tt>ZZ.cpp.html</tt></a> 
+Check the documentation in <a href="ZZ.cpp.html"><tt>ZZ.txt</tt></a> 
 for complete details.
 
 </ul>
@@ -800,9 +800,9 @@ usually, but not always, what one wants.
 
 <p>
 <p>
-<h3>
+<h2>
 Input and Output
-</h3>
+</h2>
 <p>
 NTL provides input and output operators for all
 types, using the usual conventions for input and output streams.
@@ -818,9 +818,9 @@ and output operators provided by NTL.
 
 <p>
 <p>
-<h3>
+<h2>
 Aliasing
-</h3>
+</h2>
 <p>
 
 An important feature of NTL is that aliasing of input and output
@@ -838,9 +838,9 @@ matrices assume that their inputs do not alias their outputs.
 
 <p>
 <p>
-<h3>
+<h2>
 Constructors, Destructors, and Memory Management
-</h3>
+</h2>
 <p>
 
 NTL generally takes care of managing the space occupied by large,
@@ -975,9 +975,9 @@ object requires non-trivial computation.
 
 <p>
 <p>
-<h3>
+<h2>
 Residue class rings and modulus switching
-</h3>
+</h2>
 <p>
 
 NTL provides a number of classes to represent residue class rings:
@@ -1032,8 +1032,8 @@ ENDPLAIN -->
 <!-- }}} ENDPRETTY -->
 
 
-The constructor for push will save the current modulus, and install <tt>p</tt> as the
-current modulus.  The destructor for push will restore the old modulus when the
+The constructor for <tt>push</tt> will save the current modulus, and install <tt>p</tt> as the
+current modulus.  The destructor for <tt>push</tt> will restore the old modulus when the
 scope enclosing it exits.  This is the so-called RAII (resource acquisition is
 initialization) paradigm.
 
@@ -1052,35 +1052,95 @@ You could also do the following:
 
       ZZ_p::init(p2); // install p2
 
-      // reinstall original modulus as close of scope
+      // reinstall original modulus at close of scope
    }
 ENDPLAIN -->
 <!-- STARTPRETTY {{{ -->
-<p><p><table cellPadding=10px><tr><td><font color="#000000">
-<font face="monospace">
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
 &nbsp;&nbsp; {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ZZ_pPush push;&nbsp;<font color="#0000ee"><i>// just backup current modulus</i></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ZZ_pPush push; <font color="#0000ed"><i>// just backup current modulus</i></font><br>
 <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ZZ_p::init(p1);&nbsp;<font color="#0000ee"><i>// install p1&nbsp;</i></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ZZ_p::init(p1); <font color="#0000ed"><i>// install p1 </i></font><br>
 <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ZZ_p::init(p2);&nbsp;<font color="#0000ee"><i>// install p2</i></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ZZ_p::init(p2); <font color="#0000ed"><i>// install p2</i></font><br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ee"><i>// reinstall original modulus as close of scope</i></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ed"><i>// reinstall original modulus at close of scope</i></font><br>
 &nbsp;&nbsp; }<br>
-</font>
-</font></td></tr></table><p><p>
+</font></font></td></tr></table><p><p>
 <!-- }}} ENDPRETTY -->
 
 
+<p>
+<b>Warning:</b> <tt>C++</tt> syntax can be rather unfriendly sometimes.
+When using RAII objects like <tt>ZZ_pPush</tt>, watch out for
+the following errors:
+<!-- STARTPLAIN
+   ZZ_pPush push();  // ERROR: local declaration of a function!!
+   ZZ_pPush(p);      // ERROR: temporary RAII-object created and 
+                     //        immediately destroyed!!
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+&nbsp;&nbsp; ZZ_pPush push();&nbsp;&nbsp;<font color="#0000ed"><i>// ERROR: local declaration of a function!!</i></font><br>
+&nbsp;&nbsp; ZZ_pPush(p);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ed"><i>// ERROR: temporary RAII-object created and </i></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;immediately destroyed!!</i></font><br>
+</font></font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
+Unfortunately, most compilers do not issue any warnings
+in these situations.
+I have fallen into both traps myself.
       
 <p>
 The <tt>ZZ_pPush</tt> interface is good for implementing simple stack-like
-modulus "context switching".  For more general context switching,
-see the class <tt>ZZ_pContext</tt>.
+"context switching".  For more general context switching,
+use the class <tt>ZZ_pContext</tt>:
+<!-- STARTPLAIN
+   ZZ_p::init(p);     // set current modulus to p
+
+      ...
+
+   ZZ_pContext context;
+   context.save();    // save the current modulus p
+
+      ...
+
+   ZZ_p::init(q);     // set current modulus to q
+
+      ...
+   
+   context.restore(); // restore p as the current modulus
+ENDPLAIN -->
+<!-- STARTPRETTY {{{ -->
+<p><p><table cellPadding=10px><tr><td><font color="#000000"><font face="monospace">
+&nbsp;&nbsp; ZZ_p::init(p);&nbsp;&nbsp;&nbsp;&nbsp; <font color="#0000ed"><i>// set current modulus to p</i></font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+<br>
+&nbsp;&nbsp; ZZ_pContext context;<br>
+&nbsp;&nbsp; context.save();&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ed"><i>// save the current modulus p</i></font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+<br>
+&nbsp;&nbsp; ZZ_p::init(q);&nbsp;&nbsp;&nbsp;&nbsp; <font color="#0000ed"><i>// set current modulus to q</i></font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+&nbsp;&nbsp; <br>
+&nbsp;&nbsp; context.restore(); <font color="#0000ed"><i>// restore p as the current modulus</i></font><br>
+</font></font></td></tr></table><p><p>
+<!-- }}} ENDPRETTY -->
+
+Note that <tt>ZZ_pContext</tt>'s are essentially "smart pointers",
+and they may be copied.
+Generally speaking, saving, restoring, and copying <tt>ZZ_pContext</tt>'s
+are very cheap operations.
+Likewise, saving and restoring contexts using <tt>ZZ_pPush</tt>
+objects are very cheap operations.
+
 
 <p>
 It is critical that <tt>ZZ_p</tt> objects created under one <tt>ZZ_p</tt> modulus are not used in
@@ -1100,9 +1160,9 @@ lead to unpredictable behavior.
 <p>
 The implementations of <tt>Vec&lt;ZZ_p&gt;</tt>, <tt>Vec&lt;GF2E&gt;</tt>, and <tt>Vec&lt;GF2&gt;</tt> 
 are specialized to manage memory more
-efficiently than in the default implementation of <tt>Vec&lt;T&gt;</tt>.  
-
-<p>
+efficiently than in the default implementation of <tt>Vec&lt;T&gt;</tt>:
+<ul>
+<p><li>
 Contiguous elements in a <tt>Vec&lt;ZZ_p&gt;</tt> are allocated in a contiguous region of
 memory.  This reduces the number of calls to the memory allocator, and  
 leads to greater locality of reference.  A consequence of
@@ -1112,18 +1172,165 @@ only be done "in context".  That said, it is still safe to construct a
 <tt>Vec&lt;ZZ_p&gt;</tt> using the default or copy contructor, and to assign or append one
 <tt>Vec&lt;ZZ_p&gt;</tt> to another "out of context".
 
-<p>
+<p><li>
 The same strategy is used for <tt>Vec&lt;GF2E&gt;</tt>'s.
 
-<p>
+<p><li>
 In any case, the above restrictions adhere to the general rules
 for safely using residue class ring objects "out of context".
 
-<p>
+<p><li>
 <tt>Vec&lt;GF2&gt;</tt>'s are implemented by packing coefficients (which are just bits)
 into words.  A mechanism is provided to make indexing these vectors
 behave like normal vectors, via a class the mimics ordinary references
 to <tt>GF2</tt>'s.  
+</ul>
+
+
+<p>
+<p>
+<h2>
+<a name="except">Error Handling and Exceptions</a>
+</h2>
+<p>
+Prior to version 8.0 of NTL, errors were dealt with in a simlple way:
+print an error message and abort.
+
+As of version 8.0, NTL provides error handling with exceptions.
+To use this feature, you will need to configure NTL with the
+<tt>NTL_EXCEPTIONS</tt> flag turned on.
+You will also need a <tt>C++11</tt> compiler.
+
+<p>
+The exceptions thrown by NTL are either a <tt>std::bad_alloc</tt>
+exception (in case of memory allocation error),
+or a class (defined in namespace NTL) 
+derived from <tt>std::runtime_error</tt>:
+<ul>
+<li> <tt>ErrorObject</tt> &#8594; <tt>std::runtime_error</tt>
+<ul> <li> base class  </ul>
+<li> <tt>LogicErrorObject</tt> &#8594; <tt>ErrorObject</tt>
+<ul> <li> used to indicate a logic error, such as incorrect
+          function parameters, index out of range, etc. </ul>
+<li> <tt>ArithmeticErrorObject</tt> &#8594; <tt>ErrorObject</tt>
+<ul> <li> used to indicate an arithmetic error, such as divide by zero </ul>
+<li> <tt>ResourceErrorObject</tt> &#8594; <tt>ErrorObject</tt>
+<ul> <li> used to indicate an overflow error (e.g., when a number cannot be stored as a <tt>long</tt>) </ul>
+<li> <tt>FileErrorObject</tt> &#8594; <tt>ErrorObject</tt>
+<ul> <li> used to indicate a problem opening or closing a file</ul>
+<li> <tt>InputErrorObject</tt> &#8594; <tt>ErrorObject</tt>
+<ul> <li> used to indicate a problem reading from a stream</ul>
+</ul>
+
+<p>
+All of these error objects override the <tt>what()</tt>
+method of <tt>std::exception</tt> with an appropriate
+error message.
+
+<p>
+There is also a special exception class <tt>InvModErrorObject</tt>,
+which is derived from <tt>ArithmeticErrorObject</tt>,
+and is thrown when a modular inverse computation over <tt>ZZ</tt> fails
+(either directly, or indirectly through <tt>PowerMod</tt>
+computation, or via an inverse computation in <tt>ZZ_p</tt>).
+The  <tt>InvModErrorObject</tt> provides two methods, 
+<tt>get_a()</tt> and <tt>get_n()</tt>, which provide read-only
+references to the offending objects <tt>a</tt> and <tt>n</tt>
+(so <tt>GCD(a, n) != 1</tt>).
+
+<p>
+The generic class <tt>ErrorObject</tt> is not thrown directly
+by any NTL routines, except for the legacy function <tt>Error</tt>,
+which is no longer called by any NTL routines.
+New functions 
+<pre>
+   MemoryError, LogicError, ArithmeticError, ResourceError, FileError, InputError
+</pre>
+are used to throw exceptions derived from <tt>ErrorObject</tt>.
+
+<p>
+<b>Issues with GMP:</b>
+As of this writing (December 2014),
+GMP itself provides only the very crude print-message-then-abort
+error handling.
+Note that NTL only uses low-level GMP routines (the <tt>mpn</tt>-level
+routines),
+and these routines should only abort if they cannot allocate space
+for temporary big integers.
+So this should only be an issue of you are working with some
+very large integers.
+The GMP developers are working on improving their error handling.
+When that happens, NTL will inherit these improvements.
+If you really need proper error handling, and are willing to pay
+a certain performance penalty, then you should configure
+and build NTL <i>without</i> GMP.
+
+<p>
+<b>Issues with gf2x:</b>
+Similar comments apply to NTL builds that use the <tt>gf2x</tt>
+library.
+I have no idea how they handle errors.
+If you really need proper error handling, you should not use <tt>gf2x</tt>.
+
+
+<p>
+<p>
+<b>Exception safety:</b>
+I have tried to carefully document exception safety characterstics
+for just a few, critical, low-level classes: 
+vectors and matrices 
+(<a href="vector.cpp.html">vector.txt</a> and
+<a href="matrix.cpp.html">matrix.txt</a>),
+smart pointer classes (<a href="SmartPtr.cpp.html">SmartPtr.txt</a>),
+thread-safe lazy initialization classes
+(<a href="Lazy.cpp.html">Lazy.txt</a> and 
+<a href="LazyTable.cpp.html">LazyTable.txt</a>).
+Otherwise, it is only safe to assume that NTL functions
+provide a weak exception-safety guarantee:
+if an exception is thrown, the stack unwinding process will
+will not leak any resources and will leave all modified objects
+in a reasonable state: at least, such objects may be safely 
+destroyed, and may also be assigned to or reset; 
+however, they may not necessarily
+be safely used as inputs to other functions.
+When stronger exception safety is required, you can always 
+compute results into dynamically allocated objects
+pointed to by "smart pointers",
+and then move or swap these pointers into place after all computations
+have succeeded.
+<p>
+As NTL provides <tt>swap</tt> functions for all its major classes,
+and as <tt>swap</tt> functions have evolved to play a critical role
+in writing exception-safe code, they deserve a special mention here:
+<ul>
+<p><li> 
+For all classes except <tt>ZZ</tt>, <tt>ZZ_p</tt>, <tt>GF2X</tt>,
+<tt>GF2E</tt>, and <tt>Vec&lt;T&gt;</tt>, the swap function is guaranteed to not throw
+any exceptions.
+<p><li>
+For <tt>ZZ</tt> objects that are not elements of a <tt>ZZVec</tt>,
+<tt>ZZ_p</tt> objects that are not elements of a <tt>Vec&lt;ZZ_p&gt;</tt>,
+<tt>GF2X</tt> objects that are not elements of a <tt>GF2XVec</tt>,
+and
+<tt>GF2E</tt> objects that are not elements of a <tt>Vec&lt;GF2E&gt;</tt>,
+the swap function is guaranteed to not throw any exceptions.
+<p><li>
+For  <tt>Vec&lt;T&gt;</tt> objects whose length has not been fixed,
+the swap function is guaranteed to not throw any exceptions.
+<p><li>
+For the remaining cases, the swap function provides a strong exception-safety
+guarantee (the operation either succeeds, or throws and leaves data unchanged).
+</ul>
+These rules are unfortunatley a bit complicated, due to NTL's historical
+legacy, and to its special memory management of
+<tt>ZZVec</tt>,
+<tt>Vec&lt;ZZ_p&gt;</tt>,
+<tt>GF2XVec</tt>,
+and
+<tt>Vec&lt;GF2E&gt;</tt>
+types.
+
+
 
 
 

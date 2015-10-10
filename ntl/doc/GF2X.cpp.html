@@ -812,8 +812,9 @@ GF2X::GF2X(INIT_SIZE_TYPE, <font color="#008b00"><b>long</b></font>&nbsp;n);<br>
 <font color="#008b00"><b>static</b></font>&nbsp;<font color="#008b00"><b>const</b></font>&nbsp;GF2X&amp; zero();<br>
 <font color="#0000ed"><i>// GF2X::zero() is a read-only reference to 0</i></font><br>
 <br>
+<font color="#008b00"><b>void</b></font>&nbsp;GF2X::swap(GF2X&amp; x);<br>
 <font color="#008b00"><b>void</b></font>&nbsp;swap(GF2X&amp; x, GF2X&amp; y); <br>
-<font color="#0000ed"><i>// swap x and y (via &quot;pointer swapping&quot;)</i></font><br>
+<font color="#0000ed"><i>// swap (via &quot;pointer swapping&quot; -- if possible)</i></font><br>
 <br>
 GF2X::GF2X(<font color="#008b00"><b>long</b></font>&nbsp;i, GF2 c); <br>
 GF2X::GF2X(<font color="#008b00"><b>long</b></font>&nbsp;i, <font color="#008b00"><b>long</b></font>&nbsp;c); <br>

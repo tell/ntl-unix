@@ -393,8 +393,9 @@ GF2EContext&amp; <font color="#b02f60"><b>operator</b></font>=(<font color="#008
 <font color="#0000ed"><i>// GF2E::size() returns # of words needed to store a polynomial of</i></font><br>
 <font color="#0000ed"><i>// degree &lt; GF2E::degree()</i></font><br>
 <br>
+<font color="#008b00"><b>void</b></font>&nbsp;GF2E::swap(GF2E&amp; x);<br>
 <font color="#008b00"><b>void</b></font>&nbsp;swap(GF2E&amp; x, GF2E&amp; y);<br>
-<font color="#0000ed"><i>// swap x and y (done by &quot;pointer swapping&quot;, if possible).</i></font><br>
+<font color="#0000ed"><i>// swap (done by &quot;pointer swapping&quot;, if possible).</i></font><br>
 <br>
 <font color="#008b00"><b>static</b></font>&nbsp;ZZ&amp; GF2E::cardinality();<br>
 <font color="#0000ed"><i>// yields the cardinality, i.e., 2^{GF2E::degree()}</i></font><br>

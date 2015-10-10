@@ -67,7 +67,56 @@ which may be more than the number elements initialized.
 Note that if n <= v.allocated(), then v.SetLength(n) is guaranteed
 not to cause any memory allocation, or movement of objects.
 
+IMPLEMENTATION DETAILS:
+
+A Vec<T> object is just a pointer to the first element of the array.
+There is a control block immediately before the first element that
+keeps track of several parameters: 
+   len    -- the logical length of the array (returned by length())
+   init   -- the number of elements constructed (returned ny MaxLength())
+   alloc  -- the number of elements for which space has been allocated
+             (returned by allocated())
+   fixed  -- flag that indicates that the length is fixed 
+             (returned by fixed())
+
+Note that 0 <= len <= init <- alloc
+
+COMPARISON TO STL VECTORS:
+
+When the length of an NTL vector is reduced, no objects are destroyed.
+In contrast, when the length of an STL vector is reduced, objects are
+destroyed (effectively, maintaining the invariant len == init).
+
+When the length of an NTL vector is increased, and the new value of len
+exceeds the current value of alloc, the underying array of objects is
+resized using malloc.  This implies that existing objects are moved using
+a bit-wise copy.  As mentioned above, this means that objects should
+be "relocatable", in the sense that they do not care what their actual
+address is.  Most reasonable objects satisfy this constraint.  An example
+of an object that does not is one that stores in one data member a pointer
+to another data member within the same object.
+
+In contrast, when the length of an STL vector is increased, an new array
+is allocated, and objects from the old array are copied to the new array,
+and then destroyed in the old array.  This obviously is much more expensive
+that NTL's strategy.  However, the new "move semantics", introduced in C++11,
+mitigate this issue somewhat.
+
+Because of NTL's relocatability requirement, it is not recommended to
+use NTL vectors over classes coming from the standard library, which
+may not satisfy the requirement.
+
+Note also that Facebook's open source "folly" library also provides
+a vector class that uses realloc in a manner very similar to NTL's vector class.
+See https://github.com/facebook/folly/blob/master/folly/docs/FBVector.md
+
+
+
 \**************************************************************************/
+
+
+// EXCEPTIONS: all functions below do not throw any exceptions,
+//   except as noted
 
 template<class T>
 class Vec {  
@@ -79,11 +128,17 @@ public:
    // copy constructor;  uses the assignment operator of T
    // for copying into locations that have already been initialized,
    // and uses the copy constructor for T for initializing new locations.
+   
+   // EXCEPTIONS: may throw
 
    Vec& operator=(const Vec<T>& a);  
    // assignment;  uses the assignment operator of T
    // for copying into locations that have already been initialized,
    // and uses the copy constructor for T for initializing new locations.
+
+   // EXCEPTIONS: weak ES (but if it throws, neither length nor MaxLength
+   //    will change, although some previously initialized elements
+   //    may have been assigned new values).
 
    ~Vec();  
    // destructor: calls T's destructor for all initialized
@@ -92,10 +147,26 @@ public:
    void SetLength(long n);  
    // set current length to n, growing vector if necessary
    // new objects are initialized using the default contructor for T
+
+   // EXCEPTIONS: strong ES (but the vector may have been
+   //    reallocated)
   
    void SetLength(long n, const T& a);  
    // set current length to n, growing vector if necessary
    // new objects are initialized using the copy contructor for T
+
+   // EXCEPTIONS: strong ES (but the vector may have been
+   //    reallocated)
+
+   template<class F>
+   void SetLengthAndApply(long n, F f);
+   // set current length to n, growing vector if necessary
+   // any new objects are initialized using defauly constructor
+   // for T, and after that, f is applied to each new object x
+   // as f(x).
+
+   // EXCEPTIONS: strong ES (but the vector may have been
+   //    reallocated)
 
    long length() const;
    // current length
@@ -106,6 +177,8 @@ public:
    // The first version is applied to non-const Vec<T>,
    // and returns a non-const reference to a T, while the second version
    // is applied to a const Vec<T> and returns a const reference to a T.
+
+   // EXCEPTIONS: may throw if range checking turned on, strong ES
   
    T& operator()(long i);
    const T& operator()(long i) const;
@@ -113,6 +186,8 @@ public:
    // The first version is applied to non-const Vec<T>,
    // and returns a non-const reference to a T, while the second version
    // is applied to a const Vec<T> and returns a const reference to a T.
+
+   // EXCEPTIONS: may throw if range checking turned on, strong ES
   
    T* elts();
    const T* elts() const;
@@ -127,15 +202,25 @@ public:
    void swap(Vec<T>& y);
    // swap with y (fast: just swaps pointers)
 
+   // EXCEPTIONS: throws if vectors are fixed and lengths do not match, strong ES
+
    void append(const T& a);
    // append a to end of vector; uses the assignment operator of T
    // for copying into locations that have already been initialized,
    // and uses the copy constructor for T for initializing new locations.
 
+   // EXCEPTIONS: strong ES if initializing a new element (and in any 
+   //    case, if an exception throws, length and MaxLength remain 
+   //    unchanged).
+
    void append(const Vec<T>& w);
    // append w to end of vector; uses the assignment operator of T
    // for copying into locations that have already been initialized,
    // and uses the copy constructor for T for initializing new locations.
+
+   // EXCEPTIONS: strong ES if initializing new elements (and in any 
+   //    case, if an exception throws, length and MaxLength remain 
+   //    unchanged).
 
 
 // Alternative access interface 
@@ -180,9 +265,13 @@ public:
    // Vec(INIT_SIZE, n) initializes vector with an intial length of n.
    // new objects are initialized using the default contructor for T
 
+   // EXCEPTIONS: may throw
+
    Vec(INIT_SIZE_TYPE, long n, const T& a);
    // Vec(INIT_SIZE, n, a) initializes vector with an intial length of n.
    // new objects are initialized using the copy contructor for T
+
+   // EXCEPTIONS: may throw
 
    void kill(); 
    // release space and set to length 0
@@ -190,6 +279,8 @@ public:
    void SetMaxLength(long n); 
    // allocates space and initializes up to n elements. Does not change
    // current length
+
+   // EXCEPTIONS: may throw, strong ES
 
    void FixLength(long n);
    // sets length to n and prohibits all future length changes.
@@ -201,6 +292,8 @@ public:
 
    // FixLength is provided mainly to implement Mat<T>, to enforce
    // the restriction that all rows have the same length.
+
+   // EXCEPTIONS: may throw, strong ES
 
    long fixed() const;
    // test if length has been fixed by FixLength().
@@ -224,6 +317,8 @@ public:
    // Note that if NTL_CLEAN_PTR flag is set, this routine takes
    // linear time, and otherwise, it takes constant time.
 
+   // EXCEPTIONS: may throw (as indicated above)
+
    long position1(const T& a) const;
    // returns position of a in the vector, or -1 if it is not there.
    // The search is conducted from position 0 to length()-1 of the vector.
@@ -244,14 +339,19 @@ template<class T>
 void swap(Vec<T>& x, Vec<T>& y);
 // swaps x & y; same as x.swap(y)
 
+// EXCEPTIONS: same as for swap member function
+
 template<class T>
 void append(Vec<T>& v, const T& a); 
 // appends a to the end of v; same as v.append(a)
+
+// EXCEPTIONS: same as for append member function
 
 template<class T>
 void append(Vec<T>& v, const Vec<T>& w);
 // appends w to the end of v; same as v.append(w)
 
+// EXCEPTIONS: same as for append member function
 
 
 
@@ -271,8 +371,12 @@ Uses corresponding I/O operators for T
 template<class T>
 istream& operator>>(istream&, Vec<T>&);  
 
+// EXCEPTIONS: may throw, weak ES
+
 template<class T>
 ostream& operator<<(ostream&, const Vec<T>&);  
+
+// EXCEPTIONS: may throw, weak ES
 
 
 
@@ -317,11 +421,19 @@ When a vector is destroyed, the following routine is called:
 
 The default behavior of these routines may be modified by 
 overloading these functions with a custom implementation.
- 
+
+EXCEPTIONS:
+In order to provide exception safe code, the Construct routines
+should provide strong ES; in particular, if any constructor
+throws, all newly constructed objects should be destroyed.
+Moreover, the BlockDestroy routine should not throw at all.
+
+
 In NTL, these routines are overridden for the ZZ_p and GF2E classes,
 so that many vector entries will be packed into contiguous storage
 locations.  This reduces the number of invocations of malloc, and
 increases locality of reference.
+
 
 
 \**************************************************************************/

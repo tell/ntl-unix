@@ -81,6 +81,9 @@ inline ZZ_pEX& operator=(const ZZ_pE& a);
 ZZ_pEX(ZZ_pEX& x, INIT_TRANS_TYPE) : rep(x.rep, INIT_TRANS) { }
 
 
+void swap(ZZ_pEX& x) { rep.swap(x.rep); }
+
+
 };
 
 
@@ -146,7 +149,7 @@ inline void set(ZZ_pEX& x)
 inline void swap(ZZ_pEX& x, ZZ_pEX& y)
 // swap x & y (only pointers are swapped)
 
-   { swap(x.rep, y.rep); }
+   { x.swap(y); }
 
 void random(ZZ_pEX& x, long n);
 inline ZZ_pEX random_ZZ_pEX(long n)
@@ -670,7 +673,8 @@ public:
    ZZ_pE hlc;
    ZZ_pEX f0;
 
-   Lazy<vec_ZZ_pE> tracevec; 
+   OptionalVal< Lazy<vec_ZZ_pE> > tracevec; 
+   // extra level of indirection to ensure relocatability
 
 }; 
 

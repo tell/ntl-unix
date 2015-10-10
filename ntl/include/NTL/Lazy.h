@@ -15,20 +15,28 @@ Usage:
 
    do {
       Lazy<T>::Builder builder(obj);
-      if (!builder) break;   // if builder is non-null, it points to the underlying
-      *builder = .... ;      // object, which has just been default-initialized.
+      if (!builder()) break; // if we are not building, the break out
+
+      UniquePtr<T> p;        // create a pointer 
+
+         ...
+
+      builder.move(p);       // move p into the object to complete the initialization
                              // We can then complete the initialization process.
    } while(0);               // When this scope closes, the object is fully initialized.
                              // subsequent attempts to build the object will yield
-                             // a null builder
+                             // !builder.built()
 
 
-   T objCopy = obj.value();  // obj.value() returns a const reference to 
-                             // the initialized value
+   T objCopy = *obj;         // *obj returns a read-only reference
+                             // one can also use -> operator
 
 It is important to follow this recipe carefully.  In particular,
 the builder must be enclosed in a scope, as it's destructor
 plays a crucial role in finalizing the initialization.
+
+NOTE: if p is null in builder.move(p), the object is still considered
+built.
 
 
 template<class T>
@@ -39,20 +47,26 @@ public:
    Lazy(const Lazy&);             // "deep" copies
    Lazy& operator=(const Lazy&);
 
-   const T& value() const;
-
+   const T& operator*()  const;     // pointer access
+   const T* operator->() const;
+   const T* get() const;
+   operator fake_null_type() const; // test for null pointer
+   
    ~Lazy();
 
    kill();  // destroy and reset
+
+   bool built() const; // test if already built
+
+
+
 
    class Builder {
       Builder(const Lazy&); 
      ~Builder()
 
-      T& operator *  () const;
-      T* operator -> () const;
-
-      bool operator!() const; // test for null
+      bool operator()() const; // test if we are building
+      void move(UniquePtr<T>&);
 
    };
    
@@ -73,22 +87,14 @@ NTL_OPEN_NNS
 
 
 
-// FIXME: Right now, the builder mechanism is not exception safe.
-// Although the destructor will release the mutex (if any), it
-// mark the object as "constructed", even if it is not.
-// If we want exception safety, we may have to modify the
-// interface, so that we invoke builder.finalize() to 
-// signal (to the destructor) that the object has been built.
-// Care would have to be taken to ensure that we "roll back"
-// to the right internal state in this case.
-// NOTE: right now, NTL's tracevec builders would be the most
-// prone to this problem, if we did introduce exceptions.
-
-
 // NOTE: For more on double-checked locking, see
 // http://preshing.com/20130930/double-checked-locking-is-fixed-in-cpp11/
 
-
+// NOTE: when compiled with the NTL_THREADS option, the Lazy
+// class may contain data members from the standard library
+// that may not satisfy the requirements of the Vec class
+// (i.e., relocatability).  One can wrap it in a pointer 
+// class (e.g., OptionalVal) to deal with this.
 
 template<class T>
 class Lazy {
@@ -101,24 +107,40 @@ private:
 
    mutable UniquePtr<T> data;
 
+
+   class Dummy { };
+   typedef void (Lazy::*fake_null_type)(Dummy) const;
+   void fake_null_function(Dummy) const {}
+
+
 public:
    Lazy() : initialized(false) { }
 
+   // EXCEPTIONS: This always succeeds in killing the object
    void kill() 
    { 
-      data.reset();
-      initialized = false; 
+      UniquePtr<T> tmp;
+      tmp.swap(data);
+      initialized = false;  
    }
 
+   // This is provided for convenience for some legacy code.
+   // It us up to the client code to ensure there are no race conditions.
+
+   // EXCEPTIONS: strong ES 
    Lazy& operator=(const Lazy& other) 
    {
       if (this == &other) return *this;
 
-      kill();
       if (other.initialized) {
-         data.make(*other.data);
+         UniquePtr<T> p;
+         if (other.data) p.make(*other.data);
+         p.swap(data);
          initialized = true;
       }
+      else
+         kill();
+
       return *this;
    }
    
@@ -127,11 +149,22 @@ public:
       *this = other;
    }
 
-   const T& value() const { return *data; }
+   const T& operator*()  const { return *data; }
+   const T* operator->() const { return data.operator->(); }
+   const T* get() const { return data.get(); }
+
+   bool built()  const { return initialized; }
+
+   operator fake_null_type() const 
+   {
+      return data ?  &Lazy::fake_null_function : 0;
+   }
+
 
    class Builder {
    private:
-      T *p;
+      bool building;
+      bool moved;
       const Lazy& ref;
       GuardProxy guard;
 
@@ -141,22 +174,27 @@ public:
 
 
    public:
-      Builder(const Lazy& _ref) : p(0), ref(_ref), guard(_ref.mtx)
+      Builder(const Lazy& _ref) : building(false), moved(false),
+                                  ref(_ref), guard(_ref.mtx)
       {
          // Double-checked locking
          if (ref.initialized || (guard.lock(), ref.initialized)) 
             return;
 
-         ref.data.make();
-         p = ref.data.get();
+         building = true; // we set this to true after we lock the mutex
+                          // and see the the object is still uninitialized
       }
 
-      ~Builder() { if (p) ref.initialized = true; }
+      ~Builder() { if (moved) ref.initialized = true; }
 
-      T& operator *  () const { return *p; }
-      T* operator -> () const { return p; }
+      void move(UniquePtr<T>& p) 
+      {
+         if (!building || moved) LogicError("Lazy::Builder illegal call to move");
+         ref.data.move(p); 
+         moved = true; 
+      }
 
-      bool operator!() const { return !p; }
+      bool operator()()  const { return building; }
    };
 };
 

@@ -368,8 +368,9 @@ void set(zz_pE& x); // x = 1
 static const zz_pE& zz_pE::zero();
 // zz_pE::zero() yields a read-only reference to zero
 
+void zz_pE::swap(zz_pE& x);
 void swap(zz_pE& x, zz_pE& y);
-// swap x and y (done by "pointer swapping", if possible).
+// swap (done by "pointer swapping", if possible).
 
 static ZZ& zz_pE::cardinality();
 // yields the cardinality, i.e., p^{zz_pE::degree()}

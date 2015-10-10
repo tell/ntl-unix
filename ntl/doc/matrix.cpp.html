@@ -42,6 +42,10 @@
 <br>
 <font color="#0000ed"><i>\*************************************************************************</i></font><font color="#0000ed"><i>*/</i></font><br>
 <br>
+<br>
+<font color="#0000ed"><i>// EXCEPTIONS: all functions below do not throw any exceptions,</i></font><br>
+<font color="#0000ed"><i>//&nbsp;&nbsp; except as noted</i></font><br>
+<br>
 <font color="#008b00"><b>template</b></font>&lt;<font color="#008b00"><b>class</b></font>&nbsp;T&gt;<br>
 <font color="#008b00"><b>class</b></font>&nbsp;Mat {<br>
 <br>
@@ -53,12 +57,25 @@
 &nbsp;&nbsp; Mat(); <font color="#0000ed"><i>// initially 0 x 0</i></font><br>
 <br>
 &nbsp;&nbsp; Mat(<font color="#008b00"><b>const</b></font>&nbsp;Mat&lt;T&gt;&amp; a);<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// copy constructor</i></font><br>
+<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// EXCEPTIONS: may throw</i></font><br>
+<br>
+<br>
 &nbsp;&nbsp; Mat&amp; <font color="#b02f60"><b>operator</b></font>=(<font color="#008b00"><b>const</b></font>&nbsp;Mat&lt;T&gt;&amp; a);<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// assignment</i></font><br>
+<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// EXCEPTIONS: may throw, weak ES (but dimensions of LHS</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>//&nbsp;&nbsp; will be either that of old LHS or RHS)</i></font><br>
+<br>
 &nbsp;&nbsp; ~Mat();<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// destructor</i></font><br>
 <br>
 &nbsp;&nbsp; Mat(INIT_SIZE_TYPE, <font color="#008b00"><b>long</b></font>&nbsp;n, <font color="#008b00"><b>long</b></font>&nbsp;m); <br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// Mat(INIT_SIZE, n, m) initializes an n x m matrix, invoking</i></font><br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// the default constructor for T to initialize entries.</i></font><br>
+<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// EXCEPTIONS: may throw</i></font><br>
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;SetDims(<font color="#008b00"><b>long</b></font>&nbsp;n, <font color="#008b00"><b>long</b></font>&nbsp;m); <br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// M.SetDims(n, m) makes M have dimension n x m.&nbsp;&nbsp;If the number of</i></font><br>
@@ -67,6 +84,9 @@
 &nbsp;&nbsp; <font color="#0000ed"><i>// allocated as necessary (when number of rows increases), </i></font><br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// excess rows are retained (when number of rows decreases),</i></font><br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// and--importantly--the contents do not change.</i></font><br>
+<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// EXCEPTIONS: strong ES (although underlying vector representation</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;may be reallocated)</i></font><br>
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;kill(); free storage <font color="#b02f60"><b>and</b></font>&nbsp;make <font color="#ff8b00">0</font>&nbsp;x <font color="#ff8b00">0</font><br>
 <br>
@@ -78,20 +98,31 @@
 <br>
 &nbsp;&nbsp; Vec&lt;T&gt;&amp; <font color="#b02f60"><b>operator</b></font>[](<font color="#008b00"><b>long</b></font>&nbsp;i);<br>
 &nbsp;&nbsp; <font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;T&gt;&amp; <font color="#b02f60"><b>operator</b></font>[](<font color="#008b00"><b>long</b></font>&nbsp;i) <font color="#008b00"><b>const</b></font>;<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// access row i, initial index 0.&nbsp;&nbsp;Any attempt to change the length</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// of this row will raise an error.</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// access row i, initial index 0.&nbsp;&nbsp;</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// Even if one has read/write access to a row, any attempt</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// to change its length will raise an error.</i></font><br>
+<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// EXCEPTIONS: may throw if range checking is turned on</i></font><br>
 <br>
 &nbsp;&nbsp; Vec&lt;T&gt;&amp; <font color="#b02f60"><b>operator</b></font>()(<font color="#008b00"><b>long</b></font>&nbsp;i);<br>
 &nbsp;&nbsp; <font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;T&gt;&amp; <font color="#b02f60"><b>operator</b></font>()(<font color="#008b00"><b>long</b></font>&nbsp;i) <font color="#008b00"><b>const</b></font>;<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// access row i, initial index 1.&nbsp;&nbsp;Any attempt to change the length</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// access row i, initial index 1. </i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// Even if one has read/write access to a row, any attempt</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// to change its length will raise an error.</i></font><br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// of this row will raise an error.</i></font><br>
+<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// EXCEPTIONS: may throw if range checking is turned on</i></font><br>
 <br>
 &nbsp;&nbsp; reference <font color="#b02f60"><b>operator</b></font>()(<font color="#008b00"><b>long</b></font>&nbsp;i, <font color="#008b00"><b>long</b></font>&nbsp;j);<br>
 &nbsp;&nbsp; const_reference <font color="#b02f60"><b>operator</b></font>()(<font color="#008b00"><b>long</b></font>&nbsp;i, <font color="#008b00"><b>long</b></font>&nbsp;j) <font color="#008b00"><b>const</b></font>; <br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// access element (i, j), both indices starting at 1</i></font><br>
 <br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// EXCEPTIONS: may throw if range checking is turned on</i></font><br>
+<br>
 &nbsp;&nbsp; const_reference get(<font color="#008b00"><b>long</b></font>&nbsp;i, <font color="#008b00"><b>long</b></font>&nbsp;j) <font color="#008b00"><b>const</b></font>;<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// access element (i, j), both indices starting at 0</i></font><br>
+<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// EXCEPTIONS: may throw if range checking is turned on</i></font><br>
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;put(<font color="#008b00"><b>long</b></font>&nbsp;i, <font color="#008b00"><b>long</b></font>&nbsp;j, <font color="#008b00"><b>const</b></font>&nbsp;T&amp; a);<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// same as M[i].put(j, a)</i></font><br>
@@ -100,17 +131,16 @@
 &nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;put(<font color="#008b00"><b>long</b></font>&nbsp;i, <font color="#008b00"><b>long</b></font>&nbsp;j, <font color="#008b00"><b>const</b></font>&nbsp;U&amp; a);<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// same as M[i].put(j, a)</i></font><br>
 <br>
-<br>
 &nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;position(<font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;T&gt;&amp; a) <font color="#008b00"><b>const</b></font>;<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// returns index of a in matrix, or -1 if not present;</i></font><br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// equivalent to rep(*this).position(a).</i></font><br>
-<br>
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;position1(<font color="#008b00"><b>const</b></font>&nbsp;Vec&lt;T&gt;&amp; a) <font color="#008b00"><b>const</b></font>;<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// returns index of a in matrix, or -1 if not present;</i></font><br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// equivalent to rep(*this).position1(a).</i></font><br>
 <br>
-&nbsp;&nbsp;<br>
+&nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;swap(Mat&lt;T&gt;&amp; other);<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// quick swap *this and other</i></font><br>
 <br>
 };<br>
 <br>
@@ -120,11 +150,14 @@
 <br>
 <font color="#008b00"><b>template</b></font>&lt;<font color="#008b00"><b>class</b></font>&nbsp;T&gt;<br>
 <font color="#008b00"><b>void</b></font>&nbsp;swap(Mat&lt;T&gt;&amp; X, Mat&lt;T&gt;&amp; Y);<br>
-<font color="#0000ed"><i>// swaps X and Y (by swapping pointers)</i></font><br>
+<font color="#0000ed"><i>// quick swap of X and Y </i></font><br>
 <br>
 <font color="#008b00"><b>template</b></font>&lt;<font color="#008b00"><b>class</b></font>&nbsp;T&gt;<br>
 <font color="#008b00"><b>void</b></font>&nbsp;MakeMatrix(Mat&lt;T&gt;&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;vec_vec_T&amp; a);<br>
 <font color="#0000ed"><i>// copies a to x, checking that it is &quot;rectangular&quot;</i></font><br>
+<br>
+<font color="#0000ed"><i>// EXCEPTIONS: may thow, weak ES (but dimensions of x either</i></font><br>
+<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;remain unchanged or are set to the new dimensions implied by a)</i></font><br>
 <br>
 <font color="#0000ed"><i>/*</i></font><font color="#0000ed"><i>*************************************************************************\</i></font><br>
 <br>
@@ -136,8 +169,13 @@
 <font color="#008b00"><b>template</b></font>&lt;<font color="#008b00"><b>class</b></font>&nbsp;T&gt;<br>
 istream&amp; <font color="#b02f60"><b>operator</b></font>&gt;&gt;(istream&amp;, Mat&lt;T&gt;&amp;);<br>
 <br>
+<font color="#0000ed"><i>// EXCEPTIONS: may throw, weak ES</i></font><br>
+<br>
 <font color="#008b00"><b>template</b></font>&lt;<font color="#008b00"><b>class</b></font>&nbsp;T&gt;<br>
 ostream&amp; <font color="#b02f60"><b>operator</b></font>&lt;&lt;(ostream&amp;, <font color="#008b00"><b>const</b></font>&nbsp;Mat&lt;T&gt;&amp;); <br>
+<br>
+<font color="#0000ed"><i>// EXCEPTIONS: may throw, weak ES</i></font><br>
+<br>
 <br>
 <font color="#0000ed"><i>/*</i></font><font color="#0000ed"><i>*************************************************************************\</i></font><br>
 <br>

@@ -36,8 +36,7 @@ inline RR& operator=(double a);
 
 RR(RR& z, INIT_TRANS_TYPE) : x(z.x, INIT_TRANS), e(z.e) { } 
 
-
-
+void swap(RR& z) { x.swap(z.x); _ntl_swap(e, z.e); }
 
 
 ~RR() { }
@@ -62,9 +61,10 @@ RR(const RR&);
 };
 
 
+inline void swap(RR& a, RR& b) { a.swap(b); }
+
 // RAII for saving/restoring precision
-// FIXME: document. Also, add a RRBak class
-// for finer control
+// FIXME: document. 
 
 class RRPush {
 private: 
@@ -79,12 +79,28 @@ public:
 
 };
 
+// RAII for saving/restoring output precision
+// FIXME: document. 
+
+class RROutputPush {
+private: 
+   long old_p;
+
+   RROutputPush(const RROutputPush&); // disable
+   void operator=(const RROutputPush&); // disable
+
+public:
+   RROutputPush() : old_p(RR::oprec) { }
+   ~RROutputPush() { RR::oprec = old_p; } 
+
+};
+
+
 long IsZero(const RR& a);
 long IsOne(const RR& a);
 long sign(const RR& a);
 void clear(RR& z);
 void set(RR& z);
-void swap(RR& a, RR& b);
 
 void add(RR& z, const RR& a, const RR& b);
 

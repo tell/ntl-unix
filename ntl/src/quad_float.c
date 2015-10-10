@@ -176,7 +176,7 @@ void quad_float::SetOutputPrecision(long p)
    if (p < 1) p = 1;
 
    if (NTL_OVERFLOW(p, 1, 0)) 
-      Error("quad_float: output precision too big");
+      ResourceError("quad_float: output precision too big");
 
    oprec = p;
 }
@@ -525,7 +525,7 @@ END_FIX
 
 quad_float sqrt(const quad_float& y) {
   if (y.hi < 0.0) 
-    Error("Quad: attempto to take square root of negative number");
+    ArithmeticError("quad_float: square root of negative number");
   if (y.hi == 0.0) return quad_float(0.0,0.0);
 
   double c;
@@ -653,7 +653,7 @@ void conv(quad_float& z, const ZZ& a)
 
    // The following is just paranoia.
    if (fabs(z.hi) < NTL_FDOUBLE_PRECISION && z.lo != 0)
-      Error("internal error: ZZ to quad_float conversion");
+      LogicError("internal error: ZZ to quad_float conversion");
 } 
 
 void conv(ZZ& z, const quad_float& x)
@@ -689,8 +689,8 @@ ostream& operator<<(ostream& s, const quad_float& a)
       return s;
    }
 
-   long old_p = RR::precision();
-   long old_op = RR::OutputPrecision();
+   RRPush push;
+   RROutputPush opush;
 
    RR::SetPrecision(long(3.33*quad_float::oprec) + 10);
    RR::SetOutputPrecision(quad_float::oprec);
@@ -700,16 +700,12 @@ ostream& operator<<(ostream& s, const quad_float& a)
    conv(t, a);
    s << t;
 
-   RR::SetPrecision(old_p);
-   RR::SetOutputPrecision(old_op);
-
    return s;
 }
 
 istream& operator>>(istream& s, quad_float& x)
 {
    RRPush push;
-
    RR::SetPrecision(4*NTL_DOUBLE_PRECISION);
 
    NTL_THREAD_LOCAL static RR t;
@@ -721,14 +717,12 @@ istream& operator>>(istream& s, quad_float& x)
 
 void random(quad_float& x)
 {
-   long old_p = RR::precision();
+   RRPush push;
    RR::SetPrecision(4*NTL_DOUBLE_PRECISION);
 
    NTL_THREAD_LOCAL static RR t;
    random(t);
    conv(x, t);
-
-   RR::SetPrecision(old_p);
 }
 
 quad_float random_quad_float()
@@ -815,14 +809,14 @@ quad_float fabs(const quad_float& x)
 quad_float to_quad_float(const char *s)
 {
    quad_float x;
-   long old_p = RR::precision();
+
+   RRPush push;
    RR::SetPrecision(4*NTL_DOUBLE_PRECISION);
 
    NTL_THREAD_LOCAL static RR t;
    conv(t, s);
    conv(x, t);
 
-   RR::SetPrecision(old_p);
    return x;
 }
 
@@ -859,7 +853,7 @@ quad_float exp(const quad_float& x) { // New version 97 Aug 05
   if (x.hi<DBL_MIN_10_EXP*2.302585092994045684017991) 
     return to_quad_float(0.0);
   if (x.hi>DBL_MAX_10_EXP*2.302585092994045684017991) {
-    Error("exp(quad_float): overflow");
+    ResourceError("exp(quad_float): overflow");
   }
 
   // changed this from "const" to "static" in v5.3, since "const"
@@ -892,7 +886,7 @@ quad_float exp(const quad_float& x) { // New version 97 Aug 05
 
 quad_float log(const quad_float& t) { // Newton method. See Bailey, MPFUN
   if (t.hi <= 0.0) {
-    Error("log(quad_float): argument must be positive");
+    ArithmeticError("log(quad_float): argument must be positive");
   }
   double s1 = log(t.hi);
   ForceToMem(&s1);  // Again, this is fairly paranoid.

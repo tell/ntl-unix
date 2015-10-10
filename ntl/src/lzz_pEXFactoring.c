@@ -30,7 +30,7 @@ void SquareFreeDecomp(vec_pair_zz_pEX_long& u, const zz_pEX& ff)
    zz_pEX f = ff;
 
    if (!IsOne(LeadCoeff(f)))
-      Error("SquareFreeDecomp: bad args");
+      LogicError("SquareFreeDecomp: bad args");
 
    zz_pEX r, t, v, tmp1;
    long m, j, finished, done;
@@ -152,7 +152,7 @@ void FindRoots(vec_zz_pE& x, const zz_pEX& ff)
    zz_pEX f = ff;
 
    if (!IsOne(LeadCoeff(f)))
-      Error("FindRoots: bad args");
+      LogicError("FindRoots: bad args");
 
    x.SetMaxLength(deg(f));
    x.SetLength(0);
@@ -242,7 +242,7 @@ void TraceMap(zz_pEX& w, const zz_pEX& a, long d, const zz_pEXModulus& F,
               const zz_pEX& b)
 
 {
-   if (d < 0) Error("TraceMap: bad args");
+   if (d < 0) LogicError("TraceMap: bad args");
 
    zz_pEX y, z, t;
 
@@ -281,7 +281,7 @@ void TraceMap(zz_pEX& w, const zz_pEX& a, long d, const zz_pEXModulus& F,
 
 void PowerCompose(zz_pEX& y, const zz_pEX& h, long q, const zz_pEXModulus& F)
 {
-   if (q < 0) Error("PowerCompose: bad args");
+   if (q < 0) LogicError("PowerCompose: bad args");
 
    zz_pEX z(INIT_SIZE, F.n);
    long sw;
@@ -426,7 +426,7 @@ void EDF(vec_zz_pEX& factors, const zz_pEX& ff, const zz_pEX& bb,
    zz_pEX b = bb;
 
    if (!IsOne(LeadCoeff(f)))
-      Error("EDF: bad args");
+      LogicError("EDF: bad args");
 
    long n = deg(f);
    long r = n/d;
@@ -467,7 +467,7 @@ void SFCanZass(vec_zz_pEX& factors, const zz_pEX& ff, long verbose)
    zz_pEX f = ff;
 
    if (!IsOne(LeadCoeff(f)))
-      Error("SFCanZass: bad args");
+      LogicError("SFCanZass: bad args");
 
    if (deg(f) == 0) {
       factors.SetLength(0);
@@ -537,7 +537,7 @@ void SFCanZass(vec_zz_pEX& factors, const zz_pEX& ff, long verbose)
 void CanZass(vec_pair_zz_pEX_long& factors, const zz_pEX& f, long verbose)
 {
    if (!IsOne(LeadCoeff(f)))
-      Error("CanZass: bad args");
+      LogicError("CanZass: bad args");
 
    double t;
    vec_pair_zz_pEX_long sfd;
@@ -724,10 +724,10 @@ void FindRoot(zz_pE& root, const zz_pEX& ff)
    f = ff;
    
    if (!IsOne(LeadCoeff(f)))
-      Error("FindRoot: bad args");
+      LogicError("FindRoot: bad args");
 
    if (deg(f) == 0)
-      Error("FindRoot: bad args");
+      LogicError("FindRoot: bad args");
 
 
    while (deg(f) > 1) {
@@ -1001,9 +1001,9 @@ void RecBuildIrred(zz_pEX& f, long u, const FacVec& fvec)
 void BuildIrred(zz_pEX& f, long n)
 {
    if (n <= 0)
-      Error("BuildIrred: n must be positive");
+      LogicError("BuildIrred: n must be positive");
 
-   if (NTL_OVERFLOW(n, 1, 0)) Error("overflow in BuildIrred");
+   if (NTL_OVERFLOW(n, 1, 0)) ResourceError("overflow in BuildIrred");
 
    if (n == 1) {
       SetX(f);
@@ -1023,7 +1023,7 @@ void BuildIrred(zz_pEX& f, long n)
 void BuildIrred(zz_pEX& f, long n)
 {
    if (n <= 0)
-      Error("BuildIrred: n must be positive");
+      LogicError("BuildIrred: n must be positive");
 
    if (n == 1) {
       SetX(f);
@@ -1062,10 +1062,9 @@ void BuildRandomIrred(zz_pEX& f, const zz_pEX& g)
 /************* NEW DDF ****************/
 
 NTL_THREAD_LOCAL long zz_pEX_GCDTableSize = 4;
-NTL_THREAD_LOCAL char zz_pEX_stem[256] = "";
 NTL_THREAD_LOCAL double zz_pEXFileThresh = NTL_FILE_THRESH;
-NTL_THREAD_LOCAL static vec_zz_pEX BabyStepFile;
-NTL_THREAD_LOCAL static vec_zz_pEX GiantStepFile;
+NTL_THREAD_LOCAL static vec_zz_pEX *BabyStepFile=0;
+NTL_THREAD_LOCAL static vec_zz_pEX *GiantStepFile=0;
 NTL_THREAD_LOCAL static long use_files;
 
 
@@ -1086,7 +1085,7 @@ double CalcTableSize(long n, long k)
 
 static
 void GenerateBabySteps(zz_pEX& h1, const zz_pEX& f, const zz_pEX& h, long k,
-                       long verbose)
+                       FileList& flist, long verbose)
 
 {
    double t;
@@ -1115,19 +1114,18 @@ void GenerateBabySteps(zz_pEX& h1, const zz_pEX& f, const zz_pEX& h, long k,
    long i;
 
    if (!use_files) {
-      BabyStepFile.kill();
-      BabyStepFile.SetLength(k-1);
+      (*BabyStepFile).SetLength(k-1);
    }
 
    for (i = 1; i <= k-1; i++) {
       if (use_files) {
          ofstream s;
-         OpenWrite(s, FileName("baby", i));
+         OpenWrite(s, FileName("baby", i), flist);
          s << h1 << "\n";
-         s.close();
+         CloseWrite(s);
       }
       else
-         BabyStepFile(i) = h1;
+         (*BabyStepFile)(i) = h1;
 
       CompMod(h1, h1, H, F);
       if (verbose) cerr << "+";
@@ -1140,7 +1138,8 @@ void GenerateBabySteps(zz_pEX& h1, const zz_pEX& f, const zz_pEX& h, long k,
 
 
 static
-void GenerateGiantSteps(const zz_pEX& f, const zz_pEX& h, long l, long verbose)
+void GenerateGiantSteps(const zz_pEX& f, const zz_pEX& h, long l, 
+                        FileList& flist, long verbose)
 {
 
    double t;
@@ -1170,19 +1169,18 @@ void GenerateGiantSteps(const zz_pEX& f, const zz_pEX& h, long l, long verbose)
    long i;
 
    if (!use_files) {
-      GiantStepFile.kill();
-      GiantStepFile.SetLength(l);
+      (*GiantStepFile).SetLength(l);
    }
 
    for (i = 1; i <= l-1; i++) {
       if (use_files) {
          ofstream s;
-         OpenWrite(s, FileName("giant", i));
+         OpenWrite(s, FileName("giant", i), flist);
          s << h1 << "\n";
-         s.close();
+         CloseWrite(s);
       }
       else
-        GiantStepFile(i) = h1;
+        (*GiantStepFile)(i) = h1;
 
       CompMod(h1, h1, H, F);
       if (verbose) cerr << "+";
@@ -1190,36 +1188,17 @@ void GenerateGiantSteps(const zz_pEX& f, const zz_pEX& h, long l, long verbose)
 
    if (use_files) {
       ofstream s;
-      OpenWrite(s, FileName("giant", i));
+      OpenWrite(s, FileName("giant", i), flist);
       s << h1 << "\n";
-      s.close();
+      CloseWrite(s);
    }
    else
-      GiantStepFile(i) = h1;
+      (*GiantStepFile)(i) = h1;
 
    if (verbose)
       cerr << (GetTime()-t) << "\n";
 
 }
-
-static
-void FileCleanup(long k, long l)
-{
-   if (use_files) {
-      long i;
-   
-      for (i = 1; i <= k-1; i++)
-         remove(FileName("baby", i));
-   
-      for (i = 1; i <= l; i++)
-         remove(FileName("giant", i));
-   }
-   else {
-      BabyStepFile.kill();
-      GiantStepFile.kill();
-   }
-}
-
 
 
 static
@@ -1291,14 +1270,11 @@ void FetchGiantStep(zz_pEX& g, long gs, const zz_pEXModulus& F)
 {
    if (use_files) {
       ifstream s;
-   
       OpenRead(s, FileName("giant", gs));
-   
       NTL_INPUT_CHECK_ERR(s >> g);
-      s.close();
    }
    else
-      g = GiantStepFile(gs);
+      g = (*GiantStepFile)(gs);
 
 
    rem(g, g, F);
@@ -1318,10 +1294,9 @@ void FetchBabySteps(vec_zz_pEX& v, long k)
          ifstream s;
          OpenRead(s, FileName("baby", i));
          NTL_INPUT_CHECK_ERR(s >> v[i]);
-         s.close();
       }
       else
-         v[i] = BabyStepFile(i);
+         v[i] = (*BabyStepFile)(i);
    }
 }
       
@@ -1518,7 +1493,7 @@ void NewDDF(vec_pair_zz_pEX_long& factors,
 
 {
    if (!IsOne(LeadCoeff(f)))
-      Error("NewDDF: bad args");
+      LogicError("NewDDF: bad args");
 
    if (deg(f) == 0) {
       factors.SetLength(0);
@@ -1542,15 +1517,22 @@ void NewDDF(vec_pair_zz_pEX_long& factors,
    else
       use_files = 0;
 
-   GenerateBabySteps(h1, f, h, k, verbose);
 
-   GenerateGiantSteps(f, h1, l, verbose);
+   FileList flist;
+
+   vec_zz_pEX local_BabyStepFile;
+   vec_zz_pEX local_GiantStepFile;
+
+   BabyStepFile = &local_BabyStepFile;
+   GiantStepFile = &local_GiantStepFile;
+
+   GenerateBabySteps(h1, f, h, k, flist, verbose);
+
+   GenerateGiantSteps(f, h1, l, flist, verbose);
 
    vec_pair_zz_pEX_long u;
    GiantRefine(u, f, k, l, verbose);
    BabyRefine(factors, u, k, l, verbose);
-
-   FileCleanup(k, l);
 }
 
 long IterComputeDegree(const zz_pEX& h, const zz_pEXModulus& F)

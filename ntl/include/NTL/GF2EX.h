@@ -93,6 +93,8 @@ inline GF2EX(INIT_MONO_TYPE, long i);
 
 GF2EX(GF2EX& x, INIT_TRANS_TYPE) : rep(x.rep, INIT_TRANS) { }
 
+void swap(GF2EX& x) { rep.swap(x.rep); }
+
 
 };
 
@@ -171,7 +173,7 @@ inline void set(GF2EX& x)
 inline void swap(GF2EX& x, GF2EX& y)
 // swap x & y (only pointers are swapped)
 
-   { swap(x.rep, y.rep); }
+   { x.swap(y); }
 
 void random(GF2EX& x, long n);
 inline GF2EX random_GF2EX(long n)
@@ -678,7 +680,8 @@ public:
    GF2E hlc;
    GF2EX f0;
 
-   Lazy<vec_GF2E> tracevec;
+   OptionalVal< Lazy<vec_GF2E> > tracevec;
+   // extra level of indirection to ensure class is relocatable
 
 }; 
 

@@ -30,6 +30,10 @@ int main()
    cout << "NTL_THREADS\n";
 #endif
 
+#ifdef NTL_EXCEPTIONS
+   cout << "NTL_EXCEPTIONS\n";
+#endif
+
 
 #ifdef NTL_GMP_LIP
    cout << "NTL_GMP_LIP\n";
@@ -123,6 +127,10 @@ cout << "Performance Options:\n";
 
 #ifdef NTL_TBL_REM
    cout << "NTL_TBL_REM\n";
+#endif
+
+#ifdef NTL_TBL_REM_LL
+   cout << "NTL_TBL_REM_LL\n";
 #endif
 
 

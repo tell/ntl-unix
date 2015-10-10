@@ -13,111 +13,21 @@
 <br>
 <font color="#0000ed"><i>SUMMARY:</i></font><br>
 <br>
-<font color="#0000ed"><i>The class mat_GF2 implements matrices over GF(2).</i></font><br>
-<font color="#0000ed"><i>Each row is a vec_GF2 of the same length.</i></font><br>
-<br>
-<font color="#0000ed"><i>For a mat_GF2 M, one may access row i of M as M[i],</i></font><br>
-<font color="#0000ed"><i>indexing from 0, or as M(i), indexing from 1.</i></font><br>
-<br>
-<font color="#0000ed"><i>Individual elements of M may be accessed as M[i][j],</i></font><br>
-<font color="#0000ed"><i>indexing from 0, or M(i, j), indexing from 1.</i></font><br>
-<font color="#0000ed"><i>Some restrictions apply (see vec_GF2.txt for details).</i></font><br>
-<font color="#0000ed"><i>Alternatively, one may use methods get and put.</i></font><br>
+<font color="#0000ed"><i>Defines the class mat_GF2.</i></font><br>
 <br>
 <font color="#0000ed"><i>\*************************************************************************</i></font><font color="#0000ed"><i>*/</i></font><br>
 <br>
 <br>
+<font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/matrix.h&gt;</font><br>
 <font color="#1773cc">#include </font><font color="#4a6f8b">&lt;NTL/vec_vec_GF2.h&gt;</font><br>
 <br>
-<font color="#008b00"><b>class</b></font>&nbsp;mat_GF2 {&nbsp;&nbsp;<br>
-<font color="#b02f60"><b>public</b></font>:&nbsp;&nbsp;<br>
-&nbsp;&nbsp;<br>
-&nbsp;&nbsp; mat_GF2(); <font color="#0000ed"><i>// initially 0 x 0</i></font><br>
 <br>
-&nbsp;&nbsp; mat_GF2(<font color="#008b00"><b>const</b></font>&nbsp;mat_GF2&amp; a);&nbsp;&nbsp;<br>
-&nbsp;&nbsp; mat_GF2&amp; <font color="#b02f60"><b>operator</b></font>=(<font color="#008b00"><b>const</b></font>&nbsp;mat_GF2&amp; a);&nbsp;&nbsp;<br>
-&nbsp;&nbsp; ~mat_GF2();<br>
-&nbsp;&nbsp;<br>
-&nbsp;&nbsp; mat_GF2(INIT_SIZE_TYPE, <font color="#008b00"><b>long</b></font>&nbsp;n, <font color="#008b00"><b>long</b></font>&nbsp;m);&nbsp;&nbsp;<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// mat_T(INIT_SIZE, n, m) initializes an n x m matrix, </i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// clearing all bits.</i></font><br>
+<font color="#008b00"><b>typedef</b></font>&nbsp;Mat&lt;GF2&gt; mat_GF2; <font color="#0000ed"><i>// backward compatibility</i></font><br>
 <br>
-&nbsp;&nbsp;<br>
-&nbsp;&nbsp;<br>
-&nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;SetDims(<font color="#008b00"><b>long</b></font>&nbsp;n, <font color="#008b00"><b>long</b></font>&nbsp;m);<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// M.SetDims(n, m) makes M have dimension n x m.&nbsp;&nbsp;If the number of</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// columns (m) changes, previous storage is freed, and space for M</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// is reallocated and initialized; otherwise, more rows are</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// allocated as necessary (when number of rows increases),</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// excess rows are retained (when number of rows decreases),</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// and--importantly--the contents do not change.</i></font><br>
-&nbsp;&nbsp;<br>
-&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;NumRows() <font color="#008b00"><b>const</b></font>;<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// M.NumRows() returns the number of rows of M</i></font><br>
-<br>
-&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;NumCols() <font color="#008b00"><b>const</b></font>;<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// M.NumCols() returns the number of columns of M</i></font><br>
-<br>
-&nbsp;&nbsp; vec_GF2&amp; <font color="#b02f60"><b>operator</b></font>[](<font color="#008b00"><b>long</b></font>&nbsp;i);<br>
-&nbsp;&nbsp; <font color="#008b00"><b>const</b></font>&nbsp;vec_GF2&amp; <font color="#b02f60"><b>operator</b></font>[](<font color="#008b00"><b>long</b></font>&nbsp;i) <font color="#008b00"><b>const</b></font>;<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// access row i, initial index 0.&nbsp;&nbsp;Any attempt to change the length</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// of this row will raise an error.</i></font><br>
-<br>
-&nbsp;&nbsp;<br>
-&nbsp;&nbsp; vec_GF2&amp; <font color="#b02f60"><b>operator</b></font>()(<font color="#008b00"><b>long</b></font>&nbsp;i);<br>
-&nbsp;&nbsp; <font color="#008b00"><b>const</b></font>&nbsp;vec_GF2&amp; <font color="#b02f60"><b>operator</b></font>()(<font color="#008b00"><b>long</b></font>&nbsp;i) <font color="#008b00"><b>const</b></font>;<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// access row i, initial index 1.&nbsp;&nbsp;Any attempt to change the length</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// of this row will raise an error.</i></font><br>
-<br>
-<br>
-&nbsp;&nbsp; GF2 get(<font color="#008b00"><b>long</b></font>&nbsp;i, <font color="#008b00"><b>long</b></font>&nbsp;j) <font color="#008b00"><b>const</b></font>; <br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// returns entry (i, j), indexing from 0</i></font><br>
-<br>
-&nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;put(<font color="#008b00"><b>long</b></font>&nbsp;i, <font color="#008b00"><b>long</b></font>&nbsp;j, GF2 a); <br>
-&nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;put(<font color="#008b00"><b>long</b></font>&nbsp;i, <font color="#008b00"><b>long</b></font>&nbsp;j, <font color="#008b00"><b>long</b></font>&nbsp;a);<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// set entry (i, j) to a, indexing from 0</i></font><br>
-<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// Here are the subscripting operations defined using</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// the &quot;helper&quot; classes subscript_GF2 and const_subscript_GF2.</i></font><br>
-<br>
-&nbsp;&nbsp; subscript_GF2 <font color="#b02f60"><b>operator</b></font>()(<font color="#008b00"><b>long</b></font>&nbsp;i, <font color="#008b00"><b>long</b></font>&nbsp;j);<br>
-<br>
-&nbsp;&nbsp; const_subscript_GF2 <font color="#b02f60"><b>operator</b></font>()(<font color="#008b00"><b>long</b></font>&nbsp;i, <font color="#008b00"><b>long</b></font>&nbsp;j) <font color="#008b00"><b>const</b></font>;<br>
-<br>
-&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;position(<font color="#008b00"><b>const</b></font>&nbsp;vec_GF2&amp; a) <font color="#008b00"><b>const</b></font>;<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// returns index of a in matrix, or -1 if not present;</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// equivalent to rep(*this).position(a);</i></font><br>
-<br>
-&nbsp;&nbsp; <font color="#008b00"><b>long</b></font>&nbsp;position1(<font color="#008b00"><b>const</b></font>&nbsp;vec_GF2&amp; a) <font color="#008b00"><b>const</b></font>;<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// returns index of a in matrix, or -1 if not present;</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// equivalent to rep(*this).position1(a);</i></font><br>
-&nbsp;&nbsp;<br>
-&nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;kill(); <font color="#0000ed"><i>// free space and make 0 x 0.</i></font><br>
-<br>
-};&nbsp;&nbsp;<br>
-<br>
-<font color="#008b00"><b>const</b></font>&nbsp;vec_vec_GF2&amp; rep(<font color="#008b00"><b>const</b></font>&nbsp;mat_GF2&amp; a);<br>
-<font color="#0000ed"><i>// read-only access to underlying representation.</i></font><br>
-&nbsp;&nbsp;<br>
-<font color="#008b00"><b>void</b></font>&nbsp;swap(mat_GF2&amp; X, mat_GF2&amp; Y); <br>
-<font color="#0000ed"><i>// swap X and Y (fast pointer swap)</i></font><br>
 <br>
 <font color="#008b00"><b>void</b></font>&nbsp;conv(mat_GF2&amp; X, <font color="#008b00"><b>const</b></font>&nbsp;vec_vec_GF2&amp; A);&nbsp;&nbsp;<br>
 mat_GF2 to_mat_GF2(<font color="#008b00"><b>const</b></font>&nbsp;vec_vec_GF2&amp; A);&nbsp;&nbsp;<br>
 <font color="#0000ed"><i>// convert a vector of vec_GF2's to a matrix</i></font><br>
-<br>
-<font color="#0000ed"><i>// equality testing:</i></font><br>
-<br>
-<font color="#008b00"><b>long</b></font>&nbsp;<font color="#b02f60"><b>operator</b></font>==(<font color="#008b00"><b>const</b></font>&nbsp;mat_GF2&amp; A, <font color="#008b00"><b>const</b></font>&nbsp;mat_GF2&amp; B); <br>
-<font color="#008b00"><b>long</b></font>&nbsp;<font color="#b02f60"><b>operator</b></font>!=(<font color="#008b00"><b>const</b></font>&nbsp;mat_GF2&amp; A, <font color="#008b00"><b>const</b></font>&nbsp;mat_GF2&amp; B); <br>
-<br>
-<font color="#0000ed"><i>// Input/Output:</i></font><br>
-<font color="#0000ed"><i>//&nbsp;&nbsp;&nbsp;&nbsp;input format is the same as for a vector of vec_GF2s.</i></font><br>
-<br>
-istream&amp; <font color="#b02f60"><b>operator</b></font>&gt;&gt;(istream&amp;, mat_GF2&amp;); <br>
-ostream&amp; <font color="#b02f60"><b>operator</b></font>&lt;&lt;(ostream&amp;, <font color="#008b00"><b>const</b></font>&nbsp;mat_GF2&amp;);&nbsp;&nbsp;<br>
-<br>
-<br>
 <br>
 <br>
 <font color="#0000ed"><i>// procedural arithmetic routines:</i></font><br>

@@ -381,7 +381,9 @@ RR power2_RR(long e);
 void clear(RR& z);  // z = 0
 void set(RR& z);  // z = 1
 
-void swap(RR& a, RR& b);  // swaps a and b (by swapping pointers)
+void RR::swap(RR& a);
+void swap(RR& a, RR& b);  
+// swap (pointer swap)
 
 
 

@@ -134,6 +134,10 @@ int main()
 #endif
 
 
+#ifdef NTL_EXCEPTIONS
+   cerr << "NTL_EXCEPTIONS\n";
+#endif
+
 
 #ifdef NTL_GMP_LIP
    cerr << "NTL_GMP_LIP\n";
@@ -237,6 +241,11 @@ cerr << "Performance Options:\n";
 #endif
 
 
+#ifdef NTL_TBL_REM_LL
+   cerr << "NTL_TBL_REM_LL\n";
+#endif
+
+
 #ifdef NTL_GF2X_ALTCODE
    cerr << "NTL_GF2X_ALTCODE\n";
 #endif
@@ -252,31 +261,39 @@ cerr << "Performance Options:\n";
 
    cerr << "\n\n";
 
-   cerr << "running tests...";
+   cerr << "running tests";
 
-   long n, k;
+   long n, k, i;
 
-   n = 5000;
-   k = 200;
+   n = 250;
+   k = 16000;
 
    ZZ p;
 
-   RandomLen(p, k);
+
+   for (i = 0; i < 14; i++) {
+      // cerr << n << "/" << k; 
+      cerr << ".";
+      RandomLen(p, k);
+      ZZ_p::init(p);  
+
+      ZZ_pX a, b, c, c1;
 
 
-   ZZ_p::init(p);         // initialization
+      random(a, n);
+      random(b, n);
 
-   ZZ_pX a, b, c, c1;
-   random(a, n);
-   random(b, n);
+      FFTMul(c, a, b);
 
-   FFTMul(c, a, b);
+      c1 = conv<ZZ_pX>( SSMul( conv<ZZX>(a), conv<ZZX>(b) ) );
 
-   c1 = conv<ZZ_pX>( SSMul( conv<ZZX>(a), conv<ZZX>(b) ) );
+      if (c1 != c) {
+         cerr << "ZZ_pX mul failed!\n";
+         return 1;
+      }
 
-   if (c1 != c) {
-      cerr << "ZZ_pX mul failed!\n";
-      return 1;
+      n = long(n * 1.35);
+      k = long(k / 1.414);
    }
 
 
@@ -306,7 +323,6 @@ cerr << "Performance Options:\n";
 
    ZZ x1, x2, x3, x4;
    double t;
-   long i;
 
    RandomLen(x1, 1024);
    RandomBnd(x2, x1);

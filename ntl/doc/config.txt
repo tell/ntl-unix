@@ -25,6 +25,7 @@ PREFIX=$(DEF_PREFIX) # Directory in which to install NTL library components
 SHARED=off           # Generate a shared library (as well as static)
 
 NTL_THREADS=off      # compile in thread-safe mode
+NTL_EXCEPTIONS=off   # compile in thread-safe mode
 
 NTL_GMP_LIP=off      # Switch to enable the use of GMP as primary 
                      #   long integer package
@@ -54,9 +55,10 @@ CXXFLAGS=-g -O2
 
 # Flags for the C++ compiler
 # 
-# Note that if the NTL_THREADS option is on and CXXFLAGS has
-# not been explicitly set, then then CXXFLAGS is set to
-#   -g -O2 -std=c++11 -pthread
+# Note that if CXXFLAGS has not been explicitly set,
+# then the option -std=c++11 is added if either NTL_THREADS
+# or NTL_EXCEPTIONS is set, and the option -pthread is added
+# if NTL_THREADS is set.
 
 
 ########## Installation path:
@@ -106,8 +108,17 @@ NTL_THREADS=off
 # Set to 'on' if you want to compile NTL in thread-safe mode.
 # This requires several C++11 features, including atomic types,
 # mutexes, and thread_local storage.  Your compiler may not
-# yet support these feautures.
+# yet support these features.
 
+
+########## exceptions
+
+NTL_EXCEPTIONS=off
+
+# Set to 'on' if you want to compile NTL with exceptions enabled.
+# This requires several C++11 features, including lambdas
+# and the new rules for exception specifications.
+# Your compiler may not yet support these feautures.
 
 ########## GMP variables:
 
@@ -251,6 +262,7 @@ NTL_SPMM_ASM=off
 NTL_FFT_BIGTAB=off
 NTL_FFT_LAZYMUL=off
 NTL_TBL_REM=off
+NTL_TBL_REM_LL=off
 NTL_AVOID_BRANCHING=off
 NTL_GF2X_NOINLINE=off
 NTL_GF2X_ALTCODE=off
@@ -525,6 +537,10 @@ NTL_TBL_REM=off
 # With this flag, some divisions are avoided in the
 # ZZ_pX multiplication routines.  If you use the NTL_AVOID_FLOAT
 # or NTL_LONG_LONG flags, then you should probably use this one too.
+
+NTL_TBL_REM_LL=off
+
+# Forces the LONG_LONG implementation of NTL_TBL_REM.
 
 
 

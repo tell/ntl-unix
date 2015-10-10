@@ -171,12 +171,15 @@ ZZ_p& operator/=(ZZ_p& x, long b);
 void div(ZZ_p& x, const ZZ_p& a, const ZZ_p& b);
 // x = a/b.
 
-// By default, if b is not invertible, an error is raised.  However,
-// one can override this default behavior by defining an error handler
+// By default, if b is not invertible, an error is raised.  
+// If exceptions are enabled, an InvModErrorObject is thrown
+// (see documentation in the ZZ module); otherwise, the program
+// aborts with an error message.
+// For backward compatibility, one can define an error handler
 // void H(const ZZ_p& b), and setting ZZ_p::DivHandler = H.  Then if b
 // != 0 and b is not invertible, the function H is invoked with b as
-// its argument.  When this happens, p is of course not prime, and
-// GCD(p, rep(b)) is a nontrivial factor.
+// its argument.  If the error handler function returns to its caller,
+// error handling proceeds as described above.
 
 void inv(ZZ_p& x, const ZZ_p& a); // x = 1/a
 ZZ_p inv(const ZZ_p& a); 
@@ -387,6 +390,9 @@ static const ZZ_p& ZZ_p::zero();
 
 void swap(ZZ_p& x, ZZ_p& y);
 // swap x and y (done by "pointer swapping", if possible).
+
+void ZZ_p::swap(ZZ& x);
+// swap member function
 
 
 ZZ_p::ZZ_p(INIT_NO_ALLOC_TYPE);

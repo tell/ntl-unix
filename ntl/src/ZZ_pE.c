@@ -16,15 +16,18 @@ ZZ_pEInfoT::ZZ_pEInfoT(const ZZ_pX& NewP)
 
 const ZZ& ZZ_pE::cardinality()
 {
-   if (!ZZ_pEInfo) Error("ZZ_pE::cardinality: undefined modulus");
+   if (!ZZ_pEInfo) LogicError("ZZ_pE::cardinality: undefined modulus");
 
    do { // NOTE: thread safe lazy init
       Lazy<ZZ>::Builder builder(ZZ_pEInfo->_card);
-      if (!builder) break;
-      power(*builder, ZZ_pEInfo->_card_base, ZZ_pEInfo->_card_exp);
+      if (!builder()) break;
+      UniquePtr<ZZ> p;
+      p.make();
+      power(*p, ZZ_pEInfo->_card_base, ZZ_pEInfo->_card_exp);
+      builder.move(p);
    } while (0);
       
-   return ZZ_pEInfo->_card.value();
+   return *ZZ_pEInfo->_card;
 }
 
 

@@ -5,6 +5,7 @@
 #include <NTL/ZZ.h>
 #include <NTL/FFT.h>
 #include <NTL/SmartPtr.h>
+#include <NTL/vector.h>
 
 #define NTL_zz_p_QUICK_CRT (NTL_DOUBLE_PRECISION - NTL_SP_NBITS > 12)
 
@@ -22,7 +23,6 @@ public:
    zz_pInfoT(long NewP, long maxroot);
    zz_pInfoT(INIT_FFT_TYPE, FFTPrimeInfo *info);
    zz_pInfoT(INIT_USER_FFT_TYPE, long q);
-   ~zz_pInfoT();
 
    long p;
    double pinv;
@@ -30,9 +30,10 @@ public:
    FFTPrimeInfo* p_info; // non-null means we are directly using 
                         // an FFT prime
 
-   long p_own;     // flag to indicate if info object is owened
-                   // by this
-
+   UniquePtr<FFTPrimeInfo> p_info_owner;
+   // for user-defined FFT primes, we store the corresponding
+   // FFTPrimeInfo object here
+   
 
    long PrimeCnt;    // 0 for FFT prime;  otherwise same as NumPrimes
                      // used for establishing crossover points
@@ -47,10 +48,10 @@ public:
    // q = FFTPrime[i]
 
 
-   long *CoeffModP;    // coeff mod p
+   Vec<long> CoeffModP;    // coeff mod p
 
-   double *x;          // u/q, where u = (M/q)^{-1} mod q
-   long *u;            // u, as above
+   Vec<double> x;          // u/q, where u = (M/q)^{-1} mod q
+   Vec<long> u;            // u, as above
 };
 
 NTL_THREAD_LOCAL extern SmartPtr<zz_pInfoT> zz_pInfo;  // current modulus, initially null

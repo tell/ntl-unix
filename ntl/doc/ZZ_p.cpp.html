@@ -179,12 +179,15 @@ ZZ_p&amp; <font color="#b02f60"><b>operator</b></font>/=(ZZ_p&amp; x, <font colo
 <font color="#008b00"><b>void</b></font>&nbsp;div(ZZ_p&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;ZZ_p&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;ZZ_p&amp; b);<br>
 <font color="#0000ed"><i>// x = a/b.</i></font><br>
 <br>
-<font color="#0000ed"><i>// By default, if b is not invertible, an error is raised.&nbsp;&nbsp;However,</i></font><br>
-<font color="#0000ed"><i>// one can override this default behavior by defining an error handler</i></font><br>
+<font color="#0000ed"><i>// By default, if b is not invertible, an error is raised.&nbsp;&nbsp;</i></font><br>
+<font color="#0000ed"><i>// If exceptions are enabled, an InvModErrorObject is thrown</i></font><br>
+<font color="#0000ed"><i>// (see documentation in the ZZ module); otherwise, the program</i></font><br>
+<font color="#0000ed"><i>// aborts with an error message.</i></font><br>
+<font color="#0000ed"><i>// For backward compatibility, one can define an error handler</i></font><br>
 <font color="#0000ed"><i>// void H(const ZZ_p&amp; b), and setting ZZ_p::DivHandler = H.&nbsp;&nbsp;Then if b</i></font><br>
 <font color="#0000ed"><i>// != 0 and b is not invertible, the function H is invoked with b as</i></font><br>
-<font color="#0000ed"><i>// its argument.&nbsp;&nbsp;When this happens, p is of course not prime, and</i></font><br>
-<font color="#0000ed"><i>// GCD(p, rep(b)) is a nontrivial factor.</i></font><br>
+<font color="#0000ed"><i>// its argument.&nbsp;&nbsp;If the error handler function returns to its caller,</i></font><br>
+<font color="#0000ed"><i>// error handling proceeds as described above.</i></font><br>
 <br>
 <font color="#008b00"><b>void</b></font>&nbsp;inv(ZZ_p&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;ZZ_p&amp; a); <font color="#0000ed"><i>// x = 1/a</i></font><br>
 ZZ_p inv(<font color="#008b00"><b>const</b></font>&nbsp;ZZ_p&amp; a); <br>
@@ -395,6 +398,9 @@ ZZ_pContext&amp; <font color="#b02f60"><b>operator</b></font>=(<font color="#008
 <br>
 <font color="#008b00"><b>void</b></font>&nbsp;swap(ZZ_p&amp; x, ZZ_p&amp; y);<br>
 <font color="#0000ed"><i>// swap x and y (done by &quot;pointer swapping&quot;, if possible).</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;ZZ_p::swap(ZZ&amp; x);<br>
+<font color="#0000ed"><i>// swap member function</i></font><br>
 <br>
 <br>
 ZZ_p::ZZ_p(INIT_NO_ALLOC_TYPE);<br>

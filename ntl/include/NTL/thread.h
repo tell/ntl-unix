@@ -55,6 +55,18 @@ public:
 };
 
 
+class AtomicCounter {
+private:
+   NTL_SNS atomic_ulong cnt;
+
+public:
+   AtomicCounter() : cnt(0) { }
+   unsigned long inc() 
+   { 
+      return cnt.fetch_add(1UL, NTL_SNS memory_order_relaxed); 
+   }
+};
+
 
 
 
@@ -134,9 +146,28 @@ public:
    operator bool() const { return data; }
 };
 
+
+class AtomicCounter {
+private:
+   unsigned long cnt;
+
+   AtomicCounter(const AtomicCounter&); // disabled
+   void operator=(const AtomicCounter&); // disabled
+
+
+public:
+   AtomicCounter() : cnt(0) { }
+   unsigned long inc() { return cnt++; }
+};
+
+
 class AtomicRefCount {
 private:
    long cnt;
+
+   AtomicRefCount(const AtomicRefCount&); // disabled
+   void operator=(const AtomicRefCount&); // disabled
+
 
 public:
    AtomicRefCount() : cnt(0) { }

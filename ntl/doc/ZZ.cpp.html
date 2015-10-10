@@ -304,10 +304,27 @@ ZZ MulMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font color=
 <font color="#008b00"><b>void</b></font>&nbsp;SqrMod(ZZ&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; n); <font color="#0000ed"><i>// x = a^2 % n</i></font><br>
 ZZ SqrMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; n);<br>
 <br>
+<br>
+<br>
+<br>
 <font color="#008b00"><b>void</b></font>&nbsp;InvMod(ZZ&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; n);<br>
 ZZ InvMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; n);<br>
 <font color="#0000ed"><i>// x = a^{-1} mod n (0 &lt;= x &lt; n); error is raised occurs if inverse</i></font><br>
 <font color="#0000ed"><i>// not defined</i></font><br>
+<br>
+<font color="#0000ed"><i>// If exceptions are enabled, an object of the following class </i></font><br>
+<font color="#0000ed"><i>// is throw by the InvMod routine if the inverse of a mod n is</i></font><br>
+<font color="#0000ed"><i>// not defined. The methods get_a() and get_n() give read-only</i></font><br>
+<font color="#0000ed"><i>// access to the offending values of a and n.</i></font><br>
+<font color="#0000ed"><i>// This also happens for any indirect call to InvMod, via PowerMod,</i></font><br>
+<font color="#0000ed"><i>// of via inverse computations in ZZ_p.</i></font><br>
+<br>
+<font color="#008b00"><b>class</b></font>&nbsp;InvModErrorObject : <font color="#b02f60"><b>public</b></font>&nbsp;ArithmeticErrorObject {<br>
+<font color="#b02f60"><b>public</b></font>:<br>
+&nbsp;&nbsp; InvModErrorObject(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>char</b></font>&nbsp;*s, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; n);<br>
+&nbsp;&nbsp; <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; get_a() <font color="#008b00"><b>const</b></font>;<br>
+&nbsp;&nbsp; <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; get_n() <font color="#008b00"><b>const</b></font>;<br>
+};<br>
 <br>
 <font color="#008b00"><b>long</b></font>&nbsp;InvModStatus(ZZ&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; n);<br>
 <font color="#0000ed"><i>// if gcd(a,b) = 1, then return-value = 0, x = a^{-1} mod n;</i></font><br>
@@ -562,10 +579,12 @@ ZZ ZZFromBytes(<font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b
 <font color="#0000ed"><i>// not necessary that s itself looks random, just that </i></font><br>
 <font color="#0000ed"><i>// it has a lot of &quot;entropy&quot;.</i></font><br>
 <font color="#0000ed"><i>// If SetSeed is not called before using the routines below,</i></font><br>
-<font color="#0000ed"><i>// a default initial state is used.</i></font><br>
-<font color="#0000ed"><i>// Calling SetSeed with s == 0, e.g. SetSeed(ZZ::zero()), </i></font><br>
-<font color="#0000ed"><i>// has the effect of re-setting the state to the default initial state.</i></font><br>
-<font color="#0000ed"><i>// Routine ZZFromBytes (above) may be useful.</i></font><br>
+<font color="#0000ed"><i>// a default initial seed is used.</i></font><br>
+<font color="#0000ed"><i>// This default seed is guaranteed to be unique among different</i></font><br>
+<font color="#0000ed"><i>// threads in a given process, and an attempt is made to </i></font><br>
+<font color="#0000ed"><i>// make this seed globally unique among all threads and processes.</i></font><br>
+<font color="#0000ed"><i>// Routine ZZFromBytes (above) may be useful for constructing seeds</i></font><br>
+<font color="#0000ed"><i>// from arbitrary binary data.</i></font><br>
 <br>
 <br>
 <font color="#008b00"><b>void</b></font>&nbsp;RandomBnd(ZZ&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; n);<br>
@@ -853,6 +872,9 @@ ostream&amp; <font color="#b02f60"><b>operator</b></font>&lt;&lt;(ostream&amp; s
 <br>
 <font color="#008b00"><b>void</b></font>&nbsp;ZZ::kill();<br>
 <font color="#0000ed"><i>// a.kill() sets a to zero and frees the space held by a.</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;ZZ::swap(ZZ&amp; x);<br>
+<font color="#0000ed"><i>// swap method (done by &quot;pointer swapping&quot; if possible)</i></font><br>
 <br>
 ZZ::ZZ(INIT_SIZE_TYPE, <font color="#008b00"><b>long</b></font>&nbsp;k);<br>
 <font color="#0000ed"><i>// ZZ(INIT_SIZE, k) initializes to 0, but space is pre-allocated so</i></font><br>

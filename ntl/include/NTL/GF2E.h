@@ -131,6 +131,9 @@ inline GF2E& operator=(GF2 a);
 // You can always access the _GF2E__representation directly...if you dare.
 GF2X& LoopHole() { return _GF2E__rep; }
 
+
+void swap(GF2E& y) { _GF2E__rep.swap(y._GF2E__rep); }
+
 static long WordLength() { return GF2EInfo->p.WordLength(); }
 
 static long storage() { return WV_storage(GF2E::WordLength()); }
@@ -168,7 +171,7 @@ inline void set(GF2E& x)
 inline void swap(GF2E& x, GF2E& y)
 // swap x and y
 
-   { swap(x._GF2E__rep, y._GF2E__rep); }
+   { x.swap(y); }
 
 // ****** addition
 

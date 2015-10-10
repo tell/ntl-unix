@@ -141,6 +141,8 @@ inline ZZ_pE& operator=(const ZZ_p& a);
 
 ZZ_pE(ZZ_pE& x, INIT_TRANS_TYPE) : _ZZ_pE__rep(x._ZZ_pE__rep, INIT_TRANS) { }
 
+void swap(ZZ_pE& x) { _ZZ_pE__rep.swap(x._ZZ_pE__rep); }
+
 
 // You can always access the _ZZ_pE__representation directly...if you dare.
 ZZ_pX& LoopHole() { return _ZZ_pE__rep; }
@@ -156,6 +158,7 @@ static const ZZ_pE& zero();
 static long initialized() { return (ZZ_pEInfo != 0); }
 
 static void init(const ZZ_pX&);
+
 
 
 };
@@ -177,7 +180,7 @@ inline void set(ZZ_pE& x)
 inline void swap(ZZ_pE& x, ZZ_pE& y)
 // swap x and y
 
-   { swap(x._ZZ_pE__rep, y._ZZ_pE__rep); }
+   { x.swap(y); }
 
 // ****** addition
 
