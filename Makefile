@@ -1,10 +1,14 @@
 PREFIX = $(shell pwd)/prefix
 CXXFLAGS = -std=c++11 -O4 -g3 -Wall -Wextra
+ifeq (Linux,$(shell uname -s))
+CONFIG.cmd = ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)" NTL_THREADS=on
+else
 CONFIG.cmd = ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)"
+endif
 
 .PHONY: all clean check install
 
-all: config.done compile.done
+all: config.done ntl/src/all
 
 clean:
 	$(RM) *.done
@@ -21,6 +25,5 @@ config.done:
 	cd ntl/src && $(CONFIG.cmd)
 	touch $@
 
-compile.done:
+ntl/src/all:
 	$(MAKE) -C ntl/src
-	touch $@
