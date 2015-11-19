@@ -1,8 +1,10 @@
+CXX = c++
 PREFIX = $(shell pwd)/prefix
 CXXFLAGS = -std=c++11 -O4 -g3 -Wall -Wextra
+
 ifeq (Linux,$(shell uname -s))
 CXXFLAGS += -pthread
-CONFIG.cmd = ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)" NTL_THREADS=on
+CONFIG.cmd = ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)"
 else
 CONFIG.cmd = ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)"
 endif
