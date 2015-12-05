@@ -1,4 +1,3 @@
-CXX = c++
 PREFIX = $(shell pwd)/prefix
 CXXFLAGS = -std=c++11 -O4 -g3 -Wall -Wextra
 
