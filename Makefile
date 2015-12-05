@@ -1,4 +1,5 @@
 PREFIX = $(shell pwd)/prefix
+BUILD_DIR = ntl/src
 CXXFLAGS = -std=c++11 -O4 -g3 -Wall -Wextra
 
 ifeq (Linux,$(shell uname -s))
@@ -10,22 +11,22 @@ endif
 
 .PHONY: all clean check install
 
-all: config.done ntl/src/all
+all: config.done $(BUILD_DIR)/all
 
 clean:
 	$(RM) *.done
-	$(MAKE) -C ntl/src clean
-	$(RM) ntl/src/all
+	$(MAKE) -C $(BUILD_DIR) clean
+	$(RM) $(BUILD_DIR)/all
 
 check:
-	$(MAKE) -C ntl/src check
+	$(MAKE) -C $(BUILD_DIR) check
 
 install:
-	$(MAKE) -C ntl/src install
+	$(MAKE) -C $(BUILD_DIR) install
 
 config.done:
-	cd ntl/src && $(CONFIG.cmd)
+	cd $(BUILD_DIR) && $(CONFIG.cmd)
 	touch $@
 
-ntl/src/all:
-	$(MAKE) -C ntl/src
+$(BUILD_DIR)/all:
+	$(MAKE) -C $(BUILD_DIR)
