@@ -8,12 +8,12 @@ addons:
             # - deadsnakes
         - ubuntu-toolchain-r-test
         packages:
-        - g++-4.8
+        - g++-4.9
         - libgmp-dev
 compiler:
-- g++-4.8
+- g++-4.9
 before_script:
-- CXX=g++-4.8 make
+- CXX=g++-4.9 make
 script: make check
 # after_failure:
 #     - "pwd"
