@@ -13,10 +13,8 @@ addons:
 compiler:
 - g++-4.8
 before_script:
-- cd ntl/src
-- ./configure
-- make -j 4
-script: make -j 4 check
+- make
+script: make check
 # after_failure:
 #     - "pwd"
 #     - "cat config.log"
