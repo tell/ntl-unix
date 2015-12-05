@@ -1,0 +1,22 @@
+language: c
+sudo: false
+cache:
+    apt: true
+addons:
+    apt:
+        sources:
+            # - deadsnakes
+        - ubuntu-toolchain-r-test
+        packages:
+        - gcc-4.8
+        - libgmp-dev
+compiler:
+- gcc-4.8
+before_script:
+- cd ntl/src
+- ./configure
+- make -j 4
+script: make -j 4 check
+# after_failure:
+#     - "pwd"
+#     - "cat config.log"
