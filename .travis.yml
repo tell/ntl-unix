@@ -13,7 +13,7 @@ addons:
 compiler:
 - g++-4.9
 before_script:
-- CXX=g++-4.9 make
+- CXX=g++-4.9 make 2>&1 > make.log || { echo "!!!! ERROR !!!!"; cat make.log; false; }
 script: make check
 # after_failure:
 #     - "pwd"
