@@ -5,7 +5,7 @@ NTL_ALL = $(NTL_SRC)/all
 NTL_BUILD_TARGET = $(NTL_ALL)
 
 ifeq (Linux,$(shell uname -s))
-NTL_CONFIG.cmd = cd $(NTL_SRC) && ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)"
+NTL_CONFIG.cmd = cd $(NTL_SRC) && ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)" NTL_THREADS=on
 else
 NTL_CONFIG.cmd = cd $(NTL_SRC) && ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)"
 endif
