@@ -38,6 +38,7 @@
 //#include <cstdio>
 #include <cmath>
 
+#include <cstddef>
 #include <gmp.h>
 
 NTL_CLIENT

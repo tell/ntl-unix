@@ -23,6 +23,7 @@ int main()
 #else
 
 
+#include <cstddef>
 #include <gmp.h>
 #include <NTL/mach_desc.h>
 
