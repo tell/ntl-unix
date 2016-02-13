@@ -1,5 +1,5 @@
 include ../common.mk
-include $(ROOT)/ntl.mk
+include $(ROOT)/ntl-conf.mk
 
 WORK_DIR := $(shell pwd)
 

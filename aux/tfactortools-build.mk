@@ -1,8 +1,4 @@
-include ../../common.mk
-
-CXXFLAGS += -I$(PREFIX)/include
-LDFLAGS += -L$(PREFIX)/lib
-LOADLIBES += -lntl -lgmp
+include ../../ntl.mk
 
 all: tfactor
 	$(info The ROOT: $(ROOT))
