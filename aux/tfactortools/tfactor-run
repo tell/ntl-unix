@@ -1,0 +1,16 @@
+#/bin/bash
+
+./tfactor n=2048 l=2048 nt=1 &> tfactor.txt 
+./tfactor n=2048 l=2048 nt=2 &>> tfactor.txt 
+./tfactor n=2048 l=2048 nt=4 &>> tfactor.txt 
+./tfactor n=2048 l=2048 nt=8 &>> tfactor.txt 
+./tfactor n=2048 l=2048 nt=16 &>> tfactor.txt 
+
+./tfactor n=4096 l=4096 nt=1 &>> tfactor.txt 
+./tfactor n=4096 l=4096 nt=2 &>> tfactor.txt 
+./tfactor n=4096 l=4096 nt=4 &>> tfactor.txt 
+./tfactor n=4096 l=4096 nt=8 &>> tfactor.txt 
+./tfactor n=4096 l=4096 nt=16 &>> tfactor.txt 
+
+./tfactor n=8192 l=8192 nt=16 &>> tfactor.txt 
+./tfactor n=16384 l=16384 nt=16 &>> tfactor.txt 
