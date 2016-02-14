@@ -5,3 +5,6 @@ WORK_DIR := $(shell pwd)
 
 all:
 	$(MAKE) -C tfactortools -f $(WORK_DIR)/tfactortools-build.mk
+
+clean:
+	$(MAKE) -C tfactortools -f $(WORK_DIR)/tfactortools-build.mk clean
