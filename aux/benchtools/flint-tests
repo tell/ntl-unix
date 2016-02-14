@@ -1,0 +1,33 @@
+#/bin/bash
+
+make -B flint-mul
+make -B flint-mulmod
+make -B flint-mulmodprecon
+make -B flint-sqrmod
+
+make -B flint-lmul
+make -B flint-lmulmod
+make -B flint-lmulmodprecon
+make -B flint-lsqrmod
+
+make -B flint-zmul
+
+make -B flint-factor
+make -B flint-lfactor
+
+./flint-mul &> flint-mul.txt
+./flint-mulmod &> flint-mulmod.txt
+./flint-mulmodprecon &> flint-mulmodprecon.txt
+./flint-sqrmod &> flint-sqrmod.txt
+
+./flint-lmul &> flint-lmul.txt
+./flint-lmulmod &> flint-lmulmod.txt
+./flint-lmulmodprecon &> flint-lmulmodprecon.txt
+./flint-lsqrmod &> flint-lsqrmod.txt
+
+./flint-zmul &> flint-zmul.txt
+
+./flint-factor  &> flint-factor.txt
+
+./flint-lfactor &> flint-lfactor.txt
+
