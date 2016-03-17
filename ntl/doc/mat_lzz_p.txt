@@ -6,6 +6,7 @@ MODULE: mat_zz_p
 SUMMARY:
 
 Defines the class mat_zz_p.
+Note that the modulus p need no be a prime, except as indicated below.
 
 \**************************************************************************/
 
@@ -40,27 +41,31 @@ void mul(mat_zz_p& X, long a, const mat_zz_p& B);
 // X = a * B
 
 
-void determinant(zz_p& d, const mat_zz_p& A);
-zz_p determinant(const mat_zz_p& a); 
-// d = determinant(A)
-
-
 void transpose(mat_zz_p& X, const mat_zz_p& A);
 mat_zz_p transpose(const mat_zz_p& A);
 // X = transpose of A
 
-void solve(zz_p& d, vec_zz_p& X,
-           const mat_zz_p& A, const vec_zz_p& b);
-// A is an n x n matrix, b is a length n vector.  Computes d =
-// determinant(A).  If d != 0, solves x*A = b.
+
+
+
+void determinant(zz_p& d, const mat_zz_p& A);
+zz_p determinant(const mat_zz_p& a); 
+// d = determinant(A)
+
+void solve(zz_p& d, vec_zz_p& x, const mat_zz_p& A, const vec_zz_p& b);
+// A is an n x n matrix, b is a length n vector.  Computes d = determinant(A).
+// If d != 0, solves x*A = b (so x and b are treated as a row vectors).
+
+void solve(zz_p& d, const mat_zz_p& A, vec_zz_p& x, const vec_zz_p& b);
+// A is an n x n matrix, b is a length n vector.  Computes d = determinant(A).
+// If d != 0, solves A*x = b (so x and b are treated as a column vectors).
+// NOTE: this routine was added in NTL v9.7.0, and an  analogous routine will
+// eventually be added to all the other matrix classes in a subsequent release.
 
 void inv(zz_p& d, mat_zz_p& X, const mat_zz_p& A);
 // A is an n x n matrix.  Computes d = determinant(A).  If d != 0,
 // computes X = A^{-1}.
 
-void sqr(mat_zz_p& X, const mat_zz_p& A);
-mat_zz_p sqr(const mat_zz_p& A);
-// X = A*A   
 
 void inv(mat_zz_p& X, const mat_zz_p& A);
 mat_zz_p inv(const mat_zz_p& A);
@@ -68,11 +73,37 @@ mat_zz_p inv(const mat_zz_p& A);
 
 void power(mat_zz_p& X, const mat_zz_p& A, const ZZ& e);
 mat_zz_p power(const mat_zz_p& A, const ZZ& e);
-
 void power(mat_zz_p& X, const mat_zz_p& A, long e);
 mat_zz_p power(const mat_zz_p& A, long e);
 // X = A^e; e may be negative (in which case A must be nonsingular).
 
+// NOTE: the routines determinant, solve, inv, and power (with negative
+// exponent) all require that the modulus p is prime: during elimination, if a
+// non-zero pivot element does not have an inverse, and error is raised.  The
+// following "relaxed" versions of these routines will also work with prime
+// powers, if the optional parameter relax is true (which is the default).
+// However, note that in these relaxed routines, if a computed determinant
+// value is zero, this may not be the true determinant: all that you can assume
+// is that the true determinant is is not invertible mod p. If the parameter
+// relax==false, then these routines behave identically to their "unrelaxed"
+// counterparts.
+
+void relaxed_determinant(zz_p& d, const mat_zz_p& A, bool relax=true);
+zz_p relaxed_determinant(const mat_zz_p& a, bool relax=true); 
+void relaxed_solve(zz_p& d, vec_zz_p& x, const mat_zz_p& A, const vec_zz_p& b, bool relax=true);
+void relaxed_solve(zz_p& d, const mat_zz_p& A, vec_zz_p& x, const vec_zz_p& b, bool relax=true);
+void relaxed_inv(zz_p& d, mat_zz_p& X, const mat_zz_p& A, bool relax=true);
+void relaxed_inv(mat_zz_p& X, const mat_zz_p& A, bool relax=true);
+mat_zz_p relaxed_inv(const mat_zz_p& A, bool relax=true);
+void relaxed_power(mat_zz_p& X, const mat_zz_p& A, const ZZ& e, bool relax=true);
+mat_zz_p relaxed_power(const mat_zz_p& A, const ZZ& e, bool relax=true);
+void relaxed_power(mat_zz_p& X, const mat_zz_p& A, long e, bool relax=true);
+mat_zz_p relaxed_power(const mat_zz_p& A, long e, bool relax=true);
+
+
+void sqr(mat_zz_p& X, const mat_zz_p& A);
+mat_zz_p sqr(const mat_zz_p& A);
+// X = A*A   
 
 void ident(mat_zz_p& X, long n);
 mat_zz_p ident_mat_zz_p(long n);
@@ -104,6 +135,13 @@ void image(mat_zz_p& X, const mat_zz_p& A);
 void kernel(mat_zz_p& X, const mat_zz_p& A);
 // Computes a basis for the kernel of the map x -> x*A. where x is a
 // row vector.
+
+// NOTE: the gauss, image, and kernel routines all require that
+// the modulus p is prime. Also, since NTL v 9.7.0, these routines
+// may be significantly slower than the routines inv and solve above.
+// In a subsequent release, it is planned to introduce new functions
+// with a slightly different interface that will be faster.
+
 
 
 

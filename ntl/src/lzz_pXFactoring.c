@@ -673,7 +673,7 @@ long ProbIrredTest(const zz_pX& f, long iter)
    return !IsX(s);
 }
 
-NTL_THREAD_LOCAL long zz_pX_BlockingFactor = 10;
+NTL_CHEAP_THREAD_LOCAL long zz_pX_BlockingFactor = 10;
 
 void DDF(vec_pair_zz_pX_long& factors, const zz_pX& ff, const zz_pX& hh, 
          long verbose)
@@ -1529,12 +1529,12 @@ void BuildRandomIrred(zz_pX& f, const zz_pX& g)
 
 /************* NEW DDF ****************/
 
-NTL_THREAD_LOCAL long zz_pX_GCDTableSize = 4;
-NTL_THREAD_LOCAL static vec_zz_pX *BabyStepFile = 0;
-NTL_THREAD_LOCAL static vec_zz_pX *GiantStepFile = 0;
-NTL_THREAD_LOCAL static zz_pXArgument *HHH = 0;
-NTL_THREAD_LOCAL static zz_pXAltArgument *HHH1 = 0;
-NTL_THREAD_LOCAL static long OldN = 0;
+NTL_CHEAP_THREAD_LOCAL long zz_pX_GCDTableSize = 4;
+static NTL_CHEAP_THREAD_LOCAL vec_zz_pX *BabyStepFile = 0;
+static NTL_CHEAP_THREAD_LOCAL vec_zz_pX *GiantStepFile = 0;
+static NTL_CHEAP_THREAD_LOCAL zz_pXArgument *HHH = 0;
+static NTL_CHEAP_THREAD_LOCAL zz_pXAltArgument *HHH1 = 0;
+static NTL_CHEAP_THREAD_LOCAL long OldN = 0;
 
 
 static

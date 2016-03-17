@@ -426,17 +426,17 @@ void ComputeGS(mat_ZZ& B, double **B1, double **mu, double *b,
    c[k] = b[k] - s;
 }
 
-NTL_THREAD_LOCAL static double red_fudge = 0;
-NTL_THREAD_LOCAL static long log_red = 0;
-NTL_THREAD_LOCAL static long verbose = 0;
+NTL_CHEAP_THREAD_LOCAL double LLLStatusInterval = 900.0;
+NTL_CHEAP_THREAD_LOCAL char *LLLDumpFile = 0;
 
-NTL_THREAD_LOCAL double LLLStatusInterval = 900.0;
-NTL_THREAD_LOCAL char *LLLDumpFile = 0;
+static NTL_CHEAP_THREAD_LOCAL double red_fudge = 0;
+static NTL_CHEAP_THREAD_LOCAL long log_red = 0;
+static NTL_CHEAP_THREAD_LOCAL long verbose = 0;
 
-NTL_THREAD_LOCAL static unsigned long NumSwaps = 0;
-NTL_THREAD_LOCAL static double RR_GS_time = 0;
-NTL_THREAD_LOCAL static double StartTime = 0;
-NTL_THREAD_LOCAL static double LastTime = 0;
+static NTL_CHEAP_THREAD_LOCAL unsigned long NumSwaps = 0;
+static NTL_CHEAP_THREAD_LOCAL double RR_GS_time = 0;
+static NTL_CHEAP_THREAD_LOCAL double StartTime = 0;
+static NTL_CHEAP_THREAD_LOCAL double LastTime = 0;
 
 
 

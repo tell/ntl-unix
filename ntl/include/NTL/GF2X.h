@@ -56,7 +56,7 @@ const GF2 operator[](long i) const;
 
 
 
-NTL_THREAD_LOCAL static long HexOutput;
+static NTL_CHEAP_THREAD_LOCAL long HexOutput;
 
 inline GF2X(long i, GF2 c);
 inline GF2X(long i, long c);

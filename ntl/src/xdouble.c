@@ -9,7 +9,7 @@ NTL_START_IMPL
 
 
 
-NTL_THREAD_LOCAL
+NTL_CHEAP_THREAD_LOCAL
 long xdouble::oprec = 10;
 
 void xdouble::SetOutputPrecision(long p)

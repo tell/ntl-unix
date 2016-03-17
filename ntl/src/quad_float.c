@@ -169,7 +169,7 @@ quad_float to_quad_float(unsigned long n)
 #endif
 
 
-NTL_THREAD_LOCAL
+NTL_CHEAP_THREAD_LOCAL
 long quad_float::oprec = 10;
 
 void quad_float::SetOutputPrecision(long p)

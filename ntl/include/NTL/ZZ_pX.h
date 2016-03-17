@@ -1108,7 +1108,7 @@ struct ZZ_pXArgument {
    vec_ZZ_pX H;
 };
 
-NTL_THREAD_LOCAL extern long ZZ_pXArgBound;
+extern NTL_CHEAP_THREAD_LOCAL long ZZ_pXArgBound;
 
 
 void build(ZZ_pXArgument& H, const ZZ_pX& h, const ZZ_pXModulus& F, long m);

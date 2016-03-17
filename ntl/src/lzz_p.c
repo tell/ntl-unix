@@ -5,6 +5,14 @@
 
 NTL_START_IMPL
 
+
+static
+NTL_THREAD_LOCAL SmartPtr<zz_pInfoT> zz_pInfo_stg;
+
+NTL_CHEAP_THREAD_LOCAL zz_pInfoT *zz_pInfo = 0;
+
+
+
 SmartPtr<zz_pInfoT> Build_zz_pInfo(FFTPrimeInfo *info)
 {
    return MakeSmart<zz_pInfoT>(INIT_FFT, info);
@@ -26,6 +34,7 @@ zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
    p = NewP;
    pinv = PrepMulMod(p);
    red_struct = sp_PrepRem(p);
+   ll_red_struct = make_sp_ll_reduce_struct(p);
 
    p_info = 0;
 
@@ -82,6 +91,7 @@ zz_pInfoT::zz_pInfoT(INIT_FFT_TYPE, FFTPrimeInfo *info)
    p = info->q;
    pinv = info->qinv;
    red_struct = sp_PrepRem(p);
+   ll_red_struct = make_sp_ll_reduce_struct(p);
 
 
    p_info = info;
@@ -102,6 +112,7 @@ zz_pInfoT::zz_pInfoT(INIT_USER_FFT_TYPE, long q)
    p = q;
    pinv = PrepMulMod(p);
    red_struct = sp_PrepRem(p);
+   ll_red_struct = make_sp_ll_reduce_struct(p);
 
 
    p_info_owner.make();
@@ -118,11 +129,6 @@ zz_pInfoT::zz_pInfoT(INIT_USER_FFT_TYPE, long q)
 
    MaxRoot = CalcMaxRoot(p);
 }
-
-
-
-NTL_THREAD_LOCAL SmartPtr<zz_pInfoT> zz_pInfo = 0;
-
 
 
 void zz_p::init(long p, long maxroot)
@@ -165,12 +171,13 @@ zz_pContext::zz_pContext(INIT_USER_FFT_TYPE, long q) :
 
 void zz_pContext::save()
 {
-   ptr = zz_pInfo;
+   ptr = zz_pInfo_stg;
 }
 
 void zz_pContext::restore() const
 {
-   zz_pInfo = ptr;
+   zz_pInfo_stg = ptr;
+   zz_pInfo = zz_pInfo_stg.get();
 }
 
 
@@ -225,5 +232,173 @@ ostream& operator<<(ostream& s, zz_p a)
 
    return s;
 }
+
+
+
+// ***********************************************************************
+
+
+#ifdef NTL_HAVE_LL_TYPE
+
+#define NTL_CAST_ULL(x) ((NTL_ULL_TYPE) (x))
+#define NTL_MUL_ULL(x,y) (NTL_CAST_ULL(x)*NTL_CAST_ULL(y))
+
+
+// NOTE: the following code sequence will generate imulq 
+// instructions on x86_64 machines, which empirically is faster
+// than using the mulq instruction or even the mulxq instruction,
+// (tested on a Haswell machine).
+
+long 
+InnerProd_LL(const long *ap, const zz_p *bp, long n, long d, 
+          sp_ll_reduce_struct dinv)
+{
+   const long BLKSIZE = (1L << min(20, 2*(NTL_BITS_PER_LONG-NTL_SP_NBITS)));
+
+   unsigned long acc0 = 0;
+   NTL_ULL_TYPE acc21 = 0;
+
+   long i;
+   for (i = 0; i <= n-BLKSIZE; i += BLKSIZE, ap += BLKSIZE, bp += BLKSIZE) {
+      // sum ap[j]*rep(bp[j]) for j in [0..BLKSIZE)
+
+      NTL_ULL_TYPE sum = 0;
+      for (long j = 0; j < BLKSIZE; j += 4) {
+         sum += NTL_MUL_ULL(ap[j+0], rep(bp[j+0]));
+         sum += NTL_MUL_ULL(ap[j+1], rep(bp[j+1]));
+         sum += NTL_MUL_ULL(ap[j+2], rep(bp[j+2]));
+         sum += NTL_MUL_ULL(ap[j+3], rep(bp[j+3]));
+      }
+
+      sum += acc0; 
+      acc0 = sum;
+      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
+   }
+
+   if (i < n) {
+      // sum ap[i]*rep(bp[j]) for j in [0..n-i)
+
+      NTL_ULL_TYPE sum = 0;
+      long j = 0;
+
+      for (; j <= n-i-4; j += 4) {
+         sum += NTL_MUL_ULL(ap[j+0], rep(bp[j+0]));
+         sum += NTL_MUL_ULL(ap[j+1], rep(bp[j+1]));
+         sum += NTL_MUL_ULL(ap[j+2], rep(bp[j+2]));
+         sum += NTL_MUL_ULL(ap[j+3], rep(bp[j+3]));
+      }
+
+      for (; j < n-i; j++)
+         sum += NTL_MUL_ULL(ap[j], rep(bp[j]));
+
+      sum += acc0; 
+      acc0 = sum;
+      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
+   }
+
+   if (dinv.nbits == NTL_SP_NBITS) 
+      return sp_ll_red_31_normalized(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, d, dinv);
+   else
+      return sp_ll_red_31(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, d, dinv);
+}
+
+
+long 
+InnerProd_LL(const zz_p *ap, const zz_p *bp, long n, long d, 
+          sp_ll_reduce_struct dinv)
+{
+   const long BLKSIZE = (1L << min(20, 2*(NTL_BITS_PER_LONG-NTL_SP_NBITS)));
+
+   unsigned long acc0 = 0;
+   NTL_ULL_TYPE acc21 = 0;
+
+   long i;
+   for (i = 0; i <= n-BLKSIZE; i += BLKSIZE, ap += BLKSIZE, bp += BLKSIZE) {
+      // sum rep(ap[j])*rep(bp[j]) for j in [0..BLKSIZE)
+
+      NTL_ULL_TYPE sum = 0;
+      for (long j = 0; j < BLKSIZE; j += 4) {
+         sum += NTL_MUL_ULL(rep(ap[j+0]), rep(bp[j+0]));
+         sum += NTL_MUL_ULL(rep(ap[j+1]), rep(bp[j+1]));
+         sum += NTL_MUL_ULL(rep(ap[j+2]), rep(bp[j+2]));
+         sum += NTL_MUL_ULL(rep(ap[j+3]), rep(bp[j+3]));
+      }
+
+      sum += acc0; 
+      acc0 = sum;
+      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
+   }
+
+   if (i < n) {
+      // sum rep(ap[i])*rep(bp[j]) for j in [0..n-i)
+
+      NTL_ULL_TYPE sum = 0;
+      long j = 0;
+
+      for (; j <= n-i-4; j += 4) {
+         sum += NTL_MUL_ULL(rep(ap[j+0]), rep(bp[j+0]));
+         sum += NTL_MUL_ULL(rep(ap[j+1]), rep(bp[j+1]));
+         sum += NTL_MUL_ULL(rep(ap[j+2]), rep(bp[j+2]));
+         sum += NTL_MUL_ULL(rep(ap[j+3]), rep(bp[j+3]));
+      }
+
+      for (; j < n-i; j++)
+         sum += NTL_MUL_ULL(rep(ap[j]), rep(bp[j]));
+
+      sum += acc0; 
+      acc0 = sum;
+      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
+   }
+
+   if (dinv.nbits == NTL_SP_NBITS) 
+      return sp_ll_red_31_normalized(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, d, dinv);
+   else
+      return sp_ll_red_31(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, d, dinv);
+}
+
+
+long 
+InnerProd_L(const long *ap, const zz_p *bp, long n, long d, 
+          sp_reduce_struct dinv)
+{
+   unsigned long sum = 0;
+   long j = 0;
+
+   for (; j <= n-4; j += 4) {
+      sum += (ap[j+0]) * (rep(bp[j+0]));
+      sum += (ap[j+1]) * (rep(bp[j+1]));
+      sum += (ap[j+2]) * (rep(bp[j+2]));
+      sum += (ap[j+3]) * (rep(bp[j+3]));
+   }
+
+   for (; j < n; j++)
+      sum += (ap[j]) * (rep(bp[j]));
+
+   return rem(sum, d, dinv);
+}
+
+long 
+InnerProd_L(const zz_p *ap, const zz_p *bp, long n, long d, 
+          sp_reduce_struct dinv)
+{
+   unsigned long sum = 0;
+   long j = 0;
+
+   for (; j <= n-4; j += 4) {
+      sum += (rep(ap[j+0])) * (rep(bp[j+0]));
+      sum += (rep(ap[j+1])) * (rep(bp[j+1]));
+      sum += (rep(ap[j+2])) * (rep(bp[j+2]));
+      sum += (rep(ap[j+3])) * (rep(bp[j+3]));
+   }
+
+   for (; j < n; j++)
+      sum += (rep(ap[j])) * (rep(bp[j]));
+
+   return rem(sum, d, dinv);
+}
+
+#endif
+
+
 
 NTL_END_IMPL

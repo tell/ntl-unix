@@ -1264,6 +1264,7 @@ unsigned long LazyReduce2(unsigned long a, long q)
 
 
 
+// FFT: Lazy, no tables
 
 void NTL_FFT_ROUTINE_NOTAB(long* A, const long* a, long k, const FFTPrimeInfo& info, long dir)
 
@@ -1690,6 +1691,7 @@ void PrecompFFTMultipliers(long k, long q, mulmod_t qinv, const long *root, cons
 }
 
 
+// FFT: no lazy, table
 
 void NTL_FFT_ROUTINE_TAB(long* A, const long* a, long k, const FFTPrimeInfo& info, long dir)
 // performs a 2^k-point convolution modulo q
@@ -2034,6 +2036,8 @@ void LazyPrecompFFTMultipliers(long k, long q, mulmod_t qinv, const long *root, 
 bool BRC_test_flag = false;
 #endif
 
+
+// FFT: lazy, tables
 
 void NTL_FFT_ROUTINE_TAB(long* A, const long* a, long k, const FFTPrimeInfo& info, long dir)
 

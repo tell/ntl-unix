@@ -38,7 +38,7 @@ Note that the traditional long integer package used by NTL, lip.c, is derived
 from---and represents an extensive modification of---
 a package originally developed and copyrighted by Arjen Lenstra,
 who has agreed to renounce any copyright claims on the particular 
-version of the long integer package appearing in NTL, so that the
+version of the long integer package appearing in NTL, so that 
 this package now is covered by the GNU GPL as well.
 
 Note that the alternative long integer package used by NTL is GMP,

@@ -6,6 +6,13 @@
 
 NTL_START_IMPL
 
+static
+NTL_THREAD_LOCAL
+SmartPtr<GF2EInfoT> GF2EInfo_stg; 
+
+NTL_CHEAP_THREAD_LOCAL
+GF2EInfoT *GF2EInfo = 0; 
+
 
 GF2EInfoT::GF2EInfoT(const GF2X& NewP)
 {
@@ -80,9 +87,6 @@ const ZZ& GF2E::cardinality()
 
 
 
-NTL_THREAD_LOCAL
-SmartPtr<GF2EInfoT> GF2EInfo = 0; 
-
 
 
 
@@ -95,12 +99,13 @@ void GF2E::init(const GF2X& p)
 
 void GF2EContext::save()
 {
-   ptr = GF2EInfo;
+   ptr = GF2EInfo_stg;
 }
 
 void GF2EContext::restore() const
 {
-   GF2EInfo = ptr;
+   GF2EInfo_stg = ptr;
+   GF2EInfo = GF2EInfo_stg.get();
 }
 
 

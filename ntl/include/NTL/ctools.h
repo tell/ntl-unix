@@ -325,9 +325,16 @@ extern unsigned long exception_counter;
 
 #define NTL_THREAD_LOCAL thread_local 
 
+#ifdef __GNUC__
+#define NTL_CHEAP_THREAD_LOCAL __thread
+#else
+#define NTL_CHEAP_THREAD_LOCAL thread_local
+#endif
+
 #else
 
 #define NTL_THREAD_LOCAL 
+#define NTL_CHEAP_THREAD_LOCAL 
 
 #endif
 
@@ -385,6 +392,32 @@ void _ntl_swap(T*& a, T*& b)
    as the C++ standard is kind of broken on the issue of where
    swap is defined. And I also only want it defined for built-in types.
  */
+
+
+
+
+// The following is for aligning small local arrays
+// Equivalent to type x[n], but aligns to align bytes
+// Only works for POD types
+// NOTE: the gcc aligned attribute might work, but there is
+// some chatter on the web that this was (at some point) buggy.
+// Not clear what the current status is.
+// Anyway, this is only intended for use with gcc on intel
+// machines, so it should be OK.
+
+
+#define NTL_ALIGNED_LOCAL_ARRAY(align, x, type, n) \
+   char x##__ntl_hidden_variable_storage[n*sizeof(type)+align]; \
+   type *x = (type *) ((&x##__ntl_hidden_variable_storage[0]) + \
+                       ((-((unsigned long) (&x##__ntl_hidden_variable_storage[0]))) %\
+                       (unsigned long)(align))) \
+
+
+#define NTL_AVX_BYTE_ALIGN (32)
+#define NTL_AVX_DBL_ALIGN (NTL_AVX_BYTE_ALIGN/long(sizeof(double)))
+
+#define NTL_AVX_LOCAL_ARRAY(x, type, n) NTL_ALIGNED_LOCAL_ARRAY(NTL_AVX_BYTE_ALIGN, x, type, n)
+
    
 
 #endif

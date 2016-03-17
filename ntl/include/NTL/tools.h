@@ -125,9 +125,8 @@ NTL_OPEN_NNS
 
 
 
-#define NTL_FILE_THRESH (128000.0)
-// threshold in KB for switching to external storage of certain
-// tables (currently in the DDF polynomial factoring routines)
+#define NTL_FILE_THRESH (1e12)
+// threshold in KB for switching to external storage of certain tables 
 
 
 
@@ -192,9 +191,32 @@ inline long max(int a, long b) { return (a < b) ? b : long(a); }
 inline long min(long a, int b) { return (a < b) ?  a : long(b); } 
 inline long max(long a, int b) { return (a < b) ? long(b) : a; }
 
+inline unsigned int min(unsigned int a, unsigned int b) 
+{ return (a < b) ?  a : b; } 
+inline unsigned int max(unsigned int a, unsigned int b) 
+{ return (a < b) ? b : a; }
+
+inline unsigned long min(unsigned long a, unsigned long b) 
+{ return (a < b) ?  a : b; } 
+inline unsigned long max(unsigned long a, unsigned long b) 
+{ return (a < b) ? b : a; }
+
+inline unsigned long min(unsigned int a, unsigned long b) 
+{ return (a < b) ?  (unsigned long)(a) : b; } 
+inline unsigned long max(unsigned int a, unsigned long b) 
+{ return (a < b) ? b : (unsigned long)(a); }
+
+inline unsigned long min(unsigned long a, unsigned int b) 
+{ return (a < b) ?  a : (unsigned long)(b); } 
+inline unsigned long max(unsigned long a, unsigned int b) 
+{ return (a < b) ? (unsigned long)(b) : a; }
+
 #endif
 
 
+// NOTE: these are here for historical reasons, so I'll leave them
+// Since it is likely to lead to ambiguities with std::swap,
+// I am not defining any more of these.  
 inline void swap(long& a, long& b)  {  long t;  t = a; a = b; b = t; }
 inline void swap(int& a, int& b)  {  int t;  t = a; a = b; b = t; }
 
@@ -494,9 +516,9 @@ public:
 
 
 
-NTL_THREAD_LOCAL extern void (*ErrorCallback)();
+extern NTL_CHEAP_THREAD_LOCAL void (*ErrorCallback)();
 
-NTL_THREAD_LOCAL extern void (*ErrorMsgCallback)(const char *);
+extern NTL_CHEAP_THREAD_LOCAL void (*ErrorMsgCallback)(const char *);
 
 
 void TerminalError(const char *s);

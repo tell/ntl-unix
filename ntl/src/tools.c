@@ -10,8 +10,8 @@
 
 NTL_START_IMPL
 
-NTL_THREAD_LOCAL void (*ErrorCallback)() = 0;
-NTL_THREAD_LOCAL void (*ErrorMsgCallback)(const char *) = 0;
+NTL_CHEAP_THREAD_LOCAL void (*ErrorCallback)() = 0;
+NTL_CHEAP_THREAD_LOCAL void (*ErrorMsgCallback)(const char *) = 0;
 
 
 void TerminalError(const char *s)

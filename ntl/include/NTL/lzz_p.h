@@ -27,6 +27,7 @@ public:
    mulmod_t pinv;
 
    sp_reduce_struct red_struct;
+   sp_ll_reduce_struct ll_red_struct;
 
    FFTPrimeInfo* p_info; // non-null means we are directly using 
                          // an FFT prime
@@ -58,7 +59,10 @@ public:
    Vec<mulmod_precon_t> uqinv;  // MulModPrecon for u
 };
 
-NTL_THREAD_LOCAL extern SmartPtr<zz_pInfoT> zz_pInfo;  // current modulus, initially null
+extern 
+NTL_CHEAP_THREAD_LOCAL 
+zz_pInfoT *zz_pInfo;  
+// current modulus, initially null
 
 
 class zz_pContext {
@@ -180,6 +184,8 @@ long& LoopHole() { return _zz_p__rep; }
 static long modulus() { return zz_pInfo->p; }
 static zz_p zero() { return zz_p(); }
 static mulmod_t ModulusInverse() { return zz_pInfo->pinv; }
+static sp_reduce_struct red_struct() { return zz_pInfo->red_struct; }
+static sp_ll_reduce_struct ll_red_struct() { return zz_pInfo->ll_red_struct; }
 static long PrimeCnt() { return zz_pInfo->PrimeCnt; }
 
 
@@ -423,7 +429,8 @@ NTL_SNS istream& operator>>(NTL_SNS istream& s, zz_p& x);
 
 
 void conv(Vec<zz_p>& x, const Vec<ZZ>& a);
-// explicit instantiation of more efficient version,
+void conv(Vec<zz_p>& x, const Vec<long>& a);
+// explicit instantiation of more efficient versions,
 // defined in vec_lzz_p.c
 
 
@@ -441,6 +448,29 @@ inline void conv(zz_p& x, zz_p a) { x = a; }
 
 /* ------------------------------------- */
 
+
+// *********************************************************
+// *** specialized inner-product routines, for internal consumption
+// *********************************************************
+
+#ifdef NTL_HAVE_LL_TYPE
+long 
+InnerProd_LL(const long *ap, const zz_p *bp, long n, long d, 
+          sp_ll_reduce_struct dinv);
+
+long
+InnerProd_LL(const zz_p *ap, const zz_p *bp, long n, long d, 
+          sp_ll_reduce_struct dinv);
+#endif
+
+
+long 
+InnerProd_L(const long *ap, const zz_p *bp, long n, long d, 
+          sp_reduce_struct dinv);
+
+long 
+InnerProd_L(const zz_p *ap, const zz_p *bp, long n, long d, 
+          sp_reduce_struct dinv);
 
 
 NTL_CLOSE_NNS

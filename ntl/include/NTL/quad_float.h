@@ -66,7 +66,9 @@ public:
 
   inline quad_float& operator=(double x);
 
-  NTL_THREAD_LOCAL static long oprec;
+  static 
+  NTL_CHEAP_THREAD_LOCAL 
+  long oprec;
 
   static void SetOutputPrecision(long p);
   static long OutputPrecision() { return oprec; }

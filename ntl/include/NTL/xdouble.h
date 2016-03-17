@@ -42,7 +42,9 @@ inline xdouble& operator=(double a);
 
 void normalize();
 
-NTL_THREAD_LOCAL static long oprec;
+static 
+NTL_CHEAP_THREAD_LOCAL 
+long oprec;
 
 static void SetOutputPrecision(long p);
 static long OutputPrecision() { return oprec; }

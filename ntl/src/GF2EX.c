@@ -2461,7 +2461,7 @@ void build(GF2EXArgument& A, const GF2EX& h, const GF2EXModulus& F, long m)
 
 
 
-NTL_THREAD_LOCAL
+NTL_CHEAP_THREAD_LOCAL
 long GF2EXArgBound = 0;
 
 

@@ -319,7 +319,7 @@ public:
 };
 
 long InvModStatus(ZZ& x, const ZZ& a, const ZZ& n);
-// if gcd(a,b) = 1, then return-value = 0, x = a^{-1} mod n;
+// if gcd(a,n) = 1, then return-value = 0, x = a^{-1} mod n;
 // otherwise, return-value = 1, x = gcd(a, n)
 
 void PowerMod(ZZ& x, const ZZ& a, const ZZ& e, const ZZ& n);
@@ -393,6 +393,10 @@ mulmod_precon_t PrepMulModPrecon(long b, long n, mulmod_t ninv);
 
 long InvMod(long a, long n);
 // computes a^{-1} mod n.  Error is raised if undefined.
+
+long InvModStatus(long& x, long a, long n);
+// if gcd(a,n) = 1, then return-value = 0, x = a^{-1} mod n;
+// otherwise, return-value = 1, x = gcd(a, n)
 
 long PowerMod(long a, long e, long n);
 // computes a^e mod n (e may be negative)

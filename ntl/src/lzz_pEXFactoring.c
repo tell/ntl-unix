@@ -357,7 +357,7 @@ long ProbIrredTest(const zz_pEX& f, long iter)
 }
 
 
-NTL_THREAD_LOCAL long zz_pEX_BlockingFactor = 10;
+NTL_CHEAP_THREAD_LOCAL long zz_pEX_BlockingFactor = 10;
 
 
 
@@ -1061,11 +1061,11 @@ void BuildRandomIrred(zz_pEX& f, const zz_pEX& g)
 
 /************* NEW DDF ****************/
 
-NTL_THREAD_LOCAL long zz_pEX_GCDTableSize = 4;
-NTL_THREAD_LOCAL double zz_pEXFileThresh = NTL_FILE_THRESH;
-NTL_THREAD_LOCAL static vec_zz_pEX *BabyStepFile=0;
-NTL_THREAD_LOCAL static vec_zz_pEX *GiantStepFile=0;
-NTL_THREAD_LOCAL static long use_files;
+NTL_CHEAP_THREAD_LOCAL long zz_pEX_GCDTableSize = 4;
+NTL_CHEAP_THREAD_LOCAL double zz_pEXFileThresh = NTL_FILE_THRESH;
+static NTL_CHEAP_THREAD_LOCAL vec_zz_pEX *BabyStepFile=0;
+static NTL_CHEAP_THREAD_LOCAL vec_zz_pEX *GiantStepFile=0;
+static NTL_CHEAP_THREAD_LOCAL long use_files;
 
 
 static

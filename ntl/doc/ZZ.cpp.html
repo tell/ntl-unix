@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>/Volumes/unix-files/u/ntl-new/ntl-9.6.4/doc/ZZ.cpp.html</title>
+<title>/Volumes/unix-files/u/ntl-new/ntl-9.7.0/doc/ZZ.cpp.html</title>
 <meta name="Generator" content="Vim/7.1">
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 </head>
@@ -327,7 +327,7 @@ ZZ InvMod(<font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font color=
 };<br>
 <br>
 <font color="#008b00"><b>long</b></font>&nbsp;InvModStatus(ZZ&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; n);<br>
-<font color="#0000ed"><i>// if gcd(a,b) = 1, then return-value = 0, x = a^{-1} mod n;</i></font><br>
+<font color="#0000ed"><i>// if gcd(a,n) = 1, then return-value = 0, x = a^{-1} mod n;</i></font><br>
 <font color="#0000ed"><i>// otherwise, return-value = 1, x = gcd(a, n)</i></font><br>
 <br>
 <font color="#008b00"><b>void</b></font>&nbsp;PowerMod(ZZ&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; a, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; e, <font color="#008b00"><b>const</b></font>&nbsp;ZZ&amp; n);<br>
@@ -401,6 +401,10 @@ mulmod_precon_t PrepMulModPrecon(<font color="#008b00"><b>long</b></font>&nbsp;b
 <br>
 <font color="#008b00"><b>long</b></font>&nbsp;InvMod(<font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;n);<br>
 <font color="#0000ed"><i>// computes a^{-1} mod n.&nbsp;&nbsp;Error is raised if undefined.</i></font><br>
+<br>
+<font color="#008b00"><b>long</b></font>&nbsp;InvModStatus(<font color="#008b00"><b>long</b></font>&amp; x, <font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;n);<br>
+<font color="#0000ed"><i>// if gcd(a,n) = 1, then return-value = 0, x = a^{-1} mod n;</i></font><br>
+<font color="#0000ed"><i>// otherwise, return-value = 1, x = gcd(a, n)</i></font><br>
 <br>
 <font color="#008b00"><b>long</b></font>&nbsp;PowerMod(<font color="#008b00"><b>long</b></font>&nbsp;a, <font color="#008b00"><b>long</b></font>&nbsp;e, <font color="#008b00"><b>long</b></font>&nbsp;n);<br>
 <font color="#0000ed"><i>// computes a^e mod n (e may be negative)</i></font><br>

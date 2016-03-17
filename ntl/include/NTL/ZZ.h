@@ -1318,7 +1318,7 @@ inline ZZ InvMod(const ZZ& a, const ZZ& n)
 
 
 inline long InvModStatus(ZZ& x, const ZZ& a, const ZZ& n)
-// if gcd(a,b) = 1, then ReturnValue = 0, x = a^{-1} mod n
+// if gcd(a,n) = 1, then ReturnValue = 0, x = a^{-1} mod n
 // otherwise, ReturnValue = 1, x = gcd(a, n)
 
   { return NTL_zinv(a.rep, n.rep, &x.rep); }
@@ -1436,6 +1436,10 @@ NTL_SNS ostream& operator<<(NTL_SNS ostream& s, const ZZ& a);
 
 long InvMod(long a, long n);
 // computes a^{-1} mod n.  Error is raised if undefined.
+
+long InvModStatus(long& x, long a, long n);
+// if gcd(a,n) = 1, then ReturnValue = 0, x = a^{-1} mod n
+// otherwise, ReturnValue = 1, x = gcd(a, n)
 
 long PowerMod(long a, long e, long n);
 // computes a^e mod n, e >= 0

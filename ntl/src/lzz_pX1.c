@@ -993,7 +993,7 @@ void build(zz_pXArgument& A, const zz_pX& h, const zz_pXModulus& F, long m)
 
 
 
-NTL_THREAD_LOCAL long zz_pXArgBound = 0;
+NTL_CHEAP_THREAD_LOCAL long zz_pXArgBound = 0;
 
 
 void CompMod(zz_pX& x, const zz_pX& g, const zz_pX& h, const zz_pXModulus& F)
@@ -1084,8 +1084,11 @@ void build(zz_pXAltArgument& altH, const zz_pXArgument& H, const zz_pXModulus& F
 #ifdef NTL_HAVE_LL_TYPE
    altH.mem.kill();
    altH.row.kill();
+
+#ifdef NTL_HAVE_AVX
    altH.dmem.kill();
    altH.drow.kill();
+#endif
 
    if (H.H.length() < 10 || F.n < 50) { altH.strategy = 0; return; }
 
@@ -1167,10 +1170,9 @@ void build(zz_pXAltArgument& altH, const zz_pXArgument& H, const zz_pXModulus& F
       for (long i = 0; i < NumBlocks; i++) {
          long first = i*BlockSize;
          long last = min(npanels, first + BlockSize);
-         altH.dmem[i].SetLength((last-first)*panel_size + 4);
+         altH.dmem[i].SetLength((last-first)*panel_size);
 
-         double *ptr = altH.dmem[i].elts();
-         while ((((unsigned long) ptr) % 32UL) != 0) ptr++; // DIRT: alignment
+         double *ptr = altH.dmem[i].get();
 
          for (long j = first; j < last; j++)
             drow[j] = ptr + (j-first)*panel_size;
@@ -1194,92 +1196,6 @@ void build(zz_pXAltArgument& altH, const zz_pXArgument& H, const zz_pXModulus& F
 
 
 #ifdef NTL_HAVE_LL_TYPE
-
-#define NTL_CAST_ULL(x) ((NTL_ULL_TYPE) (x))
-#define NTL_MUL_ULL(x,y) (NTL_CAST_ULL(x)*NTL_CAST_ULL(y))
-
-
-// NOTE: the following code sequence will generate imulq 
-// instructions on x86_64 machines, which empirically is faster
-// than using the mulq instruction or even the mulxq instruction,
-// (tested on a Broadwell machine).
-
-static inline long 
-InnerProd_LL(const long *ap, const zz_p *bp, long n, long d, 
-          sp_ll_reduce_struct dinv)
-{
-   const long BLKSIZE = (1L << min(20, 2*(NTL_BITS_PER_LONG-NTL_SP_NBITS)));
-
-   unsigned long acc0 = 0;
-   NTL_ULL_TYPE acc21 = 0;
-
-   long i;
-   for (i = 0; i <= n-BLKSIZE; i += BLKSIZE, ap += BLKSIZE, bp += BLKSIZE) {
-      // sum ap[j]*rep(bp[j]) for j in [0..BLKSIZE)
-
-      NTL_ULL_TYPE sum = 0;
-      for (long j = 0; j < BLKSIZE; j += 4) {
-         sum += NTL_MUL_ULL(ap[j+0], rep(bp[j+0]));
-         sum += NTL_MUL_ULL(ap[j+1], rep(bp[j+1]));
-         sum += NTL_MUL_ULL(ap[j+2], rep(bp[j+2]));
-         sum += NTL_MUL_ULL(ap[j+3], rep(bp[j+3]));
-      }
-
-      sum += acc0; 
-      acc0 = sum;
-      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
-   }
-
-   if (i < n) {
-      // sum ap[i]*rep(bp[j]) for j in [0..n-i)
-
-      NTL_ULL_TYPE sum = 0;
-      long j = 0;
-
-      for (; j <= n-i-4; j += 4) {
-         sum += NTL_MUL_ULL(ap[j+0], rep(bp[j+0]));
-         sum += NTL_MUL_ULL(ap[j+1], rep(bp[j+1]));
-         sum += NTL_MUL_ULL(ap[j+2], rep(bp[j+2]));
-         sum += NTL_MUL_ULL(ap[j+3], rep(bp[j+3]));
-      }
-
-      for (; j < n-i; j++)
-         sum += NTL_MUL_ULL(ap[j], rep(bp[j]));
-
-      sum += acc0; 
-      acc0 = sum;
-      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
-   }
-
-   if (dinv.nbits == NTL_SP_NBITS) 
-      return sp_ll_red_31_normalized(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, d, dinv);
-   else
-      return sp_ll_red_31(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, d, dinv);
-}
-
-
-
-
-static inline long 
-InnerProd_L(const long *ap, const zz_p *bp, long n, long d, 
-          sp_reduce_struct dinv)
-{
-   unsigned long sum = 0;
-   long j = 0;
-
-   for (; j <= n-4; j += 4) {
-      sum += (ap[j+0]) * (rep(bp[j+0]));
-      sum += (ap[j+1]) * (rep(bp[j+1]));
-      sum += (ap[j+2]) * (rep(bp[j+2]));
-      sum += (ap[j+3]) * (rep(bp[j+3]));
-   }
-
-   for (; j < n; j++)
-      sum += (ap[j]) * (rep(bp[j]));
-
-   return rem(sum, d, dinv);
-}
-
 
 
 #ifdef NTL_HAVE_AVX
@@ -1528,9 +1444,7 @@ void InnerProduct_AVX(zz_pX& x, const Vec<double>& v, long low, long high,
 
    const double *vp = v.elts() + low;
 
-   double res_buf[20];
-   double *res = &res_buf[0];
-   while ((((unsigned long) res) % 32UL) != 0) res++; // DIRT: alignment
+   NTL_AVX_LOCAL_ARRAY(res, double, 16);
 
    long npanels = H.drow.length();
 
@@ -1561,13 +1475,8 @@ void InnerProduct2_AVX(zz_pX& x, zz_pX& x_, const Vec<double>& v, long low, long
    const double *vp = v.elts() + low;
    const double *vp_ = v.elts() + low_;
 
-   double res_buf[20];
-   double *res = &res_buf[0];
-   while ((((unsigned long) res) % 32UL) != 0) res++; // DIRT: alignment
-
-   double res_buf_[20];
-   double *res_ = &res_buf_[0];
-   while ((((unsigned long) res_) % 32UL) != 0) res_++; // DIRT: alignment
+   NTL_AVX_LOCAL_ARRAY(res, double, 16);
+   NTL_AVX_LOCAL_ARRAY(res_, double, 16);
 
    long npanels = H.drow.length();
 

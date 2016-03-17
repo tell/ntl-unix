@@ -842,7 +842,7 @@ long ProbIrredTest(const GF2EX& f, long iter)
 }
 
 
-NTL_THREAD_LOCAL
+NTL_CHEAP_THREAD_LOCAL
 long GF2EX_BlockingFactor = 10;
 
 void DDF(vec_pair_GF2EX_long& factors, const GF2EX& ff, const GF2EX& hh, 
@@ -1630,11 +1630,11 @@ void BuildRandomIrred(GF2EX& f, const GF2EX& g)
 
 /************* NEW DDF ****************/
 
-NTL_THREAD_LOCAL long GF2EX_GCDTableSize = 4;
-NTL_THREAD_LOCAL double GF2EXFileThresh = NTL_FILE_THRESH;
-NTL_THREAD_LOCAL static vec_GF2EX *BabyStepFile = 0;
-NTL_THREAD_LOCAL static vec_GF2EX *GiantStepFile = 0;
-NTL_THREAD_LOCAL static long use_files;
+NTL_CHEAP_THREAD_LOCAL long GF2EX_GCDTableSize = 4;
+NTL_CHEAP_THREAD_LOCAL double GF2EXFileThresh = NTL_FILE_THRESH;
+static NTL_CHEAP_THREAD_LOCAL vec_GF2EX *BabyStepFile = 0;
+static NTL_CHEAP_THREAD_LOCAL vec_GF2EX *GiantStepFile = 0;
+static NTL_CHEAP_THREAD_LOCAL long use_files;
 
 
 static

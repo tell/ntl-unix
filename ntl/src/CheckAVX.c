@@ -1,13 +1,20 @@
+#include <NTL/ctools.h>
 
 #include <cstdlib>
 #include <immintrin.h>
 #include <iostream>
 
-using namespace std;
 
 #if (!defined(__GNUC__) || !defined(__x86_64__) || !defined(__AVX__))
 #error "AVX not supported"
 #endif
+
+#if (NTL_BITS_PER_LONG != 64 || NTL_DOUBLE_PRECISION != 53)
+#error "AVX not supported"
+// sanity check -- code that uses this feature also relies on this
+#endif
+
+using namespace std;
 
 void fun(double * x, const double *a, const double *b)
 {
@@ -23,9 +30,7 @@ void fun(double * x, const double *a, const double *b)
 }
 int main()
 {
-   double v[16];
-   double *vp = &v[0];
-   while ((((unsigned long) vp) % 32UL) != 0) vp++; // DIRT: alignment
+   NTL_AVX_LOCAL_ARRAY(vp, double, 12);
 
    double *a = vp + 0*4;
    double *b = vp + 1*4;

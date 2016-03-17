@@ -473,7 +473,7 @@ void mul(ZZ_pX& c, const ZZ_pX& a, const ZZ_pX& b)
       // mul routine
       
 #ifdef NTL_THREAD_BOOST
-      BasicThreadPool *pool = NTLThreadPool;
+      BasicThreadPool *pool = GetThreadPool();
       if (pool && !pool->active()) nt  = pool->NumThreads();
 #endif
 
@@ -531,7 +531,7 @@ void sqr(ZZ_pX& c, const ZZ_pX& a)
       // mul routine
 
 #ifdef NTL_THREAD_BOOST
-      BasicThreadPool *pool = NTLThreadPool;
+      BasicThreadPool *pool = GetThreadPool();
       if (pool && !pool->active()) nt  = pool->NumThreads();
 #endif
 
@@ -1024,7 +1024,7 @@ NTL_TBDECL_static(MulAux)(ZZ_p* xp, const ZZ_p* ap, const ZZ_p& t, long n)
 #ifdef NTL_THREAD_BOOST
 static void MulAux(ZZ_p* xp, const ZZ_p* ap, const ZZ_p& t, long n)
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_MulAux(xp, ap, t, n);
@@ -1243,7 +1243,7 @@ NTL_TBDECL_static(MulByXModAux1)(long n, ZZ_p *hh, const ZZ_p* aa, const ZZ_p *f
 static void MulByXModAux1(long n, ZZ_p *hh, const ZZ_p* aa, const ZZ_p *ff, const ZZ_p& z)
 {
 
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1 || hh == aa) {
       // Careful! can't parallelize if hh == aa
@@ -1562,7 +1562,7 @@ void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
 // computes an n = 2^k point convolution.
 // if deg(x) >= 2^k, then x is first reduced modulo X^n-1.
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_ToFFTRep(y, x, k, lo, hi);
@@ -1732,7 +1732,7 @@ void RevToFFTRep(FFTRep& y, const vec_ZZ_p& x,
 // using "inverted" evaluation points.
 
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_RevToFFTRep(y, x, k, lo, hi, offset);
@@ -1869,7 +1869,7 @@ void FromFFTRep(ZZ_pX& x, FFTRep& y, long lo, long hi)
    
 
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_FromFFTRep(x, y, lo, hi);
@@ -1978,7 +1978,7 @@ NTL_TBDECL(RevFromFFTRep)(vec_ZZ_p& x, FFTRep& y, long lo, long hi)
 
 void RevFromFFTRep(vec_ZZ_p& x, FFTRep& y, long lo, long hi)
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_RevFromFFTRep(x, y, lo, hi);
@@ -2091,7 +2091,7 @@ void NDFromFFTRep(ZZ_pX& x, const FFTRep& y, long lo, long hi, FFTRep& z)
    
 
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_NDFromFFTRep(x, y, lo, hi, z);
@@ -2206,7 +2206,7 @@ void FromFFTRep(ZZ_p* x, FFTRep& y, long lo, long hi)
    
 
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_FromFFTRep(x, y, lo, hi);
@@ -2298,7 +2298,7 @@ NTL_TBDECL(mul)(FFTRep& z, const FFTRep& x, const FFTRep& y)
 
 void mul(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_mul(z, x, y);
@@ -2369,7 +2369,7 @@ NTL_TBDECL(sub)(FFTRep& z, const FFTRep& x, const FFTRep& y)
 
 void sub(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_sub(z, x, y);
@@ -2439,7 +2439,7 @@ NTL_TBDECL(add)(FFTRep& z, const FFTRep& x, const FFTRep& y)
 
 void add(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_add(z, x, y);
@@ -2515,7 +2515,7 @@ void reduce(FFTRep& x, const FFTRep& a, long k)
   // reduces a 2^l point FFT-rep to a 2^k point FFT-rep
   // input may alias output
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_reduce(x, a, k);
@@ -2584,7 +2584,7 @@ NTL_TBDECL(AddExpand)(FFTRep& x, const FFTRep& a)
 void AddExpand(FFTRep& x, const FFTRep& a)
 //  x = x + (an "expanded" version of a)
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_AddExpand(x, a);
@@ -2656,7 +2656,7 @@ NTL_TBDECL(ToZZ_pXModRep)(ZZ_pXModRep& y, const ZZ_pX& x, long lo, long hi)
 #ifdef NTL_THREAD_BOOST
 void ToZZ_pXModRep(ZZ_pXModRep& y, const ZZ_pX& x, long lo, long hi)
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_ToZZ_pXModRep(y, x, lo, hi);
@@ -2756,7 +2756,7 @@ NTL_TBDECL(ToFFTRep)(FFTRep& x, const ZZ_pXModRep& a, long k, long lo, long hi)
 #ifdef NTL_THREAD_BOOST
 void ToFFTRep(FFTRep& x, const ZZ_pXModRep& a, long k, long lo, long hi)
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_ToFFTRep(x, a, k, lo, hi);

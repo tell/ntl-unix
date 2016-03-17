@@ -139,18 +139,33 @@ int main()
 
    for (r = 0; r < nprimes; r++) UseFFTPrime(r);
 
-   vec_long aa[nprimes], AA[nprimes];
+   vec_long A1[nprimes], A2[nprimes];
+   vec_long B1[nprimes], B2[nprimes];
 
    for (r = 0; r < nprimes; r++) {
-      aa[r].SetLength(N);
-      AA[r].SetLength(N);
+      A1[r].SetLength(N);
+      A2[r].SetLength(N);
+      B1[r].SetLength(N);
+      B2[r].SetLength(N);
 
-      for (i = 0; i < N; i++)
-         aa[r][i] = RandomBnd(GetFFTPrime(r));
+      for (i = 0; i < N; i++) {
+         A1[r][i] = RandomBnd(GetFFTPrime(r));
+         A2[r][i] = RandomBnd(GetFFTPrime(r));
+      }
+   }
 
-
-      FFTFwd(AA[r].elts(), aa[r].elts(), L, r);
-      FFTRev1(AA[r].elts(), AA[r].elts(), L, r);
+   for (r = 0; r < nprimes; r++) {
+      long *A1p = A1[r].elts();
+      long *A2p = A2[r].elts();
+      long *B1p = B1[r].elts();
+      long *B2p = B2[r].elts();
+      long q = GetFFTPrime(r);
+      mulmod_t qinv = GetFFTPrimeInv(r);
+ 
+      FFTFwd(B1p, A1p, L, r);
+      FFTFwd(B2p, A2p, L, r);
+      for (i = 0; i < N; i++) B1p[i] = NormalizedMulMod(B1p[i], B2p[i], q, qinv);
+      FFTRev1(B1p, B1p, L, r);
    }
 
    iter = 1;
@@ -159,14 +174,17 @@ int main()
      t = GetTime();
      for (j = 0; j < iter; j++) {
         for (r = 0; r < nprimes; r++) {
-           long *AAp = AA[r].elts();
-           long *aap = aa[r].elts();
+           long *A1p = A1[r].elts();
+           long *A2p = A2[r].elts();
+           long *B1p = B1[r].elts();
+           long *B2p = B2[r].elts();
            long q = GetFFTPrime(r);
            mulmod_t qinv = GetFFTPrimeInv(r);
 
-           FFTFwd(AAp, aap, L, r);
-           FFTRev1(AAp, aap, L, r);
-           for (i = 0; i < N; i++) AAp[i] = NormalizedMulMod(AAp[i], aap[i], q, qinv);
+           FFTFwd(B1p, A1p, L, r);
+           FFTFwd(B2p, A2p, L, r);
+           for (i = 0; i < N; i++) B1p[i] = NormalizedMulMod(B1p[i], B2p[i], q, qinv);
+           FFTRev1(B1p, B1p, L, r);
         }
      }
      t = GetTime() - t;
@@ -185,14 +203,17 @@ int main()
      t = GetTime();
      for (j = 0; j < iter; j++) {
         for (r = 0; r < nprimes; r++) {
-           long *AAp = AA[r].elts();
-           long *aap = aa[r].elts();
+           long *A1p = A1[r].elts();
+           long *A2p = A2[r].elts();
+           long *B1p = B1[r].elts();
+           long *B2p = B2[r].elts();
            long q = GetFFTPrime(r);
            mulmod_t qinv = GetFFTPrimeInv(r);
 
-           FFTFwd(AAp, aap, L, r);
-           FFTRev1(AAp, aap, L, r);
-           for (i = 0; i < N; i++) AAp[i] = NormalizedMulMod(AAp[i], aap[i], q, qinv);
+           FFTFwd(B1p, A1p, L, r);
+           FFTFwd(B2p, A2p, L, r);
+           for (i = 0; i < N; i++) B1p[i] = NormalizedMulMod(B1p[i], B2p[i], q, qinv);
+           FFTRev1(B1p, B1p, L, r);
         }
      }
      t = GetTime() - t;

@@ -8,6 +8,96 @@
 #include <NTL/thread.h>
 
 
+NTL_OPEN_NNS
+
+
+inline long AvailableThreads();
+
+struct PartitionInfo {
+   long nintervals;  // number of intervals
+   long intervalsz;  // interval size
+   long nsintervals; // number of small intervals
+
+   PartitionInfo(long sz, long nt = AvailableThreads()) 
+   // partitions [0..sz) into nintervals intervals,
+   // so that there are nsintervals of size intervalsz-1
+   // and nintervals-nsintervals of size intervalsz
+   {
+      if (sz <= 0) {
+         nintervals = intervalsz = nsintervals = 0;
+         return;
+      }
+
+      if (nt <= 0) LogicError("PartitionInfo: bad args");
+
+      // NOTE: this overflow check probably unnecessary
+      if (NTL_OVERFLOW(sz, 1, 0) || NTL_OVERFLOW(nt, 1, 0))
+         ResourceError("PartitionInfo: arg too big");
+
+      if (sz < nt) {
+         nintervals = sz;
+         intervalsz = 1;
+         nsintervals = 0;
+         return;
+      }
+
+      nintervals = nt;
+
+      long q, r;
+      q = sz/nt;
+      r = sz - nt*q;
+
+      if (r == 0) {
+         intervalsz = q;
+         nsintervals = 0;
+      }
+      else {
+         intervalsz = q+1;
+         nsintervals = nt - r;
+      }
+   }
+
+   long NumIntervals() const { return nintervals; }
+
+   void interval(long& first, long& last, long i) const
+   // [first..last) is the ith interval -- no range checking is done
+   {
+
+#if 0
+      // this is the logic, naturally expressed
+      if (i < nsintervals) {
+         first = i*(intervalsz-1);
+         last = first + (intervalsz-1);
+      }
+      else {
+         first = nsintervals*(intervalsz-1) + (i-nsintervals)*intervalsz;
+         last = first + intervalsz;
+      }
+#else
+      // this is the same logic, but branch-free (and portable)
+      // ...probably unnecessary optimization
+      
+      long mask = -long(cast_unsigned(i-nsintervals) >> (NTL_BITS_PER_LONG-1));
+      // mask == -1 if i < nsintervals, 0 o/w
+ 
+      long lfirst = i*(intervalsz-1);
+      lfirst += long((~cast_unsigned(mask)) & cast_unsigned(i-nsintervals));
+      // lfirst += max(0, i-nsintervals)
+
+      long llast = lfirst + intervalsz + mask;
+
+      first = lfirst;
+      last = llast;
+#endif
+   }
+
+};
+
+
+
+NTL_CLOSE_NNS
+
+
 
 #ifdef NTL_THREADS
 
@@ -16,8 +106,8 @@
 #include <condition_variable>
 #include <exception>
 
-NTL_OPEN_NNS
 
+NTL_OPEN_NNS
 
 /*************************************************************
 
@@ -195,10 +285,10 @@ private:
    template<class Fct>
    class ConcurrentTaskFct : public ConcurrentTask {
    public:
-     Fct fct;
+     const Fct& fct;
    
-     ConcurrentTaskFct(BasicThreadPool *_pool, Fct&& _fct) : 
-       ConcurrentTask(_pool), fct(std::move(_fct)) { }
+     ConcurrentTaskFct(BasicThreadPool *_pool, const Fct& _fct) : 
+       ConcurrentTask(_pool), fct(_fct) { }
    
      void run(long index) { fct(index); }
    };
@@ -206,12 +296,19 @@ private:
    template<class Fct>
    class ConcurrentTaskFct1 : public ConcurrentTask {
    public:
-     Fct fct;
-     const Vec<long>& pvec;
-     ConcurrentTaskFct1(BasicThreadPool *_pool, Fct&& _fct, const Vec<long>& _pvec) : 
-       ConcurrentTask(_pool), fct(std::move(_fct)), pvec(_pvec)  { }
-   
-     void run(long index) { fct(pvec[index], pvec[index+1]); }
+      const Fct& fct;
+      const PartitionInfo& pinfo;
+ 
+      ConcurrentTaskFct1(BasicThreadPool *_pool, const Fct& _fct, 
+         const PartitionInfo& _pinfo) : 
+         ConcurrentTask(_pool), fct(_fct), pinfo(_pinfo)  { }
+    
+      void run(long index) 
+      { 
+         long first, last;
+         pinfo.interval(first, last, index);
+         fct(first, last); 
+      }
    };
    
    
@@ -252,8 +349,6 @@ private:
   std::exception_ptr eptr;
   std::mutex eptr_guard;
 
-  Vec<long> pvec;
-
 // BasicThreadPool private member functions
 
   BasicThreadPool(const BasicThreadPool&); // disabled
@@ -261,15 +356,11 @@ private:
 
   void launch(ConcurrentTask *task, long index)
   {
-    if (task == 0 || index < 0 || index >= nthreads-1)
-      LogicError("BasicThreadPool::launch: bad args");
-
     threadVec[index]->localSignal.send(task, index);
   }
 
   void begin(long cnt)
   {
-    if (cnt <= 0 || cnt > nthreads) LogicError("BasicThreadPool::begin: bad args");
 
     active_flag = true;
     counter = cnt;
@@ -336,6 +427,12 @@ public:
     }
   }
 
+  ~BasicThreadPool() 
+  {
+    if (active()) TerminalError("BasicThreadPool: destructor called while active");
+  }
+   
+
   // adding, deleting, moving threads
 
   void add(long n = 1)
@@ -398,19 +495,31 @@ public:
   // an index in [0..cnt)
 
   template<class Fct>
-  void exec_index(long cnt, Fct fct) 
+  void exec_index(long cnt, const Fct& fct) 
   {
     if (active()) LogicError("BasicThreadPool: illegal operation while active");
     if (cnt <= 0) return;
-    if (NTL_OVERFLOW(cnt, 1, 0))
-      ResourceError("BasicThreadPool::exec_index: arg too big");
+    if (cnt > nthreads) LogicError("BasicThreadPool::exec_index: bad args");
 
-    ConcurrentTaskFct<Fct> task(this, std::move(fct));
+    ConcurrentTaskFct<Fct> task(this, fct);
 
     begin(cnt);
     for (long t = 0; t < cnt-1; t++) launch(&task, t);
     runOneTask(&task, cnt-1);
     end();
+  }
+
+  template<class Fct>
+  static void relaxed_exec_index(BasicThreadPool *pool, long cnt, const Fct& fct) 
+  {
+    if (cnt <= 0) return;
+    if (!pool || pool->active()) {
+      if (cnt > 0) LogicError("friendly_exec_index: not enough threads");
+      fct(0);
+    }
+    else {
+      pool->exec_index(cnt, fct);
+    }
   }
 
   // even higher level version: sz is the number of subproblems,
@@ -418,15 +527,15 @@ public:
   // [first..last) are processed.
 
   template<class Fct>
-  void exec_range(long sz, Fct fct) 
+  void exec_range(long sz, const Fct& fct) 
   {
     if (active()) LogicError("BasicThreadPool: illegal operation while active");
     if (sz <= 0) return;
-    if (NTL_OVERFLOW(sz, 1, 0))
-      ResourceError("BasicThreadPool::exec_range: arg too big");
 
-    long cnt = SplitProblems(sz, pvec);
-    ConcurrentTaskFct1<Fct> task(this, std::move(fct), pvec);
+    PartitionInfo pinfo(sz, nthreads);
+
+    long cnt = pinfo.NumIntervals();
+    ConcurrentTaskFct1<Fct> task(this, fct, pinfo);
 
     begin(cnt);
     for (long t = 0; t < cnt-1; t++) launch(&task, t);
@@ -434,59 +543,25 @@ public:
     end();
   }
 
-
-  // splits nproblems problems among (at most) nthreads threads.
-  // returns the actual number of threads nt to be used, and 
-  // initializes pvec to have length nt+1, so that for t = 0..nt-1,
-  // thread t processes subproblems pvec[t]..pvec[t+1]-1
-  long SplitProblems(long nproblems, Vec<long>& pvec) const
+  template<class Fct>
+  static void relaxed_exec_range(BasicThreadPool *pool, long sz, const Fct& fct) 
   {
-    if (active()) LogicError("BasicThreadPool: illegal operation while active");
-    if (nproblems <= 0) {
-      pvec.SetLength(1);
-      pvec[0] = 0;
-      return 0;  
-    } 
-    if (NTL_OVERFLOW(nproblems, 1, 0))
-      ResourceError("BasicThreadPool::SplitProblems: arg too big");
-
-    long blocksz = (nproblems + nthreads - 1)/nthreads;
-    long nt = (nproblems + blocksz - 1)/blocksz;
-  
-    pvec.SetLength(nt+1);
-  
-    for (long t = 0; t < nt; t++) pvec[t] = blocksz*t;
-    pvec[nt] = nproblems;
-  
-    return nt;
+    if (sz <= 0) return;
+    if (!pool || pool->active()) {
+      fct(0, sz);
+    }
+    else {
+      pool->exec_range(sz, fct);
+    }
   }
-
-
 
 };
 
 
 
 
-
-extern
-NTL_THREAD_LOCAL BasicThreadPool *NTLThreadPool;
-
-inline void SetNumThreads(long n) { NTLThreadPool = MakeRaw<BasicThreadPool>(n); }
-
-
 NTL_CLOSE_NNS
 
-#else
-
-
-NTL_OPEN_NNS
-
-
-inline void SetNumThreads(long n) { }
-
-
-NTL_CLOSE_NNS
 
 #endif
 
@@ -498,14 +573,145 @@ NTL_CLOSE_NNS
 #error "NTL_THREAD_BOOST requires NTL_THREADS"
 #endif
 
+NTL_OPEN_NNS
+
+extern
+NTL_CHEAP_THREAD_LOCAL BasicThreadPool *NTLThreadPool_ptr;
+
+inline
+BasicThreadPool *GetThreadPool()
+{
+   return NTLThreadPool_ptr;
+}
+
+void ResetThreadPool(BasicThreadPool *pool = 0);
+BasicThreadPool *ReleaseThreadPool();
+
+inline void SetNumThreads(long n) 
+{ 
+   ResetThreadPool(MakeRaw<BasicThreadPool>(n));
+}
+
+inline long AvailableThreads()
+{
+   BasicThreadPool *pool = GetThreadPool();
+   if (!pool || pool->active())
+      return 1;
+   else
+      return pool->NumThreads();
+}
+
+
+NTL_CLOSE_NNS
+
+
+#define NTL_EXEC_RANGE(n, first, last)  \
+{  \
+   NTL_NNS BasicThreadPool::relaxed_exec_range(NTL_NNS GetThreadPool(), (n), \
+     [&](long first, long last) {  \
+
+
+#define NTL_EXEC_RANGE_END  \
+   } ); \
+}  \
+
+
+#define NTL_GEXEC_RANGE(seq, n, first, last)  \
+{  \
+   NTL_NNS BasicThreadPool::relaxed_exec_range((seq) ? 0 : NTL_NNS GetThreadPool(), (n), \
+     [&](long first, long last) {  \
+
+
+#define NTL_GEXEC_RANGE_END  \
+   } ); \
+}  \
+
+
+#define NTL_EXEC_INDEX(n, index)  \
+{  \
+   NTL_NNS BasicThreadPool::relaxed_exec_index(NTL_NNS GetThreadPool(), (n), \
+     [&](long index) {  \
+
+
+#define NTL_EXEC_INDEX_END  \
+   } ); \
+}  \
+
+
+
+// NOTE: at least with gcc >= 4.9.2, the GEXEC versions will evaluate seq, and
+// if it is true, jump directly (more or less) to the body
+
+
 #define NTL_TBDECL(x) static void basic_ ## x
 #define NTL_TBDECL_static(x) static void basic_ ## x
 
 
 #else
 
+NTL_OPEN_NNS
+
+
+inline void SetNumThreads(long n) { }
+
+inline long AvailableThreads() { return 1; }
+
+
+NTL_CLOSE_NNS
+
+#define NTL_EXEC_RANGE(n, first, last)  \
+{  \
+   long _ntl_par_exec_n = (n);  \
+   if (_ntl_par_exec_n > 0) {  \
+      long first = 0;  \
+      long last = _ntl_par_exec_n;  \
+      {  \
+   
+
+#define NTL_EXEC_RANGE_END  }}}
+
+#define NTL_GEXEC_RANGE(seq, n, first, last)  \
+{  \
+   long _ntl_par_exec_n = (n);  \
+   if (_ntl_par_exec_n > 0) {  \
+      long first = 0;  \
+      long last = _ntl_par_exec_n;  \
+      {  \
+   
+
+#define NTL_GEXEC_RANGE_END  }}}
+
+
+
+
+#define NTL_EXEC_INDEX(n, index)  \
+{  \
+   long _ntl_par_exec_n = (n);  \
+   if (_ntl_par_exec_n > 0) {  \
+      if (_ntl_par_exec_n > 1) NTL_NNS LogicError("NTL_EXEC_INDEX: not enough threads"); \
+      long index = 0;  \
+      {  \
+
+   
+#define NTL_EXEC_INDEX_END  }}}
+
+
+
 #define NTL_TBDECL(x) void x
 #define NTL_TBDECL_static(x) static void x
+
+#endif
+
+
+
+#ifdef NTL_THREADS
+
+#define NTL_IMPORT(x) auto _ntl_hidden_variable_IMPORT__ ## x = x; auto x = _ntl_hidden_variable_IMPORT__ ##x;
+
+#else
+
+#define NTL_IMPORT(x)
+
 
 #endif
 

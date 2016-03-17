@@ -202,7 +202,7 @@ public:
       if (dp) {
          cp = NTL_NEW_OP SmartPtrControlDerived<T>(dp);
          if (!cp) {
-            delete dp; // if we throw an exception
+            delete dp;  // this could theoretically throw an exception
             MemoryError();
          }
          AddRef();
@@ -1344,6 +1344,119 @@ bool operator!=(const Unique2DArray<X>& a, const Unique2DArray<Y>& b)
 
 
 
+#ifdef NTL_HAVE_AVX
+
+// AlignedArrayPOD:
+//
+// specialized arrays that have similar interface to UniqueArray, but:
+//  * they are allocated with a given alignment
+//  * they (currently) only work on POD types
+// the current implementation uses posix_memalign, which seems
+// to work on gcc and gcc clones (clang and icc).
+// intended for use with Intel AVX intrinsics
+//
+// For now, this is not a part of the documented interface, and it is
+// only available with NTL_HAVE_AVX (which, in particular, requires __GNUC__).
+// This could change in the future, if and when there is a more portable way 
+// of doing this.
+
+// NOTE: the methods reset, free, and release are available, but should
+// really only be used to move raw pointers around between compatible 
+// AlignedArrayPOD's.
+
+// NOTE: posix_memalign has been in available since glibc 2.1.91, which
+// is some time around the year 2000, so this should be portable.
+
+template<class T, long align>
+class AlignedArrayPOD {
+private:
+   T *dp;
+
+   class Dummy { };
+
+   typedef void (AlignedArrayPOD::*fake_null_type)(Dummy) const;
+   void fake_null_function(Dummy) const {}
+
+   bool cannot_compare_these_types() const { return false; }
+
+   AlignedArrayPOD(const AlignedArrayPOD&); // disabled
+   void operator=(const AlignedArrayPOD&); // disabled
+
+public:   
+   explicit AlignedArrayPOD(T *p) : dp(p) { }
+
+   AlignedArrayPOD() : dp(0) { }
+
+   ~AlignedArrayPOD() { NTL_SNS free(dp); }
+
+
+   void reset(T* p = 0)
+   {
+      AlignedArrayPOD tmp(p);
+      tmp.swap(*this);
+   }
+
+   AlignedArrayPOD& operator=(fake_null_type) { reset(); return *this; }
+
+   void SetLength(long n)
+   {
+      using namespace std;
+      // not clear if posix_memalign is in std:: or ::
+      // this will make sure to find it in either case
+
+      if (align <= 0 || n < 0) LogicError("AlignedArrayPOD::SetLength: bad args");
+      if (NTL_OVERFLOW1(n, sizeof(T), 0)) ResourceError("AlignedArrayPOD::SetLength: overflow");
+
+      if (n == 0) {
+         reset();
+      }
+      else
+      {
+	 void *p;
+	 if (posix_memalign(&p, align, n*sizeof(T))) MemoryError();
+	 reset( (T*) p );
+      }
+   }
+
+   T& operator[](long i) const { return dp[i]; }
+
+   T* get() const { return dp; }
+
+   T* release() { T *p = dp; dp = 0; return p; }
+   void move(AlignedArrayPOD& other) { reset(other.release()); }
+
+   void swap(AlignedArrayPOD& other)
+   {
+      _ntl_swap(dp, other.dp);
+   }
+
+   AlignedArrayPOD(fake_null_type) : dp(0) { }
+
+   operator fake_null_type() const 
+   {
+      return dp ?  &AlignedArrayPOD::fake_null_function : 0;
+   }
+
+};
+
+
+// free swap function
+template<class T, long align>
+void swap(AlignedArrayPOD<T,align>& p, AlignedArrayPOD<T,align>& q) { p.swap(q); }
+
+
+template<class T>
+class AlignedArray {
+private:
+   AlignedArray() {}
+public:
+   typedef AlignedArrayPOD<T,NTL_AVX_BYTE_ALIGN> AVX;
+};
+
+
+
+
+#endif
 
 
 

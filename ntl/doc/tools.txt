@@ -69,6 +69,19 @@ long max(int a, long b);
 long min(long a, int b);
 long max(long a, int b);
 
+unsigned int min(unsigned int a, unsigned int b);
+unsigned int max(unsigned int a, unsigned int b);
+
+unsigned long min(unsigned long a, unsigned long b);
+unsigned long max(unsigned long a, unsigned long b);
+
+unsigned long min(unsigned int a, unsigned long b);
+unsigned long max(unsigned int a, unsigned long b);
+
+unsigned long min(unsigned long a, unsigned int b);
+unsigned long max(unsigned long a, unsigned int b);
+
+
 void swap(long& a, long& b);
 void swap(int& a, int& b);
 

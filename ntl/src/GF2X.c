@@ -40,7 +40,7 @@ pclmul_mul1 (unsigned long *c, unsigned long a, unsigned long b)
 
 NTL_START_IMPL
 
-NTL_THREAD_LOCAL
+NTL_CHEAP_THREAD_LOCAL
 long GF2X::HexOutput = 0;
 
 

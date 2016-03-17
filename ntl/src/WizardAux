@@ -186,7 +186,7 @@ print "run: $aflag $bflag $cflag default\n";
 GenConfigHeader();
 $time1 = RunProg("Poly1TimeTest");
 
-if ($time1*1.0 > $time*1.05) {  
+if ($time1*1.0 > $time*1.04) {  
    # stick with BIGTABs
    $Config{"NTL_FFT_BIGTAB"} = 1;
 }

@@ -71,16 +71,22 @@ public:
   ZZ_TmpVecAdapter rem_tmp_vec;
 };
 
-NTL_THREAD_LOCAL
-extern SmartPtr<ZZ_pInfoT> ZZ_pInfo; 
+
+extern 
+NTL_CHEAP_THREAD_LOCAL
+ZZ_pInfoT *ZZ_pInfo; 
 // info for current modulus, initially null
+// plain pointer for faster TLS access
 
-NTL_THREAD_LOCAL
-extern SmartPtr<ZZ_pTmpSpaceT> ZZ_pTmpSpace;  
+extern 
+NTL_CHEAP_THREAD_LOCAL
+ZZ_pTmpSpaceT *ZZ_pTmpSpace;  
 // space for temps associated with current modulus, 
+// plain pointer for faster TLS access
 
-NTL_THREAD_LOCAL
-extern bool ZZ_pInstalled;
+extern 
+NTL_CHEAP_THREAD_LOCAL
+bool ZZ_pInstalled;
 // flag indicating if current modulus is fully installed
 
 
@@ -97,7 +103,7 @@ explicit ZZ_pContext(const ZZ& p) : ptr(MakeSmart<ZZ_pInfoT>(p)) { }
 
 // copy constructor, assignment, destructor: default
 
-void save() { ptr = ZZ_pInfo; }
+void save();
 void restore() const;
 
 };
@@ -159,7 +165,9 @@ static void init(const ZZ&);
 
 typedef void (*DivHandlerPtr)(const ZZ_p& a);   // error-handler for division
 
-NTL_THREAD_LOCAL static DivHandlerPtr DivHandler;
+static 
+NTL_CHEAP_THREAD_LOCAL 
+DivHandlerPtr DivHandler;
 
 
 // ****** constructors and assignment
@@ -210,7 +218,7 @@ static const ZZ_pFFTInfoT* GetFFTInfo()
 static ZZ_pTmpSpaceT* GetTmpSpace()
 {
    install();
-   return ZZ_pTmpSpace.get();
+   return ZZ_pTmpSpace;
 }
 
 

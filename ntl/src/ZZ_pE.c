@@ -6,6 +6,15 @@
 
 NTL_START_IMPL
 
+
+static
+NTL_THREAD_LOCAL 
+SmartPtr<ZZ_pEInfoT> ZZ_pEInfo_stg;
+
+NTL_CHEAP_THREAD_LOCAL 
+ZZ_pEInfoT *ZZ_pEInfo = 0; 
+
+
 ZZ_pEInfoT::ZZ_pEInfoT(const ZZ_pX& NewP)
 {
    build(p, NewP);
@@ -33,11 +42,6 @@ const ZZ& ZZ_pE::cardinality()
 
 
 
-
-NTL_THREAD_LOCAL 
-SmartPtr<ZZ_pEInfoT> ZZ_pEInfo = 0; 
-
-
 void ZZ_pE::init(const ZZ_pX& p)
 {
    ZZ_pEContext c(p);
@@ -47,12 +51,13 @@ void ZZ_pE::init(const ZZ_pX& p)
 
 void ZZ_pEContext::save()
 {
-   ptr = ZZ_pEInfo;
+   ptr = ZZ_pEInfo_stg;
 }
 
 void ZZ_pEContext::restore() const
 {
-   ZZ_pEInfo = ptr;
+   ZZ_pEInfo_stg = ptr;
+   ZZ_pEInfo = ZZ_pEInfo_stg.get();
 }
 
 

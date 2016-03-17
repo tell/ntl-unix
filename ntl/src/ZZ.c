@@ -323,6 +323,24 @@ void XGCD(long& d, long& s, long& t, long a, long b)
    t = v1;
 }
    
+long InvModStatus(long& x, long a, long n)
+{
+   long d, s, t;
+
+   XGCD(d, s, t, a, n);
+   if (d != 1) {
+      x = d;
+      return 1;
+   }
+   else {
+      if (s < 0)
+         x = s + n;
+      else
+         x = s;
+
+      return 0;
+   }
+}
 
 long InvMod(long a, long n)
 {

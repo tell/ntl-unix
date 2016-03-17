@@ -1626,7 +1626,7 @@ void TofftRep(fftRep& y, const zz_pX& x, long k, long lo, long hi)
 // computes an n = 2^k point convolution.
 // if deg(x) >= 2^k, then x is first reduced modulo X^n-1.
 {
-   zz_pInfoT *info = zz_pInfo.get();
+   zz_pInfoT *info = zz_pInfo;
    long p = info->p;
 
    long n, i, j, m, j1;
@@ -1722,7 +1722,7 @@ void RevTofftRep(fftRep& y, const vec_zz_p& x,
 // using "inverted" evaluation points.
 
 {
-   zz_pInfoT *info = zz_pInfo.get();
+   zz_pInfoT *info = zz_pInfo;
    long p = info->p;
 
    long n, i, j, m, j1;
@@ -1804,7 +1804,7 @@ void FromfftRep(zz_pX& x, fftRep& y, long lo, long hi)
    
 
 {
-   zz_pInfoT *info = zz_pInfo.get();
+   zz_pInfoT *info = zz_pInfo;
 
    long k, n, i, j, l;
    long NumPrimes = info->NumPrimes;
@@ -1852,7 +1852,7 @@ void RevFromfftRep(vec_zz_p& x, fftRep& y, long lo, long hi)
    
 
 {
-   zz_pInfoT *info = zz_pInfo.get();
+   zz_pInfoT *info = zz_pInfo;
 
    long k, n, i, j, l;
    long NumPrimes = info->NumPrimes;
@@ -1892,7 +1892,7 @@ void RevFromfftRep(vec_zz_p& x, fftRep& y, long lo, long hi)
 
 void NDFromfftRep(zz_pX& x, const fftRep& y, long lo, long hi, fftRep& z)
 {
-   zz_pInfoT *info = zz_pInfo.get();
+   zz_pInfoT *info = zz_pInfo;
    
    long k, n, i, j, l;
    long NumPrimes = info->NumPrimes;
@@ -1949,7 +1949,7 @@ void FromfftRep(zz_p* x, fftRep& y, long lo, long hi)
    
 
 {
-   zz_pInfoT *info = zz_pInfo.get();
+   zz_pInfoT *info = zz_pInfo;
 
    long k, n, i, j;
    long NumPrimes = info->NumPrimes;
@@ -1991,7 +1991,7 @@ void FromfftRep(zz_p* x, fftRep& y, long lo, long hi)
 
 void mul(fftRep& z, const fftRep& x, const fftRep& y)
 {
-   zz_pInfoT *info = zz_pInfo.get();
+   zz_pInfoT *info = zz_pInfo;
 
    long k, n, i, j;
 
@@ -2036,7 +2036,7 @@ void mul(fftRep& z, const fftRep& x, const fftRep& y)
 
 void sub(fftRep& z, const fftRep& x, const fftRep& y)
 {
-   zz_pInfoT *info = zz_pInfo.get();
+   zz_pInfoT *info = zz_pInfo;
 
    long k, n, i, j;
 
@@ -2073,7 +2073,7 @@ void sub(fftRep& z, const fftRep& x, const fftRep& y)
 
 void add(fftRep& z, const fftRep& x, const fftRep& y)
 {
-   zz_pInfoT *info = zz_pInfo.get();
+   zz_pInfoT *info = zz_pInfo;
 
    long k, n, i, j;
 
@@ -2113,7 +2113,7 @@ void reduce(fftRep& x, const fftRep& a, long k)
   // reduces a 2^l point FFT-rep to a 2^k point FFT-rep
   // input may alias output
 {
-   zz_pInfoT *info = zz_pInfo.get();
+   zz_pInfoT *info = zz_pInfo;
 
    long i, j, l, n;
    long* xp;
@@ -2137,7 +2137,7 @@ void reduce(fftRep& x, const fftRep& a, long k)
 void AddExpand(fftRep& x, const fftRep& a)
 //  x = x + (an "expanded" version of a)
 {
-   zz_pInfoT *info = zz_pInfo.get();
+   zz_pInfoT *info = zz_pInfo;
 
    long i, j, l, k, n;
 

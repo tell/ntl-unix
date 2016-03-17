@@ -83,6 +83,15 @@ fi
 
 echo
 echo "---------------------------------"
+echo "making mat_lzz_pTest"
+make mat_lzz_pTest
+echo "running mat_lzz_pTest"
+./mat_lzz_pTest 
+sh RemoveProg mat_lzz_pTest
+
+
+echo
+echo "---------------------------------"
 echo "making CharPolyTest"
 make CharPolyTest
 echo "running CharPolyTest"

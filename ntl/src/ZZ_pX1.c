@@ -938,7 +938,7 @@ NTL_TBDECL(InnerProduct)(ZZ_pX& x, const vec_ZZ_p& v, long low, long high,
 void InnerProduct(ZZ_pX& x, const vec_ZZ_p& v, long low, long high, 
                    const vec_ZZ_pX& H, long n, ZZVec& t)
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_InnerProduct(x, v, low, high, H, n, t);
@@ -1041,7 +1041,7 @@ void build(ZZ_pXArgument& A, const ZZ_pX& h, const ZZ_pXModulus& F, long m)
 
 
 
-NTL_THREAD_LOCAL long ZZ_pXArgBound = 0;
+NTL_CHEAP_THREAD_LOCAL long ZZ_pXArgBound = 0;
 
 
 void CompMod(ZZ_pX& x, const ZZ_pX& g, const ZZ_pX& h, const ZZ_pXModulus& F)
@@ -1239,7 +1239,7 @@ void ProjectPowers(vec_ZZ_p& x, const vec_ZZ_p& a, long k,
                    const ZZ_pXArgument& H, const ZZ_pXModulus& F)
 
 {
-   BasicThreadPool *pool = NTLThreadPool;
+   BasicThreadPool *pool = GetThreadPool();
 
    if (!pool || pool->active() || pool->NumThreads() == 1) {
       basic_ProjectPowers(x, a, k, H, F);

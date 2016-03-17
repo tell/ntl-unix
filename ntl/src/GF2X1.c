@@ -27,10 +27,11 @@
 
 
 
-#define NTL_GF2X_GCD_CROSSOVER (XOVER_SCALE*400L*NTL_BITS_PER_LONG) 
+#define NTL_GF2X_GCD_CROSSOVER (XOVER_SCALE*300L*NTL_BITS_PER_LONG) 
+
 #define NTL_GF2X_BERMASS_CROSSOVER (XOVER_SCALE*200L*NTL_BITS_PER_LONG)
 
-#define NTL_GF2X_HalfGCD_CROSSOVER (6L*NTL_BITS_PER_LONG)
+#define NTL_GF2X_HalfGCD_CROSSOVER (4L*NTL_BITS_PER_LONG)
 
 
 
@@ -463,25 +464,20 @@ void build(GF2XModulus& F, const GF2X& f)
 
    GF2X f0;
    trunc(f0, f, n);
-   long deg_f0 = deg(f0);
 
-   if (F.sn > 1 && deg_f0 < NTL_BITS_PER_LONG 
-       && deg_f0 >= NTL_BITS_PER_LONG/2) {
-      if (F.size >= 3*XOVER_SCALE)
-         F.method = GF2X_MOD_MUL;
-      else
-         F.method = GF2X_MOD_SPECIAL;
-   }
-   else if (F.sn > 1 && deg_f0 < NTL_BITS_PER_LONG/2) {
-      if (F.size >= 2*XOVER_SCALE)
-         F.method = GF2X_MOD_MUL;
-      else
-         F.method = GF2X_MOD_SPECIAL;
-   }
-   else if (F.size >= 4*XOVER_SCALE)
+   if (F.n >= (NTL_BITS_PER_LONG/2)*XOVER_SCALE)
       F.method = GF2X_MOD_MUL;
    else 
       F.method = GF2X_MOD_PLAIN;
+
+
+   // NOTE: I've run some tests which indicate that the GF2X_MOD_SPECIAL
+   // method is not worth it.
+   // FIXME: in a future version, I should eliminate all code
+   // and data associated with GF2X_MOD_SPECIAL
+
+   // NOTE: I've runs some tests which indicate that the crossover
+   // for GF2X_MOD_MUL is extremely low, even without PCLMUL support.
       
 
    if (F.method == GF2X_MOD_SPECIAL) {
@@ -1947,16 +1943,16 @@ void UseMulDiv(GF2X& q, const GF2X& a, const GF2X& b)
 }
 
 
-const long GF2X_DIV_CROSS = 40*XOVER_SCALE; 
+const long GF2X_DIV_CROSS = (NTL_BITS_PER_LONG/2)*XOVER_SCALE; 
 
 void DivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2X& b)
 {
-   long sa = a.xrep.length();
-   long sb = b.xrep.length();
+   long da = deg(a);
+   long db = deg(b);
 
-   if (sb < GF2X_DIV_CROSS || sa-sb < GF2X_DIV_CROSS)
+   if (db < GF2X_DIV_CROSS || da-db < GF2X_DIV_CROSS)
       PlainDivRem(q, r, a, b);
-   else if (sa < 4*sb)
+   else if (da < 4*db)
       UseMulDivRem(q, r, a, b);
    else {
       GF2XModulus B;
@@ -1967,12 +1963,12 @@ void DivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2X& b)
 
 void div(GF2X& q, const GF2X& a, const GF2X& b)
 {
-   long sa = a.xrep.length();
-   long sb = b.xrep.length();
+   long da = deg(a);
+   long db = deg(b);
 
-   if (sb < GF2X_DIV_CROSS || sa-sb < GF2X_DIV_CROSS)
+   if (db < GF2X_DIV_CROSS || da-db < GF2X_DIV_CROSS)
       PlainDiv(q, a, b);
-   else if (sa < 4*sb)
+   else if (da < 4*db)
       UseMulDiv(q, a, b);
    else {
       GF2XModulus B;
@@ -1983,12 +1979,12 @@ void div(GF2X& q, const GF2X& a, const GF2X& b)
 
 void rem(GF2X& r, const GF2X& a, const GF2X& b)
 {
-   long sa = a.xrep.length();
-   long sb = b.xrep.length();
+   long da = deg(a);
+   long db = deg(b);
 
-   if (sb < GF2X_DIV_CROSS || sa-sb < GF2X_DIV_CROSS)
+   if (db < GF2X_DIV_CROSS || da-db < GF2X_DIV_CROSS)
       PlainRem(r, a, b);
-   else if (sa < 4*sb)
+   else if (da < 4*db)
       UseMulRem(r, a, b);
    else {
       GF2XModulus B;

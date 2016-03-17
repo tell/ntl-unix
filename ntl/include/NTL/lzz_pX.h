@@ -6,6 +6,7 @@
 #include <NTL/lzz_p.h>
 #include <NTL/vec_lzz_p.h>
 #include <NTL/Lazy.h>
+#include <NTL/SmartPtr.h>
 
 NTL_OPEN_NNS
 
@@ -1093,7 +1094,9 @@ struct zz_pXArgument {
    vec_zz_pX H;
 };
 
-NTL_THREAD_LOCAL extern long zz_pXArgBound;
+extern 
+NTL_CHEAP_THREAD_LOCAL 
+long zz_pXArgBound;
 
 
 void build(zz_pXArgument& H, const zz_pX& h, const zz_pXModulus& F, long m);
@@ -1129,8 +1132,10 @@ struct zz_pXAltArgument {
    Vec< Vec<long> > mem;
    Vec<long*> row;
 
-   Vec< Vec<double> > dmem;
+#ifdef NTL_HAVE_AVX
+   Vec< AlignedArray<double>::AVX > dmem;
    Vec<double*> drow;
+#endif
 
    sp_ll_reduce_struct pinv_LL;
    sp_reduce_struct pinv_L;

@@ -18,6 +18,101 @@ A Tour of NTL: Summary of Changes
 
 <p><hr><p>
 <h3>
+2016.03.12: Changes between NTL 9.6.4 and 9.7.0
+</h3>
+
+<ul>
+
+
+
+<p>
+<li>
+Changes to <a href="mat_lzz_p.cpp.html">mat_lzz_p</a> module:
+<ul>
+<li>
+Improved performance of <tt>mul</tt>, <tt>inv</tt>, <tt>solve</tt>, 
+and <tt>determinant</tt> routines:
+<ul>
+<li>
+more cache friendly
+<li>
+thread boosted
+<li>
+for small p (up to 23 bits), exploits
+AVX and FMA instructions (when available)
+<li>
+depending on many things,
+the new code can be anywhere between
+1.5x and 70x (!) times faster than the old code 
+(part of that speedup up can be attributed to just how
+awful some of the old code was, rather than
+how brilliant the new code is)
+<li>
+on the SandyBridge and Haswell machines I was able to test,
+the new code is comparable in speed
+to 
+<a href=" https://linbox-team.github.io/fflas-ffpack/">FFLAS/FFPACK</a>
+</ul>
+<li>
+Added "relaxed" versions of <tt>inv</tt>, <tt>solve</tt>, and 
+<tt>determinant</tt>,
+which also now work for prime powers, not just primes
+<li>
+Added a new variant of <tt>solve</tt> routine to solve <tt>A*x = b</tt> 
+for column vectors
+</ul>
+
+<p>
+<li>Changes to <a href="BasicThreadPool.cpp.html">BasicThreadPool</a>
+module:
+<ul>
+<li>
+Added <tt>NTL_EXEC_RANGE</tt> and other functionality which makes writing
+"parallel for loops" simple (very similar to OpenMP), 
+and the same source code will work regardless of whether
+threads or thread boosting is enabled.
+
+<li>
+Backward incompatibilities:
+<ul>
+<li>
+<tt>NTLThreadPool</tt> is no longer directly accessible:
+new access functions are provided
+<li>
+Got rid of method <tt>SplitProblems</tt>, and made a more general/abstract
+class <tt>PartitionInfo</tt>
+</ul>
+</ul>
+
+
+<p>
+<li>
+Miscellaneous:
+<ul>
+<li>
+Improved crossover points for <tt>GF2X</tt> division
+
+<li>
+Made access to thread local variables used in NTL faster 
+by using GCC's <tt>__thread</tt> in place of <tt>thread_local</tt>,
+wherever possible
+
+<li>
+Improved performance of <tt>vec_long</tt> to <tt>vec_zz_p</tt> conversion 
+
+<li>
+Made AVX and FMA detection more robust, requiring LP64 
+
+<li>
+Added <tt>InvModStatus</tt> for <tt>long</tt>'s
+
+<li>
+Bumped <tt>FILE_THRESH</tt> to 1e12
+</ul>
+</ul>
+
+<p><hr><p>
+<h3>
 2016.01.30: Changes between NTL 9.6.3 and 9.6.4
 </h3>
 

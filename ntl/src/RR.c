@@ -14,7 +14,7 @@ NTL_START_IMPL
 // priority right now.
 
 
-NTL_THREAD_LOCAL
+NTL_CHEAP_THREAD_LOCAL
 long RR::prec = 150;
 
 void RR::SetPrecision(long p)
@@ -28,7 +28,7 @@ void RR::SetPrecision(long p)
    prec = p;
 }
 
-NTL_THREAD_LOCAL
+NTL_CHEAP_THREAD_LOCAL
 long RR::oprec = 10;
 
 void RR::SetOutputPrecision(long p)

@@ -10,9 +10,17 @@ NTL_START_IMPL
 
 
 
-NTL_THREAD_LOCAL SmartPtr<ZZ_pInfoT> ZZ_pInfo = 0;
-NTL_THREAD_LOCAL SmartPtr<ZZ_pTmpSpaceT> ZZ_pTmpSpace = 0;
-NTL_THREAD_LOCAL bool ZZ_pInstalled = false;
+static
+NTL_THREAD_LOCAL SmartPtr<ZZ_pInfoT> ZZ_pInfo_stg;
+
+NTL_CHEAP_THREAD_LOCAL ZZ_pInfoT *ZZ_pInfo = 0;
+
+static
+NTL_THREAD_LOCAL SmartPtr<ZZ_pTmpSpaceT> ZZ_pTmpSpace_stg;
+
+NTL_CHEAP_THREAD_LOCAL ZZ_pTmpSpaceT *ZZ_pTmpSpace = 0;
+
+NTL_CHEAP_THREAD_LOCAL bool ZZ_pInstalled = false;
 
 
 
@@ -167,7 +175,8 @@ void ZZ_p::DoInstall()
       tmps->rem_tmp_vec.fetch(FFTInfo->rem_struct);
    }
 
-   ZZ_pTmpSpace = tmps;
+   ZZ_pTmpSpace_stg = tmps; 
+   ZZ_pTmpSpace = ZZ_pTmpSpace_stg.get();
 }
 
 
@@ -180,16 +189,25 @@ void ZZ_p::init(const ZZ& p)
 }
 
 
+void ZZ_pContext::save() 
+{ 
+   ptr = ZZ_pInfo_stg; 
+}
+
 
 void ZZ_pContext::restore() const
 {
-   if (ZZ_pInfo == ptr) return; 
+   if (ZZ_pInfo == ptr.get()) return; 
    // NOTE: this simple optimization could be useful in some situations,
    //    for example, a worker thread re-setting the current modulus
    //    in a multi-threaded build
 
-   ZZ_pInfo = ptr;
+   ZZ_pInfo_stg = ptr;
+   ZZ_pInfo = ZZ_pInfo_stg.get();
+
+   ZZ_pTmpSpace_stg = 0;
    ZZ_pTmpSpace = 0;
+
    ZZ_pInstalled = false;
 }
 
@@ -220,7 +238,7 @@ const ZZ_p& ZZ_p::zero()
    return z;
 }
 
-NTL_THREAD_LOCAL
+NTL_CHEAP_THREAD_LOCAL
 ZZ_p::DivHandlerPtr ZZ_p::DivHandler = 0;
 
    

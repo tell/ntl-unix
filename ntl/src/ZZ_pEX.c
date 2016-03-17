@@ -2209,7 +2209,7 @@ void build(ZZ_pEXArgument& A, const ZZ_pEX& h, const ZZ_pEXModulus& F, long m)
       MulMod(A.H[i], A.H[i-1], h, F);
 }
 
-NTL_THREAD_LOCAL long ZZ_pEXArgBound = 0;
+NTL_CHEAP_THREAD_LOCAL long ZZ_pEXArgBound = 0;
 
 
 
