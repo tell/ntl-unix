@@ -23,7 +23,7 @@ config.done:
 	touch $@
 
 patch.done:
-	find ntl/ -name '*.c' -or -name '*.h' | xargs grep -lR 'gmp.h' | xargs sed -i '/#include <gmp\.h>/i\#include <stddef.h>'
+	./patch-script.sh
 	touch $@
 
 include ntl-dep.mk
