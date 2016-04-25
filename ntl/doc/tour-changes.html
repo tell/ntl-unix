@@ -18,6 +18,40 @@ A Tour of NTL: Summary of Changes
 
 <p><hr><p>
 <h3>
+2016.04.20: Changes between NTL 9.7.0 and 9.7.1
+</h3>
+
+<ul>
+
+<li>
+Extended the performance improvements in 
+<a href="mat_lzz_p.cpp.html">mat_lzz_p</a>
+to include the <tt>gauss</tt>, <tt>kernel</tt>,
+and <tt>image</tt> routines
+
+<li>
+Generally improved
+performance for all of the <a href="mat_lzz_p.cpp.html">mat_lzz_p</a>,
+including an implementation of Strassen for matrix multiplication.
+
+<li>
+Added the matrix/column vector <tt>solve</tt> routines
+to all other matrix classes (for consistency).
+
+<p>
+<li>
+Fixed a compile-time bug that occured on certain platforms
+(mainly Windows).
+
+<li>
+Made some of the steps in <tt>configure</tt> and <tt>make</tt>
+a bit more quiet (look at <tt>.log</tt> files for outputs).
+
+</ul>
+
+
+<p><hr><p>
+<h3>
 2016.03.12: Changes between NTL 9.6.4 and 9.7.0
 </h3>
 

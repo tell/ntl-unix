@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>/Volumes/unix-files/u/ntl-new/ntl-9.7.0/doc/mat_lzz_p.cpp.html</title>
+<title>/Volumes/unix-files/u/ntl-new/ntl-9.7.1/doc/mat_lzz_p.cpp.html</title>
 <meta name="Generator" content="Vim/7.1">
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 </head>
@@ -14,7 +14,27 @@
 <font color="#0000ed"><i>SUMMARY:</i></font><br>
 <br>
 <font color="#0000ed"><i>Defines the class mat_zz_p.</i></font><br>
-<font color="#0000ed"><i>Note that the modulus p need no be a prime, except as indicated below.</i></font><br>
+<font color="#0000ed"><i>Note that the modulus p need not be a prime, except as indicated below.</i></font><br>
+<br>
+<font color="#0000ed"><i>IMPLEMENTATION NOTES: </i></font><br>
+<br>
+<font color="#0000ed"><i>Starting with NTL version 9.7.0 (and 9.7.1), many of the routines here have</i></font><br>
+<font color="#0000ed"><i>been optimized to take better advantage of specific hardware features available</i></font><br>
+<font color="#0000ed"><i>on 64-bit Intel CPU's.&nbsp;&nbsp;Currently, the mul, inv, determinant, solve, gauss,</i></font><br>
+<font color="#0000ed"><i>kernel, and image routines are fastest for p up to 23-bits long (assuming the</i></font><br>
+<font color="#0000ed"><i>CPU supports AVX instructions).&nbsp;&nbsp;After that, performance degrades in three</i></font><br>
+<font color="#0000ed"><i>stages: stage 1: up to 28-bits; stage 2: up to 31-bits; stage 3: 32-bits and</i></font><br>
+<font color="#0000ed"><i>up. </i></font><br>
+<br>
+<font color="#0000ed"><i>For primes up to 23-bits, AVX floating point instructions are used.&nbsp;&nbsp;After</i></font><br>
+<font color="#0000ed"><i>that, ordinary integer arithmetic is used.&nbsp;&nbsp;In a future version, I may exploit</i></font><br>
+<font color="#0000ed"><i>AVX2 integer instructions to get better stage 2 performance.&nbsp;&nbsp;And in the more</i></font><br>
+<font color="#0000ed"><i>distant future, AVX512 instructions will be used, when they become available.</i></font><br>
+<br>
+<font color="#0000ed"><i>On older Intel machines, or non-Intel machines that have &quot;long long&quot; support,</i></font><br>
+<font color="#0000ed"><i>one still gets optimizations corresponding to the three stages above.&nbsp;&nbsp;On</i></font><br>
+<font color="#0000ed"><i>32-bit machines, one still gets three stages, just with smaller crossover</i></font><br>
+<font color="#0000ed"><i>points.</i></font><br>
 <br>
 <font color="#0000ed"><i>\*************************************************************************</i></font><font color="#0000ed"><i>*/</i></font><br>
 <br>
@@ -54,8 +74,6 @@ mat_zz_p transpose(<font color="#008b00"><b>const</b></font>&nbsp;mat_zz_p&amp; 
 <font color="#0000ed"><i>// X = transpose of A</i></font><br>
 <br>
 <br>
-<br>
-<br>
 <font color="#008b00"><b>void</b></font>&nbsp;determinant(zz_p&amp; d, <font color="#008b00"><b>const</b></font>&nbsp;mat_zz_p&amp; A);<br>
 zz_p determinant(<font color="#008b00"><b>const</b></font>&nbsp;mat_zz_p&amp; a); <br>
 <font color="#0000ed"><i>// d = determinant(A)</i></font><br>
@@ -67,8 +85,6 @@ zz_p determinant(<font color="#008b00"><b>const</b></font>&nbsp;mat_zz_p&amp; a)
 <font color="#008b00"><b>void</b></font>&nbsp;solve(zz_p&amp; d, <font color="#008b00"><b>const</b></font>&nbsp;mat_zz_p&amp; A, vec_zz_p&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;vec_zz_p&amp; b);<br>
 <font color="#0000ed"><i>// A is an n x n matrix, b is a length n vector.&nbsp;&nbsp;Computes d = determinant(A).</i></font><br>
 <font color="#0000ed"><i>// If d != 0, solves A*x = b (so x and b are treated as a column vectors).</i></font><br>
-<font color="#0000ed"><i>// NOTE: this routine was added in NTL v9.7.0, and an&nbsp;&nbsp;analogous routine will</i></font><br>
-<font color="#0000ed"><i>// eventually be added to all the other matrix classes in a subsequent release.</i></font><br>
 <br>
 <font color="#008b00"><b>void</b></font>&nbsp;inv(zz_p&amp; d, mat_zz_p&amp; X, <font color="#008b00"><b>const</b></font>&nbsp;mat_zz_p&amp; A);<br>
 <font color="#0000ed"><i>// A is an n x n matrix.&nbsp;&nbsp;Computes d = determinant(A).&nbsp;&nbsp;If d != 0,</i></font><br>
@@ -145,11 +161,7 @@ mat_zz_p diag(<font color="#008b00"><b>long</b></font>&nbsp;n, zz_p d);<br>
 <font color="#0000ed"><i>// row vector.</i></font><br>
 <br>
 <font color="#0000ed"><i>// NOTE: the gauss, image, and kernel routines all require that</i></font><br>
-<font color="#0000ed"><i>// the modulus p is prime. Also, since NTL v 9.7.0, these routines</i></font><br>
-<font color="#0000ed"><i>// may be significantly slower than the routines inv and solve above.</i></font><br>
-<font color="#0000ed"><i>// In a subsequent release, it is planned to introduce new functions</i></font><br>
-<font color="#0000ed"><i>// with a slightly different interface that will be faster.</i></font><br>
-<br>
+<font color="#0000ed"><i>// the modulus p is prime. </i></font><br>
 <br>
 <br>
 <br>

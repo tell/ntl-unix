@@ -29,8 +29,18 @@ i.e., all source files in either the ntl-xxx.tar.gz or WinNTL-xxx.zip
 distributions.  In general, the individual files do not contain 
 copyright notices.
 
+Note that the the file ZZ.c contains an implementation of SHA256
+which is derived from work by Brad Conte, which is in the public domain.
+See file ZZ.c for a more detailed notice.
+
+Note that the file mat_lzz_p.c contains an implemention of Strassen's
+matrix multiplication algorithm which is derived from the implementation
+in FLINT v2.5.2.  The latter is copyrighted by Martin Albrecht, William Hart,
+and Fredrik Johansson, and also licensed under te GPL.
+See file mat_lzz_p.c for a more detailed notice.
+
 Note that the quad_float package is derived from the doubledouble package,
-originally developed by Keith Briggs, and also licensed unger the GNU GPL.
+originally developed by Keith Briggs, and also licensed under the GNU GPL.
 The files quad_float.c and quad_float.h contain more detailed copyright
 notices.
 
@@ -45,8 +55,6 @@ Note that the alternative long integer package used by NTL is GMP,
 which is written by Torbjorn Granlund <tege@swox.com>.
 GMP is licensed under the terms of the GNU Lesser General Public License.
 
-Note that NTL makes use of the RSA Data Security, Inc. MD5 Message 
-Digest Algorithm.
 
 Note that prior to version 4.0, NTL was distributed under the following terms:
    NTL is freely available for research and educational purposes.

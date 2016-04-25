@@ -361,7 +361,7 @@ sub CheckCompile {
    GenFiles();
    CopyFiles();
    RemoveProg("CheckCompile");
-   system("make CheckCompile") and return 0;
+   system("make CheckCompile >> CheckFlag.log 2>&1") and return 0;
    system("./CheckCompile") and RemoveProg("CheckCompile") and return 0;
    RemoveProg("CheckCompile");
    return 1;
@@ -421,6 +421,8 @@ if ($MakeFlag{'NATIVE'} eq 'on') {
     $native_flag = 1; # ' -march=native';
 }
 
+
+system("echo '*** CheckFlag log ***' > CheckFlag.log");
 
 if ($std_flag) {
    CheckFlag('-std=c++11');

@@ -1132,10 +1132,12 @@ struct zz_pXAltArgument {
    Vec< Vec<long> > mem;
    Vec<long*> row;
 
-#ifdef NTL_HAVE_AVX
-   Vec< AlignedArray<double>::AVX > dmem;
+   // NOTE: the following two members are used on if
+   // NTL_HAVE_AVX; however, we declare them unconditionally 
+   // to facilitate the possibility of dynamic linking based
+   // on architecture
+   Vec< AlignedArray<double> > dmem;
    Vec<double*> drow;
-#endif
 
    sp_ll_reduce_struct pinv_LL;
    sp_reduce_struct pinv_L;

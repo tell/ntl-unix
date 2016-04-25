@@ -282,8 +282,8 @@ void transpose(mat_GF2E& X, const mat_GF2E& A)
 }
    
 
-void solve(GF2E& d, vec_GF2E& X, 
-           const mat_GF2E& A, const vec_GF2E& b)
+static
+void solve_impl(GF2E& d, vec_GF2E& X, const mat_GF2E& A, const vec_GF2E& b, bool trans)
 
 {
    long n = A.NumRows();
@@ -311,8 +311,12 @@ void solve(GF2E& d, vec_GF2E& X,
 
    for (i = 0; i < n; i++) {
       M[i].SetSize(n+1, 2*GF2E::WordLength());
-      for (j = 0; j < n; j++) 
-         M[i][j] = rep(A[j][i]);
+
+      if (trans) 
+         for (j = 0; j < n; j++) M[i][j] = rep(A[j][i]);
+      else
+         for (j = 0; j < n; j++) M[i][j] = rep(A[i][j]);
+
       M[i][n] = rep(b[i]);
    }
 
@@ -378,6 +382,16 @@ void solve(GF2E& d, vec_GF2E& X,
    }
 
    conv(d, det);
+}
+
+void solve(GF2E& d, vec_GF2E& x, const mat_GF2E& A, const vec_GF2E& b)
+{
+   solve_impl(d, x, A, b, true);
+}
+
+void solve(GF2E& d, const mat_GF2E& A, vec_GF2E& x,  const vec_GF2E& b)
+{
+   solve_impl(d, x, A, b, false);
 }
 
 void inv(GF2E& d, mat_GF2E& X, const mat_GF2E& A)

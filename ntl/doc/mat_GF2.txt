@@ -60,8 +60,12 @@ mat_GF2 transpose(const mat_GF2& A);
 // X = transpose of A
 
 void solve(GF2& d, vec_GF2& x, const mat_GF2& A, const vec_GF2& b);
-// A is an n x n matrix, b is a length n vector.  Computes d = det(A).  
+// A is an n x n matrix, b is a length n vector.  Computes d = determinant(A).
 // If d != 0, solves x*A = b. 
+
+void solve(GF2& d, const mat_GF2& A, vec_GF2& x, const vec_GF2& b);
+// A is an n x n matrix, b is a length n vector.  Computes d = determinant(A).
+// If d != 0, solves A*x = b (so x and b are treated as a column vectors).
 
 void inv(GF2& d, mat_GF2& X, const mat_GF2& A);
 // A is an n x n matrix.  Computes d = det(A).  If d != 0,

@@ -52,10 +52,13 @@ void transpose(mat_ZZ_p& X, const mat_ZZ_p& A);
 mat_ZZ_p transpose(const mat_ZZ_p& A);
 // X = transpose of A
 
-void solve(ZZ_p& d, vec_ZZ_p& X,
-           const mat_ZZ_p& A, const vec_ZZ_p& b);
-// A is an n x n matrix, b is a length n vector.  Computes d =
-// determinant(A).  If d != 0, solves x*A = b.
+void solve(ZZ_p& d, vec_ZZ_p& x, const mat_ZZ_p& A, const vec_ZZ_p& b);
+// A is an n x n matrix, b is a length n vector.  Computes d = determinant(A).
+// If d != 0, solves x*A = b.
+
+void solve(zz_p& d, const mat_zz_p& A, vec_zz_p& x, const vec_zz_p& b);
+// A is an n x n matrix, b is a length n vector.  Computes d = determinant(A).
+// If d != 0, solves A*x = b (so x and b are treated as a column vectors).
 
 void inv(ZZ_p& d, mat_ZZ_p& X, const mat_ZZ_p& A);
 // A is an n x n matrix.  Computes d = determinant(A).  If d != 0,

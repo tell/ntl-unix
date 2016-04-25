@@ -6,7 +6,27 @@ MODULE: mat_zz_p
 SUMMARY:
 
 Defines the class mat_zz_p.
-Note that the modulus p need no be a prime, except as indicated below.
+Note that the modulus p need not be a prime, except as indicated below.
+
+IMPLEMENTATION NOTES: 
+
+Starting with NTL version 9.7.0 (and 9.7.1), many of the routines here have
+been optimized to take better advantage of specific hardware features available
+on 64-bit Intel CPU's.  Currently, the mul, inv, determinant, solve, gauss,
+kernel, and image routines are fastest for p up to 23-bits long (assuming the
+CPU supports AVX instructions).  After that, performance degrades in three
+stages: stage 1: up to 28-bits; stage 2: up to 31-bits; stage 3: 32-bits and
+up. 
+
+For primes up to 23-bits, AVX floating point instructions are used.  After
+that, ordinary integer arithmetic is used.  In a future version, I may exploit
+AVX2 integer instructions to get better stage 2 performance.  And in the more
+distant future, AVX512 instructions will be used, when they become available.
+
+On older Intel machines, or non-Intel machines that have "long long" support,
+one still gets optimizations corresponding to the three stages above.  On
+32-bit machines, one still gets three stages, just with smaller crossover
+points.
 
 \**************************************************************************/
 
@@ -46,8 +66,6 @@ mat_zz_p transpose(const mat_zz_p& A);
 // X = transpose of A
 
 
-
-
 void determinant(zz_p& d, const mat_zz_p& A);
 zz_p determinant(const mat_zz_p& a); 
 // d = determinant(A)
@@ -59,8 +77,6 @@ void solve(zz_p& d, vec_zz_p& x, const mat_zz_p& A, const vec_zz_p& b);
 void solve(zz_p& d, const mat_zz_p& A, vec_zz_p& x, const vec_zz_p& b);
 // A is an n x n matrix, b is a length n vector.  Computes d = determinant(A).
 // If d != 0, solves A*x = b (so x and b are treated as a column vectors).
-// NOTE: this routine was added in NTL v9.7.0, and an  analogous routine will
-// eventually be added to all the other matrix classes in a subsequent release.
 
 void inv(zz_p& d, mat_zz_p& X, const mat_zz_p& A);
 // A is an n x n matrix.  Computes d = determinant(A).  If d != 0,
@@ -137,11 +153,7 @@ void kernel(mat_zz_p& X, const mat_zz_p& A);
 // row vector.
 
 // NOTE: the gauss, image, and kernel routines all require that
-// the modulus p is prime. Also, since NTL v 9.7.0, these routines
-// may be significantly slower than the routines inv and solve above.
-// In a subsequent release, it is planned to introduce new functions
-// with a slightly different interface that will be faster.
-
+// the modulus p is prime. 
 
 
 

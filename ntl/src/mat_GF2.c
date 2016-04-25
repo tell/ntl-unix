@@ -315,7 +315,8 @@ void transpose(mat_GF2& X, const mat_GF2& A)
 
    
 
-void solve(ref_GF2 d, vec_GF2& X, const mat_GF2& A, const vec_GF2& b)
+static
+void solve_impl(ref_GF2 d, vec_GF2& X, const mat_GF2& A, const vec_GF2& b, bool trans)
 
 {
    long n = A.NumRows();
@@ -336,8 +337,15 @@ void solve(ref_GF2 d, vec_GF2& X, const mat_GF2& A, const vec_GF2& b)
    mat_GF2 M;
    M.SetDims(n, n+1);
 
-   for (i = 0; i < n; i++) {
-      AddToCol(M, i, A[i]);
+   if (trans) {
+      for (i = 0; i < n; i++) {
+	 AddToCol(M, i, A[i]);
+      }
+   }
+   else {
+      for (i = 0; i < n; i++) {
+         VectorCopy(M[i], A[i], n+1);
+      }
    }
 
    AddToCol(M, n, b);
@@ -398,6 +406,15 @@ void solve(ref_GF2 d, vec_GF2& X, const mat_GF2& A, const vec_GF2& b)
    return;
 }
 
+void solve(ref_GF2 d, vec_GF2& x, const mat_GF2& A, const vec_GF2& b)
+{
+   solve_impl(d, x, A, b, true);
+}
+
+void solve(ref_GF2 d, const mat_GF2& A, vec_GF2& x,  const vec_GF2& b)
+{
+   solve_impl(d, x, A, b, false);
+}
 
 
 void inv(ref_GF2 d, mat_GF2& X, const mat_GF2& A)

@@ -238,6 +238,10 @@ which facilitite simple parallel for loops.
 // 
 // If NTL_THREADS=off, the corresponding header file may be included, but the
 // BasicThreadPool class is not defined.
+//
+// Unlike most classes in NTL, the BasicThreadPool is not relocatable and hence
+// cannot be used in a Vec.  One should first wrap it in a pointer class, such
+// as UniquePtr.
 
 
 

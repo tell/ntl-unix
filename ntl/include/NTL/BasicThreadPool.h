@@ -547,7 +547,7 @@ public:
   static void relaxed_exec_range(BasicThreadPool *pool, long sz, const Fct& fct) 
   {
     if (sz <= 0) return;
-    if (!pool || pool->active()) {
+    if (!pool || pool->active() || sz == 1) {
       fct(0, sz);
     }
     else {

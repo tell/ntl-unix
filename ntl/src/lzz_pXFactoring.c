@@ -1,6 +1,6 @@
 
 #include <NTL/lzz_pXFactoring.h>
-#include <NTL/vec_vec_lzz_p.h>
+#include <NTL/mat_lzz_p.h>
 #include <NTL/FacVec.h>
 
 #include <NTL/new.h>
@@ -143,36 +143,27 @@ void NullSpace(long& r, vec_long& D, vec_vec_zz_p& M, long verbose)
 
 
 static
-void BuildMatrix(vec_vec_zz_p& M, 
+void BuildMatrix(mat_zz_p& M, 
                  long n, const zz_pX& g, const zz_pXModulus& F, long verbose)
 {
-   long i, j, m;
    zz_pXMultiplier G;
    zz_pX h;
 
-   M.SetLength(n);
-   for (i = 0; i < n; i++)
-      M[i].SetLength(n);
+   M.SetDims(n, n);
 
    build(G, g, F);
 
    set(h);
-   for (j = 0; j < n; j++) {
-      if (verbose && j % 10 == 0) cerr << "+";
+   for (long i = 0; i < n; i++) {
+      if (verbose && i % 10 == 0) cerr << "+";
 
-      m = deg(h);
-      for (i = 0; i < n; i++) {
-         if (i <= m)
-            M[i][j] = h.rep[i];
-         else
-            clear(M[i][j]);
-      }
+      VectorCopy(M[i], h, n);
 
-      if (j < n-1)
+      if (i < n-1)
          MulMod(h, h, G, F);
    }
 
-   for (i = 0; i < n; i++)
+   for (long i = 0; i < n; i++)
       add(M[i][i], M[i][i], -1);
 
 }
@@ -225,38 +216,16 @@ void FindRoots(vec_zz_p& x, const zz_pX& ff)
 
 
 static
-void RandomBasisElt(zz_pX& g, const vec_long& D, 
-                    const vec_vec_zz_p& M)
+void RandomBasisElt(zz_pX& g, mat_zz_p& ker)
 {
-   zz_p t1, t2;
+   long r = ker.NumRows();
+   long n = ker.NumCols();
 
-   long n = D.length();
+   vec_zz_p v;
+   v.SetLength(r);
+   for (long i = 0; i < r; i++) random(v[i]);
 
-   long i, j, s;
-
-   g.rep.SetLength(n);
-
-   vec_zz_p& v = g.rep;
-
-   for (j = n-1; j >= 0; j--) {
-      if (D[j] == -1)
-         random(v[j]);
-      else {
-         i = D[j];
-
-         // v[j] = sum_{s=j+1}^{n-1} v[s]*M[i,s]
-
-         clear(t1);
-
-         for (s = j+1; s < n; s++) {
-            mul(t2, v[s], M[i][s]);
-            add(t1, t1, t2);
-         }
-
-         v[j] = t1;
-      }
-   }
-
+   mul(g.rep, v, ker);
    g.normalize();
 }
 
@@ -386,19 +355,20 @@ void SFBerlekamp(vec_zz_pX& factors, const zz_pX& ff, long verbose)
    PowerXMod(g, p, F);
    if (verbose) { cerr << (GetTime()-t) << "\n"; }
 
-   vec_long D;
-   long r;
-
-   vec_vec_zz_p M;
+   mat_zz_p M, ker;
 
    if (verbose) { cerr << "building matrix..."; t = GetTime(); }
    BuildMatrix(M, n, g, F, verbose);
    if (verbose) { cerr << (GetTime()-t) << "\n"; }
 
    if (verbose) { cerr << "diagonalizing..."; t = GetTime(); }
-   NullSpace(r, D, M, verbose);
+   kernel(ker, M);
    if (verbose) { cerr << (GetTime()-t) << "\n"; }
 
+
+   M.kill();
+
+   long r = ker.NumRows();
 
    if (verbose) cerr << "number of factors = " << r << "\n";
 
@@ -412,9 +382,8 @@ void SFBerlekamp(vec_zz_pX& factors, const zz_pX& ff, long verbose)
 
    vec_zz_p roots;
 
-   RandomBasisElt(g, D, M);
+   RandomBasisElt(g, ker);
    MinPolyMod(h, g, F, r);
-   if (deg(h) == r) M.kill();
    FindRoots(roots, h);
    FindFactors(factors, f, g, roots);
 
@@ -424,7 +393,7 @@ void SFBerlekamp(vec_zz_pX& factors, const zz_pX& ff, long verbose)
 
    while (factors.length() < r) {
       if (verbose) cerr << "+";
-      RandomBasisElt(g, D, M);
+      RandomBasisElt(g, ker);
       S.kill();
       for (i = 0; i < factors.length(); i++) {
          const zz_pX& f = factors[i];

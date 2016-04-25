@@ -314,8 +314,8 @@ void transpose(mat_ZZ_p& X, const mat_ZZ_p& A)
 }
    
 
-void solve(ZZ_p& d, vec_ZZ_p& X, 
-           const mat_ZZ_p& A, const vec_ZZ_p& b)
+static
+void solve_impl(ZZ_p& d, vec_ZZ_p& X, const mat_ZZ_p& A, const vec_ZZ_p& b, bool trans)
 
 {
    long n = A.NumRows();
@@ -345,8 +345,12 @@ void solve(ZZ_p& d, vec_ZZ_p& X,
 
    for (i = 0; i < n; i++) {
       M[i].SetSize(n+1, t1.size());
-      for (j = 0; j < n; j++) 
-         M[i][j] = rep(A[j][i]);
+
+      if (trans) 
+         for (j = 0; j < n; j++) M[i][j] = rep(A[j][i]);
+      else
+         for (j = 0; j < n; j++) M[i][j] = rep(A[i][j]);
+
       M[i][n] = rep(b[i]);
    }
 
@@ -414,6 +418,16 @@ void solve(ZZ_p& d, vec_ZZ_p& X,
    }
 
    conv(d, det);
+}
+
+void solve(ZZ_p& d, vec_ZZ_p& x, const mat_ZZ_p& A, const vec_ZZ_p& b)
+{
+   solve_impl(d, x, A, b, true);
+}
+
+void solve(ZZ_p& d, const mat_ZZ_p& A, vec_ZZ_p& x,  const vec_ZZ_p& b)
+{
+   solve_impl(d, x, A, b, false);
 }
 
 void inv(ZZ_p& d, mat_ZZ_p& X, const mat_ZZ_p& A)

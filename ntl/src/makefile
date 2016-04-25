@@ -345,6 +345,7 @@ setup1:
 # setup2 does some dynamic checks for GetTime, GetPID, __builtin_clzl, and LL types 
 
 setup2:
+	echo "*** CheckFeature log ***" > CheckFeature.log
 	sh MakeGetTime "$(LINK)" "$(LDLIBS)"
 	sh MakeGetPID  "$(LINK)" "$(LDLIBS)"
 	sh MakeCheckFeature BUILTIN_CLZL "CheckCLZL.c CheckCLZLAux.c" "$(LINK)" "$(LDLIBS)"

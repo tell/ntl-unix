@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>/Volumes/unix-files/u/ntl-new/ntl-9.7.0/doc/mat_ZZ_pE.cpp.html</title>
+<title>/Volumes/unix-files/u/ntl-new/ntl-9.7.1/doc/mat_ZZ_pE.cpp.html</title>
 <meta name="Generator" content="Vim/7.1">
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 </head>
@@ -62,10 +62,13 @@ ZZ_pE determinant(<font color="#008b00"><b>const</b></font>&nbsp;mat_ZZ_pE&amp; 
 mat_ZZ_pE transpose(<font color="#008b00"><b>const</b></font>&nbsp;mat_ZZ_pE&amp; A);<br>
 <font color="#0000ed"><i>// X = transpose of A</i></font><br>
 <br>
-<font color="#008b00"><b>void</b></font>&nbsp;solve(ZZ_pE&amp; d, vec_ZZ_pE&amp; X,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008b00"><b>const</b></font>&nbsp;mat_ZZ_pE&amp; A, <font color="#008b00"><b>const</b></font>&nbsp;vec_ZZ_pE&amp; b);<br>
-<font color="#0000ed"><i>// A is an n x n matrix, b is a length n vector.&nbsp;&nbsp;Computes d =</i></font><br>
-<font color="#0000ed"><i>// determinant(A).&nbsp;&nbsp;If d != 0, solves x*A = b.</i></font><br>
+<font color="#008b00"><b>void</b></font>&nbsp;solve(ZZ_pE&amp; d, vec_ZZ_pE&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;mat_ZZ_pE&amp; A, <font color="#008b00"><b>const</b></font>&nbsp;vec_ZZ_pE&amp; b);<br>
+<font color="#0000ed"><i>// A is an n x n matrix, b is a length n vector.&nbsp;&nbsp;Computes d = determinant(A).</i></font><br>
+<font color="#0000ed"><i>// If d != 0, solves x*A = b.</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;solve(ZZ_pE&amp; d, <font color="#008b00"><b>const</b></font>&nbsp;mat_ZZ_pE&amp; A, vec_ZZ_pE&amp; x, <font color="#008b00"><b>const</b></font>&nbsp;vec_ZZ_pE&amp; b);<br>
+<font color="#0000ed"><i>// A is an n x n matrix, b is a length n vector.&nbsp;&nbsp;Computes d = determinant(A).</i></font><br>
+<font color="#0000ed"><i>// If d != 0, solves A*x = b (so x and b are treated as a column vectors).</i></font><br>
 <br>
 <font color="#008b00"><b>void</b></font>&nbsp;inv(ZZ_pE&amp; d, mat_ZZ_pE&amp; X, <font color="#008b00"><b>const</b></font>&nbsp;mat_ZZ_pE&amp; A);<br>
 <font color="#0000ed"><i>// A is an n x n matrix.&nbsp;&nbsp;Computes d = determinant(A).&nbsp;&nbsp;If d != 0,</i></font><br>

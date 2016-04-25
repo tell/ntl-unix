@@ -1344,9 +1344,8 @@ bool operator!=(const Unique2DArray<X>& a, const Unique2DArray<Y>& b)
 
 
 
-#ifdef NTL_HAVE_AVX
 
-// AlignedArrayPOD:
+// AlignedArray:
 //
 // specialized arrays that have similar interface to UniqueArray, but:
 //  * they are allocated with a given alignment
@@ -1355,48 +1354,50 @@ bool operator!=(const Unique2DArray<X>& a, const Unique2DArray<Y>& b)
 // to work on gcc and gcc clones (clang and icc).
 // intended for use with Intel AVX intrinsics
 //
-// For now, this is not a part of the documented interface, and it is
-// only available with NTL_HAVE_AVX (which, in particular, requires __GNUC__).
-// This could change in the future, if and when there is a more portable way 
-// of doing this.
+// For now, this is not a part of the documented interface, and it is only
+// works with __GNUC__.  If __GNUC__ is not defined, then it reverts to using
+// malloc. Currently, it is only used if NTL_HAVE_AVX is defined, which anyway
+// requires __GNUC__.
+//
+// This could all change in the future, if and when there is a more portable
+// way of doing this.
 
-// NOTE: the methods reset, free, and release are available, but should
-// really only be used to move raw pointers around between compatible 
-// AlignedArrayPOD's.
+// NOTE: the methods reset, free, and release are available, but should really
+// only be used to move raw pointers around between compatible AlignedArray's.
 
-// NOTE: posix_memalign has been in available since glibc 2.1.91, which
-// is some time around the year 2000, so this should be portable.
+// NOTE: posix_memalign has been in available since glibc 2.1.91, which is some
+// time around the year 2000, so this should be portable.
 
-template<class T, long align>
-class AlignedArrayPOD {
+template<class T, long align=NTL_DEFAULT_ALIGN>
+class AlignedArray {
 private:
    T *dp;
 
    class Dummy { };
 
-   typedef void (AlignedArrayPOD::*fake_null_type)(Dummy) const;
+   typedef void (AlignedArray::*fake_null_type)(Dummy) const;
    void fake_null_function(Dummy) const {}
 
    bool cannot_compare_these_types() const { return false; }
 
-   AlignedArrayPOD(const AlignedArrayPOD&); // disabled
-   void operator=(const AlignedArrayPOD&); // disabled
+   AlignedArray(const AlignedArray&); // disabled
+   void operator=(const AlignedArray&); // disabled
 
 public:   
-   explicit AlignedArrayPOD(T *p) : dp(p) { }
+   explicit AlignedArray(T *p) : dp(p) { }
 
-   AlignedArrayPOD() : dp(0) { }
+   AlignedArray() : dp(0) { }
 
-   ~AlignedArrayPOD() { NTL_SNS free(dp); }
+   ~AlignedArray() { NTL_SNS free(dp); }
 
 
    void reset(T* p = 0)
    {
-      AlignedArrayPOD tmp(p);
+      AlignedArray tmp(p);
       tmp.swap(*this);
    }
 
-   AlignedArrayPOD& operator=(fake_null_type) { reset(); return *this; }
+   AlignedArray& operator=(fake_null_type) { reset(); return *this; }
 
    void SetLength(long n)
    {
@@ -1404,8 +1405,8 @@ public:
       // not clear if posix_memalign is in std:: or ::
       // this will make sure to find it in either case
 
-      if (align <= 0 || n < 0) LogicError("AlignedArrayPOD::SetLength: bad args");
-      if (NTL_OVERFLOW1(n, sizeof(T), 0)) ResourceError("AlignedArrayPOD::SetLength: overflow");
+      if (align <= 0 || n < 0) LogicError("AlignedArray::SetLength: bad args");
+      if (NTL_OVERFLOW1(n, sizeof(T), 0)) ResourceError("AlignedArray::SetLength: overflow");
 
       if (n == 0) {
          reset();
@@ -1413,7 +1414,15 @@ public:
       else
       {
 	 void *p;
+
+#ifdef __GNUC__
+#define NTL_HAVE_ALIGNED_ARRAY
 	 if (posix_memalign(&p, align, n*sizeof(T))) MemoryError();
+#else
+         p = malloc(n*sizeof(T));
+         if (!p) MemoryError();
+#endif
+
 	 reset( (T*) p );
       }
    }
@@ -1423,18 +1432,18 @@ public:
    T* get() const { return dp; }
 
    T* release() { T *p = dp; dp = 0; return p; }
-   void move(AlignedArrayPOD& other) { reset(other.release()); }
+   void move(AlignedArray& other) { reset(other.release()); }
 
-   void swap(AlignedArrayPOD& other)
+   void swap(AlignedArray& other)
    {
       _ntl_swap(dp, other.dp);
    }
 
-   AlignedArrayPOD(fake_null_type) : dp(0) { }
+   AlignedArray(fake_null_type) : dp(0) { }
 
    operator fake_null_type() const 
    {
-      return dp ?  &AlignedArrayPOD::fake_null_function : 0;
+      return dp ?  &AlignedArray::fake_null_function : 0;
    }
 
 };
@@ -1442,21 +1451,11 @@ public:
 
 // free swap function
 template<class T, long align>
-void swap(AlignedArrayPOD<T,align>& p, AlignedArrayPOD<T,align>& q) { p.swap(q); }
-
-
-template<class T>
-class AlignedArray {
-private:
-   AlignedArray() {}
-public:
-   typedef AlignedArrayPOD<T,NTL_AVX_BYTE_ALIGN> AVX;
-};
+void swap(AlignedArray<T,align>& p, AlignedArray<T,align>& q) { p.swap(q); }
 
 
 
 
-#endif
 
 
 

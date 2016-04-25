@@ -8,8 +8,8 @@ echo "who am I?"
 
 
 sh RemoveProg TestGetPID
-echo $1 -o TestGetPID TestGetPID.c GetPID1.c $2
-$1 -o TestGetPID TestGetPID.c GetPID1.c $2
+echo $1 -o TestGetPID TestGetPID.c GetPID1.c $2  >> "CheckFeature.log" 2>&1
+$1 -o TestGetPID TestGetPID.c GetPID1.c $2  >> "CheckFeature.log" 2>&1
 
 if test -f TestGetPID
 then

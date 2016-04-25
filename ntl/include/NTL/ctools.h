@@ -418,6 +418,11 @@ void _ntl_swap(T*& a, T*& b)
 
 #define NTL_AVX_LOCAL_ARRAY(x, type, n) NTL_ALIGNED_LOCAL_ARRAY(NTL_AVX_BYTE_ALIGN, x, type, n)
 
+#define NTL_DEFAULT_ALIGN (64)
+// this should be big enough to satisfy any SIMD instructions,
+// and it should also be as big as a cache line
+
+
    
 
 #endif
