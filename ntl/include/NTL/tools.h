@@ -597,7 +597,7 @@ public:
 
 struct scope_guard_builder {  
    const char *info;
-   scope_guard_builder(const char *_info) : info(_info) { }
+   explicit scope_guard_builder(const char *_info) : info(_info) { }
 };
 
 template < typename F >

@@ -16,6 +16,19 @@ A Tour of NTL: Summary of Changes
 </p>
 </h1>
 
+
+<p><hr><p>
+<h3>
+2016.04.29: Changes between NTL 9.8.0 and 9.8.1
+</h3>
+
+<ul>
+<li>
+Fixed an annoying issue that could cause a unnecessary
+ambiguities in client code when compiling with <tt>NTL_EXCEPTIONS=on</tt>
+</ul>
+
+
 <p><hr><p>
 <h3>
 2016.04.26: Changes between NTL 9.7.1 and 9.8.0
@@ -45,14 +58,17 @@ more widely available <tt>__thread</tt>
 storage specifier be implemented, rather than the less widely available
 <tt>thread_local</tt> specifier (and it also makes direct use
 of the <tt>pthread</tt> library)
+<li>
+You can explicitly disable the hack by configuring NTL
+with <tt>NTL_DISABLE_TLS_HACK=on</tt>
 </ul>
 <li>
 This "hack"  has been successfully 
-tested on Linux with gcc 4.8.5 and above
+tested on Linux with gcc 4.8.5 
 and on Mac OSX 10.10 and 10.11 with clang
 <ul>
 <li>
-It should work with any gcc 4.8.x or higher, although I cannot confirm this
+It should work with any gcc 4.8.x or higher
 <li>
 Many thanks to Justin Walker for pushing this issue and 
 helping with the Mac OSX testing
