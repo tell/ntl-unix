@@ -381,11 +381,14 @@ void GivensComputeGS(mat_RR& B1, mat_RR& mu, mat_RR& aux, long k, long n,
 
 }
 
-NTL_THREAD_LOCAL static RR red_fudge;
-NTL_THREAD_LOCAL static long log_red = 0;
+NTL_TLS_GLOBAL_DECL(RR, red_fudge)
+
+static NTL_CHEAP_THREAD_LOCAL long log_red = 0;
 
 static void init_red_fudge()
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+
    log_red = long(0.50*RR::precision());
 
    power2(red_fudge, -log_red);
@@ -393,6 +396,8 @@ static void init_red_fudge()
 
 static void inc_red_fudge()
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+
 
    mul(red_fudge, red_fudge, 2);
    log_red--;
@@ -406,10 +411,10 @@ static void inc_red_fudge()
 
 
 
-NTL_THREAD_LOCAL static long verbose = 0;
-NTL_THREAD_LOCAL static unsigned long NumSwaps = 0;
-NTL_THREAD_LOCAL static double StartTime = 0;
-NTL_THREAD_LOCAL static double LastTime = 0;
+static NTL_CHEAP_THREAD_LOCAL long verbose = 0;
+static NTL_CHEAP_THREAD_LOCAL unsigned long NumSwaps = 0;
+static NTL_CHEAP_THREAD_LOCAL double StartTime = 0;
+static NTL_CHEAP_THREAD_LOCAL double LastTime = 0;
 
 
 
@@ -463,6 +468,8 @@ long ll_G_LLL_RR(mat_ZZ& B, mat_ZZ* U, const RR& delta, long deep,
            mat_RR& aux, long m, long init_k, long &quit,
            GivensCache_RR& cache)
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+
    long n = B.NumCols();
 
    long i, j, k, Fc1;
@@ -746,11 +753,13 @@ long G_LLL_RR(mat_ZZ& B, mat_ZZ& U, double delta, long deep,
 
 
 
-NTL_THREAD_LOCAL static vec_RR G_BKZConstant;
+NTL_TLS_GLOBAL_DECL(vec_RR, G_BKZConstant)
 
 static
 void ComputeG_BKZConstant(long beta, long p)
 {
+   NTL_TLS_GLOBAL_ACCESS(G_BKZConstant);
+
    RR c_PI;
    ComputePi(c_PI);
 
@@ -800,11 +809,14 @@ void ComputeG_BKZConstant(long beta, long p)
 
 }
 
-NTL_THREAD_LOCAL static vec_RR G_BKZThresh;
+NTL_TLS_GLOBAL_DECL(vec_RR, G_BKZThresh)
 
 static 
 void ComputeG_BKZThresh(RR *c, long beta)
 {
+   NTL_TLS_GLOBAL_ACCESS(G_BKZConstant);
+   NTL_TLS_GLOBAL_ACCESS(G_BKZThresh);
+
    G_BKZThresh.SetLength(beta-1);
 
    long i;
@@ -886,6 +898,10 @@ static
 long G_BKZ_RR(mat_ZZ& BB, mat_ZZ* UU, const RR& delta, 
          long beta, long prune, LLLCheckFct check)
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+   NTL_TLS_GLOBAL_ACCESS(G_BKZThresh);
+
+
    long m = BB.NumRows();
    long n = BB.NumCols();
    long m_orig = m;

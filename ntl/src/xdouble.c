@@ -271,7 +271,7 @@ xdouble to_xdouble(const ZZ& a)
    RRPush push;
    RR::SetPrecision(NTL_DOUBLE_PRECISION);
    
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
    conv(t, a);
 
    double x;
@@ -294,7 +294,7 @@ void conv(ZZ& x, const xdouble& a)
    RRPush push;
    RR::SetPrecision(NTL_DOUBLE_PRECISION);
 
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
    conv(t, b);
    conv(x, t);
 }
@@ -513,7 +513,7 @@ void MulSub(xdouble& z, const xdouble& a, const xdouble& b, const xdouble& c)
 
 double log(const xdouble& a)
 {
-   NTL_THREAD_LOCAL static double LogBound = log(NTL_XD_BOUND);
+   static const double LogBound = log(NTL_XD_BOUND); // GLOBAL (assumes C++11 thread-safe init)
    if (a.x <= 0) {
       ArithmeticError("log(xdouble): argument must be positive");
    }
@@ -566,9 +566,10 @@ long ComputeMax10Power()
 
 xdouble PowerOf10(const ZZ& e)
 {
-   NTL_THREAD_LOCAL static long init = 0;
-   NTL_THREAD_LOCAL static xdouble v10k;
-   NTL_THREAD_LOCAL static long k;
+   static NTL_CHEAP_THREAD_LOCAL long init = 0;
+   static NTL_CHEAP_THREAD_LOCAL long k = 0;
+
+   NTL_TLS_LOCAL(xdouble, v10k);
 
    if (!init) {
       k = ComputeMax10Power();

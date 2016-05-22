@@ -77,22 +77,18 @@ int main()
       random(a, n, m);
 
       t = GetTime();
-      kernel(x, a);
+      image(x, a);
       t = GetTime() - t;  cerr << t << "\n";
 
       cvt(A, a);
 
       t = GetTime();
-      kernel(X, A);
+      image(X, A);
       t = GetTime() - t;  cerr << t << "\n";
-
-      cerr << x.NumRows() << "\n";
 
       cvt(X1, x);
 
       if (X1 != X) TerminalError("BitMatTest NOT OK!!");
-
-      if (!IsZero(X*A)) TerminalError("BitMatTest NOT OK!!");
 
       cerr << "\n";
    }

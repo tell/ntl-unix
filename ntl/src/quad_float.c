@@ -733,7 +733,7 @@ ostream& operator<<(ostream& s, const quad_float& a)
    RR::SetPrecision(long(3.33*quad_float::oprec) + 10);
    RR::SetOutputPrecision(quad_float::oprec);
 
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
 
    conv(t, a);
    s << t;
@@ -746,7 +746,7 @@ istream& operator>>(istream& s, quad_float& x)
    RRPush push;
    RR::SetPrecision(4*NTL_DOUBLE_PRECISION);
 
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
    NTL_INPUT_CHECK_RET(s, s >> t);
    conv(x, t);
 
@@ -758,7 +758,7 @@ void random(quad_float& x)
    RRPush push;
    RR::SetPrecision(4*NTL_DOUBLE_PRECISION);
 
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
    random(t);
    conv(x, t);
 }
@@ -851,7 +851,7 @@ quad_float to_quad_float(const char *s)
    RRPush push;
    RR::SetPrecision(4*NTL_DOUBLE_PRECISION);
 
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
    conv(t, s);
    conv(x, t);
 
@@ -894,10 +894,8 @@ quad_float exp(const quad_float& x) { // New version 97 Aug 05
     ResourceError("exp(quad_float): overflow");
   }
 
-  // changed this from "const" to "static" in v5.3, since "const"
-  // causes the initialization to be performed with *every* invocation.
-  NTL_THREAD_LOCAL static quad_float Log2 = 
-    to_quad_float("0.6931471805599453094172321214581765680755");
+  static const quad_float Log2 = to_quad_float("0.6931471805599453094172321214581765680755");
+  // GLOBAL (assumes C++11 thread-safe init)
 
   quad_float y,temp,ysq,sum1,sum2;
   long iy;

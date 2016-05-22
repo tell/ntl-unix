@@ -388,10 +388,7 @@ void relaxed_power(mat_zz_p& X, const mat_zz_p& A, const ZZ& e, bool relax)
 // ******************************************************************
   
 
-// some local buffers
 
-NTL_THREAD_LOCAL static vec_long mul_aux_vec;
-NTL_THREAD_LOCAL static Vec<mulmod_precon_t> precon_vec;
 
 
 
@@ -432,6 +429,7 @@ void mul(vec_zz_p& x, const vec_zz_p& a, const mat_zz_p& B)
       long p = zz_p::modulus();
       mulmod_t pinv = zz_p::ModulusInverse();
 
+      NTL_TLS_LOCAL(vec_long, mul_aux_vec);
       vec_long::Watcher watch_mul_aux_vec(mul_aux_vec);
       mul_aux_vec.SetLength(m);
       long *acc = mul_aux_vec.elts();
@@ -534,6 +532,7 @@ void mul_aux(vec_zz_p& x, const mat_zz_p& A, const vec_zz_p& b)
    }
    else {
 
+      NTL_TLS_LOCAL(Vec<mulmod_precon_t>, precon_vec);
       Vec<mulmod_precon_t>::Watcher watch_precon_vec(precon_vec);
       precon_vec.SetLength(l);
       mulmod_precon_t *bpinv = precon_vec.elts();

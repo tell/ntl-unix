@@ -212,7 +212,7 @@ you should compile NTL with the flag <tt>-fp-model strict</tt>
 to enforce strict adherence to floating point standards.
 That said, some effort has been made to ensure that NTL
 works correctly even if the compiler does perform such
-regrouping, including replacement of <tt>x/y<tt> 
+regrouping, including replacement of <tt>x/y</tt> 
 by <tt>x*(1/y)</tt>.
 
 <p>
@@ -325,22 +325,18 @@ in the configuration script.
 Also, you will need a compiler and runtime library that 
 implements several key <tt>C++11</tt> features,
 including <tt>thread_local</tt> storage.
+<ul>
+<li>
+NOTE: as of v9.8, the requirements have been relaxed, so that
+for gcc and gcc-compatible compilers
+(such as clang and icc) only support of the gcc <tt>__thread</tt>
+storage specifier is required.
+<li>
+With these relaxed requirements, it is possible to build
+a thread safe version of NTL on Linux using gcc 4.8 and above,
+or on Mac OSX 10.10  and above.
 
-<p>
-<i>
-Currently (October 2015), there are still few compilers
-that satisfy the requirements.
-I have been able to compile and run multithreaded code
-using gcc 4.9.2 on a Linux system.
-I have not been able to do so on any current Mac OSX system:
-in fact, no compiler on current Mac systems (gcc or clang)
-yet have proper support for <tt>thread_local</tt> storage.
-</i>
-
-<p> <li>
-While extreme care has been taken with the design and implementation
-of thread safety, this feature is still fairly new and needs
-more stress testing.
+</ul>
 
 <p> <li>
 You must build NTL using GMP (i.e., configure with <tt>NTL_GMP_LIP=on</tt>).
@@ -351,7 +347,7 @@ be made so, but it is not a priority at this time.
 <li>
 The current version (v1.1) of the external gf2x
 library is not thread safe.
-Therefore, <b>you should build NTL using gf2x if you need a thread-safe
+Therefore, <b>you should NOT build NTL using gf2x if you need a thread-safe
 build</b>.
 </ul>
 

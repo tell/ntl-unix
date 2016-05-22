@@ -6,8 +6,7 @@
 NTL_START_IMPL
 
 
-static
-NTL_THREAD_LOCAL SmartPtr<zz_pInfoT> zz_pInfo_stg;
+NTL_TLS_GLOBAL_DECL(SmartPtr<zz_pInfoT>, zz_pInfo_stg)
 
 NTL_CHEAP_THREAD_LOCAL zz_pInfoT *zz_pInfo = 0;
 
@@ -171,11 +170,13 @@ zz_pContext::zz_pContext(INIT_USER_FFT_TYPE, long q) :
 
 void zz_pContext::save()
 {
+   NTL_TLS_GLOBAL_ACCESS(zz_pInfo_stg);
    ptr = zz_pInfo_stg;
 }
 
 void zz_pContext::restore() const
 {
+   NTL_TLS_GLOBAL_ACCESS(zz_pInfo_stg);
    zz_pInfo_stg = ptr;
    zz_pInfo = zz_pInfo_stg.get();
 }

@@ -10,16 +10,11 @@ NTL_START_IMPL
 
 
 
-static
-NTL_THREAD_LOCAL SmartPtr<ZZ_pInfoT> ZZ_pInfo_stg;
+NTL_TLS_GLOBAL_DECL(SmartPtr<ZZ_pInfoT>, ZZ_pInfo_stg)
+NTL_TLS_GLOBAL_DECL(SmartPtr<ZZ_pTmpSpaceT>, ZZ_pTmpSpace_stg)
 
 NTL_CHEAP_THREAD_LOCAL ZZ_pInfoT *ZZ_pInfo = 0;
-
-static
-NTL_THREAD_LOCAL SmartPtr<ZZ_pTmpSpaceT> ZZ_pTmpSpace_stg;
-
 NTL_CHEAP_THREAD_LOCAL ZZ_pTmpSpaceT *ZZ_pTmpSpace = 0;
-
 NTL_CHEAP_THREAD_LOCAL bool ZZ_pInstalled = false;
 
 
@@ -175,6 +170,7 @@ void ZZ_p::DoInstall()
       tmps->rem_tmp_vec.fetch(FFTInfo->rem_struct);
    }
 
+   NTL_TLS_GLOBAL_ACCESS(ZZ_pTmpSpace_stg);
    ZZ_pTmpSpace_stg = tmps; 
    ZZ_pTmpSpace = ZZ_pTmpSpace_stg.get();
 }
@@ -191,6 +187,7 @@ void ZZ_p::init(const ZZ& p)
 
 void ZZ_pContext::save() 
 { 
+   NTL_TLS_GLOBAL_ACCESS(ZZ_pInfo_stg);
    ptr = ZZ_pInfo_stg; 
 }
 
@@ -202,9 +199,11 @@ void ZZ_pContext::restore() const
    //    for example, a worker thread re-setting the current modulus
    //    in a multi-threaded build
 
+   NTL_TLS_GLOBAL_ACCESS(ZZ_pInfo_stg);
    ZZ_pInfo_stg = ptr;
    ZZ_pInfo = ZZ_pInfo_stg.get();
 
+   NTL_TLS_GLOBAL_ACCESS(ZZ_pTmpSpace_stg);
    ZZ_pTmpSpace_stg = 0;
    ZZ_pTmpSpace = 0;
 
@@ -234,7 +233,7 @@ void ZZ_pBak::restore()
 
 const ZZ_p& ZZ_p::zero()
 {
-   NTL_THREAD_LOCAL static ZZ_p z(INIT_NO_ALLOC);
+   static const ZZ_p z(INIT_NO_ALLOC); // GLOBAL (assumes C++11 thread-safe init)
    return z;
 }
 

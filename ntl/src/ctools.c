@@ -21,20 +21,15 @@ using namespace std;
  * side effect of forcing its argument into memory.
  */
 
-NTL_THREAD_LOCAL volatile double _ntl_IsFinite__local;
-NTL_THREAD_LOCAL volatile double *_ntl_IsFinite__ptr1 = &_ntl_IsFinite__local;
-NTL_THREAD_LOCAL volatile double *_ntl_IsFinite__ptr2 = &_ntl_IsFinite__local;
-NTL_THREAD_LOCAL volatile double *_ntl_IsFinite__ptr3 = &_ntl_IsFinite__local;
-NTL_THREAD_LOCAL volatile double *_ntl_IsFinite__ptr4 = &_ntl_IsFinite__local;
-NTL_THREAD_LOCAL volatile double *_ntl_IsFinite__ptr5 = &_ntl_IsFinite__local;
-NTL_THREAD_LOCAL volatile double *_ntl_IsFinite__ptr6 = &_ntl_IsFinite__local;
+NTL_CHEAP_THREAD_LOCAL volatile double _ntl_IsFinite__local = 0;
 
 long _ntl_IsFinite(double *p)
 {
-   *_ntl_IsFinite__ptr1 = *p;
-   *p = *_ntl_IsFinite__ptr5;
-   *_ntl_IsFinite__ptr3 = (*_ntl_IsFinite__ptr2 - *_ntl_IsFinite__ptr6);
-   if (*_ntl_IsFinite__ptr4 != 0.0) return 0;
+   _ntl_IsFinite__local = *p;
+   double x1 = _ntl_IsFinite__local;
+   double x2 = _ntl_IsFinite__local;
+   double x3 = x1-x2;
+   if (x3 != 0.0) return 0;
    return 1;
 }
 
@@ -51,8 +46,8 @@ long _ntl_IsFinite(double *p)
 
 void _ntl_ForceToMem(double *p)
 {
-   *_ntl_IsFinite__ptr1 = *p;
-   *p = *_ntl_IsFinite__ptr2;
+   _ntl_IsFinite__local = *p;
+   *p = _ntl_IsFinite__local;
 }
 
 
@@ -79,7 +74,7 @@ void _ntl_ForceToMem(double *p)
  * overly-agressive optimizing compilers from screwing things up.
  */
 
-NTL_THREAD_LOCAL volatile double _ntl_ldexp_zero = 0.0;
+NTL_CHEAP_THREAD_LOCAL volatile double _ntl_ldexp_zero = 0.0;
 
 double _ntl_ldexp(double x, long e)
 {

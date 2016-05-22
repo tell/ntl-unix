@@ -18,6 +18,62 @@ A Tour of NTL: Summary of Changes
 
 <p><hr><p>
 <h3>
+2016.04.26: Changes between NTL 9.7.1 and 9.8.0
+</h3>
+
+<ul>
+<p> <li>
+<b>Thread safety for the masses!</b>
+
+<ul>
+<li>
+Previous versions of NTL required full <tt>C++11</tt>
+compliance to achieve thread safety 
+<li>
+Unfortunately, many platforms (notably, Mac OSX)
+do not provide the necessary 
+features - in particular, they do not provide full, correct support
+for "thread local storage" (TLS)
+<li>
+This new release (by default) will apply a "TLS hack" 
+that works around this limitation (at least for 
+gcc and gcc-compatible compilers such as clang and icc)
+<ul>
+<li>
+With this "hack", it is only required that gcc's 
+more widely available <tt>__thread</tt>
+storage specifier be implemented, rather than the less widely available
+<tt>thread_local</tt> specifier (and it also makes direct use
+of the <tt>pthread</tt> library)
+</ul>
+<li>
+This "hack"  has been successfully 
+tested on Linux with gcc 4.8.5 and above
+and on Mac OSX 10.10 and 10.11 with clang
+<ul>
+<li>
+It should work with any gcc 4.8.x or higher, although I cannot confirm this
+<li>
+Many thanks to Justin Walker for pushing this issue and 
+helping with the Mac OSX testing
+</ul>
+</ul>
+
+<li><p>
+Fixed a "pseudo" bug in the test script: <tt>BitMatTest</tt>
+in <tt> make check</tt> was reporting "failure", but this was
+a bug in <tt>BitMatTest</tt>, not in NTL itself.
+
+<li>
+Fixed a real bug in the <tt>ReleaseThreadPool</tt>
+function (although NTL internally does not use this function,
+so only client code that called it directly would be affected).
+
+
+</ul>
+
+<p><hr><p>
+<h3>
 2016.04.20: Changes between NTL 9.7.0 and 9.7.1
 </h3>
 

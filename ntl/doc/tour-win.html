@@ -40,17 +40,20 @@ you will be much better served using the
 <p>
 <b>Windows Users:</b>
 you should consider using a Unix emulation environment like
-<a href="http://www.mingw.org/">MinGW</a> 
-or <a href="https://www.cygwin.com/">Cygwin</a>, instead of 
+<a href="https://www.cygwin.com/">Cygwin</a>
+or
+<a href="http://www.mingw.org/">MinGW</a>, 
+instead of 
 Microsoft development tools.
+<p>
 Why?
 <ul>
 <li>
-MinGW uses gcc, which generally adheres closer to language
+These environments use gcc, which generally adheres closer to language
 standards and produces more efficient code that Microsoft's 
 compiler.
 <p><li>
-With MinGW, you can use NTL's 
+With these environments, you can use NTL's 
 <a href="tour-unix.html">Unix distribution</a>,
 and the installation is almost entirely automatic:
 no pointing and clicking -- not much more 
@@ -59,14 +62,40 @@ You can also easily to install GMP
 and run NTL's performance-tuning Wizard.
 These factors combined can make a hige difference in performance, 
 easily giving you a huge (10x or more) performance improvement.
+<p><li>
+On 64-bit machines, you should definitely consider Cygwin:
+the 64-bit version of Cygwin gives you an 
+<a href="https://en.wikipedia.org/wiki/64-bit_computing">LP64 data model</a>,
+which for many reasons is preferable to the Windows data model.
+In particular, you will get the most performance out of NTL
+in this environment.
 </ul>
 
 
+
+
+<p>
+The remaining instructions on this page only apply 
+if you <i>do not</i> use a Unix emulation environment
+like Cygwin or MinGW.
+
+<p>
+If you really want to get the most out of NTL, please stop, 
+and seriously consider using a Unix emulation environment
+and 
+NTL's 
+<a href="tour-unix.html">Unix distribution</a>.
+Your code will be much snappier, and your quality of life 
+will be much better.
+
+<p>
+You have been warned.
 
 <p>
 <b>
 Obtaining and unpacking NTL.
 </b>
+
 <p>
 
 To obtain the source code and documentation for NTL,

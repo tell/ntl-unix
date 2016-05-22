@@ -190,11 +190,15 @@ void ComputeGS(mat_ZZ& B, xdouble **B1, xdouble **mu, xdouble *b,
    c[k] = b[k] - s;
 }
 
-NTL_THREAD_LOCAL static xdouble red_fudge = to_xdouble(0);
-NTL_THREAD_LOCAL static long log_red = 0;
+NTL_TLS_GLOBAL_DECL_INIT(xdouble, red_fudge, (to_xdouble(0)))
+
+
+static NTL_CHEAP_THREAD_LOCAL long log_red = 0;
 
 static void init_red_fudge()
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+
    long i;
 
    log_red = long(0.50*NTL_DOUBLE_PRECISION);
@@ -206,6 +210,8 @@ static void init_red_fudge()
 
 static void inc_red_fudge()
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+
 
    red_fudge = red_fudge * 2;
    log_red--;
@@ -218,10 +224,10 @@ static void inc_red_fudge()
 
 
 
-NTL_THREAD_LOCAL static long verbose = 0;
-NTL_THREAD_LOCAL static unsigned long NumSwaps = 0;
-NTL_THREAD_LOCAL static double StartTime = 0;
-NTL_THREAD_LOCAL static double LastTime = 0;
+static NTL_CHEAP_THREAD_LOCAL long verbose = 0;
+static NTL_CHEAP_THREAD_LOCAL unsigned long NumSwaps = 0;
+static NTL_CHEAP_THREAD_LOCAL double StartTime = 0;
+static NTL_CHEAP_THREAD_LOCAL double LastTime = 0;
 
 
 
@@ -274,6 +280,8 @@ long ll_LLL_XD(mat_ZZ& B, mat_ZZ* U, xdouble delta, long deep,
            xdouble *b, xdouble *c,
            long m, long init_k, long &quit)
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+
    long n = B.NumCols();
 
    long i, j, k, Fc1;
@@ -285,7 +293,7 @@ long ll_LLL_XD(mat_ZZ& B, mat_ZZ* U, xdouble delta, long deep,
    xdouble *tp;
 
 
-   NTL_THREAD_LOCAL static xdouble bound = to_xdouble(0);
+   NTL_TLS_LOCAL_INIT(xdouble, bound, (to_xdouble(0)));
 
 
    if (bound == 0) {
@@ -617,11 +625,13 @@ long LLL_XD(mat_ZZ& B, mat_ZZ& U, double delta, long deep,
 
 
 
-NTL_THREAD_LOCAL static vec_xdouble BKZConstant;
+NTL_TLS_GLOBAL_DECL(vec_xdouble, BKZConstant)
 
 static
 void ComputeBKZConstant(long beta, long p)
 {
+   NTL_TLS_GLOBAL_ACCESS(BKZConstant);
+
    const double c_PI = 3.14159265358979323846264338328;
    const double LogPI = 1.14472988584940017414342735135;
 
@@ -672,11 +682,14 @@ void ComputeBKZConstant(long beta, long p)
    }
 }
 
-NTL_THREAD_LOCAL static vec_xdouble BKZThresh;
+NTL_TLS_GLOBAL_DECL(vec_xdouble, BKZThresh)
 
 static
 void ComputeBKZThresh(xdouble *c, long beta)
 {
+   NTL_TLS_GLOBAL_ACCESS(BKZConstant);
+   NTL_TLS_GLOBAL_ACCESS(BKZThresh);
+
    BKZThresh.SetLength(beta-1);
 
    long i;
@@ -750,6 +763,10 @@ static
 long BKZ_XD(mat_ZZ& BB, mat_ZZ* UU, xdouble delta, 
          long beta, long prune, LLLCheckFct check)
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+   NTL_TLS_GLOBAL_ACCESS(BKZThresh);
+
+
    long m = BB.NumRows();
    long n = BB.NumCols();
    long m_orig = m;

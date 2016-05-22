@@ -15,8 +15,8 @@ NTL_START_IMPL
 
 const string& CurrentThreadID()
 {
-   NTL_THREAD_LOCAL static string ID;
-   NTL_THREAD_LOCAL static bool initialized = false;
+   NTL_TLS_LOCAL(string, ID);
+   static NTL_CHEAP_THREAD_LOCAL bool initialized = false;
 
    if (!initialized) {
 #ifdef NTL_THREADS

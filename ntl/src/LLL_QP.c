@@ -430,12 +430,13 @@ void ComputeGS(mat_ZZ& B, quad_float **B1, quad_float **mu, quad_float *b,
    c[k] = b[k] - s;
 }
 
-NTL_THREAD_LOCAL static quad_float red_fudge = to_quad_float(0);
-NTL_THREAD_LOCAL static long log_red = 0;
-NTL_THREAD_LOCAL static long verbose = 0;
-NTL_THREAD_LOCAL static unsigned long NumSwaps = 0;
-NTL_THREAD_LOCAL static double StartTime = 0;
-NTL_THREAD_LOCAL static double LastTime = 0;
+NTL_TLS_GLOBAL_DECL_INIT(quad_float, red_fudge, (to_quad_float(0)))
+
+static NTL_CHEAP_THREAD_LOCAL long log_red = 0;
+static NTL_CHEAP_THREAD_LOCAL long verbose = 0;
+static NTL_CHEAP_THREAD_LOCAL unsigned long NumSwaps = 0;
+static NTL_CHEAP_THREAD_LOCAL double StartTime = 0;
+static NTL_CHEAP_THREAD_LOCAL double LastTime = 0;
 
 
 static void LLLStatus(long max_k, double t, long m, const mat_ZZ& B)
@@ -483,6 +484,8 @@ static void LLLStatus(long max_k, double t, long m, const mat_ZZ& B)
 
 static void init_red_fudge()
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+
    long i;
 
    // initial log_red should be <= NTL_DOUBLE_PRECISION-2,
@@ -498,6 +501,8 @@ static void init_red_fudge()
 
 static void inc_red_fudge()
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+
 
    red_fudge = red_fudge * 2;
    log_red--;
@@ -515,6 +520,8 @@ long ll_LLL_QP(mat_ZZ& B, mat_ZZ* U, quad_float delta, long deep,
            quad_float *b, quad_float *c,
            long m, long init_k, long &quit)
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+
    long n = B.NumCols();
 
    long i, j, k, Fc1;
@@ -527,7 +534,7 @@ long ll_LLL_QP(mat_ZZ& B, mat_ZZ* U, quad_float delta, long deep,
    quad_float *tp;
 
 
-   NTL_THREAD_LOCAL static double bound = 0;
+   static NTL_CHEAP_THREAD_LOCAL double bound = 0;
 
 
    if (bound == 0) {
@@ -884,11 +891,14 @@ long LLL_QP(mat_ZZ& B, mat_ZZ& U, double delta, long deep,
 
 
 
-NTL_THREAD_LOCAL static vec_quad_float BKZConstant;
+NTL_TLS_GLOBAL_DECL(vec_quad_float, BKZConstant)
 
 static
 void ComputeBKZConstant(long beta, long p)
 {
+   NTL_TLS_GLOBAL_ACCESS(BKZConstant);
+
+
    const quad_float c_PI = 
       to_quad_float("3.141592653589793238462643383279502884197");
    const quad_float LogPI = 
@@ -942,11 +952,14 @@ void ComputeBKZConstant(long beta, long p)
 }
 
 
-NTL_THREAD_LOCAL static vec_quad_float BKZThresh;
+NTL_TLS_GLOBAL_DECL(vec_quad_float, BKZThresh)
 
 static 
 void ComputeBKZThresh(quad_float *c, long beta)
 {
+   NTL_TLS_GLOBAL_ACCESS(BKZConstant);
+   NTL_TLS_GLOBAL_ACCESS(BKZThresh);
+
    BKZThresh.SetLength(beta-1);
 
    long i;
@@ -1021,6 +1034,10 @@ static
 long BKZ_QP(mat_ZZ& BB, mat_ZZ* UU, quad_float delta, 
          long beta, long prune, LLLCheckFct check)
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+   NTL_TLS_GLOBAL_ACCESS(BKZThresh);
+
+
 
    long m = BB.NumRows();
    long n = BB.NumCols();
@@ -1495,6 +1512,10 @@ static
 long BKZ_QP1(mat_ZZ& BB, mat_ZZ* UU, quad_float delta, 
          long beta, long prune, LLLCheckFct check)
 {
+   NTL_TLS_GLOBAL_ACCESS(red_fudge);
+   NTL_TLS_GLOBAL_ACCESS(BKZThresh);
+
+
 
    long m = BB.NumRows();
    long n = BB.NumCols();

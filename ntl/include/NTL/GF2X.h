@@ -738,7 +738,7 @@ public:
    ~GF2XWatcher() { watched.KillBig(); } 
 };
 
-#define NTL_GF2XRegister(x) NTL_THREAD_LOCAL static GF2X x; GF2XWatcher _WATCHER__ ## x(x)
+#define NTL_GF2XRegister(x) NTL_TLS_LOCAL(GF2X, x); GF2XWatcher _WATCHER__ ## x(x)
 
 
 

@@ -31,7 +31,7 @@ NTL_START_IMPL
 
 const ZZ_pX& ZZ_pX::zero()
 {
-   NTL_THREAD_LOCAL static ZZ_pX z;
+   static const ZZ_pX z; // GLOBAL (relies on C++11 thread-safe init)
    return z;
 }
 
@@ -1426,9 +1426,14 @@ void ZZ_pXModRep::SetSize(long NewN)
 
 
 
-NTL_THREAD_LOCAL static vec_long ModularRepBuf;
 // FIXME: maybe I could put this is scratch space associated
 // with the current modulus
+static inline
+vec_long& ModularRepBuf()
+{
+   NTL_TLS_LOCAL(vec_long, t);
+   return t;
+}
 
 
 void ToModularRep(vec_long& x, const ZZ_p& a, const ZZ_pFFTInfoT *FFTInfo,
@@ -1493,7 +1498,7 @@ NTL_TBDECL(ToFFTRep)(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
    
 
    long n, i, j, m, j1;
-   vec_long& t = ModularRepBuf;
+   vec_long& t = ModularRepBuf();
 
 
    if (k > FFTInfo->MaxRoot) 
@@ -1607,7 +1612,7 @@ void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
         ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
         // TmpSpace is thread local!
 
-        vec_long& t = ModularRepBuf;
+        vec_long& t = ModularRepBuf();
         t.SetLength(nprimes);
       
         for (long j = first; j < last; j++) {
@@ -1626,7 +1631,7 @@ void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
          ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
          // TmpSpace is thread local!
  
-         vec_long& t = ModularRepBuf;
+         vec_long& t = ModularRepBuf();
          t.SetLength(nprimes);
    
          NTL_ZZ_pRegister(accum);
@@ -1671,7 +1676,7 @@ NTL_TBDECL(RevToFFTRep)(FFTRep& y, const vec_ZZ_p& x,
 
 
    long n, i, j, m, j1;
-   vec_long& t = ModularRepBuf;
+   vec_long& t = ModularRepBuf();
    NTL_ZZ_pRegister(accum);
 
    if (k > FFTInfo->MaxRoot) 
@@ -1774,7 +1779,7 @@ void RevToFFTRep(FFTRep& y, const vec_ZZ_p& x,
       ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
       // TmpSpace is thread local!
  
-      vec_long& t = ModularRepBuf;
+      vec_long& t = ModularRepBuf();
       t.SetLength(nprimes);
 
       long local_offset = (offset + first) & (n-1);
@@ -1831,7 +1836,7 @@ NTL_TBDECL(FromFFTRep)(ZZ_pX& x, FFTRep& y, long lo, long hi)
 
    long k, n, i, j, l;
 
-   vec_long& t = ModularRepBuf;
+   vec_long& t = ModularRepBuf();
 
    long nprimes = FFTInfo->NumPrimes;
    t.SetLength(nprimes);
@@ -1910,7 +1915,7 @@ void FromFFTRep(ZZ_pX& x, FFTRep& y, long lo, long hi)
       ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
       // TmpSpace is thread local!
 
-      vec_long& t = ModularRepBuf;
+      vec_long& t = ModularRepBuf();
       t.SetLength(nprimes);
 
       for (long j = first; j < last; j++) {
@@ -1947,7 +1952,7 @@ NTL_TBDECL(RevFromFFTRep)(vec_ZZ_p& x, FFTRep& y, long lo, long hi)
 
    long k, n, i, j, l;
 
-   vec_long& t = ModularRepBuf;
+   vec_long& t = ModularRepBuf();
 
    k = y.k;
    n = (1L << k);
@@ -2019,7 +2024,7 @@ void RevFromFFTRep(vec_ZZ_p& x, FFTRep& y, long lo, long hi)
       ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
       // TmpSpace is thread local!
 
-      vec_long& t = ModularRepBuf;
+      vec_long& t = ModularRepBuf();
       t.SetLength(nprimes);
 
       for (long j = first; j < last; j++) {
@@ -2051,7 +2056,7 @@ NTL_TBDECL(NDFromFFTRep)(ZZ_pX& x, const FFTRep& y, long lo, long hi, FFTRep& z)
 
    long k, n, i, j, l;
 
-   vec_long& t = ModularRepBuf;
+   vec_long& t = ModularRepBuf();
 
    long nprimes = FFTInfo->NumPrimes;
    t.SetLength(nprimes);
@@ -2134,7 +2139,7 @@ void NDFromFFTRep(ZZ_pX& x, const FFTRep& y, long lo, long hi, FFTRep& z)
       ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
       // TmpSpace is thread local!
 
-      vec_long& t = ModularRepBuf;
+      vec_long& t = ModularRepBuf();
       t.SetLength(nprimes);
 
       for (long j = first; j < last; j++) {
@@ -2171,7 +2176,7 @@ NTL_TBDECL(FromFFTRep)(ZZ_p* x, FFTRep& y, long lo, long hi)
 
    long k, n, i, j;
 
-   vec_long& t = ModularRepBuf;
+   vec_long& t = ModularRepBuf();
 
    k = y.k;
    n = (1L << k);
@@ -2244,7 +2249,7 @@ void FromFFTRep(ZZ_p* x, FFTRep& y, long lo, long hi)
       ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
       // TmpSpace is thread local!
 
-      vec_long& t = ModularRepBuf;
+      vec_long& t = ModularRepBuf();
       t.SetLength(nprimes);
 
       for (long idx = first; idx < last; idx++) {
@@ -2631,7 +2636,7 @@ NTL_TBDECL(ToZZ_pXModRep)(ZZ_pXModRep& y, const ZZ_pX& x, long lo, long hi)
 
 
    long n, i, j;
-   vec_long& t = ModularRepBuf;
+   vec_long& t = ModularRepBuf();
 
 
    long nprimes = FFTInfo->NumPrimes;
@@ -2690,7 +2695,7 @@ void ToZZ_pXModRep(ZZ_pXModRep& y, const ZZ_pX& x, long lo, long hi)
       ZZ_pTmpSpaceT *TmpSpace = ZZ_p::GetTmpSpace();
       // TmpSpace is thread local!
 
-      vec_long& t = ModularRepBuf;
+      vec_long& t = ModularRepBuf();
       t.SetLength(nprimes);
 
       for (long j = first; j < last; j++) {
@@ -2836,7 +2841,7 @@ void FromZZ_pXModRep(ZZ_pX& x, const ZZ_pXModRep& a, long lo, long hi)
    long n = a.n;
    long nprimes = FFTInfo->NumPrimes;
 
-   vec_long& t = ModularRepBuf;
+   vec_long& t = ModularRepBuf();
    t.SetLength(nprimes);
 
    hi = min(hi, n-1);

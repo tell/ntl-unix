@@ -12,7 +12,7 @@ NTL_START_IMPL
 
 const ZZ_pEX& ZZ_pEX::zero()
 {
-   NTL_THREAD_LOCAL static ZZ_pEX z;
+   static const ZZ_pEX z; // GLOBAL (assumes C++11 thread-safe init)
    return z;
 }
 

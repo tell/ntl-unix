@@ -16,8 +16,8 @@ using namespace std;
 
 double _ntl_GetTime()
 {
-   NTL_THREAD_LOCAL static clock_t last_clock = 0;
-   NTL_THREAD_LOCAL static double acc = 0;
+   static NTL_CHEAP_THREAD_LOCAL clock_t last_clock = 0;
+   static NTL_CHEAP_THREAD_LOCAL double acc = 0;
 
    clock_t this_clock;
    double delta;

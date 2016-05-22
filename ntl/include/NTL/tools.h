@@ -1,4 +1,7 @@
 
+
+
+
 #ifndef NTL_tools__H
 #define NTL_tools__H
 
@@ -13,6 +16,18 @@
 
 #include <cstdlib>
 #include <cmath>
+
+
+
+#if (defined(NTL_THREADS) && defined(__GNUC__) && !defined(NTL_DISABLE_TLS_HACK))
+#define NTL_TLS_HACK
+#endif
+
+
+
+#ifdef NTL_TLS_HACK
+#include <pthread.h>
+#endif
 
 
 
@@ -612,6 +627,86 @@ public:
 
 #endif
 
+
+
+
+
+#ifdef NTL_TLS_HACK
+
+
+namespace details_pthread {
+
+
+template<class T> void do_delete_aux(T* t) noexcept { delete t;  }
+// an exception here would likely lead to a complete mess...
+// the noexcept specification should force an immediate termination
+
+template<class T> void do_delete(void* t) { do_delete_aux((T*)t);  }
+
+using namespace std;
+// I'm not sure if pthread stuff might be placed in namespace std
+
+struct key_wrapper {
+   pthread_key_t key;
+
+   key_wrapper(void (*destructor)(void*))
+   {
+      if (pthread_key_create(&key, destructor))
+         ResourceError("pthread_key_create failed");
+   }
+
+   template<class T>
+   T* set(T *p)
+   {
+      if (!p) MemoryError();
+      if (pthread_setspecific(key, p)) {
+         do_delete_aux(p);
+         ResourceError("pthread_setspecific failed");
+      }
+      return p;
+   }
+
+};
+
+}
+
+
+#define NTL_TLS_LOCAL_INIT(type, var, init)  \
+   static NTL_CHEAP_THREAD_LOCAL type *_ntl_hidden_variable_tls_local_ptr_ ## var = 0;  \
+   type *_ntl_hidden_variable_tls_local_ptr1_ ## var = _ntl_hidden_variable_tls_local_ptr_ ## var;  \
+   if (!_ntl_hidden_variable_tls_local_ptr1_ ## var) {  \
+      static details_pthread::key_wrapper hidden_variable_key(details_pthread::do_delete<type>);  \
+      type *_ntl_hidden_variable_tls_local_ptr2_ ## var = hidden_variable_key.set(NTL_NEW_OP type init);  \
+      _ntl_hidden_variable_tls_local_ptr1_ ## var = _ntl_hidden_variable_tls_local_ptr2_ ## var;  \
+      _ntl_hidden_variable_tls_local_ptr_ ## var = _ntl_hidden_variable_tls_local_ptr1_ ## var;  \
+   }  \
+   type &var = *_ntl_hidden_variable_tls_local_ptr1_ ## var  \
+
+
+
+#else
+
+#define NTL_TLS_LOCAL_INIT(type,var,init) static NTL_THREAD_LOCAL type var init
+
+#endif
+
+#define NTL_EMPTY_ARG
+#define NTL_TLS_LOCAL(type,var) NTL_TLS_LOCAL_INIT(type,var,NTL_EMPTY_ARG)
+
+#define NTL_TLS_GLOBAL_DECL_INIT(type,var,init)  \
+   typedef type _ntl_hidden_typedef_tls_access_ ## var;  \
+   static inline  \
+   type& _ntl_hidden_function_tls_access_ ## var() {  \
+      NTL_TLS_LOCAL_INIT(type,var,init);  \
+      return var;  \
+   }  \
+
+
+#define NTL_TLS_GLOBAL_DECL(type,var) NTL_TLS_GLOBAL_DECL_INIT(type,var,NTL_EMPTY_ARG)
+
+#define NTL_TLS_GLOBAL_ACCESS(var) \
+_ntl_hidden_typedef_tls_access_ ## var & var = _ntl_hidden_function_tls_access_ ## var()
+      
 
 
 

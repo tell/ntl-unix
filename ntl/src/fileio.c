@@ -82,7 +82,7 @@ FileList::~FileList()
 
 const char *FileName(const char* stem, long d)
 {
-   NTL_THREAD_LOCAL static string sbuf;
+   NTL_TLS_LOCAL(string, sbuf);
 
    stringstream ss;
    ss << "tmp-ntl-" << stem;
@@ -112,11 +112,12 @@ const string& UniqueID()
    static AtomicCounter cnt; // a GLOBAL counter
    
 
-   NTL_THREAD_LOCAL static string ID;
-   NTL_THREAD_LOCAL static bool initialized = false;
-   NTL_THREAD_LOCAL static unsigned long local_cnt = cnt.inc();
-   NTL_THREAD_LOCAL static unsigned long local_time = time(0);
-   NTL_THREAD_LOCAL static unsigned long local_clock = clock();
+   NTL_TLS_LOCAL(string, ID);
+
+   NTL_TLS_LOCAL_INIT(bool, initialized, (false));
+   NTL_TLS_LOCAL_INIT(unsigned long, local_cnt, (cnt.inc()));
+   NTL_TLS_LOCAL_INIT(unsigned long, local_time, (time(0)));
+   NTL_TLS_LOCAL_INIT(unsigned long, local_clock, (clock()));
 
    if (!initialized) {
       stringstream ss;

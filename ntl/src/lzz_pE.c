@@ -7,8 +7,7 @@
 NTL_START_IMPL
 
 
-static
-NTL_THREAD_LOCAL SmartPtr<zz_pEInfoT> zz_pEInfo_stg;
+NTL_TLS_GLOBAL_DECL(SmartPtr<zz_pEInfoT>, zz_pEInfo_stg)
 
 NTL_CHEAP_THREAD_LOCAL zz_pEInfoT *zz_pEInfo = 0; 
 
@@ -51,11 +50,13 @@ void zz_pE::init(const zz_pX& p)
 
 void zz_pEContext::save()
 {
+   NTL_TLS_GLOBAL_ACCESS(zz_pEInfo_stg);
    ptr = zz_pEInfo_stg;
 }
 
 void zz_pEContext::restore() const
 {
+   NTL_TLS_GLOBAL_ACCESS(zz_pEInfo_stg);
    zz_pEInfo_stg = ptr;
    zz_pEInfo = zz_pEInfo_stg.get();
 }
@@ -83,7 +84,7 @@ void zz_pEBak::restore()
 
 const zz_pE& zz_pE::zero()
 {
-   NTL_THREAD_LOCAL static zz_pE z(INIT_NO_ALLOC);
+   static const zz_pE z(INIT_NO_ALLOC); // GLOBAL (assumes C++11 thread-safe init)
    return z;
 }
 

@@ -62,7 +62,7 @@ GF2X::GF2X(INIT_SIZE_TYPE, long n)
 
 const GF2X& GF2X::zero()
 {
-   NTL_THREAD_LOCAL static GF2X z;
+   static const GF2X z; // GLOBAL (assumes C++11 thread-safe init)
    return z;
 }
 
@@ -1041,7 +1041,7 @@ void mul(GF2X& c, const GF2X& a, const GF2X& b)
    // finally: the general case
 
 
-   NTL_THREAD_LOCAL static WordVector mem;
+   NTL_TLS_LOCAL(WordVector, mem);
    WordVectorWatcher watch_mem(mem);
 
    const _ntl_ulong *ap = a.xrep.elts(), *bp = b.xrep.elts();
@@ -1407,9 +1407,9 @@ void mul(GF2X& c, const GF2X& a, const GF2X& b)
    // finally: the general case
 
    
-   NTL_THREAD_LOCAL static WordVector mem;
-   NTL_THREAD_LOCAL static WordVector stk;
-   NTL_THREAD_LOCAL static WordVector vec;
+   NTL_TLS_LOCAL(WordVector, mem);
+   NTL_TLS_LOCAL(WordVector, stk);
+   NTL_TLS_LOCAL(WordVector, vec);
 
    WordVectorWatcher watch_mem(mem);
    WordVectorWatcher watch_stk(stk);

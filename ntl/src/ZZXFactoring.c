@@ -847,7 +847,7 @@ void UpdateLocalInfo(LocalInfoT& LocalInfo, vec_ZZ& pdeg,
                      const vec_ZZ_pX& W, const vec_ZZX& factors,
                      const ZZX& f, long k, long verbose)
 {
-   NTL_THREAD_LOCAL static long cnt = 0;
+   static NTL_CHEAP_THREAD_LOCAL long cnt = 0;
 
    if (verbose) {
       cnt = (cnt + 1) % 100;

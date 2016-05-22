@@ -28,6 +28,18 @@ int main()
    cout << "NTL_THREADS=0\n";
 #endif
 
+#ifdef NTL_DISABLE_TLS_HACK
+   cout << "NTL_DISABLE_TLS_HACK=1\n";
+#else
+   cout << "NTL_DISABLE_TLS_HACK=0\n";
+#endif
+
+#ifdef NTL_ENABLE_TLS_HACK
+   cout << "NTL_ENABLE_TLS_HACK=1\n";
+#else
+   cout << "NTL_ENABLE_TLS_HACK=0\n";
+#endif
+
 #ifdef NTL_EXCEPTIONS
    cout << "NTL_EXCEPTIONS=1\n";
 #else

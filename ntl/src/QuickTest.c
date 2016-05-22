@@ -172,6 +172,14 @@ int main()
    cerr << "NTL_THREADS\n";
 #endif
 
+#ifdef NTL_DISABLE_TLS_HACK
+   cerr << "NTL_DISABLE_TLS_HACK\n";
+#endif
+
+#ifdef NTL_ENABLE_TLS_HACK
+   cerr << "NTL_ENABLE_TLS_HACK\n";
+#endif
+
 
 #ifdef NTL_EXCEPTIONS
    cerr << "NTL_EXCEPTIONS\n";
@@ -183,21 +191,21 @@ int main()
 
 
 #ifdef NTL_LEGACY_SP_MULMOD
-   cout << "NTL_LEGACY_SP_MULMOD\n";
+   cerr << "NTL_LEGACY_SP_MULMOD\n";
 #endif
 
 
 #ifdef NTL_DISABLE_LONGDOUBLE
-   cout << "NTL_DISABLE_LONGDOUBLE\n";
+   cerr << "NTL_DISABLE_LONGDOUBLE\n";
 #endif
 
 
 #ifdef NTL_DISABLE_LONGLONG
-   cout << "NTL_DISABLE_LONGLONG\n";
+   cerr << "NTL_DISABLE_LONGLONG\n";
 #endif
 
 #ifdef NTL_MAXIMIZE_SP_NBITS
-   cout << "NTL_MAXIMIZE_SP_NBITS\n";
+   cerr << "NTL_MAXIMIZE_SP_NBITS\n";
 #endif
 
 
@@ -286,15 +294,12 @@ cerr << "Performance Options:\n";
 
 
 #ifdef NTL_FFT_BIGTAB
-   cout << "NTL_FFT_BIGTAB\n";
+   cerr << "NTL_FFT_BIGTAB\n";
 #endif
 
 #ifdef NTL_FFT_LAZYMUL
-   cout << "NTL_FFT_LAZYMUL\n";
+   cerr << "NTL_FFT_LAZYMUL\n";
 #endif
-
-
-
 
 
 #ifdef NTL_TBL_REM

@@ -30,6 +30,14 @@ int main()
    cout << "NTL_THREADS\n";
 #endif
 
+#ifdef NTL_DISABLE_TLS_HACK
+   cout << "NTL_DISABLE_TLS_HACK\n";
+#endif
+
+#ifdef NTL_ENABLE_TLS_HACK
+   cout << "NTL_ENABLE_TLS_HACK\n";
+#endif
+
 #ifdef NTL_EXCEPTIONS
    cout << "NTL_EXCEPTIONS\n";
 #endif

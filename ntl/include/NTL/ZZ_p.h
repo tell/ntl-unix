@@ -533,7 +533,7 @@ public:
    ~ZZ_pWatcher() { watched.KillBig(); }
 };
 
-#define NTL_ZZ_pRegister(x) NTL_THREAD_LOCAL static ZZ_p x; ZZ_pWatcher _WATCHER__ ## x(x); x.allocate()
+#define NTL_ZZ_pRegister(x) NTL_TLS_LOCAL(ZZ_p, x); ZZ_pWatcher _WATCHER__ ## x(x); x.allocate()
 
 // FIXME: register variables that are allocated with respect to one modulus
 // and then reused with another modulus may have initial values that are

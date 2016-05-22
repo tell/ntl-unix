@@ -404,7 +404,7 @@ typedef WrappedPtr<_ntl_gbigint_body, _ntl_gbigint_deleter> _ntl_gbigint_wrapped
 // this logic onto what was originally pure-C code.
 
 
-#define GRegister(x) NTL_THREAD_LOCAL static _ntl_gbigint_wrapped x; _ntl_gbigint_watcher _WATCHER__ ## x(&x)
+#define GRegister(x) NTL_TLS_LOCAL(_ntl_gbigint_wrapped, x); _ntl_gbigint_watcher _WATCHER__ ## x(&x)
 
 // #define GRegister(x) NTL_THREAD_LOCAL static _ntl_gbigint x(0); _ntl_gbigint_watcher _WATCHER__ ## x(&x)
 
@@ -2921,18 +2921,12 @@ double _ntl_glog(_ntl_gbigint n)
 {
    GRegister(tmp);
 
-   NTL_THREAD_LOCAL static double log_2;
-   NTL_THREAD_LOCAL static long init = 0;
+   static const double log_2 = log(2.0); // GLOBAL (assumes C++11 thread-safe init)
 
    long s;
    long shamt;
    long correction;
    double x;
-
-   if (!init) {
-      log_2 = log(2.0);
-      init = 1;
-   }
 
    if (_ntl_gsign(n) <= 0)
       ArithmeticError("log argument <= 0");

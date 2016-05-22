@@ -9,7 +9,7 @@ NTL_START_IMPL
 
 const ZZX& ZZX::zero()
 {
-   NTL_THREAD_LOCAL static ZZX z;
+   static const ZZX z; // GLOBAL (relies on C++11 thread-safe init)
    return z;
 }
 

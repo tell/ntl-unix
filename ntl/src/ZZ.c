@@ -16,14 +16,16 @@ NTL_START_IMPL
 
 const ZZ& ZZ::zero()
 {
-   NTL_THREAD_LOCAL static ZZ z;
+   
+   static const ZZ z; // GLOBAL (relies on C++11 thread-safe init)
    return z;
 }
 
 
 const ZZ& ZZ_expo(long e)
 {
-   NTL_THREAD_LOCAL static ZZ expo_helper;
+   NTL_TLS_LOCAL(ZZ, expo_helper);
+
    conv(expo_helper, e);
    return expo_helper;
 }
@@ -56,9 +58,9 @@ void SubMod(ZZ& x, long a, const ZZ& b, const ZZ& n)
 
 // ****** input and output
 
-NTL_THREAD_LOCAL static long iodigits = 0;
-NTL_THREAD_LOCAL static long ioradix = 0;
 
+static NTL_CHEAP_THREAD_LOCAL long iodigits = 0;
+static NTL_CHEAP_THREAD_LOCAL long ioradix = 0;
 // iodigits is the greatest integer such that 10^{iodigits} < NTL_WSP_BOUND
 // ioradix = 10^{iodigits}
 
@@ -175,7 +177,7 @@ void _ZZ_local_stack::push(long x)
 static
 void PrintDigits(ostream& s, long d, long justify)
 {
-   NTL_THREAD_LOCAL static Vec<char> buf(INIT_SIZE, iodigits);
+   NTL_TLS_LOCAL_INIT(Vec<char>, buf, (INIT_SIZE, iodigits));
 
    long i = 0;
 
@@ -1832,11 +1834,13 @@ void RandomStream::do_get(unsigned char *NTL_RESTRICT res, long n)
 }
 
 
-NTL_THREAD_LOCAL static UniquePtr<RandomStream> CurrentRandomStream;
+NTL_TLS_GLOBAL_DECL(UniquePtr<RandomStream>,  CurrentRandomStream);
 
 
 void SetSeed(const RandomStream& s)
 {
+   NTL_TLS_GLOBAL_ACCESS(CurrentRandomStream);
+
    if (!CurrentRandomStream)
       CurrentRandomStream.make(s);
    else
@@ -1878,6 +1882,8 @@ void InitRandomStream()
 static inline
 RandomStream& LocalGetCurrentRandomStream()
 {
+   NTL_TLS_GLOBAL_ACCESS(CurrentRandomStream);
+
    if (!CurrentRandomStream) InitRandomStream();
    return *CurrentRandomStream;
 }
@@ -1997,7 +2003,7 @@ void RandomBits(ZZ& x, long l)
    long nb = (l+7)/8;
    unsigned long mask = (1UL << (8 - nb*8 + l)) - 1UL;
 
-   NTL_THREAD_LOCAL static Vec<unsigned char> buf_mem;
+   NTL_TLS_LOCAL(Vec<unsigned char>, buf_mem);
    Vec<unsigned char>::Watcher watch_buf_mem(buf_mem);
 
    buf_mem.SetLength(nb);
@@ -2033,7 +2039,7 @@ void RandomLen(ZZ& x, long l)
    long nb = (l+7)/8;
    unsigned long mask = (1UL << (8 - nb*8 + l)) - 1UL;
 
-   NTL_THREAD_LOCAL static Vec<unsigned char> buf_mem;
+   NTL_TLS_LOCAL(Vec<unsigned char>, buf_mem);
    Vec<unsigned char>::Watcher watch_buf_mem(buf_mem);
 
    buf_mem.SetLength(nb);
@@ -2108,7 +2114,7 @@ void RandomBnd(ZZ& x, const ZZ& bnd)
 
    unsigned long mask = (1UL << (16 - nb*8 + l)) - 1UL;
 
-   NTL_THREAD_LOCAL static Vec<unsigned char> buf_mem;
+   NTL_TLS_LOCAL(Vec<unsigned char>, buf_mem);
    Vec<unsigned char>::Watcher watch_buf_mem(buf_mem);
    buf_mem.SetLength(nb);
    unsigned char *buf = buf_mem.elts();
@@ -2140,7 +2146,7 @@ void RandomBnd(ZZ& x, const ZZ& bnd)
 static
 double Log2(double x)
 {
-   NTL_THREAD_LOCAL static double log2 = log(2.0);
+   static const double log2 = log(2.0); // GLOBAL (relies on C++11 thread-safe init)
    return log(x)/log2;
 }
 

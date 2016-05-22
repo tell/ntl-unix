@@ -22,7 +22,7 @@ const long zz_pX_trace_crossover[5] = {200, 350, 450, 800, 800};
 
 const zz_pX& zz_pX::zero()
 {
-   NTL_THREAD_LOCAL static zz_pX z;
+   static const zz_pX z; // GLOBAL (assumes C++11 thread-safe init)
    return z;
 }
 

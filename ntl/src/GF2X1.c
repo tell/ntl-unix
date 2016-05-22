@@ -39,15 +39,16 @@ NTL_START_IMPL
 
 
 
-NTL_THREAD_LOCAL
-static vec_GF2X stab;  // used by PlainDivRem and PlainRem
+NTL_TLS_GLOBAL_DECL(vec_GF2X, stab)  
+// used by PlainDivRem and PlainRem
 
-NTL_THREAD_LOCAL
-static WordVector GF2X_rembuf;
+NTL_TLS_GLOBAL_DECL(WordVector, GF2X_rembuf)
 
 
 void PlainDivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2X& b)
 {
+   NTL_TLS_GLOBAL_ACCESS(stab);
+
    long da, sa, posa, db, sb, posb, dq, sq, posq;
 
    da = deg(a);
@@ -70,6 +71,7 @@ void PlainDivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2X& b)
    sq = dq/NTL_BITS_PER_LONG + 1;
    posq = dq - NTL_BITS_PER_LONG*(sq-1);
 
+   NTL_TLS_GLOBAL_ACCESS(GF2X_rembuf);
    WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
 
    _ntl_ulong *ap;
@@ -166,6 +168,8 @@ void PlainDiv(GF2X& q, const GF2X& a, const GF2X& b)
 
 void PlainRem(GF2X& r, const GF2X& a, const GF2X& b)
 {
+   NTL_TLS_GLOBAL_ACCESS(stab);
+
    long da, sa, posa, db, sb, posb;
 
    da = deg(a);
@@ -184,6 +188,7 @@ void PlainRem(GF2X& r, const GF2X& a, const GF2X& b)
    posb = db - NTL_BITS_PER_LONG*(sb-1);
 
 
+   NTL_TLS_GLOBAL_ACCESS(GF2X_rembuf);
    WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
 
    _ntl_ulong *ap;
@@ -283,7 +288,7 @@ void NewtonInvTrunc(GF2X& c, const GF2X& a, long e)
       return;
    }
 
-   NTL_THREAD_LOCAL static vec_long E;
+   NTL_TLS_LOCAL(vec_long, E);
    E.SetLength(0);
    append(E, e);
    while (e > 8) {
@@ -1277,6 +1282,7 @@ void rem(GF2X& r, const GF2X& a, const GF2XModulus& F)
          UseMulRemX1(r, a, F);
    }
    else if (F.method == GF2X_MOD_SPECIAL) {
+      NTL_TLS_GLOBAL_ACCESS(GF2X_rembuf);
       WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
 
       long sa = a.xrep.length();
@@ -1324,6 +1330,7 @@ void rem(GF2X& r, const GF2X& a, const GF2XModulus& F)
       r.normalize();
    }
    else {
+      NTL_TLS_GLOBAL_ACCESS(GF2X_rembuf);
       WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
 
       long sa = a.xrep.length();
@@ -1401,6 +1408,7 @@ void DivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2XModulus& F)
          UseMulDivRemX1(q, r, a, F);
    }
    else if (F.method == GF2X_MOD_SPECIAL) {
+      NTL_TLS_GLOBAL_ACCESS(GF2X_rembuf);
       WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
 
       long sa = a.xrep.length();
@@ -1467,6 +1475,7 @@ void DivRem(GF2X& q, GF2X& r, const GF2X& a, const GF2XModulus& F)
       r.normalize();
    }
    else {
+      NTL_TLS_GLOBAL_ACCESS(GF2X_rembuf);
       WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
 
       long sa = a.xrep.length();
@@ -1563,6 +1572,7 @@ void div(GF2X& q, const GF2X& a, const GF2XModulus& F)
          UseMulDivX1(q, a, F);
    }
    else if (F.method == GF2X_MOD_SPECIAL) {
+      NTL_TLS_GLOBAL_ACCESS(GF2X_rembuf);
       WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
 
       long sa = a.xrep.length();
@@ -1615,6 +1625,7 @@ void div(GF2X& q, const GF2X& a, const GF2XModulus& F)
       }
    }
    else {
+      NTL_TLS_GLOBAL_ACCESS(GF2X_rembuf);
       WordVectorWatcher watch_GF2X_rembuf(GF2X_rembuf);
 
       long sa = a.xrep.length();

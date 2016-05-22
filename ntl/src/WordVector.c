@@ -124,7 +124,7 @@ void WordVector::kill()
   
 void CopySwap(WordVector& x, WordVector& y)
 {
-   NTL_THREAD_LOCAL static WordVector t;
+   NTL_TLS_LOCAL(WordVector, t);
    WordVectorWatcher watch_t(t);
 
    long sz_x = x.length();

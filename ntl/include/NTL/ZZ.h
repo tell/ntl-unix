@@ -152,7 +152,7 @@ public:
    ~ZZWatcher() { watched.KillBig(); }
 };
 
-#define NTL_ZZRegister(x) NTL_THREAD_LOCAL static ZZ x; ZZWatcher _WATCHER__ ## x(x)
+#define NTL_ZZRegister(x) NTL_TLS_LOCAL(ZZ, x); ZZWatcher _WATCHER__ ## x(x)
 
 
 

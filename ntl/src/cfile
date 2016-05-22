@@ -83,6 +83,26 @@ using the configure script.
 
 #endif
 
+#if @{NTL_DISABLE_TLS_HACK}
+#define NTL_DISABLE_TLS_HACK
+
+/* Set if you want to compile NTL without "TLS hack"
+ *
+ * To re-build after changing this flag: rm *.o; make ntl.a
+ */
+
+#endif
+
+#if @{NTL_ENABLE_TLS_HACK}
+#define NTL_ENABLE_TLS_HACK
+
+/* Set if you want to compile NTL with "TLS hack"
+ *
+ * To re-build after changing this flag: rm *.o; make ntl.a
+ */
+
+#endif
+
 #if @{NTL_THREADS}
 #define NTL_THREADS
 

@@ -545,11 +545,15 @@ long RevInc(long a, long k)
 }
 
 
-
-NTL_THREAD_LOCAL static 
-Vec<long> brc_mem[NTL_FFTMaxRoot+1];
 // FIXME: This could potentially be shared across threads, using
 // a "lazy table".
+static inline 
+Vec<long> *get_brc_mem()
+{
+   NTL_TLS_LOCAL_INIT(Vec< Vec<long> >, brc_mem_vec, (INIT_SIZE, NTL_FFTMaxRoot+1));
+   return brc_mem_vec.elts();
+}
+
 
 
 #if 0
@@ -558,6 +562,8 @@ Vec<long> brc_mem[NTL_FFTMaxRoot+1];
 static
 void BitReverseCopy(long * NTL_RESTRICT A, const long * NTL_RESTRICT a, long k)
 {
+   Vec<long> *brc_mem = get_brc_mem();
+
    long n = 1L << k;
    long* NTL_RESTRICT rev;
    long i, j;
@@ -578,6 +584,8 @@ void BitReverseCopy(long * NTL_RESTRICT A, const long * NTL_RESTRICT a, long k)
 static
 void BitReverseCopy(unsigned long * NTL_RESTRICT A, const long * NTL_RESTRICT a, long k)
 {
+   Vec<long> *brc_mem = get_brc_mem();
+
    long n = 1L << k;
    long* NTL_RESTRICT rev;
    long i, j;
@@ -609,6 +617,8 @@ void BitReverseCopy(unsigned long * NTL_RESTRICT A, const long * NTL_RESTRICT a,
 static
 long *BRC_init(long k)
 {
+   Vec<long> *brc_mem = get_brc_mem();
+
    long n = (1L << k);
    brc_mem[k].SetLength(n);
    long *rev = brc_mem[k].elts();
@@ -623,6 +633,8 @@ static
 void BasicBitReverseCopy(long * NTL_RESTRICT B, 
                          const long * NTL_RESTRICT A, long k)
 {
+   Vec<long> *brc_mem = get_brc_mem();
+
    long n = 1L << k;
    long* NTL_RESTRICT rev;
    long i, j;
@@ -639,7 +651,9 @@ void BasicBitReverseCopy(long * NTL_RESTRICT B,
 static
 void COBRA(long * NTL_RESTRICT B, const long * NTL_RESTRICT A, long k)
 {
-   NTL_THREAD_LOCAL static Vec<long> BRC_temp;
+   Vec<long> *brc_mem = get_brc_mem();
+
+   NTL_TLS_LOCAL(Vec<long>, BRC_temp);
 
    long q = NTL_BRC_Q;
    long k1 = k - 2*q;
@@ -690,6 +704,8 @@ static
 void BasicBitReverseCopy(unsigned long * NTL_RESTRICT B, 
                          const long * NTL_RESTRICT A, long k)
 {
+   Vec<long> *brc_mem = get_brc_mem();
+
    long n = 1L << k;
    long* NTL_RESTRICT rev;
    long i, j;
@@ -706,7 +722,9 @@ void BasicBitReverseCopy(unsigned long * NTL_RESTRICT B,
 static
 void COBRA(unsigned long * NTL_RESTRICT B, const long * NTL_RESTRICT A, long k)
 {
-   NTL_THREAD_LOCAL static Vec<unsigned long> BRC_temp;
+   Vec<long> *brc_mem = get_brc_mem();
+
+   NTL_TLS_LOCAL(Vec<unsigned long>, BRC_temp);
 
    long q = NTL_BRC_Q;
    long k1 = k - 2*q;
@@ -814,9 +832,9 @@ void NTL_FFT_ROUTINE_NOTAB(long* A, const long* a, long k, const FFTPrimeInfo& i
 
    // assume k > 1
 
-   NTL_THREAD_LOCAL static Vec<long> wtab_store;
-   NTL_THREAD_LOCAL static Vec<mulmod_precon_t> wqinvtab_store;
-   NTL_THREAD_LOCAL static Vec<long> AA_store;
+   NTL_TLS_LOCAL(Vec<long>, wtab_store);
+   NTL_TLS_LOCAL(Vec<mulmod_precon_t>, wqinvtab_store);
+   NTL_TLS_LOCAL(Vec<long>, AA_store);
 
    wtab_store.SetLength(1L << (k-2));
    wqinvtab_store.SetLength(1L << (k-2));
@@ -1291,16 +1309,16 @@ void NTL_FFT_ROUTINE_NOTAB(long* A, const long* a, long k, const FFTPrimeInfo& i
 
    // assume k >= 2
 
-   NTL_THREAD_LOCAL static Vec<unsigned long> AA_store;
+   NTL_TLS_LOCAL(Vec<unsigned long>, AA_store);
    AA_store.SetLength(1L << k);
    unsigned long *AA = AA_store.elts();
 
-   NTL_THREAD_LOCAL static Vec<long> wtab_store;
+   NTL_TLS_LOCAL(Vec<long>, wtab_store);
    wtab_store.SetLength(max(2, 1L << (k-2))); 
    // allocate space for at least 2 elements, to deal with a corner case when k == 2
    long * NTL_RESTRICT wtab = wtab_store.elts();
 
-   NTL_THREAD_LOCAL static Vec<mulmod_precon_t> wqinvtab_store;
+   NTL_TLS_LOCAL(Vec<mulmod_precon_t>, wqinvtab_store);
    wqinvtab_store.SetLength(max(2, 1L << (k-2)));
    // allocate space for at least 2 elements, to deal with a corner case when k == 2
    mulmod_precon_t * NTL_RESTRICT wqinvtab = wqinvtab_store.elts();
@@ -1727,7 +1745,7 @@ void NTL_FFT_ROUTINE_TAB(long* A, const long* a, long k, const FFTPrimeInfo& inf
 
    if (k >= tab.length()) PrecompFFTMultipliers(k, q, qinv, root, tab);
 
-   NTL_THREAD_LOCAL static Vec<long> AA_store;
+   NTL_TLS_LOCAL(Vec<long>, AA_store);
    AA_store.SetLength(1L << k);
    long *AA = AA_store.elts();
 
@@ -2072,7 +2090,7 @@ void NTL_FFT_ROUTINE_TAB(long* A, const long* a, long k, const FFTPrimeInfo& inf
 
    if (k >= tab.length()) LazyPrecompFFTMultipliers(k, q, qinv, root, tab);
 
-   NTL_THREAD_LOCAL static Vec<unsigned long> AA_store;
+   NTL_TLS_LOCAL(Vec<unsigned long>, AA_store);
    AA_store.SetLength(1L << k);
    unsigned long *AA = AA_store.elts();
 

@@ -257,6 +257,8 @@ LIBDIR=$(PREFIX)/lib
 INCLUDEDIR=$(PREFIX)/include
 DOCDIR=$(PREFIX)/share/doc
 
+NTL_DISABLE_TLS_HACK=off
+NTL_ENABLE_TLS_HACK=off
 
 NTL_LEGACY_NO_NAMESPACE=off
 NTL_LEGACY_INPUT_ERROR=off
@@ -372,6 +374,27 @@ DOCDIR=$(PREFIX)/share/doc
 # Execution of 'make install' copies header files into $(INCLUDEDIR)/NTL,
 # copies the library itself to $(LIBDIR)/libntl.a, and copies the
 # documentation files into $(DOCDIR)/NTL.
+
+########## Disable/enable TLS hack
+
+NTL_DISABLE_TLS_HACK=off
+NTL_ENABLE_TLS_HACK=off
+
+# when building NTL with NTL_THREADS=on, if the compiler is gcc-compatible, a
+# "TLS hack" may be used to workaround the fact that many compilers do not
+# (correctly) implement C++11's thread_local feature.  The workaround is to use
+# gcc's more limited __thread feature, and to emulate thread_local semantics
+# using pthread routines.
+# 
+# "gcc-compatible" means that the "__GNUC__" macro is defined, which means the
+# TLS hack may be used for gcc, clang, and icc compilers.  The current version
+# of NTL will enable this hack by default, but you can disable it by specifying
+# NTL_DISABLE_TLS_HACK=on.  At some point in the future, this default behavior
+# may change, in which case you will still be able to force the TLS hack by
+# specifying NTL_ENABLE_TLS_HACK=on.
+
+
+
 
 
 

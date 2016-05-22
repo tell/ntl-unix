@@ -12,7 +12,7 @@ NTL_START_IMPL
 
 const GF2EX& GF2EX::zero()
 {
-   NTL_THREAD_LOCAL static GF2EX z;
+   static const GF2EX z; // GLOBAL (assumes C++11 thread-safe init)
    return z;
 }
 

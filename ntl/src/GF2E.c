@@ -6,9 +6,7 @@
 
 NTL_START_IMPL
 
-static
-NTL_THREAD_LOCAL
-SmartPtr<GF2EInfoT> GF2EInfo_stg; 
+NTL_TLS_GLOBAL_DECL(SmartPtr<GF2EInfoT>, GF2EInfo_stg)
 
 NTL_CHEAP_THREAD_LOCAL
 GF2EInfoT *GF2EInfo = 0; 
@@ -99,11 +97,13 @@ void GF2E::init(const GF2X& p)
 
 void GF2EContext::save()
 {
+   NTL_TLS_GLOBAL_ACCESS(GF2EInfo_stg);
    ptr = GF2EInfo_stg;
 }
 
 void GF2EContext::restore() const
 {
+   NTL_TLS_GLOBAL_ACCESS(GF2EInfo_stg);
    GF2EInfo_stg = ptr;
    GF2EInfo = GF2EInfo_stg.get();
 }
@@ -132,7 +132,7 @@ void GF2EBak::restore()
 
 const GF2E& GF2E::zero()
 {
-   NTL_THREAD_LOCAL static GF2E z(INIT_NO_ALLOC);
+   static const GF2E z(INIT_NO_ALLOC); // GLOBAL (assumes C++11 thread-safe init)
    return z;
 }
 

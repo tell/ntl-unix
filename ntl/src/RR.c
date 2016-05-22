@@ -108,7 +108,7 @@ void MakeRRPrec(RR& x, const ZZ& a, long e, long p)
 
 void random(RR& z)
 {
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
    RandomBits(t.x, RR::prec); 
    t.e = -RR::prec;
    normalize(z, t);
@@ -177,7 +177,7 @@ void set(RR& z)
 
 void add(RR& z, const RR& a, const RR& b)
 {
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
 
    if (IsZero(a.x)) {
       xcopy(z, b);
@@ -230,7 +230,7 @@ void AddPrec(RR& x, const RR& a, const RR& b, long p)
 
 void sub(RR& z, const RR& a, const RR& b)
 {
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
 
    if (IsZero(a.x)) {
       negate(z, b);
@@ -322,7 +322,7 @@ void AbsPrec(RR& x, const RR& a, long p)
 
 void mul(RR& z, const RR& a, const RR& b)
 {
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
 
    mul(t.x, a.x, b.x);
    t.e = a.e + b.e;
@@ -344,7 +344,7 @@ void MulPrec(RR& x, const RR& a, const RR& b, long p)
 
 void sqr(RR& z, const RR& a)
 {
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
 
    sqr(t.x, a.x);
    t.e = a.e + a.e;
@@ -383,7 +383,7 @@ void div(RR& z, const RR& a, const RR& b)
    long k = RR::prec - la + lb + 1;
    if (k < 0) k = 0;
 
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
    NTL_ZZRegister(A);
    NTL_ZZRegister(B);
    NTL_ZZRegister(R);
@@ -467,7 +467,7 @@ void SqrRootPrec(RR& x, const RR& a, long p)
 
 long compare(const RR& a, const RR& b)
 {
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
 
    SubPrec(t, a, b, 1);
    return sign(t);
@@ -483,7 +483,7 @@ long operator==(const RR& a, const RR& b)
 
 void trunc(RR& z, const RR& a)
 {
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
 
    if (a.e >= 0) 
       xcopy(z, a);
@@ -508,7 +508,7 @@ void TruncPrec(RR& x, const RR& a, long p)
 
 void floor(RR& z, const RR& a)
 {
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
 
    if (a.e >= 0) 
       xcopy(z, a);
@@ -535,7 +535,7 @@ void FloorPrec(RR& x, const RR& a, long p)
 
 void ceil(RR& z, const RR& a)
 {
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
 
    if (a.e >= 0)
       xcopy(z, a);
@@ -583,7 +583,7 @@ void round(RR& z, const RR& a)
       return;
    }
 
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
    ConvPrec(t, a, len+a.e);
    xcopy(z, t);
 }
@@ -697,7 +697,7 @@ void conv(RR& z, double a)
 
    int e;
    double f;
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
 
    f = frexp(a, &e);
 
@@ -779,7 +779,7 @@ void RoundToZZ(ZZ& z, const RR& a)
       return;
    }
 
-   NTL_THREAD_LOCAL static RR t;
+   NTL_TLS_LOCAL(RR, t);
 
    ConvPrec(t, a, len+a.e);
 
@@ -801,7 +801,7 @@ void conv(long& z, const RR& a)
 void conv(double& z, const RR& aa)
 {
    double x;
-   NTL_THREAD_LOCAL static RR a;
+   NTL_TLS_LOCAL(RR, a);
 
    ConvPrec(a, aa, NTL_DOUBLE_PRECISION);
    // round to NTL_DOUBLE_PRECISION bits to avoid double overflow
@@ -815,7 +815,7 @@ void conv(double& z, const RR& aa)
 
 void add(RR& z, const RR& a, double b)
 {
-   NTL_THREAD_LOCAL static RR B;
+   NTL_TLS_LOCAL(RR, B);
    B = b;
    add(z, a, B);
 }
@@ -824,14 +824,14 @@ void add(RR& z, const RR& a, double b)
 
 void sub(RR& z, const RR& a, double b)
 {
-   NTL_THREAD_LOCAL static RR B;
+   NTL_TLS_LOCAL(RR, B);
    B = b;
    sub(z, a, B);
 }
 
 void sub(RR& z, double a, const RR& b)
 {
-   NTL_THREAD_LOCAL static RR A;
+   NTL_TLS_LOCAL(RR, A);
    A = a;
    sub(z, A, b);
 }
@@ -840,7 +840,7 @@ void sub(RR& z, double a, const RR& b)
 
 void mul(RR& z, const RR& a, double b)
 {
-   NTL_THREAD_LOCAL static RR B;
+   NTL_TLS_LOCAL(RR, B);
    B = b;
    mul(z, a, B);
 }
@@ -848,14 +848,14 @@ void mul(RR& z, const RR& a, double b)
 
 void div(RR& z, const RR& a, double b)
 {
-   NTL_THREAD_LOCAL static RR B;
+   NTL_TLS_LOCAL(RR, B);
    B = b;
    div(z, a, B);
 }
 
 void div(RR& z, double a, const RR& b)
 {
-   NTL_THREAD_LOCAL static RR A;
+   NTL_TLS_LOCAL(RR, A);
    A = a;
    div(z, A, b);
 }
@@ -863,7 +863,7 @@ void div(RR& z, double a, const RR& b)
 
 void inv(RR& z, const RR& a)
 {
-   NTL_THREAD_LOCAL static RR one = to_RR(1);
+   NTL_TLS_LOCAL_INIT(RR, one, (to_RR(1)));
    div(z, one, a);
 }
 
@@ -884,7 +884,7 @@ long compare(const RR& a, double b)
 {
    if (b == 0) return sign(a);
 
-   NTL_THREAD_LOCAL static RR B;
+   NTL_TLS_LOCAL(RR, B);
    B = b;
    return compare(a, B);
 }
@@ -895,7 +895,7 @@ long operator==(const RR& a, double b)
    if (b == 0) return IsZero(a);
    if (b == 1) return IsOne(a);
 
-   NTL_THREAD_LOCAL static RR B;
+   NTL_TLS_LOCAL(RR, B);
    B = b;
    return a == B;
 }
@@ -1149,7 +1149,9 @@ void power2(RR& z, long e)
 
 void conv(RR& z, const quad_float& a)
 {
-   NTL_THREAD_LOCAL static RR hi, lo, res;
+   NTL_TLS_LOCAL(RR, hi);
+   NTL_TLS_LOCAL(RR, lo);
+   NTL_TLS_LOCAL(RR, res);
 
    ConvPrec(hi, a.hi, NTL_DOUBLE_PRECISION);
    ConvPrec(lo, a.lo, NTL_DOUBLE_PRECISION);
@@ -1174,7 +1176,8 @@ void ConvPrec(RR& x, const quad_float& a, long p)
 
 void conv(quad_float& z, const RR& a)
 {
-   NTL_THREAD_LOCAL static RR a_hi, a_lo;
+   NTL_TLS_LOCAL(RR, a_hi);
+   NTL_TLS_LOCAL(RR, a_lo);
 
    ConvPrec(a_hi, a, NTL_DOUBLE_PRECISION);  // high order bits
    SubPrec(a_lo, a, a_hi, NTL_DOUBLE_PRECISION);  // low order bits
@@ -1366,8 +1369,9 @@ void ReallyComputeE(RR& res)
 
 void ComputeE(RR& res)
 {
-   NTL_THREAD_LOCAL static long prec = 0;
-   NTL_THREAD_LOCAL static RR e;
+   static NTL_CHEAP_THREAD_LOCAL long prec = 0;
+
+   NTL_TLS_LOCAL(RR, e);
 
    RRPush push;
    long p = RR::precision();
@@ -1470,8 +1474,9 @@ void ReallyComputeLn2(RR& res)
 
 void ComputeLn2(RR& res)
 {
-   NTL_THREAD_LOCAL static long prec = 0;
-   NTL_THREAD_LOCAL static RR ln2;
+   static NTL_CHEAP_THREAD_LOCAL long prec = 0;
+
+   NTL_TLS_LOCAL(RR, ln2);
 
    RRPush push;
    long p = RR::precision();
@@ -1555,8 +1560,9 @@ void log(RR& res, const RR& x)
 
 void ComputeLn10(RR& res)
 {
-   NTL_THREAD_LOCAL static long prec = 0;
-   NTL_THREAD_LOCAL static RR ln10;
+   static NTL_CHEAP_THREAD_LOCAL long prec = 0;
+
+   NTL_TLS_LOCAL(RR, ln10);
 
    RRPush push;
    long p = RR::precision();
@@ -1791,8 +1797,9 @@ void ReallyComputePi(RR& res)
 
 void ComputePi(RR& res)
 {
-   NTL_THREAD_LOCAL static long prec = 0;
-   NTL_THREAD_LOCAL static RR pi;
+   static NTL_CHEAP_THREAD_LOCAL long prec = 0;
+
+   NTL_TLS_LOCAL(RR, pi);
 
    RRPush push;
    long p = RR::precision();
