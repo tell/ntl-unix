@@ -516,7 +516,7 @@ public:
   {
     if (cnt <= 0) return;
     if (!pool || pool->active()) {
-      if (cnt > 0) LogicError("friendly_exec_index: not enough threads");
+      if (cnt > 1) LogicError("relaxed_exec_index: not enough threads");
       fct(0);
     }
     else {

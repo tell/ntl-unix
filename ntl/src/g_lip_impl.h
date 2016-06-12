@@ -5137,7 +5137,9 @@ _ntl_rem_struct *_ntl_rem_struct_build(long n, _ntl_gbigint modulus, long (*p)(l
    }
 #endif
 
-   if (n >= 32 && n <= 256) {
+   if (0) {
+   // this no longer seems to be useful
+
       UniqueArray<long> q;
       long i, j;
       long levels, vec_len;
@@ -5237,7 +5239,7 @@ _ntl_rem_struct *_ntl_rem_struct_build(long n, _ntl_gbigint modulus, long (*p)(l
    }
 
 
-   if (n >= 32) {
+   if (n > 800) {
       UniqueArray<long> q;
       long i, j;
       long levels, vec_len;
