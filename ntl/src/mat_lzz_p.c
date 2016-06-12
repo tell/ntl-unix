@@ -48,10 +48,7 @@ struct mat_window_zz_p {
       ncols = c2-c1;
    }
 
-   zz_p * operator[](long i) const { return &A[i+r_offset][c_offset]; }
-   // DIRT: this assumes A[i].elts() is always non-null, which will
-   // always be the case for matrices because of the semantics of FixLength.
-   // Also, in the applications, the number of columns is always non-zero.
+   zz_p * operator[](long i) const { return A[i+r_offset].elts() + c_offset; }
 
    long NumRows() const { return nrows; }
    long NumCols() const { return ncols; }
@@ -84,10 +81,7 @@ struct const_mat_window_zz_p {
       ncols = c2-c1;
    }
 
-   const zz_p * operator[](long i) const { return &A[i+r_offset][c_offset]; }
-   // DIRT: this assumes A[i].elts() is always non-null, which will
-   // always be the case for matrices because of the semantics of FixLength.
-   // Also, in the applications, the number of columns is always non-zero.
+   const zz_p * operator[](long i) const { return A[i+r_offset].elts() + c_offset; }
 
    long NumRows() const { return nrows; }
    long NumCols() const { return ncols; }
@@ -109,9 +103,9 @@ void add(const mat_window_zz_p& X,
    long p = zz_p::modulus();
   
    for (long i = 0; i < n; i++) {   
-      zz_p *x = &X[i][0]; 
-      const zz_p *a = &A[i][0]; 
-      const zz_p *b = &B[i][0]; 
+      zz_p *x = X[i]; 
+      const zz_p *a = A[i]; 
+      const zz_p *b = B[i]; 
       for (long j = 0; j < m; j++) {  
          x[j].LoopHole() = AddMod(rep(a[j]), rep(b[j]), p);
       }
@@ -133,9 +127,9 @@ void sub(const mat_window_zz_p& X,
    long p = zz_p::modulus();
   
    for (long i = 0; i < n; i++) {   
-      zz_p *x = &X[i][0]; 
-      const zz_p *a = &A[i][0]; 
-      const zz_p *b = &B[i][0]; 
+      zz_p *x = X[i]; 
+      const zz_p *a = A[i]; 
+      const zz_p *b = B[i]; 
       for (long j = 0; j < m; j++) {  
          x[j].LoopHole() = SubMod(rep(a[j]), rep(b[j]), p);
       }
@@ -175,7 +169,7 @@ void add(mat_zz_p& X, const mat_zz_p& A, const mat_zz_p& B)
    long p = zz_p::modulus();
   
    for (long i = 0; i < n; i++) {   
-      zz_p *x = &X[i][0]; 
+      zz_p *x = X[i].elts(); 
       const zz_p *a = A[i].elts();
       const zz_p *b = B[i].elts();
       for (long j = 0; j < m; j++) {  
@@ -197,7 +191,7 @@ void sub(mat_zz_p& X, const mat_zz_p& A, const mat_zz_p& B)
    long p = zz_p::modulus();
   
    for (long i = 0; i < n; i++) {   
-      zz_p *x = &X[i][0]; 
+      zz_p *x = X[i].elts(); 
       const zz_p *a = A[i].elts();
       const zz_p *b = B[i].elts();
       for (long j = 0; j < m; j++) {  
@@ -254,7 +248,7 @@ void negate(mat_zz_p& X, const mat_zz_p& A)
    long p = zz_p::modulus();
   
    for (long i = 0; i < n; i++) {   
-      zz_p *x = &X[i][0]; 
+      zz_p *x = X[i].elts(); 
       const zz_p *a = A[i].elts();
       for (long j = 0; j < m; j++) {  
          x[j].LoopHole() = NegateMod(rep(a[j]), p);
@@ -1476,14 +1470,6 @@ typedef unsigned long uhlong;
 
 
 
-// NOTE: the following code sequence will generate imulq 
-// instructions on x86_64 machines, which empirically is faster
-// than using the mulq instruction or even the mulxq instruction,
-// (tested on a Haswell machine).
-#define NTL_CAST_ULL(x) ((NTL_ULL_TYPE) (x))
-//#define NTL_CAST_ULL(x) ((NTL_ULL_TYPE)(unsigned long)(x))
-#define NTL_MUL_ULL(x,y) (NTL_CAST_ULL(x)*NTL_CAST_ULL(y))
-
 
 // NOTE: the following code is hardcoded for MAT_BLK_SZ == 32.
 // Also, we special case NTL_BITS_PER_LONG-NTL_SP_NBITS > 2, which
@@ -1497,32 +1483,32 @@ void muladd1_by_32(long *x, const long *a, const long *b,
 {
    for (long j = 0; j < MAT_BLK_SZ; j++) {
 
-      NTL_ULL_TYPE sum = cast_unsigned(x[j]);
-
+       ll_type sum;
+       ll_init(sum, x[j]);
 #if 0
       for (long i = 0; i < n; i++)
-         sum += NTL_MUL_ULL(a[i], b[i]);
+         ll_imul_add(sum, a[i], b[i]);
 #else
       long i=0;
       for(; i <= n-8; i+= 8) {
-         sum += NTL_MUL_ULL(a[i+0], b[i+0]);
-         sum += NTL_MUL_ULL(a[i+1], b[i+1]);
-         sum += NTL_MUL_ULL(a[i+2], b[i+2]);
-         sum += NTL_MUL_ULL(a[i+3], b[i+3]);
+         ll_imul_add(sum, a[i+0], b[i+0]);
+         ll_imul_add(sum, a[i+1], b[i+1]);
+         ll_imul_add(sum, a[i+2], b[i+2]);
+         ll_imul_add(sum, a[i+3], b[i+3]);
 
-         sum += NTL_MUL_ULL(a[i+4], b[i+4]);
-         sum += NTL_MUL_ULL(a[i+5], b[i+5]);
-         sum += NTL_MUL_ULL(a[i+6], b[i+6]);
-         sum += NTL_MUL_ULL(a[i+7], b[i+7]);
+         ll_imul_add(sum, a[i+4], b[i+4]);
+         ll_imul_add(sum, a[i+5], b[i+5]);
+         ll_imul_add(sum, a[i+6], b[i+6]);
+         ll_imul_add(sum, a[i+7], b[i+7]);
       }
 
       for (; i < n; i++)
-         sum += NTL_MUL_ULL(a[i], b[i]);
+         ll_imul_add(sum, a[i], b[i]);
       
 #endif
 
-      unsigned long sum0 = sum;
-      unsigned long sum1 = sum >> NTL_BITS_PER_LONG;
+      unsigned long sum0 = ll_get_lo(sum);
+      unsigned long sum1 = ll_get_hi(sum);
 
       long res;
       
@@ -1544,43 +1530,44 @@ void muladd1_by_32_full(long *x, const long *a, const long *b,
 {
    for (long j = 0; j < MAT_BLK_SZ; j++) {
 
-      NTL_ULL_TYPE sum = cast_unsigned(x[j]);
+      ll_type sum;
+      ll_init(sum, x[j]);
 
-      sum += NTL_MUL_ULL(a[0], b[0]);
-      sum += NTL_MUL_ULL(a[1], b[1]);
-      sum += NTL_MUL_ULL(a[2], b[2]);
-      sum += NTL_MUL_ULL(a[3], b[3]);
-      sum += NTL_MUL_ULL(a[4], b[4]);
-      sum += NTL_MUL_ULL(a[5], b[5]);
-      sum += NTL_MUL_ULL(a[6], b[6]);
-      sum += NTL_MUL_ULL(a[7], b[7]);
-      sum += NTL_MUL_ULL(a[8], b[8]);
-      sum += NTL_MUL_ULL(a[9], b[9]);
-      sum += NTL_MUL_ULL(a[10], b[10]);
-      sum += NTL_MUL_ULL(a[11], b[11]);
-      sum += NTL_MUL_ULL(a[12], b[12]);
-      sum += NTL_MUL_ULL(a[13], b[13]);
-      sum += NTL_MUL_ULL(a[14], b[14]);
-      sum += NTL_MUL_ULL(a[15], b[15]);
-      sum += NTL_MUL_ULL(a[16], b[16]);
-      sum += NTL_MUL_ULL(a[17], b[17]);
-      sum += NTL_MUL_ULL(a[18], b[18]);
-      sum += NTL_MUL_ULL(a[19], b[19]);
-      sum += NTL_MUL_ULL(a[20], b[20]);
-      sum += NTL_MUL_ULL(a[21], b[21]);
-      sum += NTL_MUL_ULL(a[22], b[22]);
-      sum += NTL_MUL_ULL(a[23], b[23]);
-      sum += NTL_MUL_ULL(a[24], b[24]);
-      sum += NTL_MUL_ULL(a[25], b[25]);
-      sum += NTL_MUL_ULL(a[26], b[26]);
-      sum += NTL_MUL_ULL(a[27], b[27]);
-      sum += NTL_MUL_ULL(a[28], b[28]);
-      sum += NTL_MUL_ULL(a[29], b[29]);
-      sum += NTL_MUL_ULL(a[30], b[30]);
-      sum += NTL_MUL_ULL(a[31], b[31]);
+      ll_imul_add(sum, a[0], b[0]);
+      ll_imul_add(sum, a[1], b[1]);
+      ll_imul_add(sum, a[2], b[2]);
+      ll_imul_add(sum, a[3], b[3]);
+      ll_imul_add(sum, a[4], b[4]);
+      ll_imul_add(sum, a[5], b[5]);
+      ll_imul_add(sum, a[6], b[6]);
+      ll_imul_add(sum, a[7], b[7]);
+      ll_imul_add(sum, a[8], b[8]);
+      ll_imul_add(sum, a[9], b[9]);
+      ll_imul_add(sum, a[10], b[10]);
+      ll_imul_add(sum, a[11], b[11]);
+      ll_imul_add(sum, a[12], b[12]);
+      ll_imul_add(sum, a[13], b[13]);
+      ll_imul_add(sum, a[14], b[14]);
+      ll_imul_add(sum, a[15], b[15]);
+      ll_imul_add(sum, a[16], b[16]);
+      ll_imul_add(sum, a[17], b[17]);
+      ll_imul_add(sum, a[18], b[18]);
+      ll_imul_add(sum, a[19], b[19]);
+      ll_imul_add(sum, a[20], b[20]);
+      ll_imul_add(sum, a[21], b[21]);
+      ll_imul_add(sum, a[22], b[22]);
+      ll_imul_add(sum, a[23], b[23]);
+      ll_imul_add(sum, a[24], b[24]);
+      ll_imul_add(sum, a[25], b[25]);
+      ll_imul_add(sum, a[26], b[26]);
+      ll_imul_add(sum, a[27], b[27]);
+      ll_imul_add(sum, a[28], b[28]);
+      ll_imul_add(sum, a[29], b[29]);
+      ll_imul_add(sum, a[30], b[30]);
+      ll_imul_add(sum, a[31], b[31]);
 
-      unsigned long sum0 = sum;
-      unsigned long sum1 = sum >> NTL_BITS_PER_LONG;
+      unsigned long sum0 = ll_get_lo(sum);
+      unsigned long sum1 = ll_get_hi(sum);
 
       long res;
       
@@ -1595,96 +1582,29 @@ void muladd1_by_32_full(long *x, const long *a, const long *b,
    }
 }
 
-#elif 0
-
-static
-void muladd1_by_32_full(long *x, const long *a, const long *b, 
-                        long p, sp_ll_reduce_struct ll_red_struct)
-{
-   for (long j = 0; j < MAT_BLK_SZ; j+=2) {
-
-      NTL_ULL_TYPE sum = cast_unsigned(x[j]);
-      NTL_ULL_TYPE sum_ = cast_unsigned(x[j+1]);
-      const long *b_ = b+MAT_BLK_SZ;
-
-      sum_ += NTL_MUL_ULL(a[0], b_[0]);      sum += NTL_MUL_ULL(a[0], b[0]);
-      sum_ += NTL_MUL_ULL(a[1], b_[1]);      sum += NTL_MUL_ULL(a[1], b[1]);
-      sum_ += NTL_MUL_ULL(a[2], b_[2]);      sum += NTL_MUL_ULL(a[2], b[2]);
-      sum_ += NTL_MUL_ULL(a[3], b_[3]);      sum += NTL_MUL_ULL(a[3], b[3]);
-      sum_ += NTL_MUL_ULL(a[4], b_[4]);      sum += NTL_MUL_ULL(a[4], b[4]);
-      sum_ += NTL_MUL_ULL(a[5], b_[5]);      sum += NTL_MUL_ULL(a[5], b[5]);
-      sum_ += NTL_MUL_ULL(a[6], b_[6]);      sum += NTL_MUL_ULL(a[6], b[6]);
-      sum_ += NTL_MUL_ULL(a[7], b_[7]);      sum += NTL_MUL_ULL(a[7], b[7]);
-      sum_ += NTL_MUL_ULL(a[8], b_[8]);      sum += NTL_MUL_ULL(a[8], b[8]);
-      sum_ += NTL_MUL_ULL(a[9], b_[9]);      sum += NTL_MUL_ULL(a[9], b[9]);
-      sum_ += NTL_MUL_ULL(a[10], b_[10]);      sum += NTL_MUL_ULL(a[10], b[10]);
-      sum_ += NTL_MUL_ULL(a[11], b_[11]);      sum += NTL_MUL_ULL(a[11], b[11]);
-      sum_ += NTL_MUL_ULL(a[12], b_[12]);      sum += NTL_MUL_ULL(a[12], b[12]);
-      sum_ += NTL_MUL_ULL(a[13], b_[13]);      sum += NTL_MUL_ULL(a[13], b[13]);
-      sum_ += NTL_MUL_ULL(a[14], b_[14]);      sum += NTL_MUL_ULL(a[14], b[14]);
-      sum_ += NTL_MUL_ULL(a[15], b_[15]);      sum += NTL_MUL_ULL(a[15], b[15]);
-      sum_ += NTL_MUL_ULL(a[16], b_[16]);      sum += NTL_MUL_ULL(a[16], b[16]);
-      sum_ += NTL_MUL_ULL(a[17], b_[17]);      sum += NTL_MUL_ULL(a[17], b[17]);
-      sum_ += NTL_MUL_ULL(a[18], b_[18]);      sum += NTL_MUL_ULL(a[18], b[18]);
-      sum_ += NTL_MUL_ULL(a[19], b_[19]);      sum += NTL_MUL_ULL(a[19], b[19]);
-      sum_ += NTL_MUL_ULL(a[20], b_[20]);      sum += NTL_MUL_ULL(a[20], b[20]);
-      sum_ += NTL_MUL_ULL(a[21], b_[21]);      sum += NTL_MUL_ULL(a[21], b[21]);
-      sum_ += NTL_MUL_ULL(a[22], b_[22]);      sum += NTL_MUL_ULL(a[22], b[22]);
-      sum_ += NTL_MUL_ULL(a[23], b_[23]);      sum += NTL_MUL_ULL(a[23], b[23]);
-      sum_ += NTL_MUL_ULL(a[24], b_[24]);      sum += NTL_MUL_ULL(a[24], b[24]);
-      sum_ += NTL_MUL_ULL(a[25], b_[25]);      sum += NTL_MUL_ULL(a[25], b[25]);
-      sum_ += NTL_MUL_ULL(a[26], b_[26]);      sum += NTL_MUL_ULL(a[26], b[26]);
-      sum_ += NTL_MUL_ULL(a[27], b_[27]);      sum += NTL_MUL_ULL(a[27], b[27]);
-      sum_ += NTL_MUL_ULL(a[28], b_[28]);      sum += NTL_MUL_ULL(a[28], b[28]);
-      sum_ += NTL_MUL_ULL(a[29], b_[29]);      sum += NTL_MUL_ULL(a[29], b[29]);
-      sum_ += NTL_MUL_ULL(a[30], b_[30]);      sum += NTL_MUL_ULL(a[30], b[30]);
-      sum_ += NTL_MUL_ULL(a[31], b_[31]);      sum += NTL_MUL_ULL(a[31], b[31]);
-
-      unsigned long sum0 = sum;
-      unsigned long sum1 = sum >> NTL_BITS_PER_LONG;
-      long res;
-
-      unsigned long sum0_ = sum_;
-      unsigned long sum1_ = sum_ >> NTL_BITS_PER_LONG;
-      long res_;
-      
-      if (ll_red_struct.nbits == NTL_SP_NBITS) {
-         res = sp_ll_red_31_normalized(0, sum1, sum0, p, ll_red_struct);
-         res_ = sp_ll_red_31_normalized(0, sum1_, sum0_, p, ll_red_struct);
-      }
-      else {
-         res =  sp_ll_red_31(0, sum1, sum0, p, ll_red_struct);
-         res_ =  sp_ll_red_31(0, sum1_, sum0_, p, ll_red_struct);
-      }
-
-
-      x[j] = res;
-      x[j+1] = res_;
-      b += 2*MAT_BLK_SZ;
-   }
-}
 #elif 1
 // This version is consistently fastest on tests on Sandybridge and Haswell
 
+
+
 #define ONE_STEP(i) \
-  sum += NTL_MUL_ULL(a[i],b[i]);\
-  sum_1 += NTL_MUL_ULL(a[i],b_1[i]);\
-  sum_2 += NTL_MUL_ULL(a[i],b_2[i]);\
-  sum_3 += NTL_MUL_ULL(a[i],b_3[i])\
+  ll_imul_add(sum, a[i], b[i]);\
+  ll_imul_add(sum_1, a[i], b_1[i]);\
+  ll_imul_add(sum_2, a[i], b_2[i]);\
+  ll_imul_add(sum_3, a[i], b_3[i]);\
 
 
-
-
-static
 void muladd1_by_32_full(long *x, const long *a, const long *b, 
                         long p, sp_ll_reduce_struct ll_red_struct)
 {
    for (long j = 0; j < MAT_BLK_SZ; j+=4) {
 
-      NTL_ULL_TYPE sum = cast_unsigned(x[j]);
-      NTL_ULL_TYPE sum_1 = cast_unsigned(x[j+1]);
-      NTL_ULL_TYPE sum_2 = cast_unsigned(x[j+2]);
-      NTL_ULL_TYPE sum_3 = cast_unsigned(x[j+3]);
+      ll_type sum, sum_1, sum_2, sum_3;
+      ll_init(sum, x[j]);
+      ll_init(sum_1, x[j+1]);
+      ll_init(sum_2, x[j+2]);
+      ll_init(sum_3, x[j+3]);
+
       const long *b_1 = b+MAT_BLK_SZ;
       const long *b_2 = b+2*MAT_BLK_SZ;
       const long *b_3 = b+3*MAT_BLK_SZ;
@@ -1722,17 +1642,17 @@ void muladd1_by_32_full(long *x, const long *a, const long *b,
       ONE_STEP(30);
       ONE_STEP(31);
 
-      unsigned long sum0 = sum;
-      unsigned long sum1 = sum >> NTL_BITS_PER_LONG;
+      unsigned long sum0 = ll_get_lo(sum);
+      unsigned long sum1 = ll_get_hi(sum);
 
-      unsigned long sum0_1 = sum_1;
-      unsigned long sum1_1 = sum_1 >> NTL_BITS_PER_LONG;
+      unsigned long sum0_1 = ll_get_lo(sum_1);
+      unsigned long sum1_1 = ll_get_hi(sum_1);
 
-      unsigned long sum0_2 = sum_2;
-      unsigned long sum1_2 = sum_2 >> NTL_BITS_PER_LONG;
+      unsigned long sum0_2 = ll_get_lo(sum_2);
+      unsigned long sum1_2 = ll_get_hi(sum_2);
 
-      unsigned long sum0_3 = sum_3;
-      unsigned long sum1_3 = sum_3 >> NTL_BITS_PER_LONG;
+      unsigned long sum0_3 = ll_get_lo(sum_3);
+      unsigned long sum1_3 = ll_get_hi(sum_3);
       
       if (ll_red_struct.nbits == NTL_SP_NBITS) {
          x[j] = sp_ll_red_31_normalized(0, sum1, sum0, p, ll_red_struct);
@@ -1751,143 +1671,6 @@ void muladd1_by_32_full(long *x, const long *a, const long *b,
       b += 4*MAT_BLK_SZ;
    }
 }
-#else
-
-static
-void muladd1_by_32_full(long *x, const long *a, const long *b, 
-                        long p, sp_ll_reduce_struct ll_red_struct)
-{
-   NTL_ULL_TYPE res_vec[MAT_BLK_SZ];
-
-   for (long j = 0; j < MAT_BLK_SZ; j++) {
-
-      NTL_ULL_TYPE sum = cast_unsigned(x[j]);
-
-      sum += NTL_MUL_ULL(a[0], b[0]);
-      sum += NTL_MUL_ULL(a[1], b[1]);
-      sum += NTL_MUL_ULL(a[2], b[2]);
-      sum += NTL_MUL_ULL(a[3], b[3]);
-      sum += NTL_MUL_ULL(a[4], b[4]);
-      sum += NTL_MUL_ULL(a[5], b[5]);
-      sum += NTL_MUL_ULL(a[6], b[6]);
-      sum += NTL_MUL_ULL(a[7], b[7]);
-      sum += NTL_MUL_ULL(a[8], b[8]);
-      sum += NTL_MUL_ULL(a[9], b[9]);
-      sum += NTL_MUL_ULL(a[10], b[10]);
-      sum += NTL_MUL_ULL(a[11], b[11]);
-      sum += NTL_MUL_ULL(a[12], b[12]);
-      sum += NTL_MUL_ULL(a[13], b[13]);
-      sum += NTL_MUL_ULL(a[14], b[14]);
-      sum += NTL_MUL_ULL(a[15], b[15]);
-      sum += NTL_MUL_ULL(a[16], b[16]);
-      sum += NTL_MUL_ULL(a[17], b[17]);
-      sum += NTL_MUL_ULL(a[18], b[18]);
-      sum += NTL_MUL_ULL(a[19], b[19]);
-      sum += NTL_MUL_ULL(a[20], b[20]);
-      sum += NTL_MUL_ULL(a[21], b[21]);
-      sum += NTL_MUL_ULL(a[22], b[22]);
-      sum += NTL_MUL_ULL(a[23], b[23]);
-      sum += NTL_MUL_ULL(a[24], b[24]);
-      sum += NTL_MUL_ULL(a[25], b[25]);
-      sum += NTL_MUL_ULL(a[26], b[26]);
-      sum += NTL_MUL_ULL(a[27], b[27]);
-      sum += NTL_MUL_ULL(a[28], b[28]);
-      sum += NTL_MUL_ULL(a[29], b[29]);
-      sum += NTL_MUL_ULL(a[30], b[30]);
-      sum += NTL_MUL_ULL(a[31], b[31]);
-
-      res_vec[j] = sum;
-
-
-      b += MAT_BLK_SZ;
-   }
-
-#if 0
-   if (ll_red_struct.nbits == NTL_SP_NBITS) {
-      for (long j = 0; j < MAT_BLK_SZ; j++)
-         x[j] = sp_ll_red_31_normalized(0, res_vec[j] >> NTL_BITS_PER_LONG, res_vec[j], p, ll_red_struct);
-
-   }
-   else {
-      for (long j = 0; j < MAT_BLK_SZ; j++)
-         x[j] = sp_ll_red_31(0, res_vec[j] >> NTL_BITS_PER_LONG, res_vec[j], p, ll_red_struct);
-   }
-#else
-#define ONE_STEP_redn(j) x[j] = sp_ll_red_31_normalized(0, res_vec[j] >> NTL_BITS_PER_LONG, res_vec[j], p, ll_red_struct)
-#define ONE_STEP_red(j) x[j] = sp_ll_red_31(0, res_vec[j] >> NTL_BITS_PER_LONG, res_vec[j], p, ll_red_struct)
-   if (ll_red_struct.nbits == NTL_SP_NBITS) {
-
-      ONE_STEP_redn(0);
-      ONE_STEP_redn(1);
-      ONE_STEP_redn(2);
-      ONE_STEP_redn(3);
-      ONE_STEP_redn(4);
-      ONE_STEP_redn(5);
-      ONE_STEP_redn(6);
-      ONE_STEP_redn(7);
-      ONE_STEP_redn(8);
-      ONE_STEP_redn(9);
-      ONE_STEP_redn(10);
-      ONE_STEP_redn(11);
-      ONE_STEP_redn(12);
-      ONE_STEP_redn(13);
-      ONE_STEP_redn(14);
-      ONE_STEP_redn(15);
-      ONE_STEP_redn(16);
-      ONE_STEP_redn(17);
-      ONE_STEP_redn(18);
-      ONE_STEP_redn(19);
-      ONE_STEP_redn(20);
-      ONE_STEP_redn(21);
-      ONE_STEP_redn(22);
-      ONE_STEP_redn(23);
-      ONE_STEP_redn(24);
-      ONE_STEP_redn(25);
-      ONE_STEP_redn(26);
-      ONE_STEP_redn(27);
-      ONE_STEP_redn(28);
-      ONE_STEP_redn(29);
-      ONE_STEP_redn(30);
-      ONE_STEP_redn(31);
-
-   }
-   else {
-      ONE_STEP_red(0);
-      ONE_STEP_red(1);
-      ONE_STEP_red(2);
-      ONE_STEP_red(3);
-      ONE_STEP_red(4);
-      ONE_STEP_red(5);
-      ONE_STEP_red(6);
-      ONE_STEP_red(7);
-      ONE_STEP_red(8);
-      ONE_STEP_red(9);
-      ONE_STEP_red(10);
-      ONE_STEP_red(11);
-      ONE_STEP_red(12);
-      ONE_STEP_red(13);
-      ONE_STEP_red(14);
-      ONE_STEP_red(15);
-      ONE_STEP_red(16);
-      ONE_STEP_red(17);
-      ONE_STEP_red(18);
-      ONE_STEP_red(19);
-      ONE_STEP_red(20);
-      ONE_STEP_red(21);
-      ONE_STEP_red(22);
-      ONE_STEP_red(23);
-      ONE_STEP_red(24);
-      ONE_STEP_red(25);
-      ONE_STEP_red(26);
-      ONE_STEP_red(27);
-      ONE_STEP_red(28);
-      ONE_STEP_red(29);
-      ONE_STEP_red(30);
-      ONE_STEP_red(31);
-   }
-#endif
-}
-
 
 
 #endif
@@ -1901,29 +1684,30 @@ void muladd1_by_32(long *x, const long *a, const long *b,
 {
    for (long j = 0; j < MAT_BLK_SZ; j++) {
 
-      NTL_ULL_TYPE sum = cast_unsigned(x[j]);
+      ll_type sum;
+      ll_init(sum, x[j]);
 
       long i = 0;
       for (; i < n-16; i++)
-         sum += NTL_MUL_ULL(a[i], b[i]);
+         ll_imul_add(sum, a[i], b[i]);
 
-      NTL_ULL_TYPE acc21 = (unsigned long) (sum >> NTL_BITS_PER_LONG);
-      unsigned long acc0 = (unsigned long) sum;
-      sum = 0;
+      ll_type acc21;
+      ll_init(acc21, ll_get_hi(sum));
+      unsigned long acc0 = ll_get_lo(sum);
+      ll_init(sum, acc0);
 
       for (; i < n; i++)
-         sum += NTL_MUL_ULL(a[i], b[i]);
+         ll_imul_add(sum, a[i], b[i]);
 
-      sum += acc0;
-      acc0 = sum;
-      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
+      acc0 = ll_get_lo(sum);
+      ll_add(acc21, ll_get_hi(sum));
 
       long res;
       
       if (ll_red_struct.nbits == NTL_SP_NBITS) 
-         res = sp_ll_red_31_normalized(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, p, ll_red_struct);
+         res = sp_ll_red_31_normalized(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, ll_red_struct);
       else
-         res =  sp_ll_red_31(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, p, ll_red_struct);
+         res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, ll_red_struct);
 
       x[j] = res;
       b += MAT_BLK_SZ;
@@ -1936,57 +1720,58 @@ void muladd1_by_32_full(long *x, const long *a, const long *b,
 {
    for (long j = 0; j < MAT_BLK_SZ; j++) {
 
-      NTL_ULL_TYPE sum = cast_unsigned(x[j]);
+      ll_type sum;
+      ll_init(sum, x[j]);
 
-      sum += NTL_MUL_ULL(a[0], b[0]);
-      sum += NTL_MUL_ULL(a[1], b[1]);
-      sum += NTL_MUL_ULL(a[2], b[2]);
-      sum += NTL_MUL_ULL(a[3], b[3]);
-      sum += NTL_MUL_ULL(a[4], b[4]);
-      sum += NTL_MUL_ULL(a[5], b[5]);
-      sum += NTL_MUL_ULL(a[6], b[6]);
-      sum += NTL_MUL_ULL(a[7], b[7]);
-      sum += NTL_MUL_ULL(a[8], b[8]);
-      sum += NTL_MUL_ULL(a[9], b[9]);
-      sum += NTL_MUL_ULL(a[10], b[10]);
-      sum += NTL_MUL_ULL(a[11], b[11]);
-      sum += NTL_MUL_ULL(a[12], b[12]);
-      sum += NTL_MUL_ULL(a[13], b[13]);
-      sum += NTL_MUL_ULL(a[14], b[14]);
-      sum += NTL_MUL_ULL(a[15], b[15]);
+      ll_imul_add(sum, a[0], b[0]);
+      ll_imul_add(sum, a[1], b[1]);
+      ll_imul_add(sum, a[2], b[2]);
+      ll_imul_add(sum, a[3], b[3]);
+      ll_imul_add(sum, a[4], b[4]);
+      ll_imul_add(sum, a[5], b[5]);
+      ll_imul_add(sum, a[6], b[6]);
+      ll_imul_add(sum, a[7], b[7]);
+      ll_imul_add(sum, a[8], b[8]);
+      ll_imul_add(sum, a[9], b[9]);
+      ll_imul_add(sum, a[10], b[10]);
+      ll_imul_add(sum, a[11], b[11]);
+      ll_imul_add(sum, a[12], b[12]);
+      ll_imul_add(sum, a[13], b[13]);
+      ll_imul_add(sum, a[14], b[14]);
+      ll_imul_add(sum, a[15], b[15]);
 
-      NTL_ULL_TYPE acc21 = (unsigned long) (sum >> NTL_BITS_PER_LONG);
-      unsigned long acc0 = (unsigned long) sum;
-      sum = 0;
+      ll_type acc21;
+      ll_init(acc21, ll_get_hi(sum));
+      unsigned long acc0 = ll_get_lo(sum);
+      ll_init(sum, acc0);
 
-      sum += NTL_MUL_ULL(a[16], b[16]);
-      sum += NTL_MUL_ULL(a[17], b[17]);
-      sum += NTL_MUL_ULL(a[18], b[18]);
-      sum += NTL_MUL_ULL(a[19], b[19]);
-      sum += NTL_MUL_ULL(a[20], b[20]);
-      sum += NTL_MUL_ULL(a[21], b[21]);
-      sum += NTL_MUL_ULL(a[22], b[22]);
-      sum += NTL_MUL_ULL(a[23], b[23]);
-      sum += NTL_MUL_ULL(a[24], b[24]);
-      sum += NTL_MUL_ULL(a[25], b[25]);
-      sum += NTL_MUL_ULL(a[26], b[26]);
-      sum += NTL_MUL_ULL(a[27], b[27]);
-      sum += NTL_MUL_ULL(a[28], b[28]);
-      sum += NTL_MUL_ULL(a[29], b[29]);
-      sum += NTL_MUL_ULL(a[30], b[30]);
-      sum += NTL_MUL_ULL(a[31], b[31]);
+      ll_imul_add(sum, a[16], b[16]);
+      ll_imul_add(sum, a[17], b[17]);
+      ll_imul_add(sum, a[18], b[18]);
+      ll_imul_add(sum, a[19], b[19]);
+      ll_imul_add(sum, a[20], b[20]);
+      ll_imul_add(sum, a[21], b[21]);
+      ll_imul_add(sum, a[22], b[22]);
+      ll_imul_add(sum, a[23], b[23]);
+      ll_imul_add(sum, a[24], b[24]);
+      ll_imul_add(sum, a[25], b[25]);
+      ll_imul_add(sum, a[26], b[26]);
+      ll_imul_add(sum, a[27], b[27]);
+      ll_imul_add(sum, a[28], b[28]);
+      ll_imul_add(sum, a[29], b[29]);
+      ll_imul_add(sum, a[30], b[30]);
+      ll_imul_add(sum, a[31], b[31]);
 
-      sum += acc0;
-      acc0 = sum;
-      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
+      acc0 = ll_get_lo(sum);
+      ll_add(acc21, ll_get_hi(sum));
 
       long res;
       
       if (ll_red_struct.nbits == NTL_SP_NBITS) 
-         res = sp_ll_red_31_normalized(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, p, ll_red_struct);
+         res = sp_ll_red_31_normalized(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, ll_red_struct);
       else
-         res =  sp_ll_red_31(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, p, ll_red_struct);
-
+         res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, ll_red_struct);
+      
       x[j] = res;
       b += MAT_BLK_SZ;
    }
@@ -2056,8 +1841,9 @@ void muladd1_by_32_half1(long *x, const long *a, const long *b,
                         long n, long p, sp_ll_reduce_struct ll_red_struct)
 {
    for (long j = 0; j < MAT_BLK_SZ; j++) {
-
-      NTL_ULL_TYPE sum = cast_unsigned(x[j]);
+  
+      ll_type sum;
+      ll_init(sum, x[j]);
 
       long i=0;
       for(; i <= n-4; i+= 4) {
@@ -2065,18 +1851,18 @@ void muladd1_by_32_half1(long *x, const long *a, const long *b,
          lsum += a[i+1]*b[i+1];
          lsum += a[i+2]*b[i+2];
          lsum += a[i+3]*b[i+3];
-         sum += lsum;
+         ll_add(sum, lsum);
       }
 
       if (i < n) {
          unsigned long lsum = a[i]*b[i];
 	 for (i++; i < n; i++)
 	    lsum += a[i]*b[i];
-         sum += lsum;
+         ll_add(sum, lsum);
       }
 
-      unsigned long sum0 = sum;
-      unsigned long sum1 = sum >> NTL_BITS_PER_LONG;
+      unsigned long sum0 = ll_get_lo(sum);
+      unsigned long sum1 = ll_get_hi(sum);
       x[j] = sp_ll_red_21(sum1, sum0, p, ll_red_struct);
 
       b += MAT_BLK_SZ;

@@ -332,6 +332,15 @@ using the configure script.
 
 #endif
 
+#if @{NTL_DISABLE_LL_ASM}
+#define NTL_DISABLE_LL_ASM
+
+/* Explicitly disables us of inline assembly as a replacement
+ * for long lobg arithmetic.
+ */
+
+#endif
+
 
 #if @{NTL_MAXIMIZE_SP_NBITS}
 #define NTL_MAXIMIZE_SP_NBITS
@@ -618,8 +627,6 @@ using the configure script.
 
 
 @{WIZARD_HACK}
-
-
 
 
 #endif

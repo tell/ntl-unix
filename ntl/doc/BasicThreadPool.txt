@@ -76,7 +76,7 @@ which facilitite simple parallel for loops.
 // it runs single-threaded with first=0 and last=n.
 // 
 // Note that the code within the EXEC_RANGE body could call other routines that
-// themselves attempt to execute ab EXEC_RANGE: if this happens, the latter
+// themselves attempt to execute an EXEC_RANGE: if this happens, the latter
 // EXEC_RANGE will detect this and run single-threaded.
 // 
 // You may wish to do other things within the EXEC_RANGE body than just execute
@@ -255,6 +255,7 @@ private:
 
 public:
 
+  explicit
   BasicThreadPool(long nthreads);
   // creates a pool with nthreads threads, including the current thread
   // (so nthreads-1 other threads get created)
@@ -355,6 +356,7 @@ BasicThreadPool *ReleaseThreadPool();
 class PartitionInfo {
 public:
 
+   explicit
    PartitionInfo(long sz, long nt = AvailableThreads()); 
    // partitions [0..sz) into at most nt subintervals.  sz may be 0 or
    // negative, in which case the number of subintervals is 0.

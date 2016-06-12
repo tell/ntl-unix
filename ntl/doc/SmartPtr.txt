@@ -398,7 +398,11 @@ public:
    // returns raw pointer, and sets the raw pointer to null
 
    void move(UniquePtr& other);
+   template<class Y> void move(UniqePtr<Y>& other);
    // move other to *this
+   // in the second version, Y* should be convertable to T*
+   // NOTE: if Y is a subclass of T, then typically, ~T() should
+   // be virtual, to ensure that the destructor for Y is called
 
    void swap(UniquePtr& other);
    // swap raw pointers
@@ -456,6 +460,8 @@ Constructors:
 
    p1.val()             // dereference
 
+   rp = p1.get();       // fetch raw pointer
+   rp = p1.release();   // fetch raw pointer, and set to NULL
    p1.move(p2);         // move p2 to p1, destroying p1's referent
                         //   if p1 != p2
 
@@ -502,6 +508,12 @@ public:
 
    bool exists() const;
    // checks that underlying pointer is not null
+
+   T* get() const;
+   // returns underlying raw pointer
+
+   T* release();
+   // returns raw pointer, and sets the raw pointer to null
 
    void move(OptionalVal& other);
    // performs a (shallow) pointer move
@@ -588,6 +600,9 @@ public:
 
    T* get() const;
    // get raw pointer
+
+   T* elts() const;
+   // get raw pointer (for compatibility with the Vec class)
 
    T* release();
    // get raw pointer and reset to null

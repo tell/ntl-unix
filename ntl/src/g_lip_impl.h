@@ -4754,78 +4754,82 @@ void _ntl_crt_struct_tbl::eval(_ntl_gbigint *x, const long *b, _ntl_tmp_vec *gen
       for (i = 0; i < sz; i++) {
          const mp_limb_t *row = v[i];
 
-         NTL_ULL_TYPE acc = ((NTL_ULL_TYPE) row[0]) * ((NTL_ULL_TYPE) (mp_limb_t) b[0]);
+         ll_type acc;
+         ll_mul(acc, row[0], b[0]);
 
 #if (CRT_ALTCODE_UNROLL && NTL_BITS_PER_LONG-NTL_SP_NBITS == 4)
          switch (n) {
-         case 16: acc += ((NTL_ULL_TYPE) row[16-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[16-1]);
-         case 15: acc += ((NTL_ULL_TYPE) row[15-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[15-1]);
-         case 14: acc += ((NTL_ULL_TYPE) row[14-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[14-1]);
-         case 13: acc += ((NTL_ULL_TYPE) row[13-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[13-1]);
-         case 12: acc += ((NTL_ULL_TYPE) row[12-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[12-1]);
-         case 11: acc += ((NTL_ULL_TYPE) row[11-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[11-1]);
-         case 10: acc += ((NTL_ULL_TYPE) row[10-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[10-1]);
-         case 9: acc += ((NTL_ULL_TYPE) row[9-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[9-1]);
-         case 8: acc += ((NTL_ULL_TYPE) row[8-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[8-1]);
-         case 7: acc += ((NTL_ULL_TYPE) row[7-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[7-1]);
-         case 6: acc += ((NTL_ULL_TYPE) row[6-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[6-1]);
-         case 5: acc += ((NTL_ULL_TYPE) row[5-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[5-1]);
-         case 4: acc += ((NTL_ULL_TYPE) row[4-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[4-1]);
-         case 3: acc += ((NTL_ULL_TYPE) row[3-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[3-1]);
-         case 2: acc += ((NTL_ULL_TYPE) row[2-1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[2-1]);
+         case 16: ll_mul_add(acc, row[16-1], b[16-1]);
+         case 15: ll_mul_add(acc, row[15-1], b[15-1]);
+         case 14: ll_mul_add(acc, row[14-1], b[14-1]);
+         case 13: ll_mul_add(acc, row[13-1], b[13-1]);
+         case 12: ll_mul_add(acc, row[12-1], b[12-1]);
+         case 11: ll_mul_add(acc, row[11-1], b[11-1]);
+         case 10: ll_mul_add(acc, row[10-1], b[10-1]);
+         case 9: ll_mul_add(acc, row[9-1], b[9-1]);
+         case 8: ll_mul_add(acc, row[8-1], b[8-1]);
+         case 7: ll_mul_add(acc, row[7-1], b[7-1]);
+         case 6: ll_mul_add(acc, row[6-1], b[6-1]);
+         case 5: ll_mul_add(acc, row[5-1], b[5-1]);
+         case 4: ll_mul_add(acc, row[4-1], b[4-1]);
+         case 3: ll_mul_add(acc, row[3-1], b[3-1]);
+         case 2: ll_mul_add(acc, row[2-1], b[2-1]);
          }
 #else
          for (j = 1; j < n; j++) 
-            acc += ((NTL_ULL_TYPE) row[j]) * ((NTL_ULL_TYPE) (mp_limb_t) b[j]);
+            ll_mul_add(acc, row[j], b[j]);
 #endif
 
-         acc += carry;
-         xx[i] = acc;
-         carry = acc >> NTL_BITS_PER_LONG;
+         ll_add(acc, carry);
+         xx[i] = ll_get_lo(acc);
+         carry = ll_get_hi(acc);
       }
 
       xx[sz] = carry;
       xx[sz+1] = 0;
    }
    else {
-      NTL_ULL_TYPE carry=0;
+      ll_type carry;
+      ll_init(carry, 0);
 
       for (i = 0; i < sz; i++) {
          const mp_limb_t *row = v[i];
 
-         NTL_ULL_TYPE acc21;
+         ll_type acc21;
          mp_limb_t acc0;
 
          {
-            NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) row[0]) * ((NTL_ULL_TYPE) (mp_limb_t) b[0]);
+            ll_type sum;
+            ll_mul(sum, row[0], b[0]);
 
 #if (CRT_ALTCODE_UNROLL && NTL_BITS_PER_LONG-NTL_SP_NBITS == 4)
-            sum += ((NTL_ULL_TYPE) row[1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[1]);
-            sum += ((NTL_ULL_TYPE) row[2]) * ((NTL_ULL_TYPE) (mp_limb_t) b[2]);
-            sum += ((NTL_ULL_TYPE) row[3]) * ((NTL_ULL_TYPE) (mp_limb_t) b[3]);
-            sum += ((NTL_ULL_TYPE) row[4]) * ((NTL_ULL_TYPE) (mp_limb_t) b[4]);
-            sum += ((NTL_ULL_TYPE) row[5]) * ((NTL_ULL_TYPE) (mp_limb_t) b[5]);
-            sum += ((NTL_ULL_TYPE) row[6]) * ((NTL_ULL_TYPE) (mp_limb_t) b[6]);
-            sum += ((NTL_ULL_TYPE) row[7]) * ((NTL_ULL_TYPE) (mp_limb_t) b[7]);
-            sum += ((NTL_ULL_TYPE) row[8]) * ((NTL_ULL_TYPE) (mp_limb_t) b[8]);
-            sum += ((NTL_ULL_TYPE) row[9]) * ((NTL_ULL_TYPE) (mp_limb_t) b[9]);
-            sum += ((NTL_ULL_TYPE) row[10]) * ((NTL_ULL_TYPE) (mp_limb_t) b[10]);
-            sum += ((NTL_ULL_TYPE) row[11]) * ((NTL_ULL_TYPE) (mp_limb_t) b[11]);
-            sum += ((NTL_ULL_TYPE) row[12]) * ((NTL_ULL_TYPE) (mp_limb_t) b[12]);
-            sum += ((NTL_ULL_TYPE) row[13]) * ((NTL_ULL_TYPE) (mp_limb_t) b[13]);
-            sum += ((NTL_ULL_TYPE) row[14]) * ((NTL_ULL_TYPE) (mp_limb_t) b[14]);
-            sum += ((NTL_ULL_TYPE) row[15]) * ((NTL_ULL_TYPE) (mp_limb_t) b[15]);
+            ll_mul_add(sum, row[1], b[1]);
+            ll_mul_add(sum, row[2], b[2]);
+            ll_mul_add(sum, row[3], b[3]);
+            ll_mul_add(sum, row[4], b[4]);
+            ll_mul_add(sum, row[5], b[5]);
+            ll_mul_add(sum, row[6], b[6]);
+            ll_mul_add(sum, row[7], b[7]);
+            ll_mul_add(sum, row[8], b[8]);
+            ll_mul_add(sum, row[9], b[9]);
+            ll_mul_add(sum, row[10], b[10]);
+            ll_mul_add(sum, row[11], b[11]);
+            ll_mul_add(sum, row[12], b[12]);
+            ll_mul_add(sum, row[13], b[13]);
+            ll_mul_add(sum, row[14], b[14]);
+            ll_mul_add(sum, row[15], b[15]);
 #elif (CRT_ALTCODE_UNROLL && NTL_BITS_PER_LONG-NTL_SP_NBITS == 2)
-            sum += ((NTL_ULL_TYPE) row[1]) * ((NTL_ULL_TYPE) (mp_limb_t) b[1]);
-            sum += ((NTL_ULL_TYPE) row[2]) * ((NTL_ULL_TYPE) (mp_limb_t) b[2]);
-            sum += ((NTL_ULL_TYPE) row[3]) * ((NTL_ULL_TYPE) (mp_limb_t) b[3]);
+            ll_mul_add(sum, row[1], b[1]);
+            ll_mul_add(sum, row[2], b[2]);
+            ll_mul_add(sum, row[3], b[3]);
 #else
             for (j = 1; j < Bnd; j++)
-               sum += ((NTL_ULL_TYPE) row[j]) * ((NTL_ULL_TYPE) (mp_limb_t) b[j]);
+               ll_mul_add(sum, row[j], b[j]);
 #endif
 
-            acc21 = sum >> NTL_BITS_PER_LONG;
-            acc0 = sum;
+       
+            ll_init(acc21, ll_get_hi(sum));
+            acc0 = ll_get_lo(sum);
          }
 
          const mp_limb_t *ap = row;
@@ -4838,33 +4842,39 @@ void _ntl_crt_struct_tbl::eval(_ntl_gbigint *x, const long *b, _ntl_tmp_vec *gen
 
          for (; m >= 8; m -= 8, ap += 8, tp += 8) {
             {
-               NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[0]);
-               sum += ((NTL_ULL_TYPE) ap[1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[1]);
-               sum += ((NTL_ULL_TYPE) ap[2]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[2]);
-               sum += ((NTL_ULL_TYPE) ap[3]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[3]);
-               sum += acc0;
-               acc0 = sum;
-               acc21 += (mp_limb_t) (sum >> NTL_BITS_PER_LONG);
+               ll_type sum;
+               ll_mul(sum, ap[0], tp[0]);
+               ll_mul_add(sum, ap[1], tp[1]);
+               ll_mul_add(sum, ap[2], tp[2]);
+               ll_mul_add(sum, ap[3], tp[3]);
+
+               ll_add(sum, acc0);
+               acc0 = ll_get_lo(sum);
+               ll_add(acc21, ll_get_hi(sum));
             }
             {
-               NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) ap[4+0]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[4+0]);
-               sum += ((NTL_ULL_TYPE) ap[4+1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[4+1]);
-               sum += ((NTL_ULL_TYPE) ap[4+2]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[4+2]);
-               sum += ((NTL_ULL_TYPE) ap[4+3]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[4+3]);
-               sum += acc0;
-               acc0 = sum;
-               acc21 += (mp_limb_t) (sum >> NTL_BITS_PER_LONG);
+               ll_type sum;
+               ll_mul(sum, ap[4+0], tp[4+0]);
+               ll_mul_add(sum, ap[4+1], tp[4+1]);
+               ll_mul_add(sum, ap[4+2], tp[4+2]);
+               ll_mul_add(sum, ap[4+3], tp[4+3]);
+
+               ll_add(sum, acc0);
+               acc0 = ll_get_lo(sum);
+               ll_add(acc21, ll_get_hi(sum));
             }
          }
 
          for (; m >= 4; m -= 4, ap += 4, tp += 4) {
-            NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[0]);
-            sum += ((NTL_ULL_TYPE) ap[1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[1]);
-            sum += ((NTL_ULL_TYPE) ap[2]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[2]);
-            sum += ((NTL_ULL_TYPE) ap[3]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[3]);
-            sum += acc0;
-            acc0 = sum;
-            acc21 += (mp_limb_t) (sum >> NTL_BITS_PER_LONG);
+	    ll_type sum;
+	    ll_mul(sum, ap[0], tp[0]);
+            ll_mul_add(sum, ap[1], tp[1]);
+            ll_mul_add(sum, ap[2], tp[2]);
+            ll_mul_add(sum, ap[3], tp[3]);
+
+	    ll_add(sum, acc0);
+	    acc0 = ll_get_lo(sum);
+	    ll_add(acc21, ll_get_hi(sum));
          }
 
 
@@ -4872,73 +4882,75 @@ void _ntl_crt_struct_tbl::eval(_ntl_gbigint *x, const long *b, _ntl_tmp_vec *gen
          long m;
          for (m = n-Bnd, ap += Bnd, tp += Bnd; m >= Bnd; m -= Bnd, ap += Bnd, tp += Bnd) {
 
-            NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[0]);
+	    ll_type sum;
+	    ll_mul(sum, ap[0], tp[0]);
 
 #if (CRT_ALTCODE_UNROLL && NTL_BITS_PER_LONG-NTL_SP_NBITS == 4)
-            sum += ((NTL_ULL_TYPE) ap[1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[1]);
-            sum += ((NTL_ULL_TYPE) ap[2]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[2]);
-            sum += ((NTL_ULL_TYPE) ap[3]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[3]);
-            sum += ((NTL_ULL_TYPE) ap[4]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[4]);
-            sum += ((NTL_ULL_TYPE) ap[5]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[5]);
-            sum += ((NTL_ULL_TYPE) ap[6]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[6]);
-            sum += ((NTL_ULL_TYPE) ap[7]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[7]);
-            sum += ((NTL_ULL_TYPE) ap[8]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[8]);
-            sum += ((NTL_ULL_TYPE) ap[9]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[9]);
-            sum += ((NTL_ULL_TYPE) ap[10]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[10]);
-            sum += ((NTL_ULL_TYPE) ap[11]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[11]);
-            sum += ((NTL_ULL_TYPE) ap[12]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[12]);
-            sum += ((NTL_ULL_TYPE) ap[13]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[13]);
-            sum += ((NTL_ULL_TYPE) ap[14]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[14]);
-            sum += ((NTL_ULL_TYPE) ap[15]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[15]);
+            ll_mul_add(sum, ap[1], tp[1]);
+            ll_mul_add(sum, ap[2], tp[2]);
+            ll_mul_add(sum, ap[3], tp[3]);
+            ll_mul_add(sum, ap[4], tp[4]);
+            ll_mul_add(sum, ap[5], tp[5]);
+            ll_mul_add(sum, ap[6], tp[6]);
+            ll_mul_add(sum, ap[7], tp[7]);
+            ll_mul_add(sum, ap[8], tp[8]);
+            ll_mul_add(sum, ap[9], tp[9]);
+            ll_mul_add(sum, ap[10], tp[10]);
+            ll_mul_add(sum, ap[11], tp[11]);
+            ll_mul_add(sum, ap[12], tp[12]);
+            ll_mul_add(sum, ap[13], tp[13]);
+            ll_mul_add(sum, ap[14], tp[14]);
+            ll_mul_add(sum, ap[15], tp[15]);
 #else
             for (long j = 1; j < Bnd; j++)
-               sum += ((NTL_ULL_TYPE) ap[j]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[j]);
+               ll_mul_add(sum, ap[j], tp[j]);
 #endif
 
-            sum += acc0;
-            acc0 = sum;
-            acc21 += (mp_limb_t) (sum >> NTL_BITS_PER_LONG);
+	    ll_add(sum, acc0);
+	    acc0 = ll_get_lo(sum);
+	    ll_add(acc21, ll_get_hi(sum));
          }
 #endif
 
          if (m > 0) {
-            NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[0]);
+	    ll_type sum;
+	    ll_mul(sum, ap[0], tp[0]);
 
 #if (CRT_ALTCODE_UNROLL && NTL_BITS_PER_LONG-NTL_SP_NBITS == 4)
             switch (m) {
-            case 15:  sum += ((NTL_ULL_TYPE) ap[15-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[15-1]);
-            case 14:  sum += ((NTL_ULL_TYPE) ap[14-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[14-1]);
-            case 13:  sum += ((NTL_ULL_TYPE) ap[13-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[13-1]);
-            case 12:  sum += ((NTL_ULL_TYPE) ap[12-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[12-1]);
-            case 11:  sum += ((NTL_ULL_TYPE) ap[11-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[11-1]);
-            case 10:  sum += ((NTL_ULL_TYPE) ap[10-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[10-1]);
-            case 9:  sum += ((NTL_ULL_TYPE) ap[9-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[9-1]);
-            case 8:  sum += ((NTL_ULL_TYPE) ap[8-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[8-1]);
-            case 7:  sum += ((NTL_ULL_TYPE) ap[7-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[7-1]);
-            case 6:  sum += ((NTL_ULL_TYPE) ap[6-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[6-1]);
-            case 5:  sum += ((NTL_ULL_TYPE) ap[5-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[5-1]);
-            case 4:  sum += ((NTL_ULL_TYPE) ap[4-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[4-1]);
-            case 3:  sum += ((NTL_ULL_TYPE) ap[3-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[3-1]);
-            case 2:  sum += ((NTL_ULL_TYPE) ap[2-1]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[2-1]);
+            case 15:  ll_mul_add(sum, ap[15-1], tp[15-1]);
+            case 14:  ll_mul_add(sum, ap[14-1], tp[14-1]);
+            case 13:  ll_mul_add(sum, ap[13-1], tp[13-1]);
+            case 12:  ll_mul_add(sum, ap[12-1], tp[12-1]);
+            case 11:  ll_mul_add(sum, ap[11-1], tp[11-1]);
+            case 10:  ll_mul_add(sum, ap[10-1], tp[10-1]);
+            case 9:  ll_mul_add(sum, ap[9-1], tp[9-1]);
+            case 8:  ll_mul_add(sum, ap[8-1], tp[8-1]);
+            case 7:  ll_mul_add(sum, ap[7-1], tp[7-1]);
+            case 6:  ll_mul_add(sum, ap[6-1], tp[6-1]);
+            case 5:  ll_mul_add(sum, ap[5-1], tp[5-1]);
+            case 4:  ll_mul_add(sum, ap[4-1], tp[4-1]);
+            case 3:  ll_mul_add(sum, ap[3-1], tp[3-1]);
+            case 2:  ll_mul_add(sum, ap[2-1], tp[2-1]);
             }
 #else
             for (m--, ap++, tp++; m > 0; m--, ap++, tp++)
-               sum += ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) (mp_limb_t) tp[0]);
+               ll_mul_add(sum, ap[0], tp[0]);
 #endif
-            sum += acc0;
-            acc0 = sum;
-            acc21 += (mp_limb_t) (sum >> NTL_BITS_PER_LONG);
+	    ll_add(sum, acc0);
+	    acc0 = ll_get_lo(sum);
+	    ll_add(acc21, ll_get_hi(sum));
 
          }
 
-         carry += acc0;
-         xx[i] = carry;
-         acc21 += ((mp_limb_t) (carry >> NTL_BITS_PER_LONG));
+         ll_add(carry, acc0);
+         xx[i] = ll_get_lo(carry);
+         ll_add(acc21, ll_get_hi(carry));
          carry = acc21;
       }
 
-      xx[sz] = carry;
-      xx[sz+1] = carry >> NTL_BITS_PER_LONG;
+      xx[sz] = ll_get_lo(carry);
+      xx[sz+1] = ll_get_hi(carry);
    }
 
 
@@ -5426,13 +5438,14 @@ void _ntl_rem_struct_tbl::eval(long *x, _ntl_gbigint a,
       long i;
       for (i = 0; i < n; i++) {
          mp_limb_t *tp = tbl[i]; 
-         NTL_ULL_TYPE acc = adata[0];
+         ll_type acc;
+         ll_init(acc, adata[0]);
          long j;
          for (j = 1; j < sa; j++)
-            acc += ((NTL_ULL_TYPE) adata[j]) * ((NTL_ULL_TYPE) tp[j]);
+            ll_mul_add(acc, adata[j], tp[j]);
 
          mp_limb_t accvec[2];
-         x[i] = tbl_red_31(0, acc >> NTL_BITS_PER_LONG, acc, primes[i], inv_primes[i]);
+         x[i] = tbl_red_31(0, ll_get_hi(acc), ll_get_lo(acc), primes[i], inv_primes[i]);
       }
    }
    else {
@@ -5441,17 +5454,19 @@ void _ntl_rem_struct_tbl::eval(long *x, _ntl_gbigint a,
          mp_limb_t *ap = adata;
          mp_limb_t *tp = tbl[i]; 
 
-         NTL_ULL_TYPE acc21;
+         ll_type acc21;
          mp_limb_t acc0;
 
          {
-            NTL_ULL_TYPE sum = ap[0];
-            sum += ((NTL_ULL_TYPE) ap[1]) * ((NTL_ULL_TYPE) tp[1]);
-            sum += ((NTL_ULL_TYPE) ap[2]) * ((NTL_ULL_TYPE) tp[2]);
-            sum += ((NTL_ULL_TYPE) ap[3]) * ((NTL_ULL_TYPE) tp[3]);
+            ll_type sum;
+            ll_init(sum, ap[0]);
 
-            acc21 = sum >> NTL_BITS_PER_LONG;
-            acc0 = sum;
+            ll_mul_add(sum, ap[1], tp[1]);
+            ll_mul_add(sum, ap[2], tp[2]);
+            ll_mul_add(sum, ap[3], tp[3]);
+
+            ll_init(acc21,  ll_get_hi(sum));
+            acc0 = ll_get_lo(sum);
          }
 
          long m=sa-4;
@@ -5460,50 +5475,55 @@ void _ntl_rem_struct_tbl::eval(long *x, _ntl_gbigint a,
 
          for (; m >= 8; m -= 8, ap += 8, tp += 8) {
             {
-               NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) tp[0]);
-               sum += ((NTL_ULL_TYPE) ap[1]) * ((NTL_ULL_TYPE) tp[1]);
-               sum += ((NTL_ULL_TYPE) ap[2]) * ((NTL_ULL_TYPE) tp[2]);
-               sum += ((NTL_ULL_TYPE) ap[3]) * ((NTL_ULL_TYPE) tp[3]);
+               ll_type sum;
+               ll_mul(sum, ap[0], tp[0]);
+               ll_mul_add(sum, ap[1], tp[1]);
+               ll_mul_add(sum, ap[2], tp[2]);
+               ll_mul_add(sum, ap[3], tp[3]);
    
-               sum += acc0;
-               acc0 = sum;
-               acc21 += (mp_limb_t) (sum >> NTL_BITS_PER_LONG);
+               ll_add(sum, acc0);
+               acc0 = ll_get_lo(sum);
+               ll_add(acc21,  ll_get_hi(sum));
             }
             {
    
-               NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) ap[4+0]) * ((NTL_ULL_TYPE) tp[4+0]);
-               sum += ((NTL_ULL_TYPE) ap[4+1]) * ((NTL_ULL_TYPE) tp[4+1]);
-               sum += ((NTL_ULL_TYPE) ap[4+2]) * ((NTL_ULL_TYPE) tp[4+2]);
-               sum += ((NTL_ULL_TYPE) ap[4+3]) * ((NTL_ULL_TYPE) tp[4+3]);
+               ll_type sum;
+               ll_mul(sum, ap[4+0], tp[4+0]);
+               ll_mul_add(sum, ap[4+1], tp[4+1]);
+               ll_mul_add(sum, ap[4+2], tp[4+2]);
+               ll_mul_add(sum, ap[4+3], tp[4+3]);
    
-               sum += acc0;
-               acc0 = sum;
-               acc21 += (mp_limb_t) (sum >> NTL_BITS_PER_LONG);
+               ll_add(sum, acc0);
+               acc0 = ll_get_lo(sum);
+               ll_add(acc21,  ll_get_hi(sum));
             }
          }
 
          for (; m >= 4; m -= 4, ap += 4, tp += 4) {
-            NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) tp[0]);
-            sum += ((NTL_ULL_TYPE) ap[1]) * ((NTL_ULL_TYPE) tp[1]);
-            sum += ((NTL_ULL_TYPE) ap[2]) * ((NTL_ULL_TYPE) tp[2]);
-            sum += ((NTL_ULL_TYPE) ap[3]) * ((NTL_ULL_TYPE) tp[3]);
-
-            sum += acc0;
-            acc0 = sum;
-            acc21 += (mp_limb_t) (sum >> NTL_BITS_PER_LONG);
+            ll_type sum;
+            ll_mul(sum, ap[0], tp[0]);
+            ll_mul_add(sum, ap[1], tp[1]);
+            ll_mul_add(sum, ap[2], tp[2]);
+            ll_mul_add(sum, ap[3], tp[3]);
+   
+	    ll_add(sum, acc0);
+	    acc0 = ll_get_lo(sum);
+	    ll_add(acc21,  ll_get_hi(sum));
          }
 
          if (m > 0) {
-            NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) tp[0]);
+            ll_type sum;
+            ll_mul(sum, ap[0], tp[0]);
             for (m--, ap++, tp++; m > 0; m--, ap++, tp++)
-               sum += ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) tp[0]);
+               ll_mul_add(sum, ap[0], tp[0]);
 
-            sum += acc0;
-            acc0 = sum;
-            acc21 += (mp_limb_t) (sum >> NTL_BITS_PER_LONG);
+   
+	    ll_add(sum, acc0);
+	    acc0 = ll_get_lo(sum);
+	    ll_add(acc21,  ll_get_hi(sum));
          }
 
-         x[i] = tbl_red_31(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, primes[i], inv_primes[i]);
+         x[i] = tbl_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, primes[i], inv_primes[i]);
       }
    }
 }
@@ -5538,34 +5558,35 @@ void _ntl_rem_struct_tbl::eval(long *x, _ntl_gbigint a,
          mp_limb_t *tp = tbl[i]; 
 
 
-         NTL_ULL_TYPE acc = adata[0];
+         ll_type acc;
+         ll_init(acc, adata[0]);
 
 #if (TBL_UNROLL && NTL_BITS_PER_LONG-NTL_SP_NBITS == 4)
          switch (sa) {
-         case 16:  acc += ((NTL_ULL_TYPE) adata[16-1]) * ((NTL_ULL_TYPE) tp[16-1]);
-         case 15:  acc += ((NTL_ULL_TYPE) adata[15-1]) * ((NTL_ULL_TYPE) tp[15-1]);
-         case 14:  acc += ((NTL_ULL_TYPE) adata[14-1]) * ((NTL_ULL_TYPE) tp[14-1]);
-         case 13:  acc += ((NTL_ULL_TYPE) adata[13-1]) * ((NTL_ULL_TYPE) tp[13-1]);
-         case 12:  acc += ((NTL_ULL_TYPE) adata[12-1]) * ((NTL_ULL_TYPE) tp[12-1]);
-         case 11:  acc += ((NTL_ULL_TYPE) adata[11-1]) * ((NTL_ULL_TYPE) tp[11-1]);
-         case 10:  acc += ((NTL_ULL_TYPE) adata[10-1]) * ((NTL_ULL_TYPE) tp[10-1]);
-         case 9:  acc += ((NTL_ULL_TYPE) adata[9-1]) * ((NTL_ULL_TYPE) tp[9-1]);
-         case 8:  acc += ((NTL_ULL_TYPE) adata[8-1]) * ((NTL_ULL_TYPE) tp[8-1]);
-         case 7:  acc += ((NTL_ULL_TYPE) adata[7-1]) * ((NTL_ULL_TYPE) tp[7-1]);
-         case 6:  acc += ((NTL_ULL_TYPE) adata[6-1]) * ((NTL_ULL_TYPE) tp[6-1]);
-         case 5:  acc += ((NTL_ULL_TYPE) adata[5-1]) * ((NTL_ULL_TYPE) tp[5-1]);
-         case 4:  acc += ((NTL_ULL_TYPE) adata[4-1]) * ((NTL_ULL_TYPE) tp[4-1]);
-         case 3:  acc += ((NTL_ULL_TYPE) adata[3-1]) * ((NTL_ULL_TYPE) tp[3-1]);
-         case 2:  acc += ((NTL_ULL_TYPE) adata[2-1]) * ((NTL_ULL_TYPE) tp[2-1]);
+         case 16:  ll_mul_add(acc, adata[16-1], tp[16-1]);
+         case 15:  ll_mul_add(acc, adata[15-1], tp[15-1]);
+         case 14:  ll_mul_add(acc, adata[14-1], tp[14-1]);
+         case 13:  ll_mul_add(acc, adata[13-1], tp[13-1]);
+         case 12:  ll_mul_add(acc, adata[12-1], tp[12-1]);
+         case 11:  ll_mul_add(acc, adata[11-1], tp[11-1]);
+         case 10:  ll_mul_add(acc, adata[10-1], tp[10-1]);
+         case 9:  ll_mul_add(acc, adata[9-1], tp[9-1]);
+         case 8:  ll_mul_add(acc, adata[8-1], tp[8-1]);
+         case 7:  ll_mul_add(acc, adata[7-1], tp[7-1]);
+         case 6:  ll_mul_add(acc, adata[6-1], tp[6-1]);
+         case 5:  ll_mul_add(acc, adata[5-1], tp[5-1]);
+         case 4:  ll_mul_add(acc, adata[4-1], tp[4-1]);
+         case 3:  ll_mul_add(acc, adata[3-1], tp[3-1]);
+         case 2:  ll_mul_add(acc, adata[2-1], tp[2-1]);
          }
 
 #else
          long j;
          for (j = 1; j < sa; j++)
-            acc += ((NTL_ULL_TYPE) adata[j]) * ((NTL_ULL_TYPE) tp[j]);
+            ll_mul_add(acc, adata[j], tp[j]);
 #endif
 
-         x[i] = tbl_red_31(0, acc >> NTL_ZZ_NBITS, acc, primes[i], inv_primes[i]);
+         x[i] = tbl_red_31(0, ll_get_hi(acc), ll_get_lo(acc), primes[i], inv_primes[i]);
       }
    }
    else {
@@ -5574,97 +5595,100 @@ void _ntl_rem_struct_tbl::eval(long *x, _ntl_gbigint a,
          mp_limb_t *ap = adata;
          mp_limb_t *tp = tbl[i]; 
 
-         NTL_ULL_TYPE acc21;
+         ll_type acc21;
          mp_limb_t acc0;
 
          {
-            NTL_ULL_TYPE sum = ap[0];
+            ll_type sum;
+            ll_init(sum, ap[0]);
 
 #if (TBL_UNROLL && NTL_BITS_PER_LONG-NTL_SP_NBITS == 4)
-            sum += ((NTL_ULL_TYPE) ap[1]) * ((NTL_ULL_TYPE) tp[1]);
-            sum += ((NTL_ULL_TYPE) ap[2]) * ((NTL_ULL_TYPE) tp[2]);
-            sum += ((NTL_ULL_TYPE) ap[3]) * ((NTL_ULL_TYPE) tp[3]);
-            sum += ((NTL_ULL_TYPE) ap[4]) * ((NTL_ULL_TYPE) tp[4]);
-            sum += ((NTL_ULL_TYPE) ap[5]) * ((NTL_ULL_TYPE) tp[5]);
-            sum += ((NTL_ULL_TYPE) ap[6]) * ((NTL_ULL_TYPE) tp[6]);
-            sum += ((NTL_ULL_TYPE) ap[7]) * ((NTL_ULL_TYPE) tp[7]);
-            sum += ((NTL_ULL_TYPE) ap[8]) * ((NTL_ULL_TYPE) tp[8]);
-            sum += ((NTL_ULL_TYPE) ap[9]) * ((NTL_ULL_TYPE) tp[9]);
-            sum += ((NTL_ULL_TYPE) ap[10]) * ((NTL_ULL_TYPE) tp[10]);
-            sum += ((NTL_ULL_TYPE) ap[11]) * ((NTL_ULL_TYPE) tp[11]);
-            sum += ((NTL_ULL_TYPE) ap[12]) * ((NTL_ULL_TYPE) tp[12]);
-            sum += ((NTL_ULL_TYPE) ap[13]) * ((NTL_ULL_TYPE) tp[13]);
-            sum += ((NTL_ULL_TYPE) ap[14]) * ((NTL_ULL_TYPE) tp[14]);
-            sum += ((NTL_ULL_TYPE) ap[15]) * ((NTL_ULL_TYPE) tp[15]);
+            ll_mul_add(sum, ap[1], tp[1]);
+            ll_mul_add(sum, ap[2], tp[2]);
+            ll_mul_add(sum, ap[3], tp[3]);
+            ll_mul_add(sum, ap[4], tp[4]);
+            ll_mul_add(sum, ap[5], tp[5]);
+            ll_mul_add(sum, ap[6], tp[6]);
+            ll_mul_add(sum, ap[7], tp[7]);
+            ll_mul_add(sum, ap[8], tp[8]);
+            ll_mul_add(sum, ap[9], tp[9]);
+            ll_mul_add(sum, ap[10], tp[10]);
+            ll_mul_add(sum, ap[11], tp[11]);
+            ll_mul_add(sum, ap[12], tp[12]);
+            ll_mul_add(sum, ap[13], tp[13]);
+            ll_mul_add(sum, ap[14], tp[14]);
+            ll_mul_add(sum, ap[15], tp[15]);
 #else
             for (long j = 1; j < Bnd; j++)
-               sum += ((NTL_ULL_TYPE) ap[j]) * ((NTL_ULL_TYPE) tp[j]);
+               ll_mul_add(sum, ap[j], tp[j]);
 #endif
 
-            acc21 = sum >> NTL_BITS_PER_LONG;
-            acc0 = sum;
+            ll_init(acc21, ll_get_hi(sum));
+	    acc0 = ll_get_lo(sum);
          }
 
          long m;
          for (m = sa-Bnd, ap += Bnd, tp += Bnd; m >= Bnd; m -= Bnd, ap += Bnd, tp += Bnd) {
 
-            NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) tp[0]);
+            ll_type sum;
+            ll_mul(sum, ap[0], tp[0]);
 
 #if (TBL_UNROLL && NTL_BITS_PER_LONG-NTL_SP_NBITS == 4)
-            sum += ((NTL_ULL_TYPE) ap[1]) * ((NTL_ULL_TYPE) tp[1]);
-            sum += ((NTL_ULL_TYPE) ap[2]) * ((NTL_ULL_TYPE) tp[2]);
-            sum += ((NTL_ULL_TYPE) ap[3]) * ((NTL_ULL_TYPE) tp[3]);
-            sum += ((NTL_ULL_TYPE) ap[4]) * ((NTL_ULL_TYPE) tp[4]);
-            sum += ((NTL_ULL_TYPE) ap[5]) * ((NTL_ULL_TYPE) tp[5]);
-            sum += ((NTL_ULL_TYPE) ap[6]) * ((NTL_ULL_TYPE) tp[6]);
-            sum += ((NTL_ULL_TYPE) ap[7]) * ((NTL_ULL_TYPE) tp[7]);
-            sum += ((NTL_ULL_TYPE) ap[8]) * ((NTL_ULL_TYPE) tp[8]);
-            sum += ((NTL_ULL_TYPE) ap[9]) * ((NTL_ULL_TYPE) tp[9]);
-            sum += ((NTL_ULL_TYPE) ap[10]) * ((NTL_ULL_TYPE) tp[10]);
-            sum += ((NTL_ULL_TYPE) ap[11]) * ((NTL_ULL_TYPE) tp[11]);
-            sum += ((NTL_ULL_TYPE) ap[12]) * ((NTL_ULL_TYPE) tp[12]);
-            sum += ((NTL_ULL_TYPE) ap[13]) * ((NTL_ULL_TYPE) tp[13]);
-            sum += ((NTL_ULL_TYPE) ap[14]) * ((NTL_ULL_TYPE) tp[14]);
-            sum += ((NTL_ULL_TYPE) ap[15]) * ((NTL_ULL_TYPE) tp[15]);
+            ll_mul_add(sum, ap[1], tp[1]);
+            ll_mul_add(sum, ap[2], tp[2]);
+            ll_mul_add(sum, ap[3], tp[3]);
+            ll_mul_add(sum, ap[4], tp[4]);
+            ll_mul_add(sum, ap[5], tp[5]);
+            ll_mul_add(sum, ap[6], tp[6]);
+            ll_mul_add(sum, ap[7], tp[7]);
+            ll_mul_add(sum, ap[8], tp[8]);
+            ll_mul_add(sum, ap[9], tp[9]);
+            ll_mul_add(sum, ap[10], tp[10]);
+            ll_mul_add(sum, ap[11], tp[11]);
+            ll_mul_add(sum, ap[12], tp[12]);
+            ll_mul_add(sum, ap[13], tp[13]);
+            ll_mul_add(sum, ap[14], tp[14]);
+            ll_mul_add(sum, ap[15], tp[15]);
 #else
             for (long j = 1; j < Bnd; j++)
-               sum += ((NTL_ULL_TYPE) ap[j]) * ((NTL_ULL_TYPE) tp[j]);
+               ll_mul_add(sum, ap[j], tp[j]);
 #endif
-            sum += acc0;
-            acc0 = sum;
-            acc21 += (mp_limb_t) (sum >> NTL_BITS_PER_LONG);
+            ll_add(sum, acc0); 
+            acc0 = ll_get_lo(sum);
+            ll_add(acc21, ll_get_hi(sum));
          }
 
          if (m > 0) {
-            NTL_ULL_TYPE sum = ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) tp[0]);
+            ll_type sum;
+            ll_mul(sum, ap[0], tp[0]);
 
 #if (TBL_UNROLL && NTL_BITS_PER_LONG-NTL_SP_NBITS == 4)
             switch (m) {
-            case 15:  sum += ((NTL_ULL_TYPE) ap[15-1]) * ((NTL_ULL_TYPE) tp[15-1]);
-            case 14:  sum += ((NTL_ULL_TYPE) ap[14-1]) * ((NTL_ULL_TYPE) tp[14-1]);
-            case 13:  sum += ((NTL_ULL_TYPE) ap[13-1]) * ((NTL_ULL_TYPE) tp[13-1]);
-            case 12:  sum += ((NTL_ULL_TYPE) ap[12-1]) * ((NTL_ULL_TYPE) tp[12-1]);
-            case 11:  sum += ((NTL_ULL_TYPE) ap[11-1]) * ((NTL_ULL_TYPE) tp[11-1]);
-            case 10:  sum += ((NTL_ULL_TYPE) ap[10-1]) * ((NTL_ULL_TYPE) tp[10-1]);
-            case 9:  sum += ((NTL_ULL_TYPE) ap[9-1]) * ((NTL_ULL_TYPE) tp[9-1]);
-            case 8:  sum += ((NTL_ULL_TYPE) ap[8-1]) * ((NTL_ULL_TYPE) tp[8-1]);
-            case 7:  sum += ((NTL_ULL_TYPE) ap[7-1]) * ((NTL_ULL_TYPE) tp[7-1]);
-            case 6:  sum += ((NTL_ULL_TYPE) ap[6-1]) * ((NTL_ULL_TYPE) tp[6-1]);
-            case 5:  sum += ((NTL_ULL_TYPE) ap[5-1]) * ((NTL_ULL_TYPE) tp[5-1]);
-            case 4:  sum += ((NTL_ULL_TYPE) ap[4-1]) * ((NTL_ULL_TYPE) tp[4-1]);
-            case 3:  sum += ((NTL_ULL_TYPE) ap[3-1]) * ((NTL_ULL_TYPE) tp[3-1]);
-            case 2:  sum += ((NTL_ULL_TYPE) ap[2-1]) * ((NTL_ULL_TYPE) tp[2-1]);
+            case 15:  ll_mul_add(sum, ap[15-1], tp[15-1]);
+            case 14:  ll_mul_add(sum, ap[14-1], tp[14-1]);
+            case 13:  ll_mul_add(sum, ap[13-1], tp[13-1]);
+            case 12:  ll_mul_add(sum, ap[12-1], tp[12-1]);
+            case 11:  ll_mul_add(sum, ap[11-1], tp[11-1]);
+            case 10:  ll_mul_add(sum, ap[10-1], tp[10-1]);
+            case 9:  ll_mul_add(sum, ap[9-1], tp[9-1]);
+            case 8:  ll_mul_add(sum, ap[8-1], tp[8-1]);
+            case 7:  ll_mul_add(sum, ap[7-1], tp[7-1]);
+            case 6:  ll_mul_add(sum, ap[6-1], tp[6-1]);
+            case 5:  ll_mul_add(sum, ap[5-1], tp[5-1]);
+            case 4:  ll_mul_add(sum, ap[4-1], tp[4-1]);
+            case 3:  ll_mul_add(sum, ap[3-1], tp[3-1]);
+            case 2:  ll_mul_add(sum, ap[2-1], tp[2-1]);
             }
 #else
             for (m--, ap++, tp++; m > 0; m--, ap++, tp++)
-               sum += ((NTL_ULL_TYPE) ap[0]) * ((NTL_ULL_TYPE) tp[0]);
+               ll_mul_add(sum, ap[0], tp[0]);
 #endif
-            sum += acc0;
-            acc0 = sum;
-            acc21 += (mp_limb_t) (sum >> NTL_BITS_PER_LONG);
+            ll_add(sum, acc0); 
+            acc0 = ll_get_lo(sum);
+            ll_add(acc21, ll_get_hi(sum));
          }
 
-         x[i] = tbl_red_31(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, 
+         x[i] = tbl_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, 
                            primes[i], inv_primes[i]);
       }
    }
@@ -6075,6 +6099,366 @@ _ntl_gsubmul(_ntl_gbigint x, _ntl_gbigint y,  _ntl_gbigint *ww)
   _ntl_gaorsmul(x, y, 1, ww);
 }
 
+
+// general preconditioned remainder
+
+
+
+#ifndef NTL_VIABLE_LL
+
+
+class _ntl_general_rem_one_impl : public _ntl_general_rem_one_struct  {
+};
+
+_ntl_general_rem_one_struct *
+_ntl_general_rem_one_struct_build(long p, long sz)
+{
+   return 0;
+}
+
+long 
+_ntl_general_rem_one_struct_apply(NTL_verylong a, long p, _ntl_general_rem_one_struct *pinfo)
+{
+   return _ntl_gsmod(a, p);
+}
+
+
+
+
+#else
+
+#define REM_ONE_THRESH (256)
+
+class _ntl_general_rem_one_impl : public _ntl_general_rem_one_struct  {
+public:
+   long sz;
+   sp_ll_reduce_struct red_struct;
+   long Bnd;
+   UniqueArray<mp_limb_t> tbl;
+};
+
+_ntl_general_rem_one_struct *
+_ntl_general_rem_one_struct_build(long p, long sz)
+{
+   if (p < 2 || p >= NTL_SP_BOUND)
+      LogicError("_ntl_general_rem_one_struct_build: bad args (p)");
+
+   if (sz < 0)
+      LogicError("_ntl_general_rem_one_struct_build: bad args (sz)");
+
+   if (sz > REM_ONE_THRESH) sz = REM_ONE_THRESH;
+
+   if (sz == 0) return 0;
+
+
+   UniquePtr<_ntl_general_rem_one_impl> ptr;
+   ptr.make();
+
+   ptr->sz = sz;
+
+   ptr->red_struct = make_sp_ll_reduce_struct(p);
+
+   ptr->Bnd = 1L << (NTL_BITS_PER_LONG-_ntl_g2logs(p));
+
+   ptr->tbl.SetLength(sz);
+
+   long t = 1;
+   for (long j = 0; j < NTL_ZZ_NBITS; j++) {
+      t += t;
+      if (t >= p) t -= p;
+   }
+
+   long t1 = 1;
+   ptr->tbl[0] = 1;
+   for (long j = 1; j < sz; j++) {
+      t1 = MulMod(t1, t, p);
+      ptr->tbl[j] = t1;
+   }
+
+   return ptr.release();
+}
+
+
+
+
+long 
+_ntl_general_rem_one_struct_apply(NTL_verylong a, long p, _ntl_general_rem_one_struct *pinfo)
+{
+   if (ZEROP(a)) return 0;
+
+   if (!pinfo) {
+      return _ntl_gsmod(a, p);
+   }
+
+   _ntl_general_rem_one_impl *ptr = (_ntl_general_rem_one_impl *) pinfo;
+
+
+   long sz = ptr->sz;
+   sp_ll_reduce_struct red_struct = ptr->red_struct;
+   long Bnd = ptr->Bnd;
+   mp_limb_t *tbl = ptr->tbl.elts();
+
+   long a_sz, a_neg;
+   mp_limb_t *a_data;
+   GET_SIZE_NEG(a_sz, a_neg, a);
+   a_data = DATA(a);
+
+   if (a_sz > sz) {
+      long res = mpn_mod_1(a_data, a_sz, p);
+      if (a_neg) res = NegateMod(res, p);
+      return res;
+   }
+   else if (a_sz <= Bnd) {
+      ll_type acc;
+      ll_init(acc, a_data[0]);
+
+      {
+         long j = 1;
+
+         for (; j <= a_sz-16; j += 16) {
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+            ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+            ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+            ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+            ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+            ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+            ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+            ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+            ll_mul_add(acc, a_data[j+8], tbl[j+8]);
+            ll_mul_add(acc, a_data[j+9], tbl[j+9]);
+            ll_mul_add(acc, a_data[j+10], tbl[j+10]);
+            ll_mul_add(acc, a_data[j+11], tbl[j+11]);
+            ll_mul_add(acc, a_data[j+12], tbl[j+12]);
+            ll_mul_add(acc, a_data[j+13], tbl[j+13]);
+            ll_mul_add(acc, a_data[j+14], tbl[j+14]);
+            ll_mul_add(acc, a_data[j+15], tbl[j+15]);
+         }
+
+         for (; j <= a_sz-4; j += 4) {
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+            ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+            ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+            ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+         }
+
+	 for (; j < a_sz; j++)
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+      }
+
+
+      long res = sp_ll_red_31(0, ll_get_hi(acc), ll_get_lo(acc), p, red_struct);
+      if (a_neg) res = NegateMod(res, p);
+      return res;
+   }
+   else if (Bnd > 16) {
+      ll_type acc21;
+      ll_init(acc21, 0);
+      mp_limb_t acc0 = 0;
+
+      long jj = 0;
+      for (; jj <= a_sz-Bnd; jj += Bnd) {
+         ll_type acc;
+         ll_init(acc, acc0);
+
+         long j = jj;
+
+         for (; j <= jj+Bnd-16; j += 16) {
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+            ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+            ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+            ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+            ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+            ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+            ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+            ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+            ll_mul_add(acc, a_data[j+8], tbl[j+8]);
+            ll_mul_add(acc, a_data[j+9], tbl[j+9]);
+            ll_mul_add(acc, a_data[j+10], tbl[j+10]);
+            ll_mul_add(acc, a_data[j+11], tbl[j+11]);
+            ll_mul_add(acc, a_data[j+12], tbl[j+12]);
+            ll_mul_add(acc, a_data[j+13], tbl[j+13]);
+            ll_mul_add(acc, a_data[j+14], tbl[j+14]);
+            ll_mul_add(acc, a_data[j+15], tbl[j+15]);
+         }
+
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      if (jj < a_sz) {
+         ll_type acc;
+         ll_init(acc, acc0);
+
+         long j = jj;
+
+         for (; j <= a_sz-4; j += 4) {
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+            ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+            ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+            ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+         }
+
+	 for (; j < a_sz; j++)
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      long res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+      if (a_neg) res = NegateMod(res, p);
+      return res;
+   }
+   else if (Bnd == 16) {
+      ll_type acc21;
+      ll_init(acc21, 0);
+      mp_limb_t acc0 = 0;
+
+      long jj = 0;
+      for (; jj <= a_sz-16; jj += 16) {
+         ll_type acc;
+
+         long j = jj;
+
+         ll_mul(acc, a_data[j+0], tbl[j+0]);
+         ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+         ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+         ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+         ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+         ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+         ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+         ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+         ll_mul_add(acc, a_data[j+8], tbl[j+8]);
+         ll_mul_add(acc, a_data[j+9], tbl[j+9]);
+         ll_mul_add(acc, a_data[j+10], tbl[j+10]);
+         ll_mul_add(acc, a_data[j+11], tbl[j+11]);
+         ll_mul_add(acc, a_data[j+12], tbl[j+12]);
+         ll_mul_add(acc, a_data[j+13], tbl[j+13]);
+         ll_mul_add(acc, a_data[j+14], tbl[j+14]);
+         ll_mul_add(acc, a_data[j+15], tbl[j+15]);
+
+         ll_add(acc, acc0);
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      if (jj < a_sz) {
+         ll_type acc;
+         ll_init(acc, acc0);
+
+         long j = jj;
+
+         for (; j <= a_sz-4; j += 4) {
+	    ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+	    ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+	    ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+	    ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+         }
+
+	 for (; j < a_sz; j++)
+	    ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      long res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+      if (a_neg) res = NegateMod(res, p);
+      return res;
+   }
+   else if (Bnd == 8)  {
+      ll_type acc21;
+      ll_init(acc21, 0);
+      mp_limb_t acc0 = 0;
+
+      long jj = 0;
+      for (; jj <= a_sz-8; jj += 8) {
+         ll_type acc;
+
+         long j = jj;
+
+         ll_mul(acc, a_data[j+0], tbl[j+0]);
+         ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+         ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+         ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+         ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+         ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+         ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+         ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+
+         ll_add(acc, acc0);
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      if (jj < a_sz) {
+         ll_type acc;
+         ll_init(acc, acc0);
+
+         long j = jj;
+
+	 for (; j < a_sz; j++)
+	    ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      long res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+      if (a_neg) res = NegateMod(res, p);
+      return res;
+   }
+   else /* Bnd == 4 */  {
+      ll_type acc21;
+      ll_init(acc21, 0);
+      mp_limb_t acc0 = 0;
+
+      long jj = 0;
+      for (; jj <= a_sz-4; jj += 4) {
+         ll_type acc;
+
+         long j = jj;
+
+         ll_mul(acc, a_data[j+0], tbl[j+0]);
+         ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+         ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+         ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+
+
+         ll_add(acc, acc0);
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      if (jj < a_sz) {
+         ll_type acc;
+         ll_init(acc, acc0);
+
+         long j = jj;
+
+	 for (; j < a_sz; j++)
+	    ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      long res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+      if (a_neg) res = NegateMod(res, p);
+      return res;
+   }
+}
+
+
+
+
+
+
+
+
+
+#endif
 
 
 

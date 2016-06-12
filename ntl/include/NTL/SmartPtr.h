@@ -844,6 +844,9 @@ public:
    T* release() { T *p = dp; dp = 0; return p; }
    void move(UniquePtr& other) { reset(other.release()); }
 
+   template<class Y>
+   void move(UniquePtr<Y>& other) { reset(other.release()); }
+
    void swap(UniquePtr& other)
    {
       _ntl_swap(dp, other.dp);
@@ -919,11 +922,14 @@ Constructors:
                         // using psuedo variadic templates
                 
    p1.reset(rp);        // destroy's p1's referent and assign rp
+   
 
    if (p1.exists()) ... // test for null
 
    p1.val()             // dereference
 
+   rp = p1.get();       // fetch raw pointer
+   rp = p1.release();   // fetch raw pointer, and set to NULL
    p1.move(p2);         // if p1 != p2 then:
                         //    makes p1 point to p2's referent,
                         //    setting p2 to NULL and destroying
@@ -984,6 +990,10 @@ public:
    T& val() const { return *dp; }
 
    bool exists() const { return dp != 0; } 
+
+   T* get() const { return dp.get(); }
+
+   T* release() { return dp.release(); }
 
    void move(OptionalVal& other) { dp.move(other.dp); }
 
@@ -1085,6 +1095,7 @@ public:
    T& operator[](long i) const { return dp[i]; }
 
    T* get() const { return dp; }
+   T *elts() const { return dp; }
 
    T* release() { T *p = dp; dp = 0; return p; }
    void move(UniqueArray& other) { reset(other.release()); }
@@ -1356,8 +1367,8 @@ bool operator!=(const Unique2DArray<X>& a, const Unique2DArray<Y>& b)
 //
 // For now, this is not a part of the documented interface, and it is only
 // works with __GNUC__.  If __GNUC__ is not defined, then it reverts to using
-// malloc. Currently, it is only used if NTL_HAVE_AVX is defined, which anyway
-// requires __GNUC__.
+// malloc. Currently, it is only really needed if NTL_HAVE_AVX is defined,
+// which anyway requires __GNUC__.
 //
 // This could all change in the future, if and when there is a more portable
 // way of doing this.
@@ -1430,6 +1441,7 @@ public:
    T& operator[](long i) const { return dp[i]; }
 
    T* get() const { return dp; }
+   T* elts() const { return dp; }
 
    T* release() { T *p = dp; dp = 0; return p; }
    void move(AlignedArray& other) { reset(other.release()); }

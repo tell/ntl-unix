@@ -19,6 +19,81 @@ A Tour of NTL: Summary of Changes
 
 <p><hr><p>
 <h3>
+2016.05.30: Changes between NTL 9.8.1 and 9.9.0
+</h3>
+
+<ul>
+<li>
+Added 
+examples on how to use documentation on NTL's thread pools
+and parallel for loops:
+<a href="tour-ex7.html">see here</a>
+<li>
+The build procedure now puts files <tt>config_log.h</tt>
+and <tt>wizard_log.h</tt>
+in NTL's include directory.
+These files contain comments that document what choices were
+made during the build process,
+including the <tt>CXXAUTOFLAGS</tt> value.
+<li>
+Added <tt>elts()</tt> method to <tt>UniqueArray</tt> and <tt>AlignedArray</tt>
+   (for compatibility with <tt>Vec</tt> class)
+
+<li>
+Added <tt>get()</tt> and <tt>release()</tt> methods to <tt>OptionalVal</tt>
+
+<li>
+Made constructors for <tt>PartitionInfo</tt> and <tt>BasicThreadPool</tt> 
+<i>explicit</i>
+
+<li>
+Cleaned up some pointer issues in <tt>mat_lzz_p.c</tt> (mainly academic)
+
+<li>
+Definition of <tt>NTL_TLS_LOCAL_INIT</tt> ensures that var names
+   a local reference, regardless of the implementation
+
+<li>
+Allow <tt>p.move(q)</tt>, where <tt>p</tt> is <tt>a UniquePtr&lt;T&gt;</tt>, 
+<tt>q</tt> is a <tt>UniquePtr&lt;Y&gt;</tt>,
+  and <tt>Y*</tt> converts to <tt>T*</tt>.
+
+<li>
+Introduced <tt>PreconditionedRemainder</tt> class
+for faster reduction of a <tt>ZZ</tt> modulo a fixed long.
+This is intended to make Chinese Remaindering type computations faster
+<ul>
+<li>
+for the time being,
+this is an undocumented feature which may be modified or removed
+in a future release
+</ul>
+
+<li>
+Introduced <tt>ll_type</tt> and related routines which perform
+a restricted set of operations on a long-long-like type.
+It can be implemented via inline asm, and is a cleaner
+interface and sometimes faster.
+On x86-64/gcc platforms, the assembly code version is
+used and gives a modest speed boost.
+For all other platforms (including x86-64 with clang or icc),
+the assembly code is not used.
+I should really dynamically enable the assembly via the performance
+tuning wizard, but I don't do this yet.
+To explicitly disable the assembly code, 
+configure with <tt>NTL_DISABLE_LL_ASM=on</tt>.
+<ul>
+<li>
+for the time being,
+this is an undocumented feature which may be modified or removed
+in a future release
+</ul>
+
+</ul>
+
+
+<p><hr><p>
+<h3>
 2016.04.29: Changes between NTL 9.8.0 and 9.8.1
 </h3>
 

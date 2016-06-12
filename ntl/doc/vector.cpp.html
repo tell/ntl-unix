@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>/Volumes/unix-files/u/ntl-new/ntl-9.7.1/doc/vector.cpp.html</title>
+<title>/Volumes/unix-files/u/ntl-new/ntl-9.9.0dev/doc/vector.cpp.html</title>
 <meta name="Generator" content="Vim/7.1">
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 </head>
@@ -201,12 +201,14 @@
 &nbsp;&nbsp;<br>
 &nbsp;&nbsp; T* elts();<br>
 &nbsp;&nbsp; <font color="#008b00"><b>const</b></font>&nbsp;T* elts() <font color="#008b00"><b>const</b></font>;<br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// returns address of first vector element (or 0 if no space has</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// been allocated for this vector).&nbsp;&nbsp;If a vector potentially has</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// length 0, it is safer to write v.elts() instead of &amp;v[0].</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// The first version is applied to non-const Vec&lt;T&gt;,</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// and returns a non-const pointer to a T, while the second version</i></font><br>
-&nbsp;&nbsp; <font color="#0000ed"><i>// is applied to a const Vec&lt;T&gt; and returns a const reference to a T.</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// returns address of first vector element (or 0 if no space has been</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// allocated for this vector).&nbsp;&nbsp;If a vector potentially has length 0, it is</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// safer to write v.elts() instead of &amp;v[0]: the latter is not well defined</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// by the C++ standard (although this is likely an academic concern).</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>//</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// The first version is applied to non-const Vec&lt;T&gt;, and returns a non-const</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// pointer to a T, while the second version is applied to a const Vec&lt;T&gt; and</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// returns a const reference to a T.</i></font><br>
 <br>
 &nbsp;&nbsp; <br>
 &nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;swap(Vec&lt;T&gt;&amp; y);<br>

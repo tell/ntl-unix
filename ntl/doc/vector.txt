@@ -193,12 +193,14 @@ public:
   
    T* elts();
    const T* elts() const;
-   // returns address of first vector element (or 0 if no space has
-   // been allocated for this vector).  If a vector potentially has
-   // length 0, it is safer to write v.elts() instead of &v[0].
-   // The first version is applied to non-const Vec<T>,
-   // and returns a non-const pointer to a T, while the second version
-   // is applied to a const Vec<T> and returns a const reference to a T.
+   // returns address of first vector element (or 0 if no space has been
+   // allocated for this vector).  If a vector potentially has length 0, it is
+   // safer to write v.elts() instead of &v[0]: the latter is not well defined
+   // by the C++ standard (although this is likely an academic concern).
+   //
+   // The first version is applied to non-const Vec<T>, and returns a non-const
+   // pointer to a T, while the second version is applied to a const Vec<T> and
+   // returns a const reference to a T.
 
    
    void swap(Vec<T>& y);

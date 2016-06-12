@@ -686,7 +686,15 @@ struct key_wrapper {
 
 #else
 
-#define NTL_TLS_LOCAL_INIT(type,var,init) static NTL_THREAD_LOCAL type var init
+
+// NOTE: this definition of NTL_TLS_LOCAL_INIT ensures that var names
+// a local reference, regardless of the implementation
+#define NTL_TLS_LOCAL_INIT(type,var,init) \
+    static NTL_THREAD_LOCAL type _ntl_hidden_variable_tls_local ## var init; \
+    type &var = _ntl_hidden_variable_tls_local ## var
+
+
+
 
 #endif
 
@@ -706,7 +714,221 @@ struct key_wrapper {
 
 #define NTL_TLS_GLOBAL_ACCESS(var) \
 _ntl_hidden_typedef_tls_access_ ## var & var = _ntl_hidden_function_tls_access_ ## var()
+
+
+// **************************************************************
+// Following is code for "long long" arithmetic that can
+// be implemented using NTL_ULL_TYPE or using assembly.
+// I have found that the assembly can be a bit faster.
+// For now, this code is only available if NTL_HAVE_LL_TYPE
+// is defined.  This could change.  In any case, this provides
+// a cleaner interface and might eventually allow for 
+// implementation on systems that don't provide a long long type.
+// **************************************************************
+
+#ifdef NTL_HAVE_LL_TYPE
+
       
+#if (!defined(NTL_DISABLE_LL_ASM) \
+     && defined(__GNUC__) && (__GNUC__ >= 4) && !defined(__INTEL_COMPILER)  && !defined(__clang__) \
+     && defined (__x86_64__)  && NTL_BITS_PER_LONG == 64)
+
+// NOTE: clang's and icc's inline asm code gen is pretty bad, so
+// we don't even try. 
+
+// FIXME: probably, this should all be properly tested for speed (and correctness)
+// using the Wizard.
+
+
+struct ll_type {
+   unsigned long hi, lo;
+};
+
+
+static inline void 
+ll_mul_add(ll_type& x, unsigned long a, unsigned long b)
+{
+  unsigned long hi, lo;
+   __asm__ (
+   "mulq %[b] \n\t" 
+   "addq %[lo],%[xlo] \n\t"
+   "adcq %[hi],%[xhi]" : 
+   [lo] "=a" (lo), [hi] "=d" (hi), [xhi] "+r" (x.hi), [xlo] "+r" (x.lo) : 
+   [a] "%[lo]" (a), [b] "rm" (b) :
+   "cc"
+   );
+}
+
+static inline void 
+ll_imul_add(ll_type& x, unsigned long a, unsigned long b)
+{
+  unsigned long hi, lo;
+   __asm__ (
+   "imulq %[b] \n\t" 
+   "addq %[lo],%[xlo] \n\t"
+   "adcq %[hi],%[xhi]" : 
+   [lo] "=a" (lo), [hi] "=d" (hi), [xhi] "+r" (x.hi), [xlo] "+r" (x.lo) : 
+   [a] "%[lo]" (a), [b] "rm" (b) :
+   "cc"
+   );
+}
+
+static inline void 
+ll_mul(ll_type& x, unsigned long a, unsigned long b)
+{
+   __asm__ (
+   "mulq %[b]" :
+   [lo] "=a" (x.lo), [hi] "=d" (x.hi) : 
+   [a] "%[lo]" (a), [b] "rm" (b) :
+   "cc"
+   );
+}
+
+static inline void 
+ll_imul(ll_type& x, unsigned long a, unsigned long b)
+{
+   __asm__ (
+   "imulq %[b]" :
+   [lo] "=a" (x.lo), [hi] "=d" (x.hi) : 
+   [a] "%[lo]" (a), [b] "rm" (b) :
+   "cc"
+   );
+}
+
+static inline void
+ll_add(ll_type& x, unsigned long a)
+{
+   __asm__ (
+   "addq %[a],%[xlo] \n\t"
+   "adcq %[z],%[xhi]" :
+   [xhi] "+r" (x.hi), [xlo] "+r" (x.lo) :
+   [a] "rm" (a), [z] "i" (0) :
+   "cc"
+   );
+}
+
+
+
+// NOTE: an optimizing compiler will remove the conditional.
+// The alternative would be to make a specialization for shamt=0.
+// Unfortunately, this is impossible to do across a wide range
+// of compilers and still maintain internal linkage --- it is not 
+// allowed to include static spec in the specialization (new compilers
+// will complain) and without it, some older compilers will generate
+// an external symbol.  In fact, NTL currently never calls 
+// this with shamt=0, so it is all rather academic...but I want to
+// keep this general for future use.
+template<long shamt>
+static inline unsigned long
+ll_rshift_get_lo(ll_type x)
+{
+   if (shamt) {
+      __asm__ (
+      "shrdq %[shamt],%[hi],%[lo]" :
+      [lo] "+r" (x.lo) : 
+      [shamt] "i" (shamt), [hi] "r" (x.hi) :
+      "cc"
+      );
+   }
+   return x.lo;
+}
+
+
+static inline unsigned long 
+ll_get_lo(const ll_type& x)
+{
+   return x.lo;
+}
+
+static inline unsigned long 
+ll_get_hi(const ll_type& x)
+{
+   return x.hi;
+}
+
+
+static inline void
+ll_init(ll_type& x, unsigned long a)
+{
+   x.lo = a;
+   x.hi = 0;
+}
+
+#else
+
+
+typedef NTL_ULL_TYPE ll_type;
+
+// NOTE: the following functions definitions should serve as
+// documentation, as well.
+
+static inline void 
+ll_mul_add(ll_type& x, unsigned long a, unsigned long b)
+{
+   x += ((ll_type) a)*((ll_type) b);
+}
+
+// a and b should be representable as positive long's,
+// to allow for the most flexible implementation
+static inline void 
+ll_imul_add(ll_type& x, unsigned long a, unsigned long b)
+{
+   x += ((ll_type) long(a))*((ll_type) long(b));
+}
+static inline void 
+ll_mul(ll_type& x, unsigned long a, unsigned long b)
+{
+   x = ((ll_type) a)*((ll_type) b);
+}
+
+// a and b should be representable as positive long's,
+// to allow for the most flexible implementation
+static inline void 
+ll_imul(ll_type& x, unsigned long a, unsigned long b)
+{
+   x = ((ll_type) long(a))*((ll_type) long(b));
+}
+
+static inline void
+ll_add(ll_type& x, unsigned long a)
+{
+   x += a;
+}
+
+template<long shamt>
+static inline unsigned long
+ll_rshift_get_lo(const ll_type& x)
+{
+   return ((unsigned long) (x >> shamt));
+}
+
+static inline unsigned long 
+ll_get_lo(const ll_type& x)
+{
+   return ((unsigned long) x);
+}
+
+static inline unsigned long 
+ll_get_hi(const ll_type& x)
+{
+   return ((unsigned long) (x >> NTL_BITS_PER_LONG));
+}
+
+
+static inline void
+ll_init(ll_type& x, unsigned long a)
+{
+   x = a;
+}
+
+
+#endif
+
+
+
+#endif
+
+
 
 
 

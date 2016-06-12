@@ -1066,10 +1066,9 @@ void NTL_FFT_ROUTINE_NOTAB(long* A, const long* a, long k, const FFTPrimeInfo& i
 static inline unsigned long 
 sp_NormalizedLazyPrepMulModPreconWithRem(unsigned long& rres, long b, long n, unsigned long ninv)
 {
-   NTL_ULL_TYPE U = ((NTL_ULL_TYPE) cast_unsigned(b)) << (NTL_SP_NBITS+2);
-   unsigned long H = ((U << (NTL_BITS_PER_LONG-NTL_SP_NBITS-2)) >> NTL_BITS_PER_LONG);
+   unsigned long H = cast_unsigned(b);
    unsigned long Q = MulHiUL(H << 4, ninv);
-   unsigned long L = U;
+   unsigned long L = cast_unsigned(b) << (NTL_SP_NBITS+2);
    long r = L - Q*cast_unsigned(n);  // r in [0..2*n)
 
    r = sp_CorrectExcessQuo(Q, r, n);
@@ -1080,15 +1079,15 @@ sp_NormalizedLazyPrepMulModPreconWithRem(unsigned long& rres, long b, long n, un
 static inline unsigned long 
 sp_NormalizedLazyPrepMulModPrecon(long b, long n, unsigned long ninv)
 {
-   NTL_ULL_TYPE U = ((NTL_ULL_TYPE) cast_unsigned(b)) << (NTL_SP_NBITS+2);
-   unsigned long H = ((U << (NTL_BITS_PER_LONG-NTL_SP_NBITS-2)) >> NTL_BITS_PER_LONG);
+   unsigned long H = cast_unsigned(b);
    unsigned long Q = MulHiUL(H << 4, ninv);
-   unsigned long L = U;
+   unsigned long L = cast_unsigned(b) << (NTL_SP_NBITS+2);
    long r = L - Q*cast_unsigned(n);  // r in [0..2*n)
 
    Q += 1L + sp_SignMask(r-n);
    return Q; // NOTE: not shifted
 }
+
 
 #else
 

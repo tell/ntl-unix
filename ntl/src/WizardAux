@@ -355,5 +355,6 @@ print "\n\n*** the wizard is done!!\n\n";
 
 system("make DispSettings");
 system("./DispSettings");
+system("./DispSettings > wizard_log.h");
 
 

@@ -13,6 +13,7 @@ int main()
 {
 
    cout << "\n\n";
+   cout << "/***************************\n";
    cout << "Basic Configuration Options:\n";
 
 
@@ -105,6 +106,10 @@ int main()
    cout << "NTL_DISABLE_LONGLONG\n";
 #endif
 
+#ifdef NTL_DISABLE_LL_ASM
+   cout << "NTL_DISABLE_LL_ASM\n";
+#endif
+
 #ifdef NTL_MAXIMIZE_SP_NBITS
    cout << "NTL_MAXIMIZE_SP_NBITS\n";
 #endif
@@ -187,6 +192,7 @@ cout << "Performance Options:\n";
 #endif
 
 
+   cout << "***************************/\n";
    cout << "\n\n";
 
    return 0;

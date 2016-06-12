@@ -256,7 +256,7 @@ D13=$(D12) tour-ack.html tour-intro.html tour-time.html tour-changes.html
 D14=$(D13) tour-modules.html tour-unix.html tour-examples.html
 D15=$(D14) tour-roadmap.html tour-win.html tour-impl.html tour-struct.html
 D16=$(D15) tour.html tour-ex1.html tour-ex2.html tour-ex3.html tour-ex4.html
-D17=$(D16) tour-ex5.html tour-ex6.html arrow1.gif arrow2.gif arrow3.gif
+D17=$(D16) tour-ex5.html tour-ex6.html tour-ex7.html arrow1.gif arrow2.gif arrow3.gif
 D18=$(D17) tour-gmp.html tour-gf2x.html tour-tips.html config.txt version.txt
 
 TX01=GF2.txt GF2E.txt GF2EX.txt GF2EXFactoring.txt GF2X.txt GF2XFactoring.txt

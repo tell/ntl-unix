@@ -18,6 +18,7 @@ struct PartitionInfo {
    long intervalsz;  // interval size
    long nsintervals; // number of small intervals
 
+   explicit
    PartitionInfo(long sz, long nt = AvailableThreads()) 
    // partitions [0..sz) into nintervals intervals,
    // so that there are nsintervals of size intervalsz-1
@@ -412,6 +413,7 @@ public:
   long NumThreads() const { return nthreads; }
   bool active() const { return active_flag; }
 
+  explicit
   BasicThreadPool(long _nthreads) : 
     nthreads(_nthreads), active_flag(false), counter(0)
   {

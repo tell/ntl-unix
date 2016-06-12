@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>/Volumes/unix-files/u/ntl-new/ntl-9.7.1/doc/SmartPtr.cpp.html</title>
+<title>/Volumes/unix-files/u/ntl-new/ntl-9.9.0dev/doc/SmartPtr.cpp.html</title>
 <meta name="Generator" content="Vim/7.1">
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 </head>
@@ -406,7 +406,11 @@ CloneablePtr&lt;T&gt; MakeCloneable(<font color="#008b00"><b>const</b></font>&nb
 &nbsp;&nbsp; <font color="#0000ed"><i>// returns raw pointer, and sets the raw pointer to null</i></font><br>
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;move(UniquePtr&amp; other);<br>
+&nbsp;&nbsp; <font color="#008b00"><b>template</b></font>&lt;<font color="#008b00"><b>class</b></font>&nbsp;Y&gt; <font color="#008b00"><b>void</b></font>&nbsp;move(UniqePtr&lt;Y&gt;&amp; other);<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// move other to *this</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// in the second version, Y* should be convertable to T*</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// NOTE: if Y is a subclass of T, then typically, ~T() should</i></font><br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// be virtual, to ensure that the destructor for Y is called</i></font><br>
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;swap(UniquePtr&amp; other);<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// swap raw pointers</i></font><br>
@@ -464,6 +468,8 @@ CloneablePtr&lt;T&gt; MakeCloneable(<font color="#008b00"><b>const</b></font>&nb
 <br>
 <font color="#0000ed"><i>&nbsp;&nbsp; p1.val()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // dereference</i></font><br>
 <br>
+<font color="#0000ed"><i>&nbsp;&nbsp; rp = p1.get();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // fetch raw pointer</i></font><br>
+<font color="#0000ed"><i>&nbsp;&nbsp; rp = p1.release();&nbsp;&nbsp; // fetch raw pointer, and set to NULL</i></font><br>
 <font color="#0000ed"><i>&nbsp;&nbsp; p1.move(p2);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // move p2 to p1, destroying p1's referent</i></font><br>
 <font color="#0000ed"><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;&nbsp; if p1 != p2</i></font><br>
 <br>
@@ -510,6 +516,12 @@ CloneablePtr&lt;T&gt; MakeCloneable(<font color="#008b00"><b>const</b></font>&nb
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>bool</b></font>&nbsp;exists() <font color="#008b00"><b>const</b></font>;<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// checks that underlying pointer is not null</i></font><br>
+<br>
+&nbsp;&nbsp; T* get() <font color="#008b00"><b>const</b></font>;<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// returns underlying raw pointer</i></font><br>
+<br>
+&nbsp;&nbsp; T* release();<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// returns raw pointer, and sets the raw pointer to null</i></font><br>
 <br>
 &nbsp;&nbsp; <font color="#008b00"><b>void</b></font>&nbsp;move(OptionalVal&amp; other);<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// performs a (shallow) pointer move</i></font><br>
@@ -596,6 +608,9 @@ CloneablePtr&lt;T&gt; MakeCloneable(<font color="#008b00"><b>const</b></font>&nb
 <br>
 &nbsp;&nbsp; T* get() <font color="#008b00"><b>const</b></font>;<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// get raw pointer</i></font><br>
+<br>
+&nbsp;&nbsp; T* elts() <font color="#008b00"><b>const</b></font>;<br>
+&nbsp;&nbsp; <font color="#0000ed"><i>// get raw pointer (for compatibility with the Vec class)</i></font><br>
 <br>
 &nbsp;&nbsp; T* release();<br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// get raw pointer and reset to null</i></font><br>

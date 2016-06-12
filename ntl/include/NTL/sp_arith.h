@@ -674,16 +674,19 @@ PrepMulMod(long n)
 static inline long 
 sp_NormalizedMulMod(long a, long b, long n, unsigned long ninv) 
 {
-   NTL_ULL_TYPE U = ((NTL_ULL_TYPE) cast_unsigned(a)) * ((NTL_ULL_TYPE) cast_unsigned(b));
-   unsigned long H = U >> (NTL_SP_NBITS-2);
+   ll_type U;
+   ll_imul(U, a, b);
+   unsigned long H = ll_rshift_get_lo<NTL_SP_NBITS-2>(U);
    unsigned long Q = MulHiUL(H, ninv);
    Q = Q >> NTL_POST_SHIFT;
-   unsigned long L = U;
+   unsigned long L = ll_get_lo(U);
    long r = L - Q*cast_unsigned(n);  // r in [0..2*n)
 
    r = sp_CorrectExcess(r, n);
    return r;
 }
+
+
 
 static inline long 
 MulMod(long a, long b, long n, sp_inverse ninv)
@@ -709,11 +712,12 @@ NormalizedModulus(sp_inverse ninv) { return ninv.shamt == 0; }
 static inline long 
 sp_NormalizedMulModWithQuo(long& qres, long a, long b, long n, unsigned long ninv)
 {
-   NTL_ULL_TYPE U = ((NTL_ULL_TYPE) cast_unsigned(a)) * ((NTL_ULL_TYPE) cast_unsigned(b));
-   unsigned long H = U >> (NTL_SP_NBITS-2);
+   ll_type U;
+   ll_imul(U, a, b);
+   unsigned long H = ll_rshift_get_lo<NTL_SP_NBITS-2>(U);
    unsigned long Q = MulHiUL(H, ninv);
    Q = Q >> NTL_POST_SHIFT;
-   unsigned long L = U;
+   unsigned long L = ll_get_lo(U);
    long r = L - Q*cast_unsigned(n);  // r in [0..2*n)
 
    r = sp_CorrectExcessQuo(Q, r, n);
@@ -754,20 +758,21 @@ static inline unsigned long PrepMulModPrecon(long b, long n, wide_double ninv)
 
 #else
 
+
 static inline unsigned long 
 sp_NormalizedPrepMulModPrecon(long b, long n, unsigned long ninv)
 {
-   NTL_ULL_TYPE U = ((NTL_ULL_TYPE) cast_unsigned(b)) << NTL_SP_NBITS;
-   unsigned long H = U >> (NTL_SP_NBITS-2);
+   unsigned long H = cast_unsigned(b) << 2;
    unsigned long Q = MulHiUL(H, ninv);
    Q = Q >> NTL_POST_SHIFT;
-   unsigned long L = U;
+   unsigned long L = cast_unsigned(b) << NTL_SP_NBITS;
    long r = L - Q*cast_unsigned(n);  // r in [0..2*n)
 
 
    Q += 1L + sp_SignMask(r-n);
    return Q;  // NOTE: not shifted
 }
+
 
 static inline unsigned long 
 PrepMulModPrecon(long b, long n, sp_inverse ninv)

@@ -676,6 +676,30 @@ inline ZZ& operator%=(ZZ& x, const ZZ& b)
    { rem(x, x, b); return x; } 
 
 
+// preconditioned single-precision variant
+// not documented for now...
+
+
+class PreconditionedRemainder {
+private:
+   long p;
+   UniquePtr<_ntl_general_rem_one_struct> pinfo;
+
+public:
+   PreconditionedRemainder(long _p, long sz) : p(_p)
+   {
+      pinfo.reset(_ntl_general_rem_one_struct_build(p, sz));
+   }
+
+
+   long operator()(const ZZ& a) 
+   {
+      return _ntl_general_rem_one_struct_apply(a.rep, p, pinfo.get());
+   }
+};
+      
+
+
 /**********************************************************
 
                         GCD's

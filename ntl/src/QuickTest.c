@@ -204,6 +204,10 @@ int main()
    cerr << "NTL_DISABLE_LONGLONG\n";
 #endif
 
+#ifdef NTL_DISABLE_LL_ASM
+   cerr << "NTL_DISABLE_LL_ASM\n";
+#endif
+
 #ifdef NTL_MAXIMIZE_SP_NBITS
    cerr << "NTL_MAXIMIZE_SP_NBITS\n";
 #endif

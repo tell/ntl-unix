@@ -74,6 +74,12 @@ int main()
 #endif
 
 
+#ifdef NTL_DISABLE_LL_ASM
+   cout << "NTL_DISABLE_LL_ASM=1\n";
+#else
+   cout << "NTL_DISABLE_LL_ASM=0\n";
+#endif
+
 #ifdef NTL_MAXIMIZE_SP_NBITS
    cout << "NTL_MAXIMIZE_SP_NBITS=1\n";
 #else

@@ -241,9 +241,6 @@ ostream& operator<<(ostream& s, zz_p a)
 
 #ifdef NTL_HAVE_LL_TYPE
 
-#define NTL_CAST_ULL(x) ((NTL_ULL_TYPE) (x))
-#define NTL_MUL_ULL(x,y) (NTL_CAST_ULL(x)*NTL_CAST_ULL(y))
-
 
 // NOTE: the following code sequence will generate imulq 
 // instructions on x86_64 machines, which empirically is faster
@@ -257,50 +254,53 @@ InnerProd_LL(const long *ap, const zz_p *bp, long n, long d,
    const long BLKSIZE = (1L << min(20, 2*(NTL_BITS_PER_LONG-NTL_SP_NBITS)));
 
    unsigned long acc0 = 0;
-   NTL_ULL_TYPE acc21 = 0;
+   ll_type acc21;
+   ll_init(acc21, 0);
 
    long i;
    for (i = 0; i <= n-BLKSIZE; i += BLKSIZE, ap += BLKSIZE, bp += BLKSIZE) {
       // sum ap[j]*rep(bp[j]) for j in [0..BLKSIZE)
 
-      NTL_ULL_TYPE sum = 0;
+      ll_type sum;
+      ll_init(sum, 0);
       for (long j = 0; j < BLKSIZE; j += 4) {
-         sum += NTL_MUL_ULL(ap[j+0], rep(bp[j+0]));
-         sum += NTL_MUL_ULL(ap[j+1], rep(bp[j+1]));
-         sum += NTL_MUL_ULL(ap[j+2], rep(bp[j+2]));
-         sum += NTL_MUL_ULL(ap[j+3], rep(bp[j+3]));
+         ll_imul_add(sum, ap[j+0], rep(bp[j+0]));
+         ll_imul_add(sum, ap[j+1], rep(bp[j+1]));
+         ll_imul_add(sum, ap[j+2], rep(bp[j+2]));
+         ll_imul_add(sum, ap[j+3], rep(bp[j+3]));
       }
 
-      sum += acc0; 
-      acc0 = sum;
-      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
+      ll_add(sum, acc0); 
+      acc0 = ll_get_lo(sum);
+      ll_add(acc21, ll_get_hi(sum));
    }
 
    if (i < n) {
       // sum ap[i]*rep(bp[j]) for j in [0..n-i)
 
-      NTL_ULL_TYPE sum = 0;
+      ll_type sum; 
+      ll_init(sum, 0);
       long j = 0;
-
       for (; j <= n-i-4; j += 4) {
-         sum += NTL_MUL_ULL(ap[j+0], rep(bp[j+0]));
-         sum += NTL_MUL_ULL(ap[j+1], rep(bp[j+1]));
-         sum += NTL_MUL_ULL(ap[j+2], rep(bp[j+2]));
-         sum += NTL_MUL_ULL(ap[j+3], rep(bp[j+3]));
+         ll_imul_add(sum, ap[j+0], rep(bp[j+0]));
+         ll_imul_add(sum, ap[j+1], rep(bp[j+1]));
+         ll_imul_add(sum, ap[j+2], rep(bp[j+2]));
+         ll_imul_add(sum, ap[j+3], rep(bp[j+3]));
       }
 
       for (; j < n-i; j++)
-         sum += NTL_MUL_ULL(ap[j], rep(bp[j]));
+         ll_imul_add(sum, ap[j], rep(bp[j]));
 
-      sum += acc0; 
-      acc0 = sum;
-      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
+
+      ll_add(sum, acc0); 
+      acc0 = ll_get_lo(sum);
+      ll_add(acc21, ll_get_hi(sum));
    }
 
    if (dinv.nbits == NTL_SP_NBITS) 
-      return sp_ll_red_31_normalized(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, d, dinv);
+      return sp_ll_red_31_normalized(ll_get_hi(acc21), ll_get_lo(acc21), acc0, d, dinv);
    else
-      return sp_ll_red_31(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, d, dinv);
+      return sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, d, dinv);
 }
 
 
@@ -311,50 +311,53 @@ InnerProd_LL(const zz_p *ap, const zz_p *bp, long n, long d,
    const long BLKSIZE = (1L << min(20, 2*(NTL_BITS_PER_LONG-NTL_SP_NBITS)));
 
    unsigned long acc0 = 0;
-   NTL_ULL_TYPE acc21 = 0;
+   ll_type acc21;
+   ll_init(acc21, 0);
 
    long i;
    for (i = 0; i <= n-BLKSIZE; i += BLKSIZE, ap += BLKSIZE, bp += BLKSIZE) {
-      // sum rep(ap[j])*rep(bp[j]) for j in [0..BLKSIZE)
+      // sum ap[j]*rep(bp[j]) for j in [0..BLKSIZE)
 
-      NTL_ULL_TYPE sum = 0;
+      ll_type sum;
+      ll_init(sum, 0);
       for (long j = 0; j < BLKSIZE; j += 4) {
-         sum += NTL_MUL_ULL(rep(ap[j+0]), rep(bp[j+0]));
-         sum += NTL_MUL_ULL(rep(ap[j+1]), rep(bp[j+1]));
-         sum += NTL_MUL_ULL(rep(ap[j+2]), rep(bp[j+2]));
-         sum += NTL_MUL_ULL(rep(ap[j+3]), rep(bp[j+3]));
+         ll_imul_add(sum, rep(ap[j+0]), rep(bp[j+0]));
+         ll_imul_add(sum, rep(ap[j+1]), rep(bp[j+1]));
+         ll_imul_add(sum, rep(ap[j+2]), rep(bp[j+2]));
+         ll_imul_add(sum, rep(ap[j+3]), rep(bp[j+3]));
       }
 
-      sum += acc0; 
-      acc0 = sum;
-      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
+      ll_add(sum, acc0); 
+      acc0 = ll_get_lo(sum);
+      ll_add(acc21, ll_get_hi(sum));
    }
 
    if (i < n) {
-      // sum rep(ap[i])*rep(bp[j]) for j in [0..n-i)
+      // sum ap[i]*rep(bp[j]) for j in [0..n-i)
 
-      NTL_ULL_TYPE sum = 0;
+      ll_type sum; 
+      ll_init(sum, 0);
       long j = 0;
-
       for (; j <= n-i-4; j += 4) {
-         sum += NTL_MUL_ULL(rep(ap[j+0]), rep(bp[j+0]));
-         sum += NTL_MUL_ULL(rep(ap[j+1]), rep(bp[j+1]));
-         sum += NTL_MUL_ULL(rep(ap[j+2]), rep(bp[j+2]));
-         sum += NTL_MUL_ULL(rep(ap[j+3]), rep(bp[j+3]));
+         ll_imul_add(sum, rep(ap[j+0]), rep(bp[j+0]));
+         ll_imul_add(sum, rep(ap[j+1]), rep(bp[j+1]));
+         ll_imul_add(sum, rep(ap[j+2]), rep(bp[j+2]));
+         ll_imul_add(sum, rep(ap[j+3]), rep(bp[j+3]));
       }
 
       for (; j < n-i; j++)
-         sum += NTL_MUL_ULL(rep(ap[j]), rep(bp[j]));
+         ll_imul_add(sum, rep(ap[j]), rep(bp[j]));
 
-      sum += acc0; 
-      acc0 = sum;
-      acc21 += (unsigned long) (sum >> NTL_BITS_PER_LONG);
+
+      ll_add(sum, acc0); 
+      acc0 = ll_get_lo(sum);
+      ll_add(acc21, ll_get_hi(sum));
    }
 
    if (dinv.nbits == NTL_SP_NBITS) 
-      return sp_ll_red_31_normalized(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, d, dinv);
+      return sp_ll_red_31_normalized(ll_get_hi(acc21), ll_get_lo(acc21), acc0, d, dinv);
    else
-      return sp_ll_red_31(acc21 >> NTL_BITS_PER_LONG, acc21, acc0, d, dinv);
+      return sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, d, dinv);
 }
 
 

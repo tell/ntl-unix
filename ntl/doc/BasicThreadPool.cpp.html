@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>/Volumes/unix-files/u/ntl-new/ntl-9.7.1/doc/BasicThreadPool.cpp.html</title>
+<title>/Volumes/unix-files/u/ntl-new/ntl-9.9.0dev/doc/BasicThreadPool.cpp.html</title>
 <meta name="Generator" content="Vim/7.1">
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 </head>
@@ -84,7 +84,7 @@
 <font color="#0000ed"><i>// it runs single-threaded with first=0 and last=n.</i></font><br>
 <font color="#0000ed"><i>// </i></font><br>
 <font color="#0000ed"><i>// Note that the code within the EXEC_RANGE body could call other routines that</i></font><br>
-<font color="#0000ed"><i>// themselves attempt to execute ab EXEC_RANGE: if this happens, the latter</i></font><br>
+<font color="#0000ed"><i>// themselves attempt to execute an EXEC_RANGE: if this happens, the latter</i></font><br>
 <font color="#0000ed"><i>// EXEC_RANGE will detect this and run single-threaded.</i></font><br>
 <font color="#0000ed"><i>// </i></font><br>
 <font color="#0000ed"><i>// You may wish to do other things within the EXEC_RANGE body than just execute</i></font><br>
@@ -263,6 +263,7 @@
 <br>
 <font color="#b02f60"><b>public</b></font>:<br>
 <br>
+&nbsp;&nbsp;<font color="#008b00"><b>explicit</b></font><br>
 &nbsp;&nbsp;BasicThreadPool(<font color="#008b00"><b>long</b></font>&nbsp;nthreads);<br>
 &nbsp;&nbsp;<font color="#0000ed"><i>// creates a pool with nthreads threads, including the current thread</i></font><br>
 &nbsp;&nbsp;<font color="#0000ed"><i>// (so nthreads-1 other threads get created)</i></font><br>
@@ -363,6 +364,7 @@ BasicThreadPool *ReleaseThreadPool();<br>
 <font color="#008b00"><b>class</b></font>&nbsp;PartitionInfo {<br>
 <font color="#b02f60"><b>public</b></font>:<br>
 <br>
+&nbsp;&nbsp; <font color="#008b00"><b>explicit</b></font><br>
 &nbsp;&nbsp; PartitionInfo(<font color="#008b00"><b>long</b></font>&nbsp;sz, <font color="#008b00"><b>long</b></font>&nbsp;nt = AvailableThreads()); <br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// partitions [0..sz) into at most nt subintervals.&nbsp;&nbsp;sz may be 0 or</i></font><br>
 &nbsp;&nbsp; <font color="#0000ed"><i>// negative, in which case the number of subintervals is 0.</i></font><br>

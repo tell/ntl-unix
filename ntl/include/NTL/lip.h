@@ -63,5 +63,21 @@ _ntl_reduce_struct *
 _ntl_reduce_struct_build(NTL_verylong modulus, NTL_verylong excess);
 
 
+// faster reduction with preconditioning -- general usage, single modulus
+
+class _ntl_general_rem_one_struct {
+public:
+  virtual ~_ntl_general_rem_one_struct() { }
+};
+
+_ntl_general_rem_one_struct *
+_ntl_general_rem_one_struct_build(long p, long sz);
+
+long 
+_ntl_general_rem_one_struct_apply(NTL_verylong a, long p, _ntl_general_rem_one_struct *pinfo);
+
+
+
+
 
 #endif

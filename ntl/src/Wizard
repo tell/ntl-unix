@@ -106,11 +106,12 @@ cd ../..
 
 echo "*"
 echo "*"
-echo "* Updating config.h"
+echo "* Updating config.h and wizard_log.h"
 echo "*"
 echo "*"
 
 cp small/include/NTL/config.h ../include/NTL/config.h
+cp small/src/wizard_log.h ../include/NTL/wizard_log.h
 
 rm -r small
 
