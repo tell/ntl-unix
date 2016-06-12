@@ -1,21 +1,29 @@
+matrix:
+  include:
+  - os: linux
+  - os: osx
+    osx_image: xcode7.3
+#  - os: osx
+#    osx_image: xcode7.1
 language: cpp
 sudo: false
 cache:
-    apt: true
+  apt: true
 addons:
-    apt:
-        sources:
-            # - deadsnakes
-        - ubuntu-toolchain-r-test
-        packages:
-        - g++-5
-        - libgmp-dev
+  apt:
+    sources:
+      # - deadsnakes
+    - ubuntu-toolchain-r-test
+    packages:
+    - g++-5
+    - libgmp-dev
 compiler:
-- g++-5
+- gcc
+before_install:
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gcc5 gnu-sed; fi
 before_script:
+- g++-5 --version
 - CXX=g++-5 make 2>&1 > make.log || { echo "!!!! ERROR !!!!"; cat make.log; false; }
 script:
 - CXX=g++-5 make check
-# after_failure:
-#     - "pwd"
-#     - "cat config.log"
