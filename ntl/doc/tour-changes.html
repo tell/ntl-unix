@@ -19,6 +19,53 @@ A Tour of NTL: Summary of Changes
 
 <p><hr><p>
 <h3>
+2016.06.21: Changes between NTL 9.9.1 and 9.10.0
+</h3>
+
+<ul>
+<li>
+Fixed a problem in the <i>aligned array</i> logic
+that prevented compilation on MinGW on Windows.
+
+<li>
+Conversions from <tt>ZZ</tt> to <tt>zz_p</tt>
+are now faster, thanks to preconditioning.
+Among other things,
+the CRT-based <tt>ZZX</tt> multiplication code is also
+a bit faster as a result.
+
+<li>
+The <tt>BasicThreadPool</tt> class 
+ now guarantees that 
+  <tt>exec_range</tt> assigns the current thread
+  <tt>first=0</tt>, and <tt>exec_index</tt> assigns
+  the current thread <tt>index=0</tt>.
+This makes it easy for a thread to tell whether of not
+it is the current thread, which can be convienient for
+some applications.
+
+<li>
+Fine tuned the interface for <tt>SmartPtr</tt>
+and <tt>UniquePtr</tt> a bit, including the ability 
+to attach an explicit <i>deleter policy</i>, which
+(among other things) makes it easier to implement the
+PIMPL pattern using these classes.
+Unfortunately, some of these changes introduced some
+minor backward incompatibilities (but I doubt anyone
+will even notice).
+
+<li>
+Introduced a new class <tt>CopiedPtr</tt>, 
+which has a similar interface to <tt>UniquePtr</tt>,
+but which allows copy and assignment.
+This class is meant to replace the <tt>OptionalVal</tt>
+class, whose use is now discouraged.
+
+</ul>
+
+
+<p><hr><p>
+<h3>
 2016.06.02: Changes between NTL 9.9.0 and 9.9.1
 </h3>
 

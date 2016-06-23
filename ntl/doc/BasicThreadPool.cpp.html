@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>/Volumes/unix-files/u/ntl-new/ntl-9.9.0dev/doc/BasicThreadPool.cpp.html</title>
+<title>/Volumes/unix-files/u/ntl-new/ntl-9.10.0dev/doc/BasicThreadPool.cpp.html</title>
 <meta name="Generator" content="Vim/7.1">
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 </head>
@@ -73,8 +73,9 @@
 <font color="#0000ed"><i>// subinterval [first..last) to be processed by one thread.</i></font><br>
 <font color="#0000ed"><i>// </i></font><br>
 <font color="#0000ed"><i>// Note that the current thread participates as one of the nt available</i></font><br>
-<font color="#0000ed"><i>// threads, and that the current thread will wait for all participating threads</i></font><br>
-<font color="#0000ed"><i>// to finish their task before proceeding.</i></font><br>
+<font color="#0000ed"><i>// threads, and that the current thread will wait for all other participating threads</i></font><br>
+<font color="#0000ed"><i>// to finish their task before proceeding. The current thread can be identified</i></font><br>
+<font color="#0000ed"><i>// as the one with first == 0.</i></font><br>
 <font color="#0000ed"><i>// </i></font><br>
 <font color="#0000ed"><i>// Withing the &quot;body&quot; of this construct, you can freely reference any variables</i></font><br>
 <font color="#0000ed"><i>// that are visible at this point.&nbsp;&nbsp;This is implemented using the C++ lambda</i></font><br>
@@ -126,7 +127,9 @@
 <br>
 <font color="#0000ed"><i>// will execute the body on nt different threads, each with a unique index in</i></font><br>
 <font color="#0000ed"><i>// the range [0..nt).&nbsp;&nbsp;A variable named &quot;index&quot; (or whatever name you specify)</i></font><br>
-<font color="#0000ed"><i>// of type long will hold the given index.</i></font><br>
+<font color="#0000ed"><i>// of type long will hold the given index.&nbsp;&nbsp;Just as with EXEC_RANGE, the current</i></font><br>
+<font color="#0000ed"><i>// thread will participate as one of the nt threads, and will always be</i></font><br>
+<font color="#0000ed"><i>// assigned an index of 0.</i></font><br>
 <font color="#0000ed"><i>// </i></font><br>
 <font color="#0000ed"><i>// This tool is useful if you need to manage memory a bit more carefully.&nbsp;&nbsp;For</i></font><br>
 <font color="#0000ed"><i>// example, the following code will compute an inner product using all</i></font><br>

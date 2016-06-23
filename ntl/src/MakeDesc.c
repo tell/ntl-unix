@@ -756,6 +756,7 @@ int main()
    long bpl, bpi, bpt, rs_arith, nbits, wnbits;
    long dp, dr;
    long fma_detected;
+   long big_pointers;
    long ldp;
    FILE *f;
    long warnings = 0;
@@ -1059,6 +1060,11 @@ int main()
    // disable long doubles if it doesn't increase nbits...
    // (for example, on 32-bit machines)
 
+
+   big_pointers = 0;
+   if (sizeof(char*) > sizeof(long)) big_pointers = 1;
+
+
    /*
     * That's it!  All tests have passed.
     */
@@ -1075,6 +1081,7 @@ int main()
    fprintf(stderr, "WNBITS (maximum) = %ld\n", wnbits);
    fprintf(stderr, "double rounding detected = %s\n", yn_vec[dr]);  
    fprintf(stderr, "FMA detected = %s\n", yn_vec[fma_detected]);  
+   fprintf(stderr, "big pointers = %s\n", yn_vec[big_pointers]);  
 
    if (dr && GNUC_INTEL)
       fprintf(stderr, "-- auto x86 fix\n");
@@ -1178,15 +1185,16 @@ int main()
    fprintf(f, "#define NTL_EXT_DOUBLE (%ld)\n", dr);
 
    fprintf(f, "#define NTL_FMA_DETECTED (%ld)\n", fma_detected);
+   fprintf(f, "#define NTL_BIG_POINTERS (%ld)\n", big_pointers);
 
+   fprintf(f, "#define NTL_MIN_LONG (-NTL_MAX_LONG - 1L)\n");
+   fprintf(f, "#define NTL_MIN_INT  (-NTL_MAX_INT - 1)\n");
 
 
    print_BB_mul_code(f, bpl);
    print_BB_sqr_code(f, bpl);
    print_BB_rev_code(f, bpl);
 
-   fprintf(f, "#define NTL_MIN_LONG (-NTL_MAX_LONG - 1L)\n");
-   fprintf(f, "#define NTL_MIN_INT  (-NTL_MAX_INT - 1)\n");
 
    fprintf(f, "#endif\n\n");
 

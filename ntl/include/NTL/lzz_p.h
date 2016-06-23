@@ -28,6 +28,7 @@ public:
 
    sp_reduce_struct red_struct;
    sp_ll_reduce_struct ll_red_struct;
+   sp_ZZ_reduce_struct ZZ_red_struct;
 
    FFTPrimeInfo* p_info; // non-null means we are directly using 
                          // an FFT prime
@@ -186,6 +187,7 @@ static zz_p zero() { return zz_p(); }
 static mulmod_t ModulusInverse() { return zz_pInfo->pinv; }
 static sp_reduce_struct red_struct() { return zz_pInfo->red_struct; }
 static sp_ll_reduce_struct ll_red_struct() { return zz_pInfo->ll_red_struct; }
+static const sp_ZZ_reduce_struct& ZZ_red_struct() { return zz_pInfo->ZZ_red_struct; }
 static long PrimeCnt() { return zz_pInfo->PrimeCnt; }
 
 

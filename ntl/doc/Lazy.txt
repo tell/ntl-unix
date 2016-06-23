@@ -86,6 +86,6 @@ public:
 // class may contain data members from the standard library
 // that may not satisfy the requirements of the Vec class
 // (i.e., relocatability).  One can wrap it in a pointer 
-// class (e.g., OptionalVal) to deal with this.
+// class (e.g., CopiedPtr) to deal with this.
 
 

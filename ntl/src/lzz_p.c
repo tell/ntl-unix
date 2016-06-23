@@ -34,6 +34,7 @@ zz_pInfoT::zz_pInfoT(long NewP, long maxroot)
    pinv = PrepMulMod(p);
    red_struct = sp_PrepRem(p);
    ll_red_struct = make_sp_ll_reduce_struct(p);
+   ZZ_red_struct.build(p);
 
    p_info = 0;
 
@@ -91,6 +92,7 @@ zz_pInfoT::zz_pInfoT(INIT_FFT_TYPE, FFTPrimeInfo *info)
    pinv = info->qinv;
    red_struct = sp_PrepRem(p);
    ll_red_struct = make_sp_ll_reduce_struct(p);
+   ZZ_red_struct.build(p);
 
 
    p_info = info;
@@ -112,6 +114,7 @@ zz_pInfoT::zz_pInfoT(INIT_USER_FFT_TYPE, long q)
    pinv = PrepMulMod(p);
    red_struct = sp_PrepRem(p);
    ll_red_struct = make_sp_ll_reduce_struct(p);
+   ZZ_red_struct.build(p);
 
 
    p_info_owner.make();
@@ -207,12 +210,12 @@ void zz_pBak::restore()
 
 zz_p to_zz_p(const ZZ& a)
 {
-   return zz_p(rem(a, zz_p::modulus()), INIT_LOOP_HOLE);
+   return zz_p(zz_p::ZZ_red_struct().rem(a), INIT_LOOP_HOLE);
 }
 
 void conv(zz_p& x, const ZZ& a)
 {
-   x._zz_p__rep = rem(a, zz_p::modulus());
+   x._zz_p__rep = zz_p::ZZ_red_struct().rem(a);
 }
 
 

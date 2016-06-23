@@ -17,6 +17,9 @@
 #define NTL_QUAD_FLOAT_SPLIT ((((double)(1L<<27)))+1.0)
 #define NTL_EXT_DOUBLE (0)
 #define NTL_FMA_DETECTED (1)
+#define NTL_BIG_POINTERS (1)
+#define NTL_MIN_LONG (-NTL_MAX_LONG - 1L)
+#define NTL_MIN_INT  (-NTL_MAX_INT - 1)
 
 
 
@@ -624,7 +627,5 @@ hi=hi|(sqrtab[(a>>24)&255]<<16);\
 |(revtab[(a>>16)&255]<<8)\
 |(revtab[(a>>24)&255]<<0)
 
-#define NTL_MIN_LONG (-NTL_MAX_LONG - 1L)
-#define NTL_MIN_INT  (-NTL_MAX_INT - 1)
 #endif
 

@@ -111,7 +111,7 @@ typedef unsigned int _ntl_uint32; // 32-bit word
 
 #else
 
-// NOTE: C++ standard guarntees longs ar at least 32-bits wide,
+// NOTE: C++ standard guarantees longs are at least 32-bits wide,
 // and this is also explicitly checked at builod time
 
 typedef unsigned long _ntl_uint32; // 32-bit word
@@ -394,6 +394,59 @@ void _ntl_swap(T*& a, T*& b)
  */
 
 
+// The following routine increments a pointer so that
+// it is properly aligned.  
+// It is assumed that align > 0.
+// If align is a constant power of 2, it compiles
+// into a small handful of simple instructions.
+
+#if (NTL_BIG_POINTERS)
+
+#define NTL_UPTRINT_T unsigned long long
+// DIRT: this should really be std::uintptr_t, defined
+// in <cstdint>; however, that header is not widely available,
+// and even if it were, std::uintpre_t is not guaranteed
+// to be defined.  Of course, unsigned long long may not
+// be defined in pre-C++11.  
+
+#else
+
+#define NTL_UPTRINT_T unsigned long 
+
+#endif
+
+
+#if (!defined(__GNUC__) || !defined(__x86_64__) || NTL_BITS_PER_LONG != 64)
+
+// DIRT: for now, we only attempt to implement this function properly when
+// we really need it, which is for AVX support.
+// The source file CheckAVX.c checks for these same conditions.
+// We still define it, to simplify the overall code structure.
+
+static inline
+char *_ntl_make_aligned(char *p, long align)
+{
+   return p;
+}
+
+#else
+
+// DIRT: in the limited range of platforms for which we attempt to
+// implement it, this should work fine.
+
+static inline
+char *_ntl_make_aligned(char *p, long align)
+{
+   unsigned long r =  (unsigned long) (((NTL_UPTRINT_T) (p)) % ((NTL_UPTRINT_T) (align)));
+   return p + ((((unsigned long) (align)) - r) % ((unsigned long) (align)));
+}
+
+#define NTL_HAVE_ALIGNED_ARRAY
+
+#endif
+
+
+
 
 
 // The following is for aligning small local arrays
@@ -408,9 +461,7 @@ void _ntl_swap(T*& a, T*& b)
 
 #define NTL_ALIGNED_LOCAL_ARRAY(align, x, type, n) \
    char x##__ntl_hidden_variable_storage[n*sizeof(type)+align]; \
-   type *x = (type *) ((&x##__ntl_hidden_variable_storage[0]) + \
-                       ((-((unsigned long) (&x##__ntl_hidden_variable_storage[0]))) %\
-                       (unsigned long)(align))) \
+   type *x = (type *) _ntl_make_aligned(&x##__ntl_hidden_variable_storage[0], align);
 
 
 #define NTL_AVX_BYTE_ALIGN (32)

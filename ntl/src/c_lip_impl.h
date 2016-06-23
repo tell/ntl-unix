@@ -6752,8 +6752,7 @@ _ntl_reduce_struct_build(_ntl_verylong modulus, _ntl_verylong excess)
 
 // general preconditioned remainder
 
-class _ntl_general_rem_one_impl : public _ntl_general_rem_one_struct  {
-};
+struct _ntl_general_rem_one_struct  { };
 
 _ntl_general_rem_one_struct *
 _ntl_general_rem_one_struct_build(long p, long sz)
@@ -6767,5 +6766,9 @@ _ntl_general_rem_one_struct_apply(NTL_verylong a, long p, _ntl_general_rem_one_s
    return _ntl_zsmod(a, p);
 }
 
+void
+_ntl_general_rem_one_struct_delete(_ntl_general_rem_one_struct *pinfo) 
+{
+}
 
 

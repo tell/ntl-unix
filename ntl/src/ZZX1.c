@@ -679,6 +679,7 @@ double SSRatio(long na, long maxa, long nb, long maxb)
 
 
 
+static
 void conv(vec_zz_p& x, const ZZVec& a)
 {
    long i, n;
@@ -689,12 +690,11 @@ void conv(vec_zz_p& x, const ZZVec& a)
    zz_p* xp = x.elts();
    const ZZ* ap = a.elts();
 
-   long p = zz_p::modulus();
+   const sp_ZZ_reduce_struct& ZZ_red_struct = zz_p::ZZ_red_struct();
 
    for (i = 0; i < n; i++)
-      xp[i].LoopHole() = rem(a[i], p);
+      xp[i].LoopHole() = ZZ_red_struct.rem(ap[i]);
 }
-
 
 
 void HomMul(ZZX& x, const ZZX& a, const ZZX& b)

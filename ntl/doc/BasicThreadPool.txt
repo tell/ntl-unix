@@ -65,8 +65,9 @@ which facilitite simple parallel for loops.
 // subinterval [first..last) to be processed by one thread.
 // 
 // Note that the current thread participates as one of the nt available
-// threads, and that the current thread will wait for all participating threads
-// to finish their task before proceeding.
+// threads, and that the current thread will wait for all other participating threads
+// to finish their task before proceeding. The current thread can be identified
+// as the one with first == 0.
 // 
 // Withing the "body" of this construct, you can freely reference any variables
 // that are visible at this point.  This is implemented using the C++ lambda
@@ -118,7 +119,9 @@ which facilitite simple parallel for loops.
 
 // will execute the body on nt different threads, each with a unique index in
 // the range [0..nt).  A variable named "index" (or whatever name you specify)
-// of type long will hold the given index.
+// of type long will hold the given index.  Just as with EXEC_RANGE, the current
+// thread will participate as one of the nt threads, and will always be
+// assigned an index of 0.
 // 
 // This tool is useful if you need to manage memory a bit more carefully.  For
 // example, the following code will compute an inner product using all

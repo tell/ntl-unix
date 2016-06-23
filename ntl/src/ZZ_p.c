@@ -40,7 +40,7 @@ ZZ_pInfoT::ZZ_pInfoT(const ZZ& NewP)
 
 void ZZ_p::DoInstall()
 {
-   SmartPtr<ZZ_pTmpSpaceT> tmps = 0;
+   SmartPtr<ZZ_pTmpSpaceT> tmps; 
 
    do { // NOTE: thread safe lazy init 
       Lazy<ZZ_pFFTInfoT>::Builder builder(ZZ_pInfo->FFTInfo);

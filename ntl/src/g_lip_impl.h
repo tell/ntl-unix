@@ -6109,8 +6109,7 @@ _ntl_gsubmul(_ntl_gbigint x, _ntl_gbigint y,  _ntl_gbigint *ww)
 #ifndef NTL_VIABLE_LL
 
 
-class _ntl_general_rem_one_impl : public _ntl_general_rem_one_struct  {
-};
+struct _ntl_general_rem_one_struct  { };
 
 _ntl_general_rem_one_struct *
 _ntl_general_rem_one_struct_build(long p, long sz)
@@ -6124,15 +6123,18 @@ _ntl_general_rem_one_struct_apply(NTL_verylong a, long p, _ntl_general_rem_one_s
    return _ntl_gsmod(a, p);
 }
 
-
+void
+_ntl_general_rem_one_struct_delete(_ntl_general_rem_one_struct *pinfo) 
+{
+}
 
 
 #else
 
+
 #define REM_ONE_THRESH (256)
 
-class _ntl_general_rem_one_impl : public _ntl_general_rem_one_struct  {
-public:
+struct _ntl_general_rem_one_struct  {
    long sz;
    sp_ll_reduce_struct red_struct;
    long Bnd;
@@ -6153,16 +6155,16 @@ _ntl_general_rem_one_struct_build(long p, long sz)
    if (sz == 0) return 0;
 
 
-   UniquePtr<_ntl_general_rem_one_impl> ptr;
-   ptr.make();
+   UniquePtr<_ntl_general_rem_one_struct> pinfo;
+   pinfo.make();
 
-   ptr->sz = sz;
+   pinfo->sz = sz;
 
-   ptr->red_struct = make_sp_ll_reduce_struct(p);
+   pinfo->red_struct = make_sp_ll_reduce_struct(p);
 
-   ptr->Bnd = 1L << (NTL_BITS_PER_LONG-_ntl_g2logs(p));
+   pinfo->Bnd = 1L << (NTL_BITS_PER_LONG-_ntl_g2logs(p));
 
-   ptr->tbl.SetLength(sz);
+   pinfo->tbl.SetLength(sz);
 
    long t = 1;
    for (long j = 0; j < NTL_ZZ_NBITS; j++) {
@@ -6171,13 +6173,13 @@ _ntl_general_rem_one_struct_build(long p, long sz)
    }
 
    long t1 = 1;
-   ptr->tbl[0] = 1;
+   pinfo->tbl[0] = 1;
    for (long j = 1; j < sz; j++) {
       t1 = MulMod(t1, t, p);
-      ptr->tbl[j] = t1;
+      pinfo->tbl[j] = t1;
    }
 
-   return ptr.release();
+   return pinfo.release();
 }
 
 
@@ -6192,13 +6194,11 @@ _ntl_general_rem_one_struct_apply(NTL_verylong a, long p, _ntl_general_rem_one_s
       return _ntl_gsmod(a, p);
    }
 
-   _ntl_general_rem_one_impl *ptr = (_ntl_general_rem_one_impl *) pinfo;
 
-
-   long sz = ptr->sz;
-   sp_ll_reduce_struct red_struct = ptr->red_struct;
-   long Bnd = ptr->Bnd;
-   mp_limb_t *tbl = ptr->tbl.elts();
+   long sz = pinfo->sz;
+   sp_ll_reduce_struct red_struct = pinfo->red_struct;
+   long Bnd = pinfo->Bnd;
+   mp_limb_t *tbl = pinfo->tbl.elts();
 
    long a_sz, a_neg;
    mp_limb_t *a_data;
@@ -6452,15 +6452,17 @@ _ntl_general_rem_one_struct_apply(NTL_verylong a, long p, _ntl_general_rem_one_s
    }
 }
 
-
-
-
-
-
-
-
+void
+_ntl_general_rem_one_struct_delete(_ntl_general_rem_one_struct *pinfo) 
+{
+   delete pinfo;
+}
 
 #endif
+
+
+
+
 
 
 

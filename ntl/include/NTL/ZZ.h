@@ -680,24 +680,38 @@ inline ZZ& operator%=(ZZ& x, const ZZ& b)
 // not documented for now...
 
 
-class PreconditionedRemainder {
-private:
-   long p;
-   UniquePtr<_ntl_general_rem_one_struct> pinfo;
+#define NTL_ZZ_reduce_struct_DefaultSize (64)
+// number of zzigits stored in table
 
-public:
-   PreconditionedRemainder(long _p, long sz) : p(_p)
+
+struct sp_ZZ_reduce_struct_policy {
+
+   static
+   void deleter(_ntl_general_rem_one_struct *pinfo)
    {
-      pinfo.reset(_ntl_general_rem_one_struct_build(p, sz));
+      _ntl_general_rem_one_struct_delete(pinfo); 
    }
 
+};
 
-   long operator()(const ZZ& a) 
+struct sp_ZZ_reduce_struct {
+   long p;
+   UniquePtr<_ntl_general_rem_one_struct,sp_ZZ_reduce_struct_policy> pinfo;
+
+   sp_ZZ_reduce_struct() : p(0) { }
+
+   void build(long _p, long sz = NTL_ZZ_reduce_struct_DefaultSize) 
+   {
+      pinfo.reset(_ntl_general_rem_one_struct_build(_p, sz));
+      p = _p;
+   }
+
+   long rem(const ZZ& a) const
    {
       return _ntl_general_rem_one_struct_apply(a.rep, p, pinfo.get());
    }
 };
-      
+
 
 
 /**********************************************************

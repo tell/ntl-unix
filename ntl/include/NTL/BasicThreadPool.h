@@ -357,7 +357,9 @@ private:
 
   void launch(ConcurrentTask *task, long index)
   {
-    threadVec[index]->localSignal.send(task, index);
+    threadVec[index-1]->localSignal.send(task, index);
+    // we use threadVec[index-1] to allow for the fact
+    // that we want the current thread to have index 0
   }
 
   void begin(long cnt)
@@ -506,8 +508,8 @@ public:
     ConcurrentTaskFct<Fct> task(this, fct);
 
     begin(cnt);
-    for (long t = 0; t < cnt-1; t++) launch(&task, t);
-    runOneTask(&task, cnt-1);
+    for (long t = 1; t < cnt; t++) launch(&task, t);
+    runOneTask(&task, 0);
     end();
   }
 
@@ -540,8 +542,8 @@ public:
     ConcurrentTaskFct1<Fct> task(this, fct, pinfo);
 
     begin(cnt);
-    for (long t = 0; t < cnt-1; t++) launch(&task, t);
-    runOneTask(&task, cnt-1);
+    for (long t = 1; t < cnt; t++) launch(&task, t);
+    runOneTask(&task, 0);
     end();
   }
 
