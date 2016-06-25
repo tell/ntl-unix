@@ -1,29 +1,61 @@
+language: cpp
+sudo: false
+
 matrix:
   include:
   - os: linux
+    compiler: gcc
+    env: CXX_=g++-5
+    addons:
+      apt:
+        sources:
+        # - deadsnakes
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-5
+        - libgmp-dev
+    cache:
+      apt: true
+  - os: linux
+    compiler: clang
+    env: CXX_=clang++
+    addons:
+      apt:
+        sources:
+        # - deadsnakes
+        - ubuntu-toolchain-r-test
+        packages:
+        - clang-3.5
+        - libgmp-dev
+    cache:
+      apt: true
   - os: osx
     osx_image: xcode7.3
+    compiler: gcc
+    env: CXX_=g++-5
+  - os: osx
+    osx_image: xcode7.3
+    compiler: clang
+    env: CXX_=clang++
 #  - os: osx
 #    osx_image: xcode7.1
-language: cpp
-sudo: false
-cache:
-  apt: true
-addons:
-  apt:
-    sources:
-      # - deadsnakes
-    - ubuntu-toolchain-r-test
-    packages:
-    - g++-5
-    - libgmp-dev
-compiler:
-- gcc
+
 before_install:
+- export CXX=$CXX_
+
+install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gcc5 gnu-sed; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gnu-sed; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]] && [[ "$CXX" == g++* ]]; then brew install gcc5; fi
+
 before_script:
-- g++-5 --version
-- CXX=g++-5 make 2>&1 > make.log || { echo "!!!! ERROR !!!!"; cat make.log; false; }
+- $CXX --version
+
 script:
-- CXX=g++-5 make check
+- make
+# 2>&1 | tee make.log || { echo "!!!! ERROR !!!!"; cat make.log; false; }
+- make check
+
+notifications:
+  on_success: change
+  on_failure: always
