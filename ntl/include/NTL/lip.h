@@ -68,7 +68,7 @@ _ntl_reduce_struct_build(NTL_verylong modulus, NTL_verylong excess);
 class _ntl_general_rem_one_struct;
 
 _ntl_general_rem_one_struct *
-_ntl_general_rem_one_struct_build(long p, long sz);
+_ntl_general_rem_one_struct_build(long p);
 
 long 
 _ntl_general_rem_one_struct_apply(NTL_verylong a, long p, _ntl_general_rem_one_struct *pinfo);

@@ -1342,10 +1342,7 @@ void random(zz_pX& x, long n)
    long i;
 
    x.rep.SetLength(n);
-
-   for (i = 0; i < n; i++)
-      random(x.rep[i]); 
-
+   VectorRandom(n, x.rep.elts());
    x.normalize();
 }
 

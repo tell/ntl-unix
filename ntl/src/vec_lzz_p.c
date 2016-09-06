@@ -12,13 +12,7 @@ void conv(vec_zz_p& x, const vec_ZZ& a)
    n = a.length();
    x.SetLength(n);
 
-   zz_p* xp = x.elts();
-   const ZZ* ap = a.elts();
-
-   const sp_ZZ_reduce_struct& ZZ_red_struct = zz_p::ZZ_red_struct();
-
-   for (i = 0; i < n; i++)
-      xp[i].LoopHole() = ZZ_red_struct.rem(ap[i]);
+   VectorConv(n, x.elts(), a.elts());
 }
 
 // NOTE: the signature for this is in lzz_p.h
@@ -29,14 +23,7 @@ void conv(vec_zz_p& x, const Vec<long>& a)
    n = a.length();
    x.SetLength(n);
 
-   zz_p* xp = x.elts();
-   const long* ap = a.elts();
-
-   long p = zz_p::modulus();
-   sp_reduce_struct red_struct = zz_p::red_struct();
-
-   for (i = 0; i < n; i++)
-      xp[i].LoopHole() = rem(ap[i], p, red_struct);
+   VectorConv(n, x.elts(), a.elts());
 }
 
 

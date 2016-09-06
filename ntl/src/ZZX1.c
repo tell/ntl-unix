@@ -687,13 +687,7 @@ void conv(vec_zz_p& x, const ZZVec& a)
    n = a.length();
    x.SetLength(n);
 
-   zz_p* xp = x.elts();
-   const ZZ* ap = a.elts();
-
-   const sp_ZZ_reduce_struct& ZZ_red_struct = zz_p::ZZ_red_struct();
-
-   for (i = 0; i < n; i++)
-      xp[i].LoopHole() = ZZ_red_struct.rem(ap[i]);
+   VectorConv(n, x.elts(), a.elts());
 }
 
 
@@ -718,7 +712,7 @@ void HomMul(ZZX& x, const ZZX& a, const ZZX& b)
 
    long bound = 2 + NumBits(min(da, db)+1) + MaxBits(a) + MaxBits(b);
 
-   FastCRTHelper H(bound, 48);      
+   FastCRTHelper H(bound, 96);
 
    long i, j, k;
 
@@ -935,7 +929,7 @@ void HomSqr(ZZX& x, const ZZX& a)
 
    long bound = 2 + NumBits(da+1) + 2*MaxBits(a);
 
-   FastCRTHelper H(bound, 48);      
+   FastCRTHelper H(bound, 96);      
 
    long i, j, k;
 

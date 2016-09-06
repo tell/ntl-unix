@@ -6755,7 +6755,7 @@ _ntl_reduce_struct_build(_ntl_verylong modulus, _ntl_verylong excess)
 struct _ntl_general_rem_one_struct  { };
 
 _ntl_general_rem_one_struct *
-_ntl_general_rem_one_struct_build(long p, long sz)
+_ntl_general_rem_one_struct_build(long p)
 {
    return 0;
 }

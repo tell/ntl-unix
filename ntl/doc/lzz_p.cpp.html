@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>/Volumes/unix-files/u/ntl-new/ntl-9.10.0dev/doc/lzz_p.cpp.html</title>
+<title>/Volumes/unix-files/u/ntl-new/ntl-9.11.0dev/doc/lzz_p.cpp.html</title>
 <meta name="Generator" content="Vim/7.1">
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 </head>
@@ -192,6 +192,9 @@ zz_p power(zz_p a, <font color="#008b00"><b>long</b></font>&nbsp;e); <br>
 <font color="#008b00"><b>void</b></font>&nbsp;random(zz_p&amp; x);<br>
 zz_p random_zz_p();<br>
 <font color="#0000ed"><i>// x = random element in zz_p.&nbsp;&nbsp;Uses RandomBnd from ZZ.</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;VectorRandom(<font color="#008b00"><b>long</b></font>&nbsp;k, zz_p *x);<br>
+<font color="#0000ed"><i>// equivalent to random(x[i]) for i in [0..k), but fatser</i></font><br>
 <br>
 <br>
 <font color="#0000ed"><i>/*</i></font><font color="#0000ed"><i>*************************************************************************\</i></font><br>
@@ -410,14 +413,16 @@ zz_p::zz_p(INIT_ALLOC_TYPE);<br>
 zz_p::allocate();<br>
 <font color="#0000ed"><i>// provided for consistency with other classes, no action</i></font><br>
 <br>
-<br>
-<br>
 <font color="#008b00"><b>long</b></font>&nbsp;CalcMaxRoot(<font color="#008b00"><b>long</b></font>&nbsp;p);<br>
 <font color="#0000ed"><i>// p is assumed to be an odd prime.</i></font><br>
 <font color="#0000ed"><i>// Returns the largest k such that 2^k divides p-1</i></font><br>
 <font color="#0000ed"><i>// and such that k does not exceed an implementation defined</i></font><br>
 <font color="#0000ed"><i>// constant.&nbsp;&nbsp;This represents the max power of two for which</i></font><br>
 <font color="#0000ed"><i>// an FFT mod p is supported.</i></font><br>
+<br>
+<font color="#008b00"><b>void</b></font>&nbsp;VectorConv(<font color="#008b00"><b>long</b></font>&nbsp;k, zz_p *x, <font color="#008b00"><b>const</b></font>&nbsp;ZZ *a);<br>
+<font color="#008b00"><b>void</b></font>&nbsp;VectorConv(<font color="#008b00"><b>long</b></font>&nbsp;k, zz_p *x, <font color="#008b00"><b>const</b></font>&nbsp;<font color="#008b00"><b>long</b></font>&nbsp;*a);<br>
+<font color="#0000ed"><i>// equivalent to conv(x[i], a[i]) for i in [0..k), but fatser</i></font><br>
 <br>
 <br>
 <br>

@@ -208,15 +208,6 @@ void zz_pBak::restore()
 
 
 
-zz_p to_zz_p(const ZZ& a)
-{
-   return zz_p(zz_p::ZZ_red_struct().rem(a), INIT_LOOP_HOLE);
-}
-
-void conv(zz_p& x, const ZZ& a)
-{
-   x._zz_p__rep = zz_p::ZZ_red_struct().rem(a);
-}
 
 
 istream& operator>>(istream& s, zz_p& x)

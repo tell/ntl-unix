@@ -6112,7 +6112,7 @@ _ntl_gsubmul(_ntl_gbigint x, _ntl_gbigint y,  _ntl_gbigint *ww)
 struct _ntl_general_rem_one_struct  { };
 
 _ntl_general_rem_one_struct *
-_ntl_general_rem_one_struct_build(long p, long sz)
+_ntl_general_rem_one_struct_build(long p)
 {
    return 0;
 }
@@ -6132,39 +6132,34 @@ _ntl_general_rem_one_struct_delete(_ntl_general_rem_one_struct *pinfo)
 #else
 
 
-#define REM_ONE_THRESH (256)
+#define REM_ONE_SZ (128)
 
 struct _ntl_general_rem_one_struct  {
-   long sz;
    sp_ll_reduce_struct red_struct;
    long Bnd;
    UniqueArray<mp_limb_t> tbl;
 };
 
+
+
+
+
+#if 0
+
 _ntl_general_rem_one_struct *
-_ntl_general_rem_one_struct_build(long p, long sz)
+_ntl_general_rem_one_struct_build(long p)
 {
    if (p < 2 || p >= NTL_SP_BOUND)
       LogicError("_ntl_general_rem_one_struct_build: bad args (p)");
 
-   if (sz < 0)
-      LogicError("_ntl_general_rem_one_struct_build: bad args (sz)");
-
-   if (sz > REM_ONE_THRESH) sz = REM_ONE_THRESH;
-
-   if (sz == 0) return 0;
-
-
    UniquePtr<_ntl_general_rem_one_struct> pinfo;
    pinfo.make();
-
-   pinfo->sz = sz;
 
    pinfo->red_struct = make_sp_ll_reduce_struct(p);
 
    pinfo->Bnd = 1L << (NTL_BITS_PER_LONG-_ntl_g2logs(p));
 
-   pinfo->tbl.SetLength(sz);
+   pinfo->tbl.SetLength(REM_ONE_SZ);
 
    long t = 1;
    for (long j = 0; j < NTL_ZZ_NBITS; j++) {
@@ -6174,7 +6169,7 @@ _ntl_general_rem_one_struct_build(long p, long sz)
 
    long t1 = 1;
    pinfo->tbl[0] = 1;
-   for (long j = 1; j < sz; j++) {
+   for (long j = 1; j < REM_ONE_SZ; j++) {
       t1 = MulMod(t1, t, p);
       pinfo->tbl[j] = t1;
    }
@@ -6195,7 +6190,6 @@ _ntl_general_rem_one_struct_apply(NTL_verylong a, long p, _ntl_general_rem_one_s
    }
 
 
-   long sz = pinfo->sz;
    sp_ll_reduce_struct red_struct = pinfo->red_struct;
    long Bnd = pinfo->Bnd;
    mp_limb_t *tbl = pinfo->tbl.elts();
@@ -6205,7 +6199,7 @@ _ntl_general_rem_one_struct_apply(NTL_verylong a, long p, _ntl_general_rem_one_s
    GET_SIZE_NEG(a_sz, a_neg, a);
    a_data = DATA(a);
 
-   if (a_sz > sz) {
+   if (a_sz > REM_ONE_SZ) {
       long res = mpn_mod_1(a_data, a_sz, p);
       if (a_neg) res = NegateMod(res, p);
       return res;
@@ -6457,6 +6451,601 @@ _ntl_general_rem_one_struct_delete(_ntl_general_rem_one_struct *pinfo)
 {
    delete pinfo;
 }
+
+#else
+
+// EXPERIMENTAL VERSION
+
+_ntl_general_rem_one_struct *
+_ntl_general_rem_one_struct_build(long p)
+{
+   if (p < 2 || p >= NTL_SP_BOUND)
+      LogicError("_ntl_general_rem_one_struct_build: bad args (p)");
+
+   UniquePtr<_ntl_general_rem_one_struct> pinfo;
+   pinfo.make();
+
+   pinfo->red_struct = make_sp_ll_reduce_struct(p);
+
+   pinfo->Bnd = 1L << (NTL_BITS_PER_LONG-_ntl_g2logs(p));
+
+   pinfo->tbl.SetLength(REM_ONE_SZ+3);
+
+   long t = 1;
+   for (long j = 0; j < NTL_ZZ_NBITS; j++) {
+      t += t;
+      if (t >= p) t -= p;
+   }
+
+   long t1 = 1;
+   pinfo->tbl[0] = 1;
+   for (long j = 1; j < REM_ONE_SZ+3; j++) {
+      t1 = MulMod(t1, t, p);
+      pinfo->tbl[j] = t1;
+   }
+
+   return pinfo.release();
+}
+
+
+
+
+long 
+_ntl_general_rem_one_struct_apply1(mp_limb_t *a_data, long a_sz, long a_neg, long p, 
+                                   _ntl_general_rem_one_struct *pinfo)
+{
+   sp_ll_reduce_struct red_struct = pinfo->red_struct;
+   long Bnd = pinfo->Bnd;
+   mp_limb_t *tbl = pinfo->tbl.elts();
+
+   long idx = ((cast_unsigned(a_sz+REM_ONE_SZ-1)/REM_ONE_SZ)-1)*REM_ONE_SZ;
+   ll_type leftover;
+   long sz = a_sz-idx;
+   a_data += idx;
+
+   for ( ; ; sz = REM_ONE_SZ, a_data -= REM_ONE_SZ, idx -= REM_ONE_SZ) {
+      if (sz <= Bnd) {
+	 ll_type acc;
+	 ll_init(acc, 0);
+
+	 {
+	    long j = 0;
+
+	    for (; j <= sz-16; j += 16) {
+	       ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+	       ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+	       ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+	       ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+	       ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+	       ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+	       ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+	       ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+	       ll_mul_add(acc, a_data[j+8], tbl[j+8]);
+	       ll_mul_add(acc, a_data[j+9], tbl[j+9]);
+	       ll_mul_add(acc, a_data[j+10], tbl[j+10]);
+	       ll_mul_add(acc, a_data[j+11], tbl[j+11]);
+	       ll_mul_add(acc, a_data[j+12], tbl[j+12]);
+	       ll_mul_add(acc, a_data[j+13], tbl[j+13]);
+	       ll_mul_add(acc, a_data[j+14], tbl[j+14]);
+	       ll_mul_add(acc, a_data[j+15], tbl[j+15]);
+	    }
+
+	    for (; j <= sz-4; j += 4) {
+	       ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+	       ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+	       ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+	       ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+	    }
+
+	    for (; j < sz; j++)
+	       ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+	 }
+
+         if (idx + REM_ONE_SZ >= a_sz) { // first time
+            if (idx == 0) { // last time
+	      long res = sp_ll_red_31(0, ll_get_hi(acc), ll_get_lo(acc), p, red_struct);
+	      if (a_neg) res = NegateMod(res, p);
+	      return res;
+            }
+            else {
+               ll_mul(leftover, ll_get_lo(acc), tbl[REM_ONE_SZ]);
+               ll_mul_add(leftover, ll_get_hi(acc), tbl[REM_ONE_SZ+1]);
+            }
+         }
+         else {
+	    ll_type acc21;
+	    mp_limb_t acc0;
+
+	    ll_add(leftover, ll_get_lo(acc));
+	    acc0 = ll_get_lo(leftover);
+	    ll_init(acc21, ll_get_hi(leftover));
+	    ll_add(acc21, ll_get_hi(acc));
+
+            if (idx == 0) { // last time
+	       long res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+	       if (a_neg) res = NegateMod(res, p);
+	       return res;
+            }
+            else {
+               ll_mul(leftover, acc0, tbl[REM_ONE_SZ]);
+               ll_mul_add(leftover, ll_get_lo(acc21), tbl[REM_ONE_SZ+1]);
+               ll_mul_add(leftover, ll_get_hi(acc21), tbl[REM_ONE_SZ+2]);
+            }
+         }
+      }
+      else {
+	 ll_type acc21;
+	 ll_init(acc21, 0);
+	 mp_limb_t acc0 = 0;
+
+	 if (Bnd > 16) {
+	    long jj = 0;
+	    for (; jj <= sz-Bnd; jj += Bnd) {
+	       ll_type acc;
+	       ll_init(acc, acc0);
+
+	       long j = jj;
+
+	       for (; j <= jj+Bnd-16; j += 16) {
+		  ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+		  ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+		  ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+		  ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+		  ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+		  ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+		  ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+		  ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+		  ll_mul_add(acc, a_data[j+8], tbl[j+8]);
+		  ll_mul_add(acc, a_data[j+9], tbl[j+9]);
+		  ll_mul_add(acc, a_data[j+10], tbl[j+10]);
+		  ll_mul_add(acc, a_data[j+11], tbl[j+11]);
+		  ll_mul_add(acc, a_data[j+12], tbl[j+12]);
+		  ll_mul_add(acc, a_data[j+13], tbl[j+13]);
+		  ll_mul_add(acc, a_data[j+14], tbl[j+14]);
+		  ll_mul_add(acc, a_data[j+15], tbl[j+15]);
+	       }
+
+	       acc0 = ll_get_lo(acc);
+	       ll_add(acc21, ll_get_hi(acc));
+	    }
+
+	    if (jj < sz) {
+	       ll_type acc;
+	       ll_init(acc, acc0);
+
+	       long j = jj;
+
+	       for (; j <= sz-4; j += 4) {
+		  ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+		  ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+		  ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+		  ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+	       }
+
+	       for (; j < sz; j++)
+		  ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+	       acc0 = ll_get_lo(acc);
+	       ll_add(acc21, ll_get_hi(acc));
+	    }
+	 }
+	 else if (Bnd == 16) {
+
+	    long jj = 0;
+	    for (; jj <= sz-16; jj += 16) {
+	       ll_type acc;
+
+	       long j = jj;
+
+	       ll_mul(acc, a_data[j+0], tbl[j+0]);
+	       ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+	       ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+	       ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+	       ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+	       ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+	       ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+	       ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+	       ll_mul_add(acc, a_data[j+8], tbl[j+8]);
+	       ll_mul_add(acc, a_data[j+9], tbl[j+9]);
+	       ll_mul_add(acc, a_data[j+10], tbl[j+10]);
+	       ll_mul_add(acc, a_data[j+11], tbl[j+11]);
+	       ll_mul_add(acc, a_data[j+12], tbl[j+12]);
+	       ll_mul_add(acc, a_data[j+13], tbl[j+13]);
+	       ll_mul_add(acc, a_data[j+14], tbl[j+14]);
+	       ll_mul_add(acc, a_data[j+15], tbl[j+15]);
+
+	       ll_add(acc, acc0);
+	       acc0 = ll_get_lo(acc);
+	       ll_add(acc21, ll_get_hi(acc));
+	    }
+
+	    if (jj < sz) {
+	       ll_type acc;
+	       ll_init(acc, acc0);
+
+	       long j = jj;
+
+	       for (; j <= sz-4; j += 4) {
+		  ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+		  ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+		  ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+		  ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+	       }
+
+	       for (; j < sz; j++)
+		  ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+	       acc0 = ll_get_lo(acc);
+	       ll_add(acc21, ll_get_hi(acc));
+	    }
+	 }
+	 else if (Bnd == 8)  {
+	    long jj = 0;
+	    for (; jj <= sz-8; jj += 8) {
+	       ll_type acc;
+
+	       long j = jj;
+
+	       ll_mul(acc, a_data[j+0], tbl[j+0]);
+	       ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+	       ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+	       ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+	       ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+	       ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+	       ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+	       ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+
+	       ll_add(acc, acc0);
+	       acc0 = ll_get_lo(acc);
+	       ll_add(acc21, ll_get_hi(acc));
+	    }
+
+	    if (jj < sz) {
+	       ll_type acc;
+	       ll_init(acc, acc0);
+
+	       long j = jj;
+
+	       for (; j < sz; j++)
+		  ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+	       acc0 = ll_get_lo(acc);
+	       ll_add(acc21, ll_get_hi(acc));
+	    }
+	 }
+	 else /* Bnd == 4 */  {
+	    long jj = 0;
+	    for (; jj <= sz-4; jj += 4) {
+	       ll_type acc;
+
+	       long j = jj;
+
+	       ll_mul(acc, a_data[j+0], tbl[j+0]);
+	       ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+	       ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+	       ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+
+
+	       ll_add(acc, acc0);
+	       acc0 = ll_get_lo(acc);
+	       ll_add(acc21, ll_get_hi(acc));
+	    }
+
+	    if (jj < sz) {
+	       ll_type acc;
+	       ll_init(acc, acc0);
+
+	       long j = jj;
+
+	       for (; j < sz; j++)
+		  ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+
+	       acc0 = ll_get_lo(acc);
+	       ll_add(acc21, ll_get_hi(acc));
+	    }
+	 }
+
+	 if (idx + REM_ONE_SZ < a_sz) { // not first time
+	    ll_add(leftover, acc0);
+	    acc0 = ll_get_lo(leftover);
+	    ll_add(acc21, ll_get_hi(leftover));
+	 }
+
+	 if (idx == 0) { // last time
+	    long res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+	    if (a_neg) res = NegateMod(res, p);
+	    return res;
+	 }
+	 else {
+	    ll_mul(leftover, acc0, tbl[REM_ONE_SZ]);
+	    ll_mul_add(leftover, ll_get_lo(acc21), tbl[REM_ONE_SZ+1]);
+	    ll_mul_add(leftover, ll_get_hi(acc21), tbl[REM_ONE_SZ+2]);
+	 }
+      }
+   }
+}
+
+
+long 
+_ntl_general_rem_one_struct_apply(NTL_verylong a, long p, _ntl_general_rem_one_struct *pinfo)
+{
+   if (ZEROP(a)) return 0;
+
+   if (!pinfo) {
+      return _ntl_gsmod(a, p);
+   }
+
+   sp_ll_reduce_struct red_struct = pinfo->red_struct;
+   long Bnd = pinfo->Bnd;
+   mp_limb_t *tbl = pinfo->tbl.elts();
+
+   long a_sz, a_neg;
+   mp_limb_t *a_data;
+   GET_SIZE_NEG(a_sz, a_neg, a);
+   a_data = DATA(a);
+
+   if (a_sz > REM_ONE_SZ) {
+      return _ntl_general_rem_one_struct_apply1(a_data, a_sz, a_neg, p, pinfo);
+   }
+
+   if (a_sz <= Bnd) {
+      ll_type acc;
+      ll_init(acc, 0);
+
+      {
+         long j = 0;
+
+         for (; j <= a_sz-16; j += 16) {
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+            ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+            ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+            ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+            ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+            ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+            ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+            ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+            ll_mul_add(acc, a_data[j+8], tbl[j+8]);
+            ll_mul_add(acc, a_data[j+9], tbl[j+9]);
+            ll_mul_add(acc, a_data[j+10], tbl[j+10]);
+            ll_mul_add(acc, a_data[j+11], tbl[j+11]);
+            ll_mul_add(acc, a_data[j+12], tbl[j+12]);
+            ll_mul_add(acc, a_data[j+13], tbl[j+13]);
+            ll_mul_add(acc, a_data[j+14], tbl[j+14]);
+            ll_mul_add(acc, a_data[j+15], tbl[j+15]);
+         }
+
+         for (; j <= a_sz-4; j += 4) {
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+            ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+            ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+            ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+         }
+
+	 for (; j < a_sz; j++)
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+      }
+
+
+      long res = sp_ll_red_31(0, ll_get_hi(acc), ll_get_lo(acc), p, red_struct);
+      if (a_neg) res = NegateMod(res, p);
+      return res;
+   }
+   else if (Bnd > 16) {
+      ll_type acc21;
+      ll_init(acc21, 0);
+      mp_limb_t acc0 = 0;
+
+      long jj = 0;
+      for (; jj <= a_sz-Bnd; jj += Bnd) {
+         ll_type acc;
+         ll_init(acc, acc0);
+
+         long j = jj;
+
+         for (; j <= jj+Bnd-16; j += 16) {
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+            ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+            ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+            ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+            ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+            ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+            ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+            ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+            ll_mul_add(acc, a_data[j+8], tbl[j+8]);
+            ll_mul_add(acc, a_data[j+9], tbl[j+9]);
+            ll_mul_add(acc, a_data[j+10], tbl[j+10]);
+            ll_mul_add(acc, a_data[j+11], tbl[j+11]);
+            ll_mul_add(acc, a_data[j+12], tbl[j+12]);
+            ll_mul_add(acc, a_data[j+13], tbl[j+13]);
+            ll_mul_add(acc, a_data[j+14], tbl[j+14]);
+            ll_mul_add(acc, a_data[j+15], tbl[j+15]);
+         }
+
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      if (jj < a_sz) {
+         ll_type acc;
+         ll_init(acc, acc0);
+
+         long j = jj;
+
+         for (; j <= a_sz-4; j += 4) {
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+            ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+            ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+            ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+         }
+
+	 for (; j < a_sz; j++)
+            ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      long res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+      if (a_neg) res = NegateMod(res, p);
+      return res;
+   }
+   else if (Bnd == 16) {
+      ll_type acc21;
+      ll_init(acc21, 0);
+      mp_limb_t acc0 = 0;
+
+      long jj = 0;
+      for (; jj <= a_sz-16; jj += 16) {
+         ll_type acc;
+
+         long j = jj;
+
+         ll_mul(acc, a_data[j+0], tbl[j+0]);
+         ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+         ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+         ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+         ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+         ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+         ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+         ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+         ll_mul_add(acc, a_data[j+8], tbl[j+8]);
+         ll_mul_add(acc, a_data[j+9], tbl[j+9]);
+         ll_mul_add(acc, a_data[j+10], tbl[j+10]);
+         ll_mul_add(acc, a_data[j+11], tbl[j+11]);
+         ll_mul_add(acc, a_data[j+12], tbl[j+12]);
+         ll_mul_add(acc, a_data[j+13], tbl[j+13]);
+         ll_mul_add(acc, a_data[j+14], tbl[j+14]);
+         ll_mul_add(acc, a_data[j+15], tbl[j+15]);
+
+         ll_add(acc, acc0);
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      if (jj < a_sz) {
+         ll_type acc;
+         ll_init(acc, acc0);
+
+         long j = jj;
+
+         for (; j <= a_sz-4; j += 4) {
+	    ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+	    ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+	    ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+	    ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+         }
+
+	 for (; j < a_sz; j++)
+	    ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+#if (NTL_BITS_PER_LONG-NTL_SP_NBITS==4)
+      long res = sp_ll_red_31_normalized(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+#else
+      long res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+#endif
+      if (a_neg) res = NegateMod(res, p);
+      return res;
+   }
+   else if (Bnd == 8)  {
+      ll_type acc21;
+      ll_init(acc21, 0);
+      mp_limb_t acc0 = 0;
+
+      long jj = 0;
+      for (; jj <= a_sz-8; jj += 8) {
+         ll_type acc;
+
+         long j = jj;
+
+         ll_mul(acc, a_data[j+0], tbl[j+0]);
+         ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+         ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+         ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+         ll_mul_add(acc, a_data[j+4], tbl[j+4]);
+         ll_mul_add(acc, a_data[j+5], tbl[j+5]);
+         ll_mul_add(acc, a_data[j+6], tbl[j+6]);
+         ll_mul_add(acc, a_data[j+7], tbl[j+7]);
+
+         ll_add(acc, acc0);
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      if (jj < a_sz) {
+         ll_type acc;
+         ll_init(acc, acc0);
+
+         long j = jj;
+
+	 for (; j < a_sz; j++)
+	    ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      long res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+      if (a_neg) res = NegateMod(res, p);
+      return res;
+   }
+   else /* Bnd == 4 */  {
+      ll_type acc21;
+      ll_init(acc21, 0);
+      mp_limb_t acc0 = 0;
+
+      long jj = 0;
+      for (; jj <= a_sz-4; jj += 4) {
+         ll_type acc;
+
+         long j = jj;
+
+         ll_mul(acc, a_data[j+0], tbl[j+0]);
+         ll_mul_add(acc, a_data[j+1], tbl[j+1]);
+         ll_mul_add(acc, a_data[j+2], tbl[j+2]);
+         ll_mul_add(acc, a_data[j+3], tbl[j+3]);
+
+
+         ll_add(acc, acc0);
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+      if (jj < a_sz) {
+         ll_type acc;
+         ll_init(acc, acc0);
+
+         long j = jj;
+
+	 for (; j < a_sz; j++)
+	    ll_mul_add(acc, a_data[j+0], tbl[j+0]);
+
+
+         acc0 = ll_get_lo(acc);
+         ll_add(acc21, ll_get_hi(acc));
+      }
+
+#if (NTL_BITS_PER_LONG-NTL_SP_NBITS==2)
+      long res = sp_ll_red_31_normalized(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+#else
+      long res = sp_ll_red_31(ll_get_hi(acc21), ll_get_lo(acc21), acc0, p, red_struct);
+#endif
+      if (a_neg) res = NegateMod(res, p);
+      return res;
+   }
+}
+
+void
+_ntl_general_rem_one_struct_delete(_ntl_general_rem_one_struct *pinfo) 
+{
+   delete pinfo;
+}
+
+#endif
 
 #endif
 

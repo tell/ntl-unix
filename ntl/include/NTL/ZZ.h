@@ -680,8 +680,6 @@ inline ZZ& operator%=(ZZ& x, const ZZ& b)
 // not documented for now...
 
 
-#define NTL_ZZ_reduce_struct_DefaultSize (64)
-// number of zzigits stored in table
 
 
 struct sp_ZZ_reduce_struct_policy {
@@ -700,9 +698,9 @@ struct sp_ZZ_reduce_struct {
 
    sp_ZZ_reduce_struct() : p(0) { }
 
-   void build(long _p, long sz = NTL_ZZ_reduce_struct_DefaultSize) 
+   void build(long _p)
    {
-      pinfo.reset(_ntl_general_rem_one_struct_build(_p, sz));
+      pinfo.reset(_ntl_general_rem_one_struct_build(_p));
       p = _p;
    }
 
@@ -1111,6 +1109,66 @@ inline void RandomBits(long& x, long l) { x = RandomBits_long(l); }
 unsigned long RandomWord();
 unsigned long RandomBits_ulong(long l);
 
+// helper class to make generating small random numbers faster
+// FIXME: add documentation?
+
+struct RandomBndGenerator {
+
+   long p;
+   long nb;
+   unsigned long mask;
+
+   RandomStream *str;
+
+   RandomBndGenerator() : p(0) { }
+
+   explicit
+   RandomBndGenerator(long _p) : p(0) { build(_p); }
+
+   void build(long _p)
+   {
+      if (_p <= 1) LogicError("RandomBndGenerator::init: bad args");
+
+      if (!p) {
+         str = &GetCurrentRandomStream();
+      }
+
+      p = _p;
+      long l = NumBits(p-1);
+      nb = (l+7)/8;
+      mask = (1UL << l)-1UL;
+   }
+
+   long next()
+   {
+      unsigned char buf[NTL_BITS_PER_LONG/8];
+      long tmp;
+
+      do {
+         str->get(buf, nb);
+
+         unsigned long word = 0;
+         for (long i = nb-1; i >= 0; i--) word = (word << 8) | buf[i];
+
+         tmp = long(word & mask);
+      } while (tmp >= p);
+
+      return tmp;
+   }
+};
+
+
+inline void VectorRandomBnd(long k, long* x, long n)
+{
+   if (k <= 0) return;
+   if (n <= 1) {
+      for (long i = 0; i < k; i++) x[i] = 0;
+   }
+   else {
+      RandomBndGenerator gen(n);
+      for (long i = 0; i < k; i++) x[i] = gen.next();
+   }
+}
 
 
 

@@ -19,6 +19,45 @@ A Tour of NTL: Summary of Changes
 
 <p><hr><p>
 <h3>
+2016.08.22: Changes between NTL 9.10.0 and 9.11.0
+</h3>
+
+<ul>
+<li>
+Improved the effectiveness of the new, faster 
+<tt>ZZ</tt> to <tt>zz_p</tt> conversion
+
+<li>
+Added new routines <tt>VectorConv</tt> 
+for faster bulk conversion from <tt>ZZ</tt> and <tt>long</tt>
+to <tt>zz_p</tt>
+(see <a href="lzz_p.cpp.html">lzz_p.txt</a>)
+<ul>
+<li>
+There are some hidden interfaces which could be more generally useful,
+and I may add these to the documented interface at some point.
+</ul>
+
+<li>
+Added new routines <tt>VectorRandomBnd</tt>
+(see <a href="ZZ.cpp.html">ZZ.txt</a>)
+and <tt>VectorRandom</tt>
+(see <a href="lzz_p.cpp.html">lzz_p.txt</a>)
+for faster bulk random number generation
+<ul>
+<li>
+Again, there are some hidden interfaces which could be more generally useful,
+and I may add these to the documented interface at some point.
+</ul>
+
+
+
+
+
+</ul>
+
+<p><hr><p>
+<h3>
 2016.06.21: Changes between NTL 9.9.1 and 9.10.0
 </h3>
 
