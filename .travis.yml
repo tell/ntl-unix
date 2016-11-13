@@ -40,9 +40,9 @@ matrix:
 
 before_install:
 - export CXX=$CXX_
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$CXX" == "clang++" ]]; then sudo apt install clang-3.8 -y; fi
 
 install:
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$CXX" == "clang++" ]]; then sudo apt install clang-3.8 -y; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gnu-sed; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]] && [[ "$CXX" == g++* ]]; then brew install gcc5; fi
@@ -51,9 +51,11 @@ before_script:
 - $CXX --version
 
 script:
-- make
-# 2>&1 | tee make.log || { echo "!!!! ERROR !!!!"; cat make.log; false; }
+- make -j 2>&1 > make.log
 - make check
+
+after_failure:
+- tail -n 1000 make.log
 
 notifications:
   on_success: change
