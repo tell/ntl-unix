@@ -8,6 +8,7 @@
 #include <NTL/HAVE_BUILTIN_CLZL.h>
 #include <NTL/HAVE_AVX.h>
 #include <NTL/HAVE_FMA.h>
+#include <NTL/HAVE_PCLMUL.h>
 
 
 /*

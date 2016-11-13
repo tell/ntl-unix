@@ -139,6 +139,10 @@ int main()
    cerr << "NTL_HAVE_FMA\n";
 #endif
 
+#ifdef NTL_HAVE_PCLMUL
+   cerr << "NTL_HAVE_PCLMUL\n";
+#endif
+
 
 
 #ifdef NTL_LONGDOUBLE_SP_MULMOD
@@ -272,12 +276,6 @@ cerr << "Performance Options:\n";
 #endif
 
 
-#ifdef NTL_SPMM_ASM
-   cerr << "NTL_SPMM_ASM\n";
-#endif
-
-
-
 
 #ifdef NTL_AVOID_BRANCHING
    cerr << "NTL_AVOID_BRANCHING\n";
@@ -316,10 +314,6 @@ cerr << "Performance Options:\n";
 
 #ifdef NTL_GF2X_NOINLINE
    cerr << "NTL_GF2X_NOINLINE\n";
-#endif
-
-#ifdef NTL_PCLMUL
-   cerr << "NTL_PCLMUL\n";
 #endif
 
 

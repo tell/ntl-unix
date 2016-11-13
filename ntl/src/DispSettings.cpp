@@ -124,11 +124,6 @@ cout << "Performance Options:\n";
 #endif
 
 
-#ifdef NTL_SPMM_ASM
-   cout << "NTL_SPMM_ASM\n";
-#endif
-
-
 #ifdef NTL_AVOID_BRANCHING
    cout << "NTL_AVOID_BRANCHING\n";
 #endif
@@ -167,10 +162,6 @@ cout << "Performance Options:\n";
 
 #ifdef NTL_GF2X_NOINLINE
    cout << "NTL_GF2X_NOINLINE\n";
-#endif
-
-#ifdef NTL_PCLMUL
-   cout << "NTL_PCLMUL\n";
 #endif
 
 

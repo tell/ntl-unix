@@ -816,6 +816,9 @@ ll_add(ll_type& x, unsigned long a)
 // an external symbol.  In fact, NTL currently never calls 
 // this with shamt=0, so it is all rather academic...but I want to
 // keep this general for future use.
+
+// NOTE: this implementation assumes that shamt is in the range 
+// 0..NTL_BITS_PER_LONG-1
 template<long shamt>
 static inline unsigned long
 ll_rshift_get_lo(ll_type x)
@@ -893,6 +896,7 @@ ll_add(ll_type& x, unsigned long a)
    x += a;
 }
 
+// NOTE: shamt must be in the range 0..NTL_BITS_PER_LONG-1
 template<long shamt>
 static inline unsigned long
 ll_rshift_get_lo(const ll_type& x)
@@ -923,8 +927,17 @@ ll_init(ll_type& x, unsigned long a)
 #endif
 
 
+static inline unsigned long 
+ll_mul_hi(unsigned long a, unsigned long b)
+{
+   ll_type x;
+   ll_mul(x, a, b);
+   return ll_get_hi(x);
+} 
+
 
 #endif
+
 
 
 

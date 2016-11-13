@@ -46,8 +46,6 @@ printf("FFT_LAZYMUL ");
 
 #if defined(NTL_SPMM_ULL)
 printf("SPMM_ULL ");
-#elif defined(NTL_SPMM_ASM)
-printf("SPMM_ASM ");
 #endif
 
 #if defined(NTL_AVOID_BRANCHING)
@@ -65,16 +63,6 @@ printf("\n");
 
 int main()
 {
-
-#ifdef NTL_SPMM_ULL
-
-   if (sizeof(NTL_ULL_TYPE) < 2*sizeof(long)) {
-      printf("999999999999999 ");
-      print_flag();
-      return 0;
-   }
-
-#endif
 
    SetSeed(ZZ(0));
 

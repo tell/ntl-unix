@@ -782,11 +782,17 @@ void BitReverseCopy(unsigned long * NTL_RESTRICT B, const long * NTL_RESTRICT A,
 
 
 #ifdef NTL_FFT_LAZYMUL 
-// we only honor the FFT_LAZYMUL flag if either the SPMM_ULL, SPMM_ASM, or LONGLONG_SP_MULMOD 
+// we only honor the FFT_LAZYMUL flag if either the SPMM_ULL_VIABLE or LONGLONG_SP_MULMOD 
 // flags are set
 
-#if (!defined(NTL_SPMM_ULL) && !defined(NTL_SPMM_ASM) && !defined(NTL_LONGLONG_SP_MULMOD))
+#if (!defined(NTL_SPMM_ULL_VIABLE) && !defined(NTL_LONGLONG_SP_MULMOD))
 #undef NTL_FFT_LAZYMUL
+
+// raise an error if running the wizard
+#if (defined(NTL_WIZARD_HACK))
+#error "cannot honor NTL_FFT_LAZYMUL"
+#endif
+
 #endif
 
 #endif
@@ -1072,7 +1078,7 @@ static inline unsigned long
 sp_NormalizedLazyPrepMulModPreconWithRem(unsigned long& rres, long b, long n, unsigned long ninv)
 {
    unsigned long H = cast_unsigned(b);
-   unsigned long Q = MulHiUL(H << 4, ninv);
+   unsigned long Q = ll_mul_hi(H << 4, ninv);
    unsigned long L = cast_unsigned(b) << (NTL_SP_NBITS+2);
    long r = L - Q*cast_unsigned(n);  // r in [0..2*n)
 
@@ -1085,7 +1091,7 @@ static inline unsigned long
 sp_NormalizedLazyPrepMulModPrecon(long b, long n, unsigned long ninv)
 {
    unsigned long H = cast_unsigned(b);
-   unsigned long Q = MulHiUL(H << 4, ninv);
+   unsigned long Q = ll_mul_hi(H << 4, ninv);
    unsigned long L = cast_unsigned(b) << (NTL_SP_NBITS+2);
    long r = L - Q*cast_unsigned(n);  // r in [0..2*n)
 
@@ -1101,7 +1107,7 @@ static inline unsigned long
 sp_NormalizedLazyPrepMulModPreconWithRem(unsigned long& rres, long b, long n, unsigned long ninv)
 {
    unsigned long H = cast_unsigned(b) << 2;
-   unsigned long Q = MulHiUL(H, (ninv << 1)) + H;
+   unsigned long Q = ll_mul_hi(H, (ninv << 1)) + H;
    unsigned long rr = -Q*cast_unsigned(n);  // r in [0..3*n)
 
    long r = sp_CorrectExcessQuo(Q, rr, n);
@@ -1114,7 +1120,7 @@ static inline unsigned long
 sp_NormalizedLazyPrepMulModPrecon(long b, long n, unsigned long ninv)
 {
    unsigned long H = cast_unsigned(b) << 2;
-   unsigned long Q = MulHiUL(H, (ninv << 1)) + H;
+   unsigned long Q = ll_mul_hi(H, (ninv << 1)) + H;
    unsigned long rr = -Q*cast_unsigned(n);  // r in [0..3*n)
    Q += 2L + sp_SignMask(rr-n) + sp_SignMask(rr-2*n);
    return Q; // NOTE: not shifted
@@ -1254,7 +1260,7 @@ static inline
 unsigned long LazyMulModPreconQuo(unsigned long a, unsigned long b, 
                                   unsigned long n, unsigned long bninv)
 {
-   unsigned long q = MulHiUL(a, bninv);
+   unsigned long q = ll_mul_hi(a, bninv);
    unsigned long r = a*b - q*n;
    q += sp_SignMask(r-n) + 1L;
    return q << (NTL_BITS_PER_LONG - NTL_SP_NBITS - 2);
@@ -1265,7 +1271,7 @@ static inline
 unsigned long LazyMulModPrecon(unsigned long a, unsigned long b, 
                                unsigned long n, unsigned long bninv)
 {
-   unsigned long q = MulHiUL(a, bninv);
+   unsigned long q = ll_mul_hi(a, bninv);
    unsigned long res = a*b - q*n;
    return res;
 }

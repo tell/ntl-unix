@@ -28,6 +28,7 @@ void fun(double * x, const double *a, const double *b)
 
    _mm256_store_pd(x, xvec);
 }
+
 int main()
 {
    NTL_AVX_LOCAL_ARRAY(vp, double, 12);

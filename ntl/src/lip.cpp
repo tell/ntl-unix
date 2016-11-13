@@ -1195,7 +1195,14 @@ static void DUMP(_ntl_gbigint a)
 #define NTL_TBL_CRT
 
 #else
+
+
+// raise an error if running the wizard
+#ifdef NTL_WIZARD_HACK
 #error "NTL_CRT_ALTCODE/NTL_CRT_ALTCODE_SMALL not viable"
+#endif
+
+
 #endif
 
 #endif
@@ -1203,7 +1210,10 @@ static void DUMP(_ntl_gbigint a)
 
 #if (defined(NTL_TBL_REM) && !defined(NTL_VIABLE_LL))
 #undef NTL_TBL_REM
+// raise an error if running the wizard
+#ifdef NTL_WIZARD_HACK
 #error "NTL_TBL_REM not viable"
+#endif
 #endif
 
 
@@ -5183,7 +5193,7 @@ void _ntl_gpowermod(_ntl_gbigint g, _ntl_gbigint e, _ntl_gbigint F,
 
 {
    _ntl_gbigint_wrapped res, gg, t;
-   Vec<_ntl_gbigint_wrapped> v;
+   UniqueArray<_ntl_gbigint_wrapped> v;
 
    long n, i, k, val, cnt, m;
    long use_redc, sF;
@@ -6610,7 +6620,7 @@ static inline
 long tbl_red_21(unsigned long hi, unsigned long lo, long d, unsigned long dinv)
 {
    unsigned long H = (hi << (NTL_BITS_PER_LONG-NTL_SP_NBITS)) | (lo >> NTL_SP_NBITS);
-   unsigned long Q = MulHiUL(H, dinv) + H;
+   unsigned long Q = ll_mul_hi(H, dinv) + H;
    unsigned long rr = lo - Q*cast_unsigned(d); // rr in [0..4*d)
    long r = sp_CorrectExcess(rr, 2*d); // r in [0..2*d)
    r = sp_CorrectExcess(r, d);

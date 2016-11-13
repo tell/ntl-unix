@@ -101,6 +101,7 @@ int main()
    cout << "NTL_GF2X_LIB=0\n";
 #endif
 
+
 #ifdef NTL_UNSIGNED_LONG_LONG_TYPE
    cout << "FLAG_UNSIGNED_LONG_LONG_TYPE=1\n";
    cout << "NTL_UNSIGNED_LONG_LONG_TYPE=" make_string(NTL_UNSIGNED_LONG_LONG_TYPE) "\n";
@@ -148,13 +149,26 @@ int main()
 #endif
 
 
-// the following is synthetically defined
+// the following are not actual config flags, but help
+// in the Wizard logic
+
 #ifdef NTL_LONGLONG_SP_MULMOD
    cout << "NTL_LONGLONG_SP_MULMOD=1\n";
 #else
    cout << "NTL_LONGLONG_SP_MULMOD=0\n";
 #endif
 
+#ifdef NTL_HAVE_PCLMUL
+   cout << "NTL_HAVE_PCLMUL=1\n";
+#else
+   cout << "NTL_HAVE_PCLMUL=0\n";
+#endif
+
+#ifdef NTL_HAVE_LL_TYPE
+   cout << "NTL_HAVE_LL_TYPE=1\n";
+#else
+   cout << "NTL_HAVE_LL_TYPE=0\n";
+#endif
 
    return 0;
 }

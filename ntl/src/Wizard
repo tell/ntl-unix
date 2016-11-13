@@ -60,7 +60,6 @@ cp fileio.cpp small/src
 
 sh CopyFeatures '..' small
 cp ../include/NTL/FFT.h small/include/NTL
-cp ../include/NTL/SPMM_ASM.h small/include/NTL
 cp ../include/NTL/ctools.h small/include/NTL
 cp ../include/NTL/ZZ.h small/include/NTL
 cp ../include/NTL/sp_arith.h small/include/NTL
@@ -95,7 +94,8 @@ cp makefile small/src
 
 
 cd small/src
-perl WizardAux
+echo "*** perl WizardAux $2"
+perl WizardAux "$2"
 
 cd ../..
 

@@ -19,7 +19,7 @@
 // simple scaling factor for some crossover points:
 // we use a lower crossover of the underlying multiplication
 // is faster  
-#if (defined(NTL_GF2X_LIB) || defined(NTL_PCLMUL))
+#if (defined(NTL_GF2X_LIB) || defined(NTL_HAVE_PCLMUL))
 #define XOVER_SCALE (1L)
 #else
 #define XOVER_SCALE (2L)

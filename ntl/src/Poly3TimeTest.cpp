@@ -158,12 +158,6 @@ int main()
 
    t = floor((t/iter)*1e12);
 
-   // The following is just to test some tuning Wizard logic --
-   // be sure to get rid of this!!
-#if (defined(NTL_CRT_ALTCODE))
-   // t *= 1.12;
-#endif
-
    if (t < 0 || t >= 1e15)
       printf("999999999999999 ");
    else

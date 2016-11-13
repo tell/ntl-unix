@@ -140,7 +140,7 @@ long _ntl_gdigit(_ntl_gbigint a, long i);
 
 
 
-// DIRT: These are copied from lip.c file
+// DIRT: These are copied from lip.cpp file
 
 static
 inline long& _ntl_ALLOC(_ntl_gbigint p)

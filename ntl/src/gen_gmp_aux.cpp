@@ -123,7 +123,7 @@ int main()
    printf("#define NTL_ZZ_NBITS (%ld)\n",  ntl_zz_nbits);
 
    fprintf(stderr, "NTL_BITS_PER_LIMB_T = %ld\n", ntl_zz_nbits+nail_bits);
-   printf("#define NTL_BITS_PER_LIMB_T (%d)\n", ntl_zz_nbits+nail_bits);
+   printf("#define NTL_BITS_PER_LIMB_T (%ld)\n", ntl_zz_nbits+nail_bits);
 
    printf("#define NTL_ZZ_FRADIX ");
    print2k(stdout, ntl_zz_nbits, bpl);

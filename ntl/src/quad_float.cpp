@@ -25,6 +25,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
 
+#if (defined(__GNUC__) && __FAST_MATH__)
+#error "do not compile quad_float.cpp with -ffast-math!!"
+#endif
 
 
 #ifdef __INTEL_COMPILER

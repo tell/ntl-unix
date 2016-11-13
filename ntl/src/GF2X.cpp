@@ -14,11 +14,7 @@
 #endif
 
 
-#ifdef NTL_PCLMUL
-
-#if (NTL_BITS_PER_LONG != 64)
-#error "NTL_PCLMUL only works on 64-bit machines"
-#endif
+#ifdef NTL_HAVE_PCLMUL
 
 #include <wmmintrin.h>
 
@@ -31,6 +27,7 @@ pclmul_mul1 (unsigned long *c, unsigned long a, unsigned long b)
    __m128i bb = _mm_setr_epi64( _mm_cvtsi64_m64(b), _mm_cvtsi64_m64(0));
    _mm_storeu_si128((__m128i*)c, _mm_clmulepi64_si128(aa, bb, 0));
 }
+
 #else
 
 
@@ -579,16 +576,15 @@ void add(GF2X& x, const GF2X& a, const GF2X& b)
 
 
 
-static 
+static NTL_INLINE
 void mul1(_ntl_ulong *c, _ntl_ulong a, _ntl_ulong b)
 {
 
-#ifdef NTL_PCLMUL
+#ifdef NTL_HAVE_PCLMUL
 pclmul_mul1(c, a, b);
 #else
 NTL_EFF_BB_MUL_CODE0
 #endif
-
 
 }
 
@@ -603,7 +599,7 @@ static inline
 void mul1_inline(_ntl_ulong *c, _ntl_ulong a, _ntl_ulong b)
 {
 
-#ifdef NTL_PCLMUL
+#ifdef NTL_HAVE_PCLMUL
 pclmul_mul1(c, a, b);
 #else
 NTL_EFF_BB_MUL_CODE0
@@ -620,7 +616,7 @@ static
 void Mul1(_ntl_ulong *cp, const _ntl_ulong *bp, long sb, _ntl_ulong a)
 {
  
-#ifdef NTL_PCLMUL
+#ifdef NTL_HAVE_PCLMUL
 
    long i;
    unsigned long carry, prod[2];
@@ -647,7 +643,7 @@ static
 void AddMul1(_ntl_ulong *cp, const _ntl_ulong* bp, long sb, _ntl_ulong a)
 {
 
-#ifdef NTL_PCLMUL
+#ifdef NTL_HAVE_PCLMUL
 
    long i;
    unsigned long carry, prod[2];
@@ -676,7 +672,7 @@ static
 void Mul1_short(_ntl_ulong *cp, const _ntl_ulong *bp, long sb, _ntl_ulong a)
 {
  
-#ifdef NTL_PCLMUL
+#ifdef NTL_HAVE_PCLMUL
 
    long i;
    unsigned long carry, prod[2];
@@ -707,7 +703,7 @@ static
 void mul_half(_ntl_ulong *c, _ntl_ulong a, _ntl_ulong b)
 {
 
-#ifdef NTL_PCLMUL
+#ifdef NTL_HAVE_PCLMUL
 pclmul_mul1(c, a, b);
 #else
 NTL_EFF_HALF_BB_MUL_CODE0
@@ -1630,7 +1626,7 @@ static const _ntl_ulong sqrtab[256] = {
 static inline
 void sqr1(_ntl_ulong *c, _ntl_ulong a)
 {
-#ifdef NTL_PCLMUL
+#ifdef NTL_HAVE_PCLMUL
    // this appears to be marginally faster than the
    // table-driven code
    pclmul_mul1(c, a, a);

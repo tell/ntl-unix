@@ -19,6 +19,103 @@ A Tour of NTL: Summary of Changes
 
 <p><hr><p>
 <h3>
+2016.10.14: Changes between NTL 10.0.0 and 10.1.0
+</h3>
+
+<ul>
+<li><b>Better building</b>
+
+<ul>
+<li>
+Thanks to the encouragement and guidance of the Sage
+developers, I've made some improvements to the 
+build process 
+(this applies only to the Unix distribution -- Windows users
+still have to keep on pointing and clicking).
+
+<li>
+The build process now configures <tt>libtool</tt>
+on the fly, rather than relying on an existing <tt>libtool</tt>
+program.
+This should make builing dynamic libraries easier.
+Also added a configuration variable <tt>LIBTOOL_LINK_FLAGS</tt>,
+mainly to help with Cygwin builds.
+
+<li>
+Added a <tt>TUNE</tt> switch to the configure script.
+<ul>
+<li>
+<tt>TUNE=auto</tt> (the default) runs the performance-tuning wizard
+(as before).
+<li>
+<tt>TUNE=x86</tt> skips the wizard and sets all performance-related
+flags so that they are geared towards (a not too old) <tt>x86</tt>
+machine.
+<li>
+<tt>TUNE=generic</tt> skips the wizard and sets all performance-related
+flags so that they should not be too bad on any fairly modern machine
+(PowerPC, ARM).
+</ul>
+Additional tuning values may be set in the future.
+The source files have also been adjusted to accomodate this feature:
+if a performance option requires some hardware/software feature
+that is not available, the performance option is quietly ignored. 
+
+<li>
+Fixed the makefile so that recursive invocations
+call <tt>$(MAKE)</tt> rather than <tt>make</tt>.
+
+<li>
+With these improvements, then on the 32-core Haswell server I've
+been using lately, if I type
+<pre>
+   % configure TUNE=x86
+   % make -j20
+</pre>
+then the whole business of configuring and building NTL
+takes less than a minute <tt>:-)</tt>.
+
+
+<li>
+There are a number of other small improvements to the
+build process. 
+
+<li>
+<a href="tour-unix.html">[See here]</a> for more details
+(this documentation is now hopefully more informative as well).
+
+</ul>
+
+<p>
+<li><b>Vec tweaks</b>
+<ul>
+<li>
+Made some small tweaks to the <tt>Vec</tt> class.
+<li>
+The copy constructor for <tt>Vec&lt;T&gt;</tt>
+no longer requires an assgnment operator for <tt>T</tt>.
+<li>
+Started laying the groundwork for a possible future implementation
+that would do something about about the "relocatabilty" requirement
+for vector element types.
+In theory, this is a very thorny issue, and the current implementation
+is somewhat dangerous.
+In practice, this implementation has served its purpose quite
+well for about 25 years.
+Still, it would be nice to tighten things up a bit,
+without affecting performance.
+<p>
+It would be great to discuss these issues
+with any <tt>C++</tt> experts out there! 
+</ul>
+
+
+</ul>
+
+
+
+<p><hr><p>
+<h3>
 2016.10.08: Changes between NTL 9.11.0 and 10.0.0
 </h3>
 
