@@ -457,8 +457,6 @@ void PrintTime(NTL_SNS ostream& s, double t);
 // semantics.
 
 // A call to Deleter::apply should free the pointed-to storage
-// and set the pointer itself to zero, so apply should
-// take an argument that is a reference to a T*.
 
 template<class T, class Deleter>
 class WrappedPtr {
@@ -481,7 +479,7 @@ public:
    const raw_ptr* operator&() const { return &rep; }
    raw_ptr* operator&() { return &rep; }
 
-   void kill() { Deleter::apply(rep); }
+   void kill() { Deleter::apply(rep); rep = 0; }
 
    void swap(WrappedPtr& other) { _ntl_swap(rep, other.rep); }
 

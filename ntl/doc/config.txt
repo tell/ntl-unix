@@ -265,7 +265,6 @@ NTL_LEGACY_INPUT_ERROR=off
 
 NTL_LEGACY_SP_MULMOD=off
 
-NTL_LONG_LONG_TYPE=undefined
 NTL_UNSIGNED_LONG_LONG_TYPE=undefined
 NTL_CLEAN_INT=off
 NTL_CLEAN_PTR=off
@@ -279,14 +278,11 @@ NTL_DISABLE_LL_ASM=off
 NTL_MAXIMIZE_SP_NBITS=off
 
 WIZARD=on
-NTL_LONG_LONG=off
-NTL_AVOID_FLOAT=off
 NTL_SPMM_ULL=off
 NTL_SPMM_ASM=off
 NTL_FFT_BIGTAB=off
 NTL_FFT_LAZYMUL=off
 NTL_TBL_REM=off
-NTL_TBL_REM_LL=off
 NTL_AVOID_BRANCHING=off
 NTL_GF2X_NOINLINE=off
 NTL_GF2X_ALTCODE=off
@@ -421,34 +417,25 @@ NTL_LEGACY_SP_MULMOD=off
 
 ########### Basic Configuration Options:
 
-NTL_LONG_LONG_TYPE=undefined
+NTL_UNSIGNED_LONG_LONG_TYPE=undefined
 
-# Name of double-word signed integer type.
+# Name of double-word unsigned integer type.
 # This is a non-standard type, and is called 'long long' by many
-# compilers.  MS C++ calls it '__int64'.
+# compilers.  MS C++ calls it 'unsigned __int64'.
 #
-# Note that the new C99 standard defines the type 'long long'
+# Note that the new C99 standard defines the type 'unsigned long long'
 # to be at least 64-bits wide.  On 32-bit machines, this is just right.
 # Although not officially part of the C++ standard (which predates C99),
 # it is widely supported by C++ compilers, and is likely to be added
 # to the C++ standard.
 #
-# Unfortunately, 64-bit machines usually define 'long long'
+# Unfortunately, 64-bit machines usually define 'unsigned long long'
 # to also be 64-bits wide, which is kind of useless.
-# However, GCC provides a type __int128_t which does the job.
+# However, GCC provides a type __uint128_t which does the job.
 #
 # If left undefined, NTL will use some "ifdef magic" to find
 # the type most suitable for your machine (based on compiler and
 # word size).
-
-NTL_UNSIGNED_LONG_LONG_TYPE=undefined
-
-# Name of double-word unsigned integer type.
-#
-# If left undefined, NTL will use some "ifdef magic" to find
-# the type most suitable for your machine (based on compiler and
-# word size).
-
 
 
 
@@ -541,29 +528,6 @@ WIZARD=on
 
 
 
-NTL_LONG_LONG=off
-
-# For platforms that support it, this flag can be set to cause
-# the long-integer multiplication code to use the type "long long",
-# which on some platforms yields a significant performance gain,
-# but on others, it can yield no improvement and can even
-# slow things down.
-# The variable NTL_LONG_LONG_TYPE can be defined to use a type name
-# other than "long long".
-# If you set NTL_LONG_LONG, you might also want to set
-# the flag NTL_TBL_REM.
-
-
-
-NTL_AVOID_FLOAT=off
-
-# On machines with slow floating point or---more comminly---slow int/float
-# conversions, this flag can lead to faster long-integer multiplication code.
-# If you set NTL_AVOID_FLOAT, you should probably also
-# set NTL_TBL_REM.
-# Note that at most one of NTL_LONG_LONG and NTL_AVOID_FLOAT may be set.
-
-
 NTL_SPMM_ULL=off
 
 # Implement the MulModPrecon code using "unsigned long long"
@@ -591,17 +555,10 @@ NTL_FFT_LAZYMUL=off
 
 
 
-
 NTL_TBL_REM=off
 
 # With this flag, some divisions are avoided in the
-# ZZ_pX multiplication routines.  If you use the NTL_AVOID_FLOAT
-# or NTL_LONG_LONG flags, then you should probably use this one too.
-
-NTL_TBL_REM_LL=off
-
-# Forces the LONG_LONG implementation of NTL_TBL_REM.
-
+# ZZ_pX multiplication routines.  
 
 
 

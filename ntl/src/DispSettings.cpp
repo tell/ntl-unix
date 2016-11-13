@@ -57,11 +57,6 @@ int main()
    cout << "NTL_GF2X_LIB\n";
 #endif
 
-#ifdef NTL_LONG_LONG_TYPE
-   cout << "NTL_LONG_LONG_TYPE: ";
-   cout << make_string(NTL_LONG_LONG_TYPE) << "\n";
-#endif
-
 #ifdef NTL_UNSIGNED_LONG_LONG_TYPE
    cout << "NTL_UNSIGNED_LONG_LONG_TYPE: ";
    cout << make_string(NTL_UNSIGNED_LONG_LONG_TYPE) << "\n";
@@ -116,21 +111,12 @@ int main()
 
 
 cout << "\n";
-cout << "Resolution of double-word types:\n";
-cout << make_string(NTL_LL_TYPE) << "\n";
+cout << "Resolution of double-word type:\n";
 cout << make_string(NTL_ULL_TYPE) << "\n";
 
 
 cout << "\n";
 cout << "Performance Options:\n";
-
-#ifdef NTL_LONG_LONG
-   cout << "NTL_LONG_LONG\n";
-#endif
-
-#ifdef NTL_AVOID_FLOAT
-   cout << "NTL_AVOID_FLOAT\n";
-#endif
 
 
 #ifdef NTL_SPMM_ULL
@@ -158,10 +144,6 @@ cout << "Performance Options:\n";
 
 #ifdef NTL_TBL_REM
    cout << "NTL_TBL_REM\n";
-#endif
-
-#ifdef NTL_TBL_REM_LL
-   cout << "NTL_TBL_REM_LL\n";
 #endif
 
 #ifdef NTL_CRT_ALTCODE

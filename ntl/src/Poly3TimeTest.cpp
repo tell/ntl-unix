@@ -39,10 +39,8 @@ void print_flag()
 {
 
 
-#if (defined(NTL_TBL_REM))
-printf("TBL_REM ");
-#elif (defined(NTL_TBL_REM_LL))
-printf("TBL_REM_LL ");
+#if (defined(NTL_CRT_ALTCODE))
+printf("CRT_ALTCODE ");
 #else
 printf("DEFAULT ");
 #endif
@@ -56,30 +54,12 @@ printf("\n");
 int main()
 {
 
-#if (defined(NTL_TBL_REM) && defined(NTL_GMP_LIP) && !(defined(NTL_HAVE_LL_TYPE) && NTL_ZZ_NBITS == NTL_BITS_PER_LONG))
-   {
-      printf("999999999999999 ");
-      print_flag();
-      return 0;
-   }
-
-#endif
-
-#if (defined(NTL_TBL_REM_LL) && !defined(NTL_GMP_LIP) && !defined(NTL_HAVE_LL_TYPE))
-   {
-      printf("999999999999999 ");
-      print_flag();
-      return 0;
-   }
-
-#endif
-
    SetSeed(ZZ(0));
 
    long n, k;
 
-   n = 200;
-   k = 10*NTL_ZZ_NBITS;
+   n = 1024;
+   k = 30*NTL_SP_NBITS; 
 
    ZZ p;
 
@@ -127,26 +107,31 @@ int main()
    long i;
    long iter;
 
-   n = 1024;
-   k = 1600;
-   RandomLen(p, k);
-   if (!IsOdd(p)) p++;
-
-   ZZ_p::init(p);
-
-   ZZ_pX a;
+   ZZ_pX a, b, c;
    random(a, n);
+   random(b, n);
    long da = deg(a);
+   long db = deg(b);
+   long dc = da + db;
+   long l = NextPowerOfTwo(dc+1);
+
+   FFTRep arep, brep, crep;
+   ToFFTRep(arep, a, l, 0, da);
+   ToFFTRep(brep, b, l, 0, db);
+
+   mul(crep, arep, brep);
 
    ZZ_pXModRep modrep;
-   ToZZ_pXModRep(modrep, a, 0, da);
+   FromFFTRep(modrep, crep);
+
+   FromZZ_pXModRep(c, modrep, 0, dc);
 
    iter = 1;
 
    do {
      t = GetTime();
      for (i = 0; i < iter; i++) {
-        ToZZ_pXModRep(modrep, a, 0, da);
+        FromZZ_pXModRep(c, modrep, 0, dc);
      }
      t = GetTime() - t;
      iter = 2*iter;
@@ -162,7 +147,7 @@ int main()
    for (w = 0; w < 5; w++) {
      t = GetTime();
      for (i = 0; i < iter; i++) {
-        ToZZ_pXModRep(modrep, a, 0, da);
+        FromZZ_pXModRep(c, modrep, 0, dc);
      }
      t = GetTime() - t;
      tvec[w] = t;
@@ -172,6 +157,12 @@ int main()
    t = clean_data(tvec);
 
    t = floor((t/iter)*1e12);
+
+   // The following is just to test some tuning Wizard logic --
+   // be sure to get rid of this!!
+#if (defined(NTL_CRT_ALTCODE))
+   // t *= 1.12;
+#endif
 
    if (t < 0 || t >= 1e15)
       printf("999999999999999 ");

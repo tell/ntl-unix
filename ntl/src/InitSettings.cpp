@@ -101,15 +101,6 @@ int main()
    cout << "NTL_GF2X_LIB=0\n";
 #endif
 
-#ifdef NTL_LONG_LONG_TYPE
-   cout << "FLAG_LONG_LONG_TYPE=1\n";
-   cout << "NTL_LONG_LONG_TYPE=" make_string(NTL_LONG_LONG_TYPE) "\n";
-#else
-   cout << "FLAG_LONG_LONG_TYPE=0\n";
-   cout << "NTL_LONG_LONG_TYPE=long long\n";
-#endif
-
-
 #ifdef NTL_UNSIGNED_LONG_LONG_TYPE
    cout << "FLAG_UNSIGNED_LONG_LONG_TYPE=1\n";
    cout << "NTL_UNSIGNED_LONG_LONG_TYPE=" make_string(NTL_UNSIGNED_LONG_LONG_TYPE) "\n";

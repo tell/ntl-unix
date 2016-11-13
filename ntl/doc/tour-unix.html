@@ -19,7 +19,7 @@ A Tour of NTL: Obtaining and Installing NTL for UNIX
 <p> <hr> <p>
 
 This procedure should work on most Unix or Unix-like platorms
-(including Mac OSX, and Windows with MinGW or Cygwin tools).
+(including Mac OS, and Windows with MinGW or Cygwin tools).
 
 <p>
 
@@ -78,7 +78,7 @@ with the option <tt>NTL_GF2X_LIB=on</tt>.
  
 
 <p>
-If you want to install NTL install NTL somewhere besides <tt>/usr/local</tt>,
+If you want to install NTL somewhere besides <tt>/usr/local</tt>,
 pass the option <tt>PREFIX=/path/to/install/ntl</tt> to 
 <tt>configure</tt>.
 If GMP is installed somewhere besides <tt>/usr/local</tt>,
@@ -98,18 +98,18 @@ override the default for <tt>PREFIX</tt>,
 
 <p>
 Now suppose you want to compile a program that uses NTL.
-Suppose you are working in some arbitrary directory and <tt>foo.c</tt>
+Suppose you are working in some arbitrary directory and <tt>foo.cpp</tt>
 is your program.
 Assume that you have installed NTL in <tt>/usr/local</tt> as above.
 The following should work:
 <pre>
-   % g++ -g -O2 foo.c -o foo -lntl -lgmp -lm
+   % g++ -g -O2 foo.cpp -o foo -lntl -lgmp -lm
 </pre>
 If you have installed NTL and/or GMP is a non-standard location,
 say <tt>/path/to/sw</tt>,
 then:
 <pre>
-   % g++ -g -O2 -I/path/to/sw/include foo.c -o foo  -L/path/to/sw/lib -lntl -lgmp -lm
+   % g++ -g -O2 -I/path/to/sw/include foo.cpp -o foo  -L/path/to/sw/lib -lntl -lgmp -lm
 </pre>
 If you build NTL with <tt>gf2x</tt>, just add the option
 <tt>-lgf2x</tt> to the above, right after <tt>-lgmp</tt>.
@@ -120,7 +120,7 @@ you can just run:
 <pre>
    % make foo
 </pre>
-to compile a program <tt>foo.c</tt>, as above.
+to compile a program <tt>foo.cpp</tt>, as above.
 
 <p>
 <h2>
@@ -360,9 +360,9 @@ will be in
 effect while the wizard runs, and will be retained in the updated
 <tt>config.h</tt> file, with the exception of the flags
 <pre>
-   NTL_LONG_LONG NTL_AVOID_FLOAT NTL_TBL_REM NTL_TBL_REM_LL NTL_AVOID_BRANCHING 
-   NTL_SPMM_ULL NTL_SPMM_ASM NTL_GF2X_NOINLINE NTL_GF2X_ALTCODE
-   NTL_GF2X_ALTCODE1 NTL_FFT_LAZYMUL NTL_FFT_BIGTAB NTL_PCLMUL
+   NTL_AVOID_BRANCHING NTL_SPMM_ULL NTL_SPMM_ASM NTL_FFT_LAZYMUL NTL_FFT_BIGTAB
+   NTL_GF2X_NOINLINE NTL_GF2X_ALTCODE NTL_GF2X_ALTCODE1 NTL_PCLMUL
+   NTL_TBL_REM NTL_CRT_ALTCODE NTL_CRT_ALTCODE_SMALL
 </pre>
 which are set by the wizard. 
 Also note that if you <i>do not</i> want the wizard to run,
@@ -460,11 +460,15 @@ to deal with all idiosyncracies of shared libraries.
 You may need to set the
 configuration variable <tt>LIBTOOL</tt>, to point to another version of
 <tt>libtool</tt>.  
-For example, on <i>Mac OSX</i>, the built-in command called <tt>libtool</tt>
+For example, on <i>Mac OS</i>, the built-in command called <tt>libtool</tt>
 is not
 actually the GNU <tt>libtool</tt> program; 
 in this case, you will want to set
 <tt>LIBTOOL=glibtool</tt>.  
+Unfortunately, newer versions of Mac OS do not come
+with <tt>glibtool</tt> installed.
+You can easily get it, however, using a packaging system
+such as <a href="http://brew.sh/index.html">homebrew</a>.
 On other systems, it may be necssary to download and
 install a fresh copy of the libtool program (which can be obtained from
 <a href="http://www.gnu.org/software/libtool">here</a>). 
@@ -507,14 +511,10 @@ Some platforms
 support both 64-bit and 32-bit ABI's;
 typically in such settings, the 64-bit ABI will yield much better
 performance, while the 32-bit ABI is available for backward compatibility.
-In addition, the 64-bit ABI may <i>not</i> be the default:
-if you are using <tt>gcc</tt>, you need to pass the <tt>-m64</tt>
-flag to the compiler to get the 64-bit ABI.
-
-<p>
-When compiling NTL, you may want to try running <tt>configure</tt>
-with <tt>CFLAGS="-O2 -m64"</tt> to force a 64-bit ABI -- this 
-may yield a very marked performance improvement.
+On modern 64-bit platforms, the 64-bit ABI is typically the default;
+otherwise, you may have to explicitly request it
+(e.g., with <tt>gcc</tt>, pass the <tt>-m64</tt>
+flag to the compiler).
 
 <p>
 If you are using NTL with either the GMP or <tt>gf2x</tt> libraries,
@@ -526,9 +526,6 @@ The installation script for <tt>gf2x</tt> may need some hints.
 <p>
 When compiling programs that use NTL, you must also ensure that
 the program is compiled with the same ABI as NTL.
-Again, if you want a 64-bit ABI, then just pass the flag <tt>-m64</tt>
-to the compiler.
-
 
 
 

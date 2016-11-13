@@ -1,4 +1,13 @@
 
+
+echo
+echo "---------------------------------"
+echo "making ZZTest"
+make ZZTest
+echo "running ZZTest"
+./ZZTest
+sh RemoveProg ZZTest
+
 echo
 echo "---------------------------------"
 echo "making CanZassTest"

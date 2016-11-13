@@ -191,13 +191,18 @@ optimization.
 
 64-BIT MACHINES
 
+FIXME: this discussion is out of date.
+Current versions of NTL use (by default) 60-bit moduli based
+on all-integer arithemtic.
+
+
 Prior to v9.0 of NTL, on 64 bits, the modulus n was restricted to 50 bits, in
 order to allow the use of double-precision techniques, as double's have 53 bits
 of precisions.  However, since the x86-64 is such an importnat target, and the
 one can still access the old x87 FPU, which provided 64-bit precision, the
 bound on n on such platforms is now 60 bits.  Actually, 62 bits could be
 supported, but other things (namely, the TBL_REM implementation in
-g_lip_impl.h) start to slow down if 62 bits are used, so 60 seems like a good
+lip.cpp) start to slow down if 62 bits are used, so 60 seems like a good
 compromose.  Currently,  60-bit moduli are available only when using gcc on
 x86-64 machines, and when compiling NTL with GMP. 
 

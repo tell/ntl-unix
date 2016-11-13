@@ -102,7 +102,7 @@ void ZZ_p::DoInstall()
       if (8.0*fn*(fn+48) > NTL_FDOUBLE_PRECISION)
          ResourceError("modulus too big");
 
-      if (n >= NTL_SP_BOUND)
+      if (n >= NTL_NSP_BOUND)
          ResourceError("modulus too big");
 
 

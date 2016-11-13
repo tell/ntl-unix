@@ -118,6 +118,11 @@ void old_image(mat_zz_p& X, const mat_zz_p& A)
 
 int main(int argc, char **argv)
 {
+   ZZ seed;
+   RandomLen(seed, 30);
+   SetSeed(seed);
+   cerr << "\nseed=" << seed << "\n";
+
    long iters = 100;
 
 

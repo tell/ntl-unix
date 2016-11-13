@@ -166,6 +166,8 @@ void MulSubFrom(ZZ& x, const ZZ& a, long b);      // x -= a*b
 // The single-precision versions may be significantly
 // faster than the code sequence 
 //   mul(tmp, a, b); add(x, x, tmp);
+// However, for the single-precision version, the use-case
+// that is optimized is for |b| < 2^{NTL_WSP_BOUND}.
 
 
 

@@ -79,12 +79,9 @@ system("make InitSettings");
 
 %Config = (
 
-'NTL_LONG_LONG'        => 0,
-'NTL_AVOID_FLOAT'      => 0,
 'NTL_SPMM_ULL'         => 0,
 'NTL_SPMM_ASM'         => 0,
 'NTL_TBL_REM'          => 0,
-'NTL_TBL_REM_LL'       => 0,
 'NTL_CRT_ALTCODE'      => 0,
 'NTL_CRT_ALTCODE_SMALL'=> 0,
 'NTL_AVOID_BRANCHING'  => 0,
@@ -166,7 +163,7 @@ foreach $aflag1 ("default", "NTL_FFT_LAZYMUL") {
          $Config{$cflag1} = 0;
 
          # these are the files that include class definitions
-         # from FFT.h and ZZ_p.h, which have memvers defined
+         # from FFT.h and ZZ_p.h, which have members defined
          # in terms of mulmod_precon_t
          unlink("FFT.o"); unlink("ZZ_p.o"); unlink("vec_ZZ_p.o");
          unlink("ZZ_pX.o"); unlink("ZZ_pX1.o"); 
@@ -243,110 +240,61 @@ if ($time1 >= $time) {
    $Config{$bflag} = 1;
 }
 
-if ($Config{"NTL_GMP_LIP"} == 0) {
 
-   # GMP is not the primary long integer package
-   # Choose between default, AVOID_FLOAT, and LONG_LONG implementatsions
+# set NTL_TBL_REM
 
-   $time = "999999999999999";
-   $flag = "default";
+$time = "999999999999999";
+$flag = "default";
 
-   foreach $flag1 ("default", "NTL_AVOID_FLOAT", "NTL_LONG_LONG") {
-      $Config{$flag1} = 1;
-      GenConfigHeader(); 
-      $time1 = RunProg("MulTimeTest");
+foreach $flag1 ("default", "NTL_TBL_REM") {
+   $Config{$flag1} = 1;
+   GenConfigHeader(); 
+   $time1 = RunProg("Poly2TimeTest");
 
-      if ($time1 < $time) {
-	 $flag = $flag1;
-	 $time = $time1;
-      }
-
-      $Config{$flag1} = 0;
-      unlink("lip.o");
+   if ($time1 < $time) {
+      $flag = $flag1;
+      $time = $time1;
    }
 
-   $Config{$flag} = 1;
-
-
-   # finally, now set TBL_REM and TBL_REM_LL
-
-   $time = "999999999999999";
-   $flag = "default";
-
-   foreach $flag1 ("default", "NTL_TBL_REM", "NTL_TBL_REM_LL") {
-      $Config{$flag1} = 1;
-      GenConfigHeader(); 
-      $time1 = RunProg("Poly2TimeTest");
-
-      if ($time1 < $time) {
-	 $flag = $flag1;
-	 $time = $time1;
-      }
-
-      $Config{$flag1} = 0;
-      unlink("lip.o");
-   }
-
-   $Config{$flag} = 1;
+   $Config{$flag1} = 0;
+   unlink("lip.o");
 }
-else {
 
-   # set NTL_TBL_REM
+$Config{$flag} = 1;
 
-   $time = "999999999999999";
-   $flag = "default";
 
-   foreach $flag1 ("default", "NTL_TBL_REM") {
-      $Config{$flag1} = 1;
-      GenConfigHeader(); 
-      $time1 = RunProg("Poly2TimeTest");
+# set NTL_CRT_ALTCODE
 
-      if ($time1 < $time) {
-	 $flag = $flag1;
-	 $time = $time1;
-      }
+$time = "999999999999999";
+$flag = "default";
 
-      $Config{$flag1} = 0;
-      unlink("lip.o");
+foreach $flag1 ("default", "NTL_CRT_ALTCODE") {
+   $Config{$flag1} = 1;
+   GenConfigHeader(); 
+   $time1 = RunProg("Poly3TimeTest");
+
+   if ($time1 < $time) {
+      $flag = $flag1;
+      $time = $time1;
    }
 
-   $Config{$flag} = 1;
-
-
-   # set NTL_CRT_ALTCODE
-
-   $time = "999999999999999";
-   $flag = "default";
-
-   foreach $flag1 ("default", "NTL_CRT_ALTCODE") {
-      $Config{$flag1} = 1;
-      GenConfigHeader(); 
-      $time1 = RunProg("Poly3TimeTest");
-
-      if ($time1 < $time) {
-	 $flag = $flag1;
-	 $time = $time1;
-      }
-
-      $Config{$flag1} = 0;
-      unlink("lip.o");
-   }
-
-   $Config{$flag} = 1;
-
-   # set NTL_CRT_ALTCODE_SMALL, if NTL_CRT_ALTCODE
-   # not set but it did not perform too badly
-
-   if ($Config{"NTL_CRT_ALTCODE"} == 0) {
-      # time measures default and time1 measures ALTCODE
-      if (1.0*$time1 < 1.15*$time) {
-         $Config{"NTL_CRT_ALTCODE_SMALL"} = 1;
-      }
-   }
-
-
-
+   $Config{$flag1} = 0;
+   unlink("lip.o");
 }
+
+$Config{$flag} = 1;
+
+# set NTL_CRT_ALTCODE_SMALL, if NTL_CRT_ALTCODE
+# not set but it did not perform too badly
+
+if ($Config{"NTL_CRT_ALTCODE"} == 0) {
+   # time measures default and time1 measures ALTCODE
+   if (1.0*$time1 < 1.15*$time) {
+      $Config{"NTL_CRT_ALTCODE_SMALL"} = 1;
+   }
+}
+
+
 
 $Config{'WIZARD_HACK'} = "";
 GenConfigHeader();

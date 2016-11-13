@@ -64,13 +64,10 @@
 'NTL_GF2X_LIB'            => 'off',
 'NTL_X86_FIX'             => 'off',
 'NTL_NO_X86_FIX'          => 'off',
-'NTL_AVOID_FLOAT'         => 'off',
-'NTL_LONG_LONG'           => 'off',
 'NTL_SPMM_ULL'            => 'off',
 'NTL_SPMM_ASM'            => 'off',
 'NTL_AVOID_BRANCHING'     => 'off',
 'NTL_TBL_REM'             => 'off',
-'NTL_TBL_REM_LL'          => 'off',
 'NTL_CRT_ALTCODE'         => 'off',
 'NTL_CRT_ALTCODE_SMALL'   => 'off',
 'NTL_GF2X_NOINLINE'       => 'off',
@@ -89,7 +86,6 @@
 
 %ConfigVal = (
 
-'NTL_LONG_LONG_TYPE' => undef,
 'NTL_UNSIGNED_LONG_LONG_TYPE' => undef,
 
 );
@@ -142,10 +138,6 @@ foreach $arg (@ARGV) {
 
 if ($ConfigFlag{'NTL_THREAD_BOOST'} eq 'on') {
    $ConfigFlag{'NTL_THREADS'} = 'on';
-}
-
-if ($ConfigFlag{'NTL_THREADS'} eq 'on' && $ConfigFlag{'NTL_GMP_LIP'} eq 'off') {
-   die "Error: NTL_THREADS currently only available with NTL_GMP_LIP...sorry\n";
 }
 
 
@@ -236,21 +228,6 @@ foreach $name (keys %ConfigFlag) {
 
 }
 
-# special logic for NTL_LONG_LONG_TYPE
-
-if (defined($ConfigVal{'NTL_LONG_LONG_TYPE'})) {
-
-   $ConfigSub{'NTL_LONG_LONG_TYPE'} = $ConfigVal{'NTL_LONG_LONG_TYPE'};
-   $ConfigSub{'FLAG_LONG_LONG_TYPE'} = 1;
-
-}
-else {
-   
-   $ConfigSub{'NTL_LONG_LONG_TYPE'} = 'long long';
-   $ConfigSub{'FLAG_LONG_LONG_TYPE'} = 0;
-
-}
-
 
 # special logic for NTL_UNSIGNED_LONG_LONG_TYPE
 
@@ -277,13 +254,6 @@ $ConfigSub{'WIZARD_HACK'} = '';
 if ($ConfigSub{'NTL_X86_FIX'} + $ConfigSub{'NTL_NO_X86_FIX'} > 1) {
 
    die "Error: at most one of NTL_X86_FIX and NTL_NO_X86_FIX may be on\n";
-
-}
-
-
-if ($ConfigSub{'NTL_AVOID_FLOAT'} + $ConfigSub{'NTL_LONG_LONG'} > 1) {
-
-   die "Error: at most one of NTL_AVOID_FLOAT and NTL_LONG_LONG may be on\n";
 
 }
 

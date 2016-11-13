@@ -147,32 +147,29 @@ OBJ=$(O19)
 # library source files
 
 
-S01=FFT.c FacVec.c GF2.c GF2E.c GF2EX.c GF2EXFactoring.c GF2X.c GF2X1.c
-S02=$(S01) GF2XFactoring.c GF2XVec.c HNF.c ctools.c LLL.c LLL_FP.c LLL_QP.c
-S03=$(S02) LLL_RR.c LLL_XD.c RR.c WordVector.c ZZ.c ZZVec.c ZZX.c ZZX1.c
-S04=$(S03) ZZXCharPoly.c ZZXFactoring.c ZZ_p.c ZZ_pE.c ZZ_pEX.c 
-S05=$(S04) ZZ_pEXFactoring.c ZZ_pX.c ZZ_pX1.c ZZ_pXCharPoly.c
-S06=$(S05) ZZ_pXFactoring.c fileio.c lip.c lzz_p.c lzz_pE.c lzz_pEX.c
-S07=$(S06) lzz_pEXFactoring.c lzz_pX.c lzz_pX1.c
-S08=$(S07) lzz_pXCharPoly.c lzz_pXFactoring.c mat_GF2.c mat_GF2E.c
-S09=$(S08) mat_RR.c mat_ZZ.c mat_ZZ_p.c mat_ZZ_pE.c mat_lzz_p.c mat_lzz_pE.c
-S10=$(S09) mat_poly_ZZ.c mat_poly_ZZ_p.c mat_poly_lzz_p.c 
+S01=FFT.cpp FacVec.cpp GF2.cpp GF2E.cpp GF2EX.cpp GF2EXFactoring.cpp GF2X.cpp GF2X1.cpp
+S02=$(S01) GF2XFactoring.cpp GF2XVec.cpp HNF.cpp ctools.cpp LLL.cpp LLL_FP.cpp LLL_QP.cpp
+S03=$(S02) LLL_RR.cpp LLL_XD.cpp RR.cpp WordVector.cpp ZZ.cpp ZZVec.cpp ZZX.cpp ZZX1.cpp
+S04=$(S03) ZZXCharPoly.cpp ZZXFactoring.cpp ZZ_p.cpp ZZ_pE.cpp ZZ_pEX.cpp 
+S05=$(S04) ZZ_pEXFactoring.cpp ZZ_pX.cpp ZZ_pX1.cpp ZZ_pXCharPoly.cpp
+S06=$(S05) ZZ_pXFactoring.cpp fileio.cpp lip.cpp lzz_p.cpp lzz_pE.cpp lzz_pEX.cpp
+S07=$(S06) lzz_pEXFactoring.cpp lzz_pX.cpp lzz_pX1.cpp
+S08=$(S07) lzz_pXCharPoly.cpp lzz_pXFactoring.cpp mat_GF2.cpp mat_GF2E.cpp
+S09=$(S08) mat_RR.cpp mat_ZZ.cpp mat_ZZ_p.cpp mat_ZZ_pE.cpp mat_lzz_p.cpp mat_lzz_pE.cpp
+S10=$(S09) mat_poly_ZZ.cpp mat_poly_ZZ_p.cpp mat_poly_lzz_p.cpp 
 S11=$(S10) 
 S12=$(S11) 
-S13=$(S12) quad_float.c tools.c vec_GF2.c vec_GF2E.c vec_RR.c
-S14=$(S13) vec_ZZ.c vec_ZZ_p.c vec_ZZ_pE.c 
-S15=$(S14) vec_lzz_p.c vec_lzz_pE.c 
+S13=$(S12) quad_float.cpp tools.cpp vec_GF2.cpp vec_GF2E.cpp vec_RR.cpp
+S14=$(S13) vec_ZZ.cpp vec_ZZ_p.cpp vec_ZZ_pE.cpp 
+S15=$(S14) vec_lzz_p.cpp vec_lzz_pE.cpp 
 S16=$(S15) 
 S17=$(S16) 
-S18=$(S17) xdouble.c
-S19=$(S18) G_LLL_FP.c G_LLL_QP.c G_LLL_XD.c G_LLL_RR.c thread.c BasicThreadPool.c
+S18=$(S17) xdouble.cpp
+S19=$(S18) G_LLL_FP.cpp G_LLL_QP.cpp G_LLL_XD.cpp G_LLL_RR.cpp thread.cpp BasicThreadPool.cpp
 
 SRC = $(S19)
 
 # library source files that are header files
-
-SINC = c_lip_impl.h g_lip_impl.h
-
 
 
 
@@ -196,7 +193,7 @@ IN14=$(IN13) vec_long.h vec_lzz_p.h vec_lzz_pE.h vec_quad_float.h
 IN15=$(IN14) vec_vec_GF2.h vec_vec_GF2E.h vec_vec_RR.h vec_vec_ZZ.h
 IN16=$(IN15) vec_vec_ZZ_p.h vec_vec_ZZ_pE.h vec_vec_long.h vec_vec_lzz_p.h
 IN17=$(IN16) vec_vec_lzz_pE.h vec_xdouble.h xdouble.h config.h version.h
-IN18=$(IN17) def_config.h new.h vec_ulong.h vec_vec_ulong.h c_lip.h g_lip.h
+IN18=$(IN17) def_config.h new.h vec_ulong.h vec_vec_ulong.h 
 IN19=$(IN18) SmartPtr.h Lazy.h LazyTable.h thread.h  BasicThreadPool.h
 INCL=$(IN19)
 
@@ -213,10 +210,10 @@ TD = $(TD4)
 
 # test source files
 
-TS1=QuickTest.c BerlekampTest.c CanZassTest.c ZZXFacTest.c MoreFacTest.c LLLTest.c
-TS2=$(TS1) subset.c MatrixTest.c mat_lzz_pTest.c CharPolyTest.c RRTest.c QuadTest.c
-TS3=$(TS2) GF2XTest.c GF2EXTest.c BitMatTest.c ZZ_pEXTest.c lzz_pEXTest.c Timing.c
-TS4=$(TS3) ThreadTest.c ExceptionTest.c
+TS1=QuickTest.cpp ZZTest.cpp BerlekampTest.cpp CanZassTest.cpp ZZXFacTest.cpp MoreFacTest.cpp LLLTest.cpp
+TS2=$(TS1) subset.cpp MatrixTest.cpp mat_lzz_pTest.cpp CharPolyTest.cpp RRTest.cpp QuadTest.cpp
+TS3=$(TS2) GF2XTest.cpp GF2EXTest.cpp BitMatTest.cpp ZZ_pEXTest.cpp lzz_pEXTest.cpp Timing.cpp
+TS4=$(TS3) ThreadTest.cpp ExceptionTest.cpp
 TS = $(TS4)
 
 # scripts
@@ -228,10 +225,10 @@ SCRIPTS=$(SCRIPTS2)
 
 # auxilliary source
 
-MD=MakeDesc.c MakeDescAux.c newnames.c gen_gmp_aux.c 
-GT=GetTime0.c GetTime1.c GetTime2.c GetTime3.c GetTime4.c GetTime5.c TestGetTime.c
-GP=GetPID1.c GetPID2.c TestGetPID.c
-CH=CheckCLZL.c CheckCLZLAux.c CheckLL.c CheckLLAux.c CheckAVX.c CheckFMA.c CheckCompile.c
+MD=MakeDesc.cpp MakeDescAux.cpp newnames.cpp gen_gmp_aux.cpp 
+GT=GetTime0.cpp GetTime1.cpp GetTime2.cpp GetTime3.cpp GetTime4.cpp GetTime5.cpp TestGetTime.cpp
+GP=GetPID1.cpp GetPID2.cpp TestGetPID.cpp
+CH=CheckCLZL.cpp CheckCLZLAux.cpp CheckLL.cpp CheckLLAux.cpp CheckAVX.cpp CheckFMA.cpp CheckCompile.cpp
 
 AUXPROGS = TestGetTime TestGetPID CheckFeature CheckCompile
 
@@ -297,9 +294,9 @@ PROGS = $(PROG3)
 
 # things to save to a tar file
 
-SFI1=makefile $(SRC) $(SINC) $(SCRIPTS) $(MD) $(GT) $(GP) $(CH) $(TS) $(TD) mach_desc.win 
-SFI2=$(SFI1) MulTimeTest.c Poly1TimeTest.c Poly2TimeTest.c Poly3TimeTest.c GF2XTimeTest.c  
-SFI3=$(SFI2) InitSettings.c DispSettings.c  WizardAux Wizard def_makefile
+SFI1=makefile $(SRC) $(SCRIPTS) $(MD) $(GT) $(GP) $(CH) $(TS) $(TD) mach_desc.win 
+SFI2=$(SFI1) Poly1TimeTest.cpp Poly2TimeTest.cpp Poly3TimeTest.cpp GF2XTimeTest.cpp  
+SFI3=$(SFI2) InitSettings.cpp DispSettings.cpp  WizardAux Wizard def_makefile
 SFILES=$(SFI3)
 
 
@@ -336,8 +333,8 @@ all:
 # setup1 generates the file ../incluse/NTL/mach_desc.h
 
 setup1:
-	$(COMPILE) MakeDescAux.c
-	$(LINK) -o MakeDesc MakeDesc.c MakeDescAux.o $(LDLIBS)
+	$(COMPILE) MakeDescAux.cpp
+	$(LINK) -o MakeDesc MakeDesc.cpp MakeDescAux.o $(LDLIBS)
 	./MakeDesc
 	mv mach_desc.h ../include/NTL/mach_desc.h
 
@@ -348,10 +345,10 @@ setup2:
 	echo "*** CheckFeature log ***" > CheckFeature.log
 	sh MakeGetTime "$(LINK)" "$(LDLIBS)"
 	sh MakeGetPID  "$(LINK)" "$(LDLIBS)"
-	sh MakeCheckFeature BUILTIN_CLZL "CheckCLZL.c CheckCLZLAux.c" "$(LINK)" "$(LDLIBS)"
-	sh MakeCheckFeature LL_TYPE "CheckLL.c CheckLLAux.c" "$(LINK)" "$(LDLIBS)"
-	sh MakeCheckFeature AVX "CheckAVX.c" "$(LINK)" "$(LDLIBS)"
-	sh MakeCheckFeature FMA "CheckFMA.c" "$(LINK)" "$(LDLIBS)"
+	sh MakeCheckFeature BUILTIN_CLZL "CheckCLZL.cpp CheckCLZLAux.cpp" "$(LINK)" "$(LDLIBS)"
+	sh MakeCheckFeature LL_TYPE "CheckLL.cpp CheckLLAux.cpp" "$(LINK)" "$(LDLIBS)"
+	sh MakeCheckFeature AVX "CheckAVX.cpp" "$(LINK)" "$(LDLIBS)"
+	sh MakeCheckFeature FMA "CheckFMA.cpp" "$(LINK)" "$(LDLIBS)"
 
 # setup3 generates the file ../include/NTL/gmp_aux.h
 # The file ../include/NTL/gmp_aux.h is included in ../include/NTL/lip.h
@@ -359,7 +356,7 @@ setup2:
 # When this flag is not set, an empty files produced.
 
 setup3:
-	$(LINK) $(GMP_OPT_INCDIR) -o gen_gmp_aux gen_gmp_aux.c $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
+	$(LINK) $(GMP_OPT_INCDIR) -o gen_gmp_aux gen_gmp_aux.cpp $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
 	./gen_gmp_aux > ../include/NTL/gmp_aux.h
 
 # setup4 runs the wizard
@@ -376,27 +373,27 @@ ntl.a:	$(OBJ)
 LCOMP= #LSTAT
 # LCOMP=$(LIBTOOL) --tag=CXX --mode=compile #LSHAR
 
-lip.o:	lip.c g_lip_impl.h c_lip_impl.h 
-	$(LCOMP) $(COMPILE) $(GMP_OPT_INCDIR) lip.c
+lip.o:	lip.cpp 
+	$(LCOMP) $(COMPILE) $(GMP_OPT_INCDIR) lip.cpp
 
-ctools.o:	ctools.c
-	$(LCOMP) $(COMPILE) ctools.c
-
-
-GetTime.o: GetTime.c 
-	$(LCOMP) $(COMPILE) GetTime.c
-
-GetPID.o: GetPID.c 
-	$(LCOMP) $(COMPILE) GetPID.c
-
-CheckCompile: CheckCompile.c
-	$(LINK) -o  CheckCompile CheckCompile.c $(LDLIBS)
+ctools.o:	ctools.cpp
+	$(LCOMP) $(COMPILE) ctools.cpp
 
 
-.c.o: 
+GetTime.o: GetTime.cpp 
+	$(LCOMP) $(COMPILE) GetTime.cpp
+
+GetPID.o: GetPID.cpp 
+	$(LCOMP) $(COMPILE) GetPID.cpp
+
+CheckCompile: CheckCompile.cpp
+	$(LINK) -o  CheckCompile CheckCompile.cpp $(LDLIBS)
+
+
+.cpp.o: 
 	$(LCOMP) $(COMPILE) $(GF2X_OPT_INCDIR) $<
 
-.c: 
+.cpp: 
 	$(LINK) -o $@ $< ntl.a $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(GF2X_OPT_LIBDIR) $(GF2X_OPT_LIB) $(LDLIBS) #LSTAT
 # 	$(LIBTOOL) --tag=CXX --mode=link $(LINK) -o $@ $< libntl.la #LSHAR
 
@@ -467,7 +464,7 @@ uninstall:
 #################################################################
 
 clobber:	
-	rm -f ntl.a mach_desc.h ../include/NTL/mach_desc.h  GetTime.c GetPID.c
+	rm -f ntl.a mach_desc.h ../include/NTL/mach_desc.h  GetTime.cpp GetPID.cpp
 	sh ResetFeatures '..'
 	rm -f ../include/NTL/gmp_aux.h
 	sh RemoveProg $(PROGS) MakeDesc $(AUXPROGS) gen_gmp_aux
@@ -521,7 +518,7 @@ winpack:
 	./configure --nowrite NTL_GMP_LIP=off
 	cp mfileout def_makefile
 	cp cfileout ../include/NTL/def_config.h
-	sh dosify "$(SRC)" "$(INCL)" "$(DOC)" "$(TS)" "$(TD)" "$(SINC)"
+	sh dosify "$(SRC)" "$(INCL)" "$(DOC)" "$(TS)" "$(TD)" 
 	rm -rf `cat WINDIR`
 	rm -f `cat WINDIR`.zip 
 	mv dos `cat WINDIR`
@@ -548,27 +545,24 @@ wntl.a:	$(WOBJ)
 	$(AR) $(ARFLAGS) wntl.a $(WOBJ)
 	- $(RANLIB) wntl.a
 
-MulTimeTest:
-	$(LINK) -o MulTimeTest MulTimeTest.c wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB)  $(LDLIBS)
-
 
 Poly1TimeTest:
-	$(LINK) -o Poly1TimeTest Poly1TimeTest.c wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
+	$(LINK) -o Poly1TimeTest Poly1TimeTest.cpp wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
 Poly2TimeTest:
-	$(LINK) -o Poly2TimeTest Poly2TimeTest.c wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
+	$(LINK) -o Poly2TimeTest Poly2TimeTest.cpp wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
 Poly3TimeTest:
-	$(LINK) -o Poly3TimeTest Poly3TimeTest.c wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
+	$(LINK) -o Poly3TimeTest Poly3TimeTest.cpp wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
 
 
 GF2XTimeTest:
-	$(LINK) -o GF2XTimeTest GF2XTimeTest.c wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
+	$(LINK) -o GF2XTimeTest GF2XTimeTest.cpp wntl.a  $(GMP_OPT_LIBDIR) $(GMP_OPT_LIB) $(LDLIBS)
 
 InitSettings:
-	$(LINK) -o InitSettings InitSettings.c  $(LDLIBS)
+	$(LINK) -o InitSettings InitSettings.cpp  $(LDLIBS)
 
 
 DispSettings:
-	$(LINK) -o DispSettings DispSettings.c $(LDLIBS)
+	$(LINK) -o DispSettings DispSettings.cpp $(LDLIBS)
 
 
 

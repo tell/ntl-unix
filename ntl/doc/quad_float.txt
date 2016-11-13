@@ -200,7 +200,7 @@ rounding, i.e., given double floating point numbers a and b, a op b
 is computed exactly and then rounded to the nearest double.  
 The tie-breaking rule is not important.
 
-This is a rather wierd representation;  although it gives one
+This is a rather weird representation;  although it gives one
 essentially twice the precision of an ordinary double, it is
 not really the equivalent of quadratic precision (despite the name).
 For example, the number 1 + 2^{-200} can be represented exactly as

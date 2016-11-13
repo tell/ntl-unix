@@ -74,6 +74,7 @@ int main()
 {
    long bpl;
    long ntl_zz_nbits;
+   long nail_bits;
 
    fprintf(stderr, "NTL_GMP_LIP flag set\n");
 
@@ -83,23 +84,34 @@ int main()
    /*
     * We require that the number of bits per limb quantity correspond to the
     * number of bits of a long, or possibly a "long long" that is twice as wide
-    * as a long.  These restrictions will almost certainly be satisfied, unless
-    * GMP is installed using the newly proposed "nail" option.
+    * as a long.  These restrictions will almost certainly be satisfied.
     */
 
    ntl_zz_nbits = 0;
 
+   nail_bits = 0;
+#ifdef GMP_NAIL_BITS
+   nail_bits = GMP_NAIL_BITS;
+#endif
+
+   if (nail_bits > 0)
+      fprintf(stderr, "WARNING: GMP_NAIL_BITS > 0: this has not been well tested\n");
+
+   // NOTE: newer versions of GMP define mp_bits_per_limb as
+   // GMP_LIMB_BITS
+
    if (sizeof(mp_limb_t) == sizeof(long) && mp_bits_per_limb == bpl)
-      ntl_zz_nbits = bpl;
+      ntl_zz_nbits = bpl-nail_bits;
    else if (sizeof(mp_limb_t) == 2*sizeof(long) && mp_bits_per_limb == 2*bpl)
-      ntl_zz_nbits = 2*bpl;
+      ntl_zz_nbits = 2*bpl-nail_bits;
    else
       Error("sorry...this is a funny gmp");
 
-   if (sizeof(mp_size_t) != sizeof(long) &&
-       sizeof(mp_size_t) != sizeof(int))
+   if (ntl_zz_nbits % 2 != 0 || ntl_zz_nbits < 30)
+      Error("sorry...this is a funny gmp");
 
-   Error("sorry...this is a funny gmp");
+   if (sizeof(mp_size_t) != sizeof(long) && sizeof(mp_size_t) != sizeof(int))
+      Error("sorry...this is a funny gmp");
 
 
    if (sizeof(mp_size_t) < sizeof(long)) {
@@ -108,8 +120,10 @@ int main()
    }
 
    fprintf(stderr, "NTL_ZZ_NBITS = %ld\n", ntl_zz_nbits);
-
    printf("#define NTL_ZZ_NBITS (%ld)\n",  ntl_zz_nbits);
+
+   fprintf(stderr, "NTL_BITS_PER_LIMB_T = %ld\n", ntl_zz_nbits+nail_bits);
+   printf("#define NTL_BITS_PER_LIMB_T (%d)\n", ntl_zz_nbits+nail_bits);
 
    printf("#define NTL_ZZ_FRADIX ");
    print2k(stdout, ntl_zz_nbits, bpl);

@@ -37,7 +37,7 @@ int main()
 
       ZZ_p::init(p);
 
-      ZZ x, y, z, w;
+      ZZ x, y, z, w, s1, s2;
 
       SetSeed(conv<ZZ>(2));
       RandomBnd(x, p);
@@ -49,12 +49,21 @@ int main()
       TIME_IT(t, mul(z, x, y));
       cout << "multiply 1000-bit ints: " << t << "\n";
 
+      TIME_IT(t, sqr(w, x));
+      cout << "square 1000-bit ints: " << t << "\n";
 
       TIME_IT(t, rem(w, z, p));
       cout << "remainder 2000/1000-bit ints: " << t << "\n";
 
       TIME_IT(t, GCD(w, x, y));
       cout << "gcd 1000-bit ints: " << t << "\n";
+
+      TIME_IT(t, XGCD(w, s1, s2, x, y));
+      cout << "xgcd 1000-bit ints: " << t << "\n";
+
+      TIME_IT(t, PowerMod(w, x, y, p));
+      cout << "power mod 1000-bit ints: " << t << "\n";
+      
 
       ZZ_pX a, b, c;
 

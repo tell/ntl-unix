@@ -490,6 +490,9 @@ void BuildIrred(GF2X& f, long n)
 
    i = 0;
    do {
+      if (i >> (NTL_BITS_PER_LONG-1)) 
+         ResourceError("BuildIrred: limit exceeded");
+
       ConvertBits(g, 2*i+1);
       SetCoeff(g, n);
       i++;

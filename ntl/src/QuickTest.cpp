@@ -226,10 +226,6 @@ int main()
 
 
 
-#ifdef NTL_LONG_LONG_TYPE
-   cerr << "NTL_LONG_LONG_TYPE: ";
-   cerr << make_string(NTL_LONG_LONG_TYPE) << "\n";
-#endif
 
 #ifdef NTL_UNSIGNED_LONG_LONG_TYPE
    cerr << "NTL_UNSIGNED_LONG_LONG_TYPE: ";
@@ -263,21 +259,12 @@ int main()
 
 
 cerr << "\n";
-cerr << "Resolution of double-word types:\n";
-cerr << make_string(NTL_LL_TYPE) << "\n";
+cerr << "Resolution of double-word type:\n";
 cerr << make_string(NTL_ULL_TYPE) << "\n";
 
 
 cerr << "\n";
 cerr << "Performance Options:\n";
-
-#ifdef NTL_LONG_LONG
-   cerr << "NTL_LONG_LONG\n";
-#endif
-
-#ifdef NTL_AVOID_FLOAT
-   cerr << "NTL_AVOID_FLOAT\n";
-#endif
 
 
 #ifdef NTL_SPMM_ULL
@@ -310,10 +297,6 @@ cerr << "Performance Options:\n";
    cerr << "NTL_TBL_REM\n";
 #endif
 
-
-#ifdef NTL_TBL_REM_LL
-   cerr << "NTL_TBL_REM_LL\n";
-#endif
 
 #ifdef NTL_CRT_ALTCODE
    cerr << "NTL_CRT_ALTCODE\n";
@@ -465,11 +448,11 @@ cerr << "Performance Options:\n";
    mul(j3, j1, j2);
 
    t = GetTime();
-   for (i = 0; i < 500; i++) mul(j3, j1, j2);
+   for (i = 0; i < 100; i++) mul(j3, j1, j2);
    t = GetTime()-t;
 
    cerr << "time to multiply degree 1023 polynomials\n   modulo a 1024-bit number: ";
-   cerr << (t/500) << "s";
+   cerr << (t/100) << "s";
    cerr << "\n";
 
    GF2X_time();

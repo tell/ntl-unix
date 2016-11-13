@@ -1,6 +1,9 @@
 
 #include <NTL/BasicThreadPool.h>
 
+// make a global symbol, just to supress warnings
+int _ntl_BasicThreadPool_dummy_symbol = 0;
+
 #ifdef NTL_THREAD_BOOST
 
 NTL_START_IMPL

@@ -434,7 +434,8 @@ void negate(ZZ_pX& x, const ZZ_pX& a)
 }
 
 
-#ifndef NTL_WIZARD_HACK
+#if (!defined(NTL_WIZARD_HACK) && defined(NTL_GMP_LIP))
+// This only seems to help if we have GMP
 
 
 void mul(ZZ_pX& c, const ZZ_pX& a, const ZZ_pX& b)
@@ -464,6 +465,7 @@ void mul(ZZ_pX& c, const ZZ_pX& a, const ZZ_pX& b)
       KarMul(C, A, B);
       conv(c, C);
    }
+
    else {
       long mbits;
       mbits = NumBits(ZZ_p::modulus());

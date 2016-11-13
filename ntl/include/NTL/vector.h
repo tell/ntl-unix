@@ -120,10 +120,9 @@ public:
 
    class _vec_deleter {
    public:
-      static void apply(T*& p) { 
+      static void apply(T* p) { 
          if (p)  {
             NTL_SNS free(((char *) p) - sizeof(_ntl_AlignedVectorHeader));
-            p = 0;
          }
       }
    };
@@ -489,7 +488,7 @@ void Vec<T>::DoSetLength(long n, const T& a)
    // a aliasing a vector element
    const T *src = &a;
    long pos = -1;
-   if (n >= allocated()) pos = position(a);
+   if (n > allocated()) pos = position(a);
    AllocateTo(n);
    if (pos != -1) src = elts() + pos;
    Init(n, *src);

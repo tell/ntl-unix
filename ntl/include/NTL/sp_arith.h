@@ -114,7 +114,7 @@ long sp_CorrectDeficit(unsigned long a, long n):
 // and that long(a) >= -n 
 
 long sp_CorrectExcess(long a, long n) 
-long sp_CorrectDeficit(unsigned long a, long n): 
+long sp_CorrectExcess(unsigned long a, long n): 
 // if (a < n) then a else a-n
 
 // For the signed version, it is assumed that a >= 0.
@@ -362,7 +362,7 @@ long NegateMod(long a, long n)
 #include <NTL/SPMM_ASM.h>
 
 
-#elif (defined(NTL_SPMM_ULL) || defined(NTL_HAVE_LL_TYPE))
+#elif (defined(NTL_HAVE_LL_TYPE))
 #define NTL_HAVE_MULHI
 
 static inline unsigned long 
