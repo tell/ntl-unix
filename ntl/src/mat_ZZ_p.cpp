@@ -65,17 +65,22 @@ void mul_aux(mat_ZZ_p& X, const mat_ZZ_p& A, const mat_ZZ_p& B)
   
    long i, j, k;  
    ZZ acc, tmp;  
-  
-   for (i = 1; i <= n; i++) {  
-      for (j = 1; j <= m; j++) {  
-         clear(acc);  
-         for(k = 1; k <= l; k++) {  
-            mul(tmp, rep(A(i,k)), rep(B(k,j)));  
-            add(acc, acc, tmp);  
-         }  
-         conv(X(i,j), acc);  
-      }  
-   }  
+
+   vec_ZZ_p B_col;;
+   B_col.SetLength(l);
+
+   for (j = 0; j < m; j++) {
+      for (k = 0; k < l; k++) B_col[k] = B[k][j];
+
+      for (i = 0; i < n; i++) {
+         clear(acc);
+         for (k = 0; k < l; k++) {
+            mul(tmp, rep(A[i][k]), rep(B_col[k]));
+            add(acc, acc, tmp);
+         }
+         conv(X[i][j], acc);
+      }
+   }
 }  
   
   

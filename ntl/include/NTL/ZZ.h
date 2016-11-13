@@ -714,6 +714,35 @@ struct sp_ZZ_reduce_struct {
 };
 
 
+// special-purpose routines for accumulating CRT-like summations
+// Not documented for now.
+
+
+// Allocates sz+2 limbs and zeros them all out.
+// x is not normalized.
+inline
+void QuickAccumBegin(ZZ& x, long sz)
+{
+   _ntl_quick_accum_begin(&x.rep, sz);
+}
+
+// x += y*b. 
+// Assumes y >= 0 and that 0 <= b < NTL_SP_BOUND.
+// Must only be called less than NTL_NSP_BOUND times.
+// x remains unnormalized.
+inline
+void QuickAccumMulAdd(ZZ& x, const ZZ& y, long b)
+{
+   _ntl_quick_accum_muladd(x.rep, y.rep, b);
+}
+
+// renormalizes x.
+inline
+void QuickAccumEnd(ZZ& x)
+{
+   _ntl_quick_accum_end(x.rep);
+}
+
 
 /**********************************************************
 

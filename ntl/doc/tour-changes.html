@@ -16,6 +16,52 @@ A Tour of NTL: Summary of Changes
 </p>
 </h1>
 
+<p><hr><p>
+<h3>
+2016.11.10: Changes between NTL 10.1.0 and 10.2.0
+</h3>
+
+<ul>
+<li>
+Added "thread boosting" to the <tt>ZZX</tt>
+multiplication routine.
+This can significantly increase performance on
+multicore machines (you must configure with <tt>NTL_THREAD_BOOST=on</tt>
+and call <tt>SetNumThreads</tt>).
+
+<li>
+Marginally improved performance and crossovers for 
+<tt>mat_zz_p</tt> multipliplication.
+
+<li>
+Marginally improved performance for
+<tt>mat_ZZ_p</tt> multipliplication (but much bigger 
+improvements hopefully coming soon).
+
+<li>
+Retired the <tt>zz_pXAltArgument</tt> class,
+which was used for modular composition in <tt>zz_pX</tt>.
+While this has been in  in the documented interface
+for a few months,
+it was flagged as being provisional and subject to 
+change.
+Well, it is being changed: it is being eliminated.
+
+<li>
+In place of <tt>zz_pXAltArgument</tt>, 
+I've added a class <tt>zz_pXNewArgument</tt>.
+For the time being, this will also be provisional and
+subject to change.
+With this class, all the code complexity for improved
+performance of modular composition is relegated to
+<tt>mat_zz_p</tt> multiplication.
+Also, all modular composition in <tt>zz_pX</tt> in NTL 
+goes through this new class.
+The old <tt>zz_pXArgument</tt> remains just for backward compatibility.
+
+
+</ul>
+
 
 <p><hr><p>
 <h3>
@@ -612,7 +658,6 @@ optimize certain code.
 A new modular composition implemention for <tt>zz_pX</tt>.
 This makes modular composition up to 3x faster, depending 
 on several factors.
-<a href="lzz_pX.cpp.html#compmod">See here</a> for details.
 
 <li>
 Improved performance for polynomial factoring over <tt>zz_pX</tt>
