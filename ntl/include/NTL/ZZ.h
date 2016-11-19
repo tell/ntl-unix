@@ -728,7 +728,7 @@ void QuickAccumBegin(ZZ& x, long sz)
 
 // x += y*b. 
 // Assumes y >= 0 and that 0 <= b < NTL_SP_BOUND.
-// Must only be called less than NTL_NSP_BOUND times.
+// Caller must assure that x does not exceed sz+2 limbs.
 // x remains unnormalized.
 inline
 void QuickAccumMulAdd(ZZ& x, const ZZ& y, long b)

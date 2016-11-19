@@ -5433,15 +5433,6 @@ void _ntl_gpowermod(_ntl_gbigint g, _ntl_gbigint e, _ntl_gbigint F,
    _ntl_gcopy(res, h);
 }
 
-long _ntl_gsize(_ntl_gbigint rep)
-{
-   if (!rep)
-      return 0;
-   else if (SIZE(rep) < 0)
-      return -SIZE(rep);
-   else
-      return SIZE(rep);
-}
 
 long _ntl_gisone(_ntl_gbigint rep)
 {

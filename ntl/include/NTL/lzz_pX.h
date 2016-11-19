@@ -1113,7 +1113,7 @@ CompMod(const zz_pX& g, const zz_pXArgument& H, const zz_pXModulus& F)
 
 
 // New alternative CompMod strategy that just reduces to 
-// matrix multiplication ... not documented for now
+// matrix multiplication ... 
 
 
 struct zz_pXNewArgument {
@@ -1125,6 +1125,11 @@ void build(zz_pXNewArgument& H, const zz_pX& h, const zz_pXModulus& F, long m);
 void CompMod(zz_pX& x, const zz_pX& g, const zz_pXNewArgument& H,
              const zz_pXModulus& F);
 void reduce(zz_pXNewArgument& H, const zz_pXModulus& F);
+
+void ProjectPowers(vec_zz_p& x, const vec_zz_p& a, long k,
+                   const zz_pXNewArgument& H, const zz_pXModulus& F);
+
+
 
 
 

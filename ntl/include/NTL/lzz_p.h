@@ -91,7 +91,9 @@ void restore() const;
 bool null() const { return ptr == 0; } 
 bool equals(const zz_pContext& other) const { return ptr == other.ptr; } 
 long modulus() const { return ptr->p; }
+mulmod_t ModulusInverse() const { return ptr->pinv; }
 const sp_ZZ_reduce_struct& ZZ_red_struct() const { return ptr->ZZ_red_struct; } 
+sp_reduce_struct red_struct() const { return ptr->red_struct; } 
 
 
 };

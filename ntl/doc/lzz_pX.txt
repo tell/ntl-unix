@@ -799,10 +799,6 @@ void CompMod(zz_pX& x, const zz_pX& g, const zz_pXNewArgument& H,
              const zz_pXModulus& F);
 // same functionality as the corresponding zz_pXArgument-based routine
 
-void reduce(zz_pXNewArgument& H, const zz_pXModulus& F);
-// If H was built using a poynimial h, it is re-built using
-// the polynomial (h mod F).
-
 void ProjectPowers(vec_zz_p& x, const vec_zz_p& a, long k,
                    const zz_pXNewArgument& H, const zz_pXModulus& F);
 // same functionality as the corresponding zz_pXArgument-based routine

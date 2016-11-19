@@ -16,7 +16,7 @@ NTL_START_IMPL
 
 
 #define PAR_THRESH_SQ (200)
-#define PAR_THRESH (40000)
+#define PAR_THRESH (40000.0)
 
 
 // *******************************************************

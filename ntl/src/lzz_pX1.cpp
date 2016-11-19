@@ -1242,6 +1242,9 @@ void CompMod(zz_pX& x, const zz_pX& g, const zz_pXNewArgument& H,
    }
 
    long m = H.mat.NumRows();
+
+   if (m == 0) LogicError("CompMod: uninitialized argument");
+
    long l = (d+m-1)/m;
 
    Mat<zz_p> gmat;
@@ -1276,6 +1279,9 @@ void CompMod(zz_pX& x, const zz_pX& g, const zz_pXNewArgument& H,
 void reduce(zz_pXNewArgument& H, const zz_pXModulus& F)
 {
    long m = H.mat.NumRows();
+
+   if (m == 0) LogicError("reduce: uninitialized argument");
+
    zz_pX h;
    if (m > 1)
       conv(h, H.mat[1]);
@@ -1302,6 +1308,9 @@ void ProjectPowers(vec_zz_p& x, const vec_zz_p& a, long k,
       ResourceError("ProjectPowers: excessive args");
 
    long m = H.mat.NumRows();
+
+   if (m == 0) LogicError("CompMod: uninitialized argument");
+
    long width = H.mat.NumCols();
    long l = (k+m-1)/m;
 

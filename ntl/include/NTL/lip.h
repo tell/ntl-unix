@@ -564,7 +564,17 @@ inline long _ntl_ZEROP(_ntl_gbigint p)
 
 ********************************************************************/
 
-long _ntl_gsize(_ntl_gbigint n);
+static inline
+long _ntl_gsize(_ntl_gbigint rep)
+{
+  if (!rep)
+      return 0;
+   else if (_ntl_SIZE(rep) < 0)
+      return -_ntl_SIZE(rep);
+   else
+      return _ntl_SIZE(rep);
+}
+
 long _ntl_gisone(_ntl_gbigint n);
 
 long _ntl_gsptest(_ntl_gbigint a);

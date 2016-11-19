@@ -95,7 +95,7 @@ void ZZ_p::DoInstall()
 
       double fn = double(n);
 
-      // NOTE: the following checks iis somewhat academic,
+      // NOTE: the following checks is somewhat academic,
       // but the implementation relies on it
 
       if (8.0*fn*(fn+48) > NTL_FDOUBLE_PRECISION)

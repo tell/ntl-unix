@@ -139,7 +139,7 @@ OBJ=FFT.o FacVec.o GF2.o GF2E.o GF2EX.o GF2EXFactoring.o GF2X.o GF2X1.o  \
 	mat_lzz_p.o mat_lzz_pE.o mat_poly_ZZ.o mat_poly_ZZ_p.o mat_poly_lzz_p.o  \
 	quad_float.o tools.o vec_GF2.o vec_GF2E.o vec_RR.o vec_ZZ.o vec_ZZ_p.o  \
 	vec_ZZ_pE.o vec_lzz_p.o vec_lzz_pE.o xdouble.o G_LLL_FP.o G_LLL_QP.o G_LLL_XD.o  \
-	G_LLL_RR.o thread.o BasicThreadPool.o  
+	G_LLL_RR.o thread.o BasicThreadPool.o MatPrime.o 
 
 # library source files
 SRC=FFT.cpp FacVec.cpp GF2.cpp GF2E.cpp GF2EX.cpp GF2EXFactoring.cpp GF2X.cpp  \
@@ -154,7 +154,7 @@ SRC=FFT.cpp FacVec.cpp GF2.cpp GF2E.cpp GF2EX.cpp GF2EXFactoring.cpp GF2X.cpp  \
 	quad_float.cpp tools.cpp vec_GF2.cpp vec_GF2E.cpp vec_RR.cpp vec_ZZ.cpp  \
 	vec_ZZ_p.cpp vec_ZZ_pE.cpp vec_lzz_p.cpp vec_lzz_pE.cpp xdouble.cpp  \
 	G_LLL_FP.cpp G_LLL_QP.cpp G_LLL_XD.cpp G_LLL_RR.cpp thread.cpp  \
-	BasicThreadPool.cpp
+	BasicThreadPool.cpp MatPrime.cpp
 
 
 
@@ -173,7 +173,7 @@ INCL=FFT.h FacVec.h GF2.h GF2E.h GF2EX.h GF2EXFactoring.h GF2X.h  \
 	vec_vec_GF2E.h vec_vec_RR.h vec_vec_ZZ.h vec_vec_ZZ_p.h vec_vec_ZZ_pE.h  \
 	vec_vec_long.h vec_vec_lzz_p.h vec_vec_lzz_pE.h vec_xdouble.h xdouble.h  \
 	config.h version.h def_config.h new.h vec_ulong.h vec_vec_ulong.h SmartPtr.h  \
-	Lazy.h LazyTable.h thread.h  BasicThreadPool.h
+	Lazy.h LazyTable.h thread.h  BasicThreadPool.h MatPrime.h
 
 
 
