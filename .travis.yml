@@ -1,9 +1,12 @@
+# vim: set expandtab shiftwidth=2 softtabstop=2 :
+
 language: cpp
-sudo: false
+sudo: required
 
 matrix:
   include:
   - os: linux
+    dist: trusty
     compiler: gcc
     env: CXX_=g++-5
     addons:
@@ -28,7 +31,6 @@ matrix:
         - libgmp-dev
     cache:
       apt: true
-    sudo: required
   - os: osx
     osx_image: xcode8
     compiler: gcc
@@ -51,11 +53,12 @@ before_script:
 - $CXX --version
 
 script:
-- make -j 2>&1 > make.log
+# - make -j 2>&1 | tee make.log
+- make -j
 - make check
 
-after_failure:
-- tail -n 1000 make.log
+# after_failure:
+# - tail -n 1000 make.log
 
 notifications:
   on_success: change
