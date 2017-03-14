@@ -2,6 +2,7 @@ include common.mk
 include $(ROOT)/ntl-conf.mk
 
 .PHONY: all aux clean check install
+.DEFAULT_GOAL := all
 
 all: config.done patch.done $(NTL_BUILD_TARGET)
 

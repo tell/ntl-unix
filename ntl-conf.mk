@@ -4,8 +4,7 @@ NTL_ALL = $(NTL_SRC)/all
 
 NTL_BUILD_TARGET = $(NTL_ALL)
 
-NTL_CONFIG.cmd = cd $(NTL_SRC) && ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)"
-
+NTL_CONFIG.cmd = cd $(NTL_SRC) && ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)" NTL_GMP_LIP=off
 
 ifeq (1,$(USE_THREAD))
   NTL_CONFIG.cmd += NTL_THREADS=on
