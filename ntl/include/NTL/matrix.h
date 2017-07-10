@@ -85,7 +85,27 @@ public:
       tmp.swap(*this);
    }
 
+
+#if (NTL_CXX_STANDARD >= 2011)
+
+   Mat(Mat&& other) noexcept : Mat() 
+   {
+      this->move(other);
+   }
+
+   Mat& operator=(Mat&& other) noexcept
+   {
+      this->move(other);
+      return *this;
+   }
+
+#endif
+
+
 };  
+
+
+template<class T> NTL_DECLARE_RELOCATABLE((Mat<T>*))
  
 template<class T> 
 inline const Vec< Vec<T> >& rep(const Mat<T>& a)  

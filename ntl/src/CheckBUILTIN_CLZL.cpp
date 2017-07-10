@@ -1,6 +1,8 @@
 #include <NTL/mach_desc.h>
+#include <cstdlib>
 
-void touch(unsigned long& x);
+using namespace std;
+
 
 long CountLeadingZeros(unsigned long x)
 {
@@ -9,8 +11,7 @@ long CountLeadingZeros(unsigned long x)
 
 int main()
 {
-   unsigned long x = 3;
-   touch(x);
+   unsigned long x = atoi("3");
    if (CountLeadingZeros(x) == NTL_BITS_PER_LONG-2)
       return 0;
    else

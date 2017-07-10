@@ -38,7 +38,6 @@ explicit xdouble(double a) : x(0), e(0) { *this = a; }
 inline xdouble& operator=(double a);
 
 
-~xdouble() { }
 
 void normalize();
 
@@ -55,6 +54,9 @@ long exponent() const { return e; }
 xdouble(double xx, long ee) : x(xx), e(ee) { } // internal use only
 
 };
+
+
+NTL_DECLARE_RELOCATABLE((xdouble*))
 
 inline xdouble to_xdouble(int a) { return xdouble(a, 0); }
 inline xdouble to_xdouble(long a) { return xdouble(a, 0); }

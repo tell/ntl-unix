@@ -61,6 +61,9 @@
 'NTL_DISABLE_TLS_HACK'    => 'off',
 'NTL_ENABLE_TLS_HACK'     => 'off',
 'NTL_EXCEPTIONS'          => 'off',
+'NTL_STD_CXX11'           => 'off',
+'NTL_STD_CXX14'           => 'off',
+'NTL_EXCEPTIONS'          => 'off',
 'NTL_THREAD_BOOST'        => 'off',
 'NTL_GMP_LIP'             => 'on',
 'NTL_GF2X_LIB'            => 'off',
@@ -69,6 +72,7 @@
 'NTL_NO_INIT_TRANS'       => 'off',
 'NTL_CLEAN_INT'           => 'off',
 'NTL_CLEAN_PTR'           => 'off',
+'NTL_SAFE_VECTORS'        => 'off',
 'NTL_RANGE_CHECK'         => 'off',
 
 
@@ -353,6 +357,12 @@ if ($ConfigSub{'NTL_CRT_ALTCODE'} + $ConfigSub{'NTL_CRT_ALTCODE_SMALL'} > 1) {
 }
 
 
+if ($ConfigSub{'NTL_STD_CXX11'} + $ConfigSub{'NTL_STD_CXX14'} > 1) {
+
+   die "Error: at most one of NTL_STD_CXX11 and NTL_STD_CXX14 may be on\n";
+
+}
+
 
 
 #
@@ -424,7 +434,7 @@ sub CheckCompile {
    GenFiles();
    CopyFiles();
    RemoveProg("CheckCompile");
-   system("$MakeVal{'MAKE_PROG'} CheckCompile >> CheckFlag.log 2>&1") and return 0;
+   system("$MakeVal{'MAKE_PROG'} CheckCompile >> CheckFlags.log 2>&1") and return 0;
    system("./CheckCompile") and RemoveProg("CheckCompile") and return 0;
    RemoveProg("CheckCompile");
    return 1;
@@ -435,46 +445,37 @@ sub CheckFlag {
    my $try_flags = $MakeSub{'CXXAUTOFLAGS'};
    print "*** checking $flag flag\n";
    $MakeSub{'CXXAUTOFLAGS'} = $MakeSub{'CXXAUTOFLAGS'} . ' ' . $flag;
-   print("CXXAUTOFLAGS=\"$MakeSub{'CXXAUTOFLAGS'}\"\n");
+   print("   CXXAUTOFLAGS=\"$MakeSub{'CXXAUTOFLAGS'}\"\n");
    if (CheckCompile()) {
-      print "*** $flag works\n";
+      print "   $flag works\n";
+      return 1;
    }
    else {
       $MakeSub{'CXXAUTOFLAGS'} = $try_flags;
-      print "*** $flag does not work\n";
+      print "   $flag does not work\n";
+      return 0;
    }
-   return 1;
 }
 
-
-
-if ($nowrite) {
-   GenFiles();
-   exit 0;
-}
-
-
-if (exists($Variable{'CXXAUTOFLAGS'})) {
-   print("CXXAUTOFLAGS=\"$MakeSub{'CXXAUTOFLAGS'}\"\n");
-   GenFiles();
-   CopyFiles();
-   exit 0;
-}
-
-$std_flag = 0;
 $pthread_flag = 0;
 $native_flag = 0;
 
 # special processing for NTL_THREADS
 
-if ($ConfigFlag{'NTL_THREADS'} eq 'on') {
+if ($ConfigSub{'NTL_THREADS'}) {
    $std_flag = 1; # ' -std=c++11';
    $pthread_flag = 1; # ' -pthread';
 }
 
 # special processing for NTL_EXCEPTIONS
 
-if ($ConfigFlag{'NTL_EXCEPTIONS'} eq 'on') {
+if ($ConfigSub{'NTL_EXCEPTIONS'}) {
+   $std_flag = 1; # ' -std=c++11';
+}
+
+# special processing for NTL_SAFE_VECTORS
+
+if ($ConfigSub{'NTL_SAFE_VECTORS'}) {
    $std_flag = 1; # ' -std=c++11';
 }
 
@@ -484,10 +485,31 @@ if ($MakeFlag{'NATIVE'} eq 'on') {
     $native_flag = 1; # ' -march=native';
 }
 
+if ($std_flag && !$ConfigSub{'NTL_STD_CXX14'}) {
+   $ConfigSub{'NTL_STD_CXX11'} = 1;
+}
 
-system("echo '*** CheckFlag log ***' > CheckFlag.log");
 
-if ($std_flag) {
+if ($nowrite) {
+   GenFiles();
+   exit 0;
+}
+
+if (exists($Variable{'CXXAUTOFLAGS'})) {
+   print("CXXAUTOFLAGS=\"$MakeSub{'CXXAUTOFLAGS'}\"\n");
+   GenFiles();
+   CopyFiles();
+   exit 0;
+}
+
+
+system("echo '*** CheckFlags log ***' > CheckFlags.log");
+
+if ($ConfigSub{'NTL_STD_CXX14'}) {
+   CheckFlag('-std=c++14');
+}
+
+if ($ConfigSub{'NTL_STD_CXX11'}) {
    CheckFlag('-std=c++11');
 }
 

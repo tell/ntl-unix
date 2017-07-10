@@ -39,7 +39,6 @@ RR(RR& z, INIT_TRANS_TYPE) : x(z.x, INIT_TRANS), e(z.e) { }
 void swap(RR& z) { x.swap(z.x); _ntl_swap(e, z.e); }
 
 
-~RR() { }
 
 const ZZ& mantissa() const { return x; }
 long exponent() const { return e; }
@@ -61,10 +60,12 @@ RR(const RR&);
 };
 
 
+
+NTL_DECLARE_RELOCATABLE((RR*))
+
+
 inline void swap(RR& a, RR& b) { a.swap(b); }
 
-// RAII for saving/restoring precision
-// FIXME: document. 
 
 class RRPush {
 private: 

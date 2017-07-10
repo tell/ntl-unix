@@ -58,9 +58,11 @@ public:
   quad_float(double x, double y) : hi(x), lo(y) { } // internal use only
   // FIXME: add a special argument to this to make it more "internal"
 
-  ~quad_float() {}
 
 };  // end class quad_float
+
+
+NTL_DECLARE_RELOCATABLE((quad_float*))
 
 
 
