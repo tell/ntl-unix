@@ -16,7 +16,7 @@
 
 
 #ifndef NTL_HAVE_ALIGNED_ARRAY
-#error "AVX not supported"
+#error "AVX2 not supported"
 #endif
 
 using namespace std;

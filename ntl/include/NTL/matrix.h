@@ -207,6 +207,30 @@ void MakeMatrix(Mat<T>& x, const Vec< Vec<T> >& a)
    for (i = 0; i < n; i++)  
       x[i] = a[i];  
 }  
+
+template<class T>
+bool MakeMatrixStatus(Mat<T>& x, const Vec< Vec<T> >& a)  
+{  
+   long n = a.length();  
+  
+   if (n == 0) {  
+      x.SetDims(0, 0);  
+      return false;  
+   }  
+  
+   long m = a[0].length();  
+   long i;  
+  
+   for (i = 1; i < n; i++)  
+      if (a[i].length() != m)  
+         return true;
+  
+   x.SetDims(n, m);  
+   for (i = 0; i < n; i++)  
+      x[i] = a[i];  
+
+   return false;
+}  
   
 template<class T>
 void swap(Mat<T>& X, Mat<T>& Y)  
@@ -246,7 +270,8 @@ NTL_SNS istream& operator>>(NTL_SNS istream& s, Mat<T>& x)
 {  
    Vec< Vec<T> > buf;  
    NTL_INPUT_CHECK_RET(s, s >> buf);  
-   MakeMatrix(x, buf);  
+   if (MakeMatrixStatus(x, buf)) 
+      NTL_INPUT_ERROR(s, "non-rectangular matrix detected on input");
    return s;  
 }  
   

@@ -9,7 +9,7 @@
 
 #if defined(NTL_HAVE_AVX2)
 #include <immintrin.h>
-#elif defined(NTL_HAVE_SSE3)
+#elif defined(NTL_HAVE_SSSE3)
 #include <emmintrin.h>
 #include <tmmintrin.h>
 #endif
@@ -1263,76 +1263,6 @@ void power2(ZZ& x, long e)
 }
 
    
-void conv(ZZ& x, const char *s)
-{
-   long c;
-   long cval;
-   long sign;
-   long ndigits;
-   long acc;
-   long i = 0;
-
-   NTL_ZZRegister(a);
-
-   if (!s) InputError("bad ZZ input");
-
-   if (!iodigits) InitZZIO();
-
-   a = 0;
-
-   c = s[i];
-   while (IsWhiteSpace(c)) {
-      i++;
-      c = s[i];
-   }
-
-   if (c == '-') {
-      sign = -1;
-      i++;
-      c = s[i];
-   }
-   else
-      sign = 1;
-
-   cval = CharToIntVal(c);
-   if (cval < 0 || cval > 9) InputError("bad ZZ input");
-
-   ndigits = 0;
-   acc = 0;
-   while (cval >= 0 && cval <= 9) {
-      acc = acc*10 + cval;
-      ndigits++;
-
-      if (ndigits == iodigits) {
-         mul(a, a, ioradix);
-         add(a, a, acc);
-         ndigits = 0;
-         acc = 0;
-      }
-
-      i++;
-      c = s[i];
-      cval = CharToIntVal(c);
-   }
-
-   if (ndigits != 0) {
-      long mpy = 1;
-      while (ndigits > 0) {
-         mpy = mpy * 10;
-         ndigits--;
-      }
-
-      mul(a, a, mpy);
-      add(a, a, acc);
-   }
-
-   if (sign == -1)
-      negate(a, a);
-
-   x = a;
-}
-
-
 
 void bit_and(ZZ& x, const ZZ& a, long b)
 {
@@ -1840,7 +1770,7 @@ void old_RandomStream::do_get(unsigned char *NTL_RESTRICT res, long n)
    }
 }
 
-#if (defined(NTL_HAVE_AVX2) || defined(NTL_HAVE_SSE3))
+#if (defined(NTL_HAVE_AVX2) || defined(NTL_HAVE_SSSE3))
 
 
 /*****************************************************************
@@ -1962,7 +1892,7 @@ typedef __m256i ivec_t;
 #define RANSTREAM_BUFSZ (1024)
 // must be a multiple of 8*SZ_VEC
 
-#elif defined(NTL_HAVE_SSE3)
+#elif defined(NTL_HAVE_SSSE3)
 
 typedef __m128i ivec_t;
 

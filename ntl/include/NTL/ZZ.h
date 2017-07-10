@@ -242,7 +242,6 @@ inline ZZ to_ZZ(unsigned long a) { return ZZ(INIT_VAL, a); }
 inline void conv(ZZ& x, unsigned int a) { _ntl_guintoz((unsigned long)(a), &x.rep); }
 inline ZZ to_ZZ(unsigned int a) { return ZZ(INIT_VAL, a); }
 
-void conv(ZZ& x, const char *s);
 inline ZZ::ZZ(INIT_VAL_TYPE, const char *s)  { conv(*this, s); }
 inline ZZ to_ZZ(const char *s) { return ZZ(INIT_VAL, s); }
 

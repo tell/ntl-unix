@@ -381,7 +381,7 @@ void conv(RR& z, long a);
 inline void conv(RR& z, int a) { conv(z, long(a)); }
 void conv(RR& z, unsigned long a);
 inline void conv(RR& z, unsigned int a) { conv(z, (unsigned long)(a)); }
-void conv(RR& z, const char *s);
+
 void conv(RR& z, double a);
 inline void conv(RR& z, float a) { conv(z, double(a)); }
 void conv(RR& z, const xdouble& a);

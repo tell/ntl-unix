@@ -14,6 +14,7 @@
 #include <iostream>
 #include <new>
 #include <stdexcept>
+#include <streambuf>
 
 #include <cstdlib>
 #include <cmath>
@@ -347,24 +348,6 @@ inline void conv(unsigned long& x, unsigned a) { x = ((unsigned long)(a)); }
 inline void conv(unsigned long& x, unsigned long a) { x = a; }
 inline void conv(unsigned long& x, float a) { x = ((unsigned int) to_long(a)); }
 inline void conv(unsigned long& x, double a) { x = ((unsigned int) to_long(a)); }
-
-
-/* ------------------------------------- */
-
-
-// new style converson function
-//   example: ZZ x = conv<ZZ>(1);
-//   note: modern C++ compilers should implemented 
-//     "named return value optimization", so the
-//     result statement should not create a temporary
-
-template<class T, class S>
-T conv(const S& a)
-{
-   T x;
-   conv(x, a);
-   return x;
-}
 
 
 // some convenience casting routines:
@@ -1121,6 +1104,54 @@ inline bool DeclareRelocatableType(T*)
 #define NTL_DEFAULT {}
 
 #endif
+
+
+// The following idea for deriving from streambuf comes from:
+// https://stackoverflow.com/questions/1448467/initializing-a-c-stdistringstream-from-an-in-memory-buffer/1449527#1449527
+
+struct plain_c_string_streambuf : public std::streambuf
+{
+   plain_c_string_streambuf(const char* ss)
+   {
+      char *s = const_cast<char*>(ss);
+      // casting away constant should be safe here,
+      // based of my reading of the functionality
+      // of streambuf from the documentation at cplusplus.com.
+    
+      setg(s, s, s + std::strlen(s));
+   }
+};
+
+// Generic conversion from char* or const char*.  We use SFINAE
+// to prevent conversions from 0. 
+
+
+template<class S, class T>
+typename _ntl_enable_if<_ntl_is_char_pointer<T>::value,void>::type
+conv(S& x, T y)
+{
+   if (!y) InputError("bad conversion from char*");
+   plain_c_string_streambuf buf(y);
+   std::istream istr(&buf);
+   if (!(istr >> x)) InputError("bad conversion from char*");
+}
+
+
+
+// new style converson function
+//   example: ZZ x = conv<ZZ>(1);
+//   note: modern C++ compilers should implemented 
+//     "named return value optimization", so the
+//     result statement should not create a temporary
+
+template<class T, class S>
+T conv(const S& a)
+{
+   T x;
+   conv(x, a);
+   return x;
+}
+
 
 
 NTL_CLOSE_NNS

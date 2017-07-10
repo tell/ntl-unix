@@ -274,9 +274,8 @@ inline void conv(quad_float& x, const quad_float& a)
 inline quad_float to_quad_float(const quad_float& a)
    { return a; }
 
-quad_float to_quad_float(const char *s);
-inline void conv(quad_float& x, const char *s)
-   { x = to_quad_float(s); }
+inline quad_float to_quad_float(const char *s)
+{ quad_float res; conv(res, s); return res; }
 
 
 

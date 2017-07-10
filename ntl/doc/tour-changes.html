@@ -16,6 +16,39 @@ A Tour of NTL: Summary of Changes
 </p>
 </h1>
 
+
+<p><hr><p>
+<h3>
+2017.07.07: Changes between NTL 10.4.0 and 10.5.0
+</h3>
+
+<ul>
+<li>
+Added uniform conversions from <tt>char*</tt> and <tt>const char*</tt>,
+which use whatever stream input operator <tt>&gt;&gt;</tt> applies.
+<ul>
+<li>
+For example, you can write <tt>conv(x, "...")</tt>
+or <tt>x = conv&lt;T&gt;("...")</tt>
+for <tt>x</tt> of any type <tt>T</tt>.
+<li>
+The code is written using templates in such a way
+that a second argument of <tt>0</tt> or <tt>nullptr</tt>
+will not match. 
+
+<li>
+See <a href="conversions.txt">conversions.txt</a> for details.
+</ul>
+
+<li>
+Changed behavior of matrix input: non rectctanglar matrices
+set the fail bit on the stream, rather than raising an error
+
+<li>
+Fixed a benign error on make check.
+
+</ul>
+
 <p><hr><p>
 <h3>
 2017.06.19: Changes between NTL 10.3.0 and 10.4.0

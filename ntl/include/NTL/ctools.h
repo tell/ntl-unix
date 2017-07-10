@@ -561,4 +561,38 @@ _ntl_bpl_divrem(unsigned long a, long& q, long& r)
    r = a % NTL_BITS_PER_LONG;
 }
 
+
+
+template <class T>
+struct _ntl_is_char_pointer
+{
+ enum {value = false};
+};
+
+template <>
+struct _ntl_is_char_pointer<char*>
+{
+ enum {value = true};
+};
+
+template <>
+struct _ntl_is_char_pointer<const char*>
+{
+ enum {value = true};
+};
+
+template <bool, typename T = void>
+struct _ntl_enable_if
+{};
+
+template <typename T>
+struct _ntl_enable_if<true, T> {
+  typedef T type;
+};
+
+
+
+
+
+
 #endif

@@ -2,6 +2,8 @@
 echo "" > "$1/include/NTL/ALL_FEATURES.h"
 echo "" > "$1/include/NTL/REPORT_ALL_FEATURES.h"
 
+rm -f "$1"/include/NTL/HAVE_*.h
+
 for f in $2
 do
    echo "" > "$1/include/NTL/HAVE_$f.h"

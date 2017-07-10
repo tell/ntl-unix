@@ -6,18 +6,18 @@
 #include <iostream>
 
 
-#if (!defined(__GNUC__) || !defined(__x86_64__) || !defined(__SSE3__))
-#error "AVX2 not supported"
+#if (!defined(__GNUC__) || !defined(__x86_64__) || !defined(__SSSE3__))
+#error "SSSE3 not supported"
 #endif
 
 #if (NTL_BITS_PER_LONG != 64 || NTL_BITS_PER_INT != 32 || NTL_DOUBLE_PRECISION != 53)
-#error "AVX2 not supported"
+#error "SSSE3 not supported"
 // sanity check -- code that uses this feature also relies on this
 #endif
 
 
 #ifndef NTL_HAVE_ALIGNED_ARRAY
-#error "AVX not supported"
+#error "SSSE3 not supported"
 #endif
 
 #define ROL_VEC_8(x)	_mm_shuffle_epi8(x,_mm_set_epi8(14,13,12,15,10,9,8,11,6,5,4,7,2,1,0,3))

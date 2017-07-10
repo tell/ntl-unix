@@ -65,7 +65,8 @@ inline xdouble to_xdouble(unsigned long a) { return xdouble(a, 0); }
 
 xdouble to_xdouble(double a);
 inline xdouble to_xdouble(float a) { return to_xdouble(double(a)); }
-xdouble to_xdouble(const char *a);
+inline xdouble to_xdouble(const char *a) 
+{ xdouble res; conv(res, a); return res; }
 
 
 inline xdouble& xdouble::operator=(double a)
@@ -222,7 +223,6 @@ inline void conv(xdouble& x, unsigned long a) { x = to_xdouble(a); }
 
 inline void conv(xdouble& x, float a) { x = to_xdouble(a); }
 inline void conv(xdouble& x, double a) { x = to_xdouble(a); }
-inline void conv(xdouble& x, const char *a) { x = to_xdouble(a); }
 
 
 

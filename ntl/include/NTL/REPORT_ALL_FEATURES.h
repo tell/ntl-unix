@@ -11,8 +11,8 @@
    std::cerr << "NTL_HAVE_LL_TYPE\n";
 #endif
 
-#ifdef NTL_HAVE_SSE3
-   std::cerr << "NTL_HAVE_SSE3\n";
+#ifdef NTL_HAVE_SSSE3
+   std::cerr << "NTL_HAVE_SSSE3\n";
 #endif
 
 #ifdef NTL_HAVE_AVX
