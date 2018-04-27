@@ -31,7 +31,7 @@ before_script:
 - docker exec -ti $MY_NAME bash -c "$CXX --version"
 
 script:
-- docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT ; make"
+- docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT ; make" > /dev/null
 - docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT ; make check"
 
 # after_failure:
