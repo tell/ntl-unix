@@ -2,60 +2,37 @@
 
 language: cpp
 sudo: required
+service:
+- docker
 
+env:
+  global:
+  - MY_NAME=travis-ci
+  - MY_TARGET_MOUNT=/tell/ntl-unix
 matrix:
   include:
   - os: linux
     dist: trusty
     compiler: gcc
-    env: CXX_=g++-5
-    addons:
-      apt:
-        sources:
-        # - deadsnakes
-        - ubuntu-toolchain-r-test
-        packages:
-        - g++-5
-        - libgmp-dev
-    cache:
-      apt: true
-  - os: linux
-    dist: xenial
-    compiler: clang
-    env: CXX_=clang++
-    addons:
-      apt:
-        sources:
-        - llvm-toolchain-precise-3.8
-        packages:
-        - libgmp-dev
-    cache:
-      apt: true
-  - os: osx
-    osx_image: xcode8
-    compiler: gcc
-    env: CXX_=g++-5
-  - os: osx
-    osx_image: xcode8
-    compiler: clang
-    env: CXX_=clang++
+    env:
+    - MY_TARGET_DIST=ubuntu:18.04
 
 before_install:
-- export CXX=$CXX_
+- docker pull $MY_TARGET_DIST
+- docker run --name $MY_NAME -v $TRAVIS_BUILD_DIR:$MY_TARGET_MOUNT -td $MY_TARGET_DIST /bin/bash
 
 install:
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$CXX" == "clang++" ]]; then sudo apt install clang-3.8 -y; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gnu-sed; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]] && [[ "$CXX" == g++* ]]; then brew install gcc5; fi
+- docker exec -ti $MY_NAME bash -c "apt update" > /dev/null
+- docker exec -ti $MY_NAME bash -c "apt install -y build-essential" > /dev/null
+- docker exec -ti $MY_NAME bash -c "apt install -y libgmp-dev" > /dev/null
 
 before_script:
-- $CXX --version
+- docker exec -ti $MY_NAME bash -c "$CC --version"
+- docker exec -ti $MY_NAME bash -c "$CXX --version"
 
 script:
-# - make -j 2>&1 | tee make.log
-- make -j
-- make check
+- docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT ; make"
+- docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT ; make check"
 
 # after_failure:
 # - tail -n 1000 make.log
