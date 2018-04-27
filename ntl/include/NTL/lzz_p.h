@@ -184,7 +184,6 @@ explicit zz_p(long a) : _zz_p__rep(0) { *this = a;  }
 
 zz_p(const zz_p& a) : _zz_p__rep(a._zz_p__rep) { }  
 
-~zz_p() { } 
 
 zz_p& operator=(const zz_p& a) { _zz_p__rep = a._zz_p__rep; return *this; }
 

@@ -1391,7 +1391,7 @@ void _ntl_gsetlength(_ntl_gbigint *v, long len)
       if (STORAGE_OVF(len))
          ResourceError("reallocation failed in _ntl_gsetlength");
 
-      if (!(x = (_ntl_gbigint)NTL_REALLOC((void *) x, 1, STORAGE(len), 0))) {
+      if (!(x = (_ntl_gbigint)NTL_SNS_REALLOC((void *) x, 1, STORAGE(len), 0))) {
          MemoryError();
       }
       ALLOC(x) = len << 2;
@@ -1407,7 +1407,7 @@ void _ntl_gsetlength(_ntl_gbigint *v, long len)
       if (STORAGE_OVF(len))
          ResourceError("reallocation failed in _ntl_gsetlength");
 
-      if (!(x = (_ntl_gbigint)NTL_MALLOC(1, STORAGE(len), 0))) {
+      if (!(x = (_ntl_gbigint)NTL_SNS_MALLOC(1, STORAGE(len), 0))) {
          MemoryError();
       }
       ALLOC(x) = len << 2;
@@ -2159,7 +2159,7 @@ void _ntl_guintoz(unsigned long d, _ntl_gbigint *aa)
 long _ntl_gtoint(_ntl_gbigint a)
 {
    unsigned long res = _ntl_gtouint(a);
-   return NTL_ULONG_TO_LONG(res);
+   return cast_signed(res);
 }
 
 
@@ -5741,7 +5741,7 @@ long _ntl_gblock_construct_alloc(_ntl_gbigint *x, long d, long n)
    else
       m = n;
 
-   p = (char *) NTL_MALLOC(m, sz, 0);
+   p = (char *) NTL_SNS_MALLOC(m, sz, 0);
    if (!p) MemoryError();
 
    *x = (_ntl_gbigint) p;
@@ -6595,7 +6595,7 @@ bool _ntl_crt_struct_fast::special()   { return true; }
 static inline
 unsigned long tbl_red_inv(long d)
 {
-   return (unsigned long) ( ((((NTL_ULL_TYPE) 1) << (NTL_SP_NBITS+NTL_BITS_PER_LONG))-1UL) / ((NTL_ULL_TYPE) d) );
+   return (unsigned long) ( ((_ntl_ulonglong(1) << (NTL_SP_NBITS+NTL_BITS_PER_LONG))-1UL) / _ntl_ulonglong(d) );
 }
 
 // assumes hi < d
@@ -7450,7 +7450,15 @@ _ntl_gsubmul(_ntl_gbigint x, _ntl_gbigint y,  _ntl_gbigint *ww)
  * Lightly massaged code taken from GMP's mpz routines */
 
 
+static inline 
+void _ntl_mpn_com_n(_ntl_limb_t *d, _ntl_limb_t *s, long n) 
+{
+  do {
+    *d++ = CLIP(~ *s++); 
+  } while (--n); 
+}
 
+#if 0
 #define _ntl_mpn_com_n(d,s,n) \
   do { \
     _ntl_limb_t *  __d = (d); \
@@ -7460,15 +7468,46 @@ _ntl_gsubmul(_ntl_gbigint x, _ntl_gbigint y,  _ntl_gbigint *ww)
       *__d++ = CLIP(~ *__s++); \
     while (--__n); \
   } while (0)
+#endif
 
 
+
+static inline 
+void _ntl_MPN_MUL_1C(_ntl_limb_t& cout, _ntl_limb_t *dst, 
+                     _ntl_limb_t *src, long size, _ntl_limb_t n, 
+                     _ntl_limb_t cin) 
+{
+    _ntl_limb_t cy; 
+    cy = NTL_MPN(mul_1) (dst, src, size, n); 
+    cout = CLIP(cy + NTL_MPN(add_1) (dst, dst, size, cin)); 
+}
+
+
+
+#if 0
 #define _ntl_MPN_MUL_1C(cout, dst, src, size, n, cin) \
   do { \
     _ntl_limb_t __cy; \
     __cy = NTL_MPN(mul_1) (dst, src, size, n); \
     (cout) = CLIP(__cy + NTL_MPN(add_1) (dst, dst, size, cin)); \
   } while (0)
+#endif
 
+
+
+
+static inline
+void _ntl_g_inc(_ntl_limb_t *p, long n)
+{
+    while (n > 0) {  
+       *p = CLIP(*p + 1); 
+       if (*p != 0) break;  
+       p++;  
+       n--;  
+    }
+}
+
+#if 0
 #define _ntl_g_inc(p, n)   \
   do {   \
     _ntl_limb_t * __p = (p);  \
@@ -7480,7 +7519,22 @@ _ntl_gsubmul(_ntl_gbigint x, _ntl_gbigint y,  _ntl_gbigint *ww)
        __n--;  \
     }  \
   } while (0);
+#endif
 
+static inline
+void _ntl_g_inc_carry(_ntl_limb_t& c, _ntl_limb_t *p, long n)   
+{
+   long addc = 1; 
+   while (n > 0) {  
+      *p = CLIP(*p + 1); 
+      if (*p != 0) { addc = 0; break; }  
+      p++;  
+      n--;  
+   }  
+   c = CLIP(c + addc); 
+}
+
+#if 0
 #define _ntl_g_inc_carry(c, p, n)   \
   do {   \
     _ntl_limb_t * __p = (p);  \
@@ -7494,7 +7548,24 @@ _ntl_gsubmul(_ntl_gbigint x, _ntl_gbigint y,  _ntl_gbigint *ww)
     }  \
     c = CLIP(c + __addc); \
   } while (0);
+#endif 
 
+
+static inline
+void _ntl_g_dec(_ntl_limb_t *p, long n)   
+{
+   _ntl_limb_t tmp; 
+   while (n > 0) {  
+      tmp = *p; 
+      *p = CLIP(*p - 1); 
+      if (tmp != 0) break;  
+      p++;  
+      n--;  
+   }  
+}
+
+
+#if 0
 #define _ntl_g_dec(p, n)   \
   do {   \
     _ntl_limb_t * __p = (p);  \
@@ -7508,6 +7579,7 @@ _ntl_gsubmul(_ntl_gbigint x, _ntl_gbigint y,  _ntl_gbigint *ww)
        __n--;  \
     }  \
   } while (0);
+#endif
   
 
 

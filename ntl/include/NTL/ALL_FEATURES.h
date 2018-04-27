@@ -9,4 +9,7 @@
 #include <NTL/HAVE_FMA.h>
 #include <NTL/HAVE_COPY_TRAITS1.h>
 #include <NTL/HAVE_COPY_TRAITS2.h>
+#include <NTL/HAVE_CHRONO_TIME.h>
+#include <NTL/HAVE_MACOS_TIME.h>
+#include <NTL/HAVE_POSIX_TIME.h>
 

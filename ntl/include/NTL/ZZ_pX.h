@@ -787,7 +787,6 @@ private:
 public:
 
    ZZ_pXMatrix() { }
-   ~ZZ_pXMatrix() { }
 
    void operator=(const ZZ_pXMatrix&);
    ZZ_pX& operator() (long i, long j) { return elts[i][j]; }
@@ -871,7 +870,6 @@ long InvModStatus(ZZ_pX& x, const ZZ_pX& a, const ZZ_pX& f);
 class ZZ_pXModulus {
 public:
    ZZ_pXModulus() : UseFFT(0), n(-1)  { }
-   ~ZZ_pXModulus() { }
    
 
    // the following members may become private in future
@@ -991,7 +989,6 @@ public:
    ZZ_pXMultiplier() : UseFFT(0)  { }
    ZZ_pXMultiplier(const ZZ_pX& b, const ZZ_pXModulus& F);
 
-   ~ZZ_pXMultiplier() { }
 
 
    // the following members may become private in the future

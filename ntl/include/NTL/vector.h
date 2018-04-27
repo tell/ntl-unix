@@ -229,6 +229,7 @@ public:
 #ifdef NTL_SAFE_VECTORS
 
    static constexpr bool relocatable = DeclareRelocatableType((T*)0);
+   static constexpr bool copyable = Relocate_aux_has_any_copy((T*)0);
 
 #endif
 
@@ -262,7 +263,7 @@ public:
 
    Vec& operator=(const Vec& a);  
 
-#if (NTL_CXX_STANDARD >= 2011)
+#if (NTL_CXX_STANDARD >= 2011 && !defined(NTL_DISABLE_MOVE))
 
    Vec(Vec&& a)  NTL_FAKE_NOEXCEPT
    {  
@@ -278,6 +279,7 @@ public:
       }
    }     
 
+#ifndef NTL_DISABLE_MOVE_ASSIGN
    Vec& operator=(Vec&& a)  NTL_FAKE_NOEXCEPT
    {
       if(fixed() || a.fixed()) {
@@ -291,7 +293,7 @@ public:
 
       return *this;
    }
-
+#endif
 
 #endif
 
@@ -471,6 +473,8 @@ private:
    void ReAllocate(long n, VecStrategy<false>);
    void InitMove(long n, T* src, std::true_type); 
    void InitMove(long n, T* src, std::false_type); 
+   void InitCopyMove(long n, T* src, std::true_type); 
+   void InitCopyMove(long n, T* src, std::false_type); 
 #endif
 
    template<class F>
@@ -580,11 +584,37 @@ void Vec<T>::InitMove(long n, T *src, std::true_type)
    AdjustMaxLength(n);
 }
 
+#if 0
 template<class T>
 void Vec<T>::InitMove(long n, T *src, std::false_type)
 {
    Init(n, src);
 }
+#else
+// This version throws a runtime error, rather than a compile-time
+// error, if no copy contructor is available.
+// This increases backward compatibility.
+
+template<class T>
+void Vec<T>::InitCopyMove(long n, T *src, std::true_type)
+{
+   Init(n, src);
+}
+
+template<class T>
+void Vec<T>::InitCopyMove(long n, T *src, std::false_type)
+{
+   LogicError("cannot re-allocate vector: no copy constructor for type");
+}
+
+template<class T>
+void Vec<T>::InitMove(long n, T *src, std::false_type)
+{
+   typedef std::integral_constant<bool, copyable> copy_it;
+   InitCopyMove(n, src, copy_it());
+}
+
+#endif
 
 
 template<class T>

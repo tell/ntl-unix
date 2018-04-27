@@ -25,24 +25,34 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
 
+// The configure script tries to prevent this, but we
+// double check here.  Note that while it is strongly 
+// discouraged, other parts of NTL probably work even with 
+// "fast math"; however, quad_float will definitely break.
+
 #if (defined(__GNUC__) && __FAST_MATH__)
 #error "do not compile quad_float.cpp with -ffast-math!!"
 #endif
 
+// The configure script should define NTL_FP_CONTRACT_OFF
+// for icc via the NOCONTRACT variable
+#ifdef NTL_FP_CONTRACT_OFF
+#pragma fp_contract(off)
+#endif
 
+#if 0
+// The configure script should ensure that all NTL files
+// are compiled with --fp-model precise on icc.
 #ifdef __INTEL_COMPILER
 #pragma float_control(precise,on)
 #endif
-
-// NOTE: the above will force the Intel compiler to adhere to
-// language standards, which it does not do by default
+#endif
 
 #include <NTL/quad_float.h>
 #include <NTL/RR.h>
 
 #include <cfloat>
 
-#include <NTL/new.h>
 
 NTL_START_IMPL
 
@@ -338,7 +348,11 @@ END_FIX
 
 
 
-#if (NTL_FMA_DETECTED)
+#if (NTL_FMA_DETECTED && !defined(NTL_CONTRACTION_FIXED))
+
+// The configure script should fix this issue for most
+// compilers (at least gcc, clang, and icc), but if not,
+// this is a last ditch effort to fix it (which seems to work).
 
 double quad_float_zero = 0;
 

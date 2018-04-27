@@ -86,6 +86,7 @@ cp ../include/NTL/GF2.h small/include/NTL
 cp ../include/NTL/WordVector.h small/include/NTL
 cp ../include/NTL/vec_GF2.h small/include/NTL
 cp ../include/NTL/GF2X.h small/include/NTL
+cp ../include/NTL/PackageInfo.h small/include/NTL
 
 cp cfile small/src
 cp WizardAux small/src

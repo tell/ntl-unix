@@ -1,6 +1,5 @@
 
 #include <NTL/mat_lzz_p.h>
-#include <NTL/new.h>
 #include <NTL/vec_long.h>
 
 
@@ -556,7 +555,7 @@ void mul_aux(vec_zz_p& x, const mat_zz_p& A, const vec_zz_p& b)
   
 void mul(vec_zz_p& x, const mat_zz_p& A, const vec_zz_p& b)  
 {  
-   if (&b == &x || A.position1(x) != -1) {
+   if (&b == &x || A.alias(x)) {
       vec_zz_p tmp;
       mul_aux(tmp, A, b);
       x = tmp;
@@ -1045,6 +1044,9 @@ void muladd_all_by_32_width(long first, long last, double *x, const double *a, c
       muladd_all_by_16(first, last, x, a, b, n);
 }
 
+// muladd_interval1 used in alt_inv_DD and alt_tri_DD
+// muladd_interval used in blk_inv_DD and blk_tri_DD, with an
+//   argument of MAT_BLK_SZ
 
 
 // this assumes n is a multiple of 16
@@ -1127,50 +1129,17 @@ void muladd_interval1(double * NTL_RESTRICT x, double * NTL_RESTRICT y, double c
    }
 }
 
-#define AVX_PD_SZ (4)
-
-// experimental: assumes n is a multiple of 4 in the range [0..32]
-#if 1
-static inline
-void muladd_interval2(double * NTL_RESTRICT x, double * NTL_RESTRICT y, double c, long n)
-{
-   n /= 4;
-   if (n <= 0 || n > 8) return;
-
-   x += n*4;
-   y += n*4;
-
-   // n in [1..8]
-
-   __m256d xvec, yvec, cvec;
-
-   cvec = _mm256_broadcast_sd(&c);
-
-   switch (n) {
-   case 8: xvec = _mm256_load_pd(x-8*4); yvec = _mm256_load_pd(y-8*4); MUL_ADD(xvec, yvec, cvec); _mm256_store_pd(x-8*4, xvec);
-   case 7: xvec = _mm256_load_pd(x-7*4); yvec = _mm256_load_pd(y-7*4); MUL_ADD(xvec, yvec, cvec); _mm256_store_pd(x-7*4, xvec);
-   case 6: xvec = _mm256_load_pd(x-6*4); yvec = _mm256_load_pd(y-6*4); MUL_ADD(xvec, yvec, cvec); _mm256_store_pd(x-6*4, xvec);
-   case 5: xvec = _mm256_load_pd(x-5*4); yvec = _mm256_load_pd(y-5*4); MUL_ADD(xvec, yvec, cvec); _mm256_store_pd(x-5*4, xvec);
-   case 4: xvec = _mm256_load_pd(x-4*4); yvec = _mm256_load_pd(y-4*4); MUL_ADD(xvec, yvec, cvec); _mm256_store_pd(x-4*4, xvec);
-   case 3: xvec = _mm256_load_pd(x-3*4); yvec = _mm256_load_pd(y-3*4); MUL_ADD(xvec, yvec, cvec); _mm256_store_pd(x-3*4, xvec);
-   case 2: xvec = _mm256_load_pd(x-2*4); yvec = _mm256_load_pd(y-2*4); MUL_ADD(xvec, yvec, cvec); _mm256_store_pd(x-2*4, xvec);
-   case 1: xvec = _mm256_load_pd(x-1*4); yvec = _mm256_load_pd(y-1*4); MUL_ADD(xvec, yvec, cvec); _mm256_store_pd(x-1*4, xvec);
-   }
-   
-}
-#else
-static inline
-void muladd_interval2(double * NTL_RESTRICT x, double * NTL_RESTRICT y, double c, long n)
-{
-   for (long i = 0; i < n; i++)
-      x[i] += y[i]*c;
-}
-#endif
 
 #endif
 
 
-#define DO_MUL(a, b) ((unsigned long) (long(a)*long(b)))
+//#define DO_MUL(a, b) ((unsigned long) (long(a)*long(b)))
+
+static inline 
+unsigned long 
+DO_MUL(unsigned long a, unsigned long b)
+{ return a*b; }
+
 
 static
 inline void muladd_interval(unsigned long * NTL_RESTRICT x, unsigned long * NTL_RESTRICT y, 
@@ -1483,6 +1452,7 @@ void muladd1_by_32_full_width(unsigned long *x, const unsigned long *a, const un
    }
 }
 
+
 // experiment with shorter int's
 static
 void muladd1_by_32_full(unsigned long *x, const unsigned int *a, const unsigned int *b)
@@ -1716,7 +1686,10 @@ void muladd_all_by_32_width(long first, long last, unsigned long *x, const unsig
    }
 }
 
-#if (NTL_BITS_PER_INT >= NTL_BITS_PER_LONG/2)
+#if (!defined(__INTEL_COMPILER) && (NTL_BITS_PER_INT >= NTL_BITS_PER_LONG/2))
+// Something goes wrong with the Intel ICC (version 16.0.3) compiler 
+// in this case.
+// It goes away with -O1, so I suspect it is a compiler bug.
 
 typedef unsigned int uhlong;
 

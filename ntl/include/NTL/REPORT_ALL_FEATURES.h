@@ -39,3 +39,15 @@
    std::cerr << "NTL_HAVE_COPY_TRAITS2\n";
 #endif
 
+#ifdef NTL_HAVE_CHRONO_TIME
+   std::cerr << "NTL_HAVE_CHRONO_TIME\n";
+#endif
+
+#ifdef NTL_HAVE_MACOS_TIME
+   std::cerr << "NTL_HAVE_MACOS_TIME\n";
+#endif
+
+#ifdef NTL_HAVE_POSIX_TIME
+   std::cerr << "NTL_HAVE_POSIX_TIME\n";
+#endif
+

@@ -20,7 +20,6 @@ private:
 public:
 
    GF2EInfoT(const GF2X& NewP);
-   ~GF2EInfoT() { }
 
    GF2XModulus p;
 

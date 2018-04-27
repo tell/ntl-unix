@@ -5,7 +5,6 @@
 #include <NTL/vec_vec_ZZ_p.h>
 #include <NTL/ZZX.h>
 
-#include <NTL/new.h>
 
 NTL_START_IMPL
 

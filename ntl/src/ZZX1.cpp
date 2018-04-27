@@ -3,7 +3,6 @@
 #include <NTL/ZZX.h>
 #include <NTL/BasicThreadPool.h>
 
-#include <NTL/new.h>
 
 NTL_START_IMPL
 

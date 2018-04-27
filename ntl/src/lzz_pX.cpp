@@ -1,7 +1,6 @@
 
 #include <NTL/lzz_pX.h>
 
-#include <NTL/new.h>
 
 NTL_START_IMPL
 

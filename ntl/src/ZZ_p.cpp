@@ -3,7 +3,6 @@
 #include <NTL/ZZ_p.h>
 #include <NTL/FFT.h>
 
-#include <NTL/new.h>
 
 
 NTL_START_IMPL

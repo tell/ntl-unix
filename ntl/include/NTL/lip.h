@@ -642,7 +642,7 @@ _ntl_reduce_struct_build(_ntl_gbigint modulus, _ntl_gbigint excess);
 
 // faster reduction with preconditioning -- general usage, single modulus
 
-class _ntl_general_rem_one_struct;
+struct _ntl_general_rem_one_struct;
 
 _ntl_general_rem_one_struct *
 _ntl_general_rem_one_struct_build(long p);

@@ -2,7 +2,6 @@
 
 #include <NTL/GF2E.h>
 
-#include <NTL/new.h>
 
 NTL_START_IMPL
 

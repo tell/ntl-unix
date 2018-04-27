@@ -28,17 +28,12 @@ int main()
    cout << "NTL_THREADS=0\n";
 #endif
 
-#ifdef NTL_DISABLE_TLS_HACK
-   cout << "NTL_DISABLE_TLS_HACK=1\n";
+#ifdef NTL_TLS_HACK
+   cout << "NTL_TLS_HACK=1\n";
 #else
-   cout << "NTL_DISABLE_TLS_HACK=0\n";
+   cout << "NTL_TLS_HACK=0\n";
 #endif
 
-#ifdef NTL_ENABLE_TLS_HACK
-   cout << "NTL_ENABLE_TLS_HACK=1\n";
-#else
-   cout << "NTL_ENABLE_TLS_HACK=0\n";
-#endif
 
 #ifdef NTL_EXCEPTIONS
    cout << "NTL_EXCEPTIONS=1\n";
@@ -113,6 +108,17 @@ int main()
    cout << "NTL_STD_CXX14=0\n";
 #endif
 
+#ifdef NTL_DISABLE_MOVE_ASSIGN
+   cout << "NTL_DISABLE_MOVE_ASSIGN=1\n";
+#else
+   cout << "NTL_DISABLE_MOVE_ASSIGN=0\n";
+#endif
+
+#ifdef NTL_DISABLE_MOVE
+   cout << "NTL_DISABLE_MOVE=1\n";
+#else
+   cout << "NTL_DISABLE_MOVE=0\n";
+#endif
 
 #ifdef NTL_UNSIGNED_LONG_LONG_TYPE
    cout << "FLAG_UNSIGNED_LONG_LONG_TYPE=1\n";

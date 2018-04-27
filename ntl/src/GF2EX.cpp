@@ -4,7 +4,6 @@
 #include <NTL/vec_vec_GF2.h>
 #include <NTL/ZZX.h>
 
-#include <NTL/new.h>
 
 NTL_START_IMPL
 

@@ -1,7 +1,6 @@
 
 #include <NTL/ZZ_pX.h>
 #include <NTL/BasicThreadPool.h>
-#include <NTL/new.h>
 
 
 

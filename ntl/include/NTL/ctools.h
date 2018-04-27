@@ -7,13 +7,21 @@
 
 #include <NTL/ALL_FEATURES.h>
 
+#include <NTL/PackageInfo.h>
 
-// defines the working C++ standard
 
-#if defined(NTL_STD_CXX11)
-#define NTL_CXX_STANDARD (2011)
-#elif defined(NTL_STD_CXX14)
+#if (!defined(NTL_HAVE_LL_TYPE) && defined(_MSC_VER) && defined(NTL_WINPACK))
+// for the windows distribution, for MSVC++ we assume LL_TYPE works
+#define NTL_HAVE_LL_TYPE
+#endif
+
+// Define the working C++ standard.
+// Both NTL_STD_CXX14 and NTL_STD_CXX11, and we take the highest one
+
+#if defined(NTL_STD_CXX14)
 #define NTL_CXX_STANDARD (2014)
+#elif defined(NTL_STD_CXX11)
+#define NTL_CXX_STANDARD (2011)
 #else
 #define NTL_CXX_STANDARD (1998)
 #endif
@@ -293,7 +301,7 @@ extern unsigned long exception_counter;
 
 #define NTL_ULONG_TO_LONG(a) \
    ((((unsigned long) a) >> (NTL_BITS_PER_LONG-1)) ? \
-    (((long) (((unsigned long) a) - ((unsigned long) NTL_MIN_LONG))) + \
+    (((long) (((unsigned long) a) ^ ((unsigned long) NTL_MIN_LONG))) ^ \
        NTL_MIN_LONG) : \
     ((long) a))
 
@@ -308,7 +316,7 @@ extern unsigned long exception_counter;
 
 #define NTL_UINT_TO_INT(a) \
    ((((unsigned int) a) >> (NTL_BITS_PER_INT-1)) ? \
-    (((int) (((unsigned int) a) - ((unsigned int) NTL_MIN_INT))) + \
+    (((int) (((unsigned int) a) ^ ((unsigned int) NTL_MIN_INT))) ^ \
        NTL_MIN_INT) : \
     ((int) a))
 
@@ -345,6 +353,9 @@ extern unsigned long exception_counter;
  * threshold for releasing scratch memory.
  */
 
+
+
+double _ntl_GetWallTime();
 
 
 long _ntl_IsFinite(double *p);

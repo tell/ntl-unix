@@ -19,6 +19,203 @@ A Tour of NTL: Summary of Changes
 
 <p><hr><p>
 <h3>
+2018.04.07: Changes between NTL 10.5.0 and 11.0.0
+</h3>
+
+<ul>
+<li>
+<b>Updated the configuration script:</b>
+<ul>
+<li>
+It does some basic auto-detection of the compiler, default language
+standard, and hardware platform.
+<li>
+Using compiler information, it sets compiler flags
+affecting floating point more intelligently.
+Note also that the configuration and build scripts ensure
+that floating point closely adheres to the IEEE standard,
+and that the compiler does not perform any re-association.
+<li>
+Using the default language standard information, it sets 
+the flags affecting language standards  more intelligently.
+<li>
+Using the hardware platform information, 
+it sets the TUNE flag more intelligently
+(in particular, on x86 platforms, the defaults should work just fine).
+<li>
+One now has to run <tt>./configure</tt> to generate 
+a make file,
+as the distribution no longer includes a default make file.
+<li>
+Running <tt>make clobber</tt> is no longer of much use,
+as the make file will call it automatically if you re-configure.
+<li>
+There is now a flag <tt>NTL_TLS_HACK</tt> that is automatically set
+by the configuration script.
+This flag controls how TLS (thread local storage) is implemented:
+either using pthread routines with <tt>__thread</tt> 
+or using only <tt>thread_local</tt>.
+This flag replaces the <tt>NTL_DISABLE_TLS_HACK</tt>
+and <tt>NTL_ENABLE_TLS_HACK</tt> flags, which had to be set manually.
+<li>
+Added a flag <tt>NTL_DISABLE_MOVE_ASSIGN</tt>, 
+which is on by default,
+and which prevents move assignment operators for
+<tt>Vec&lt;T&gt;</tt> and
+<tt>Mat&lt;T&gt;</tt>. 
+This disables move assignment
+for many other classes, including all of the polynomial classes.
+Move assignment can break backward compatibility, as it may
+invalidate pointers into the destination vector.
+Move constructors are not affected.
+
+<li>
+Added a flag <tt>NTL_DISABLE_MOVE</tt>, which is off by default.
+This disables <i>all</i> move constructors and assignment operators.
+It is doubtful that this will ever be needed, 
+except for really weird client code.
+
+<li>
+Added a check in the the build script to ensure that a thread-safe version of
+the <tt>gf2x</tt> library is used (if necessary).
+
+</ul>
+
+<p>
+<li>
+<b>Updated some default configuration values:</b>
+<ul>
+<li>
+Made <tt>NTL_STD_CXX11=on</tt> the default.
+<li>
+Made <tt>NTL_THREADS=on</tt> and <tt>NTL_THREAD_BOOST=on</tt>
+the default.
+So now, by default, NTL is thread safe and exploits
+multiple cores to speed up many operations,
+when possible.
+To get these speedups, you just have to call <tt>SetNumThreads</tt>.
+See <a href="BasicThreadPool.cpp.html">BasicThreadPool.txt</a>
+for more details on thread boosting.
+<li>
+Made <tt>NTL_SAFE_VECTORS=on</tt> the default.
+This makes the use of NTL's vectors much safer,
+since they do not (by default) rely on 
+the "relocatability" of the component type.
+This mode of operation has also been modified from
+previous versions so that it is more backward
+compatible (in particular, if the component 
+type does not have a usable copy or move constructor,
+it can still work without compile-time errors).
+See <a href="vector.cpp.html">vector.txt</a>
+for more details.
+
+<ul>
+<li>
+All of the above new default settings require <tt>C++11</tt> features.
+The configuration script will include additional compiler flags,
+such as <tt>-std=c++11</tt>,
+to ensure that these features are available.
+In addition, the <tt>NTL_THREADS=on</tt> and <tt>NTL_THREAD_BOOST=on</tt>
+settings generally require that the <tt>-pthread</tt>
+flag be passed to the compiler (at least on for GCC and GCC-like 
+compilers).
+This means that to compile programs using NTL,
+you may have to pass the flags  <tt>-std=c++11</tt>
+and  <tt>-pthread</tt> to your compiler (although,
+GCC version 6 and later do not require the  <tt>-std=c++11</tt>,
+since the default is <tt>C++14</tt> for these compilers).
+
+<li>
+If you really want to revert to the old default settings,
+run <tt>./configure</tt> with
+<pre>
+   NTL_STD_CXX11=off NTL_THREADS=off NTL_SAFE_VECTORS=off
+</pre>
+</ul>
+
+<li>
+Made <tt>NTL_CLEAN_PTR=on</tt> the default.
+This has no significant impact on performance,
+and avoids undefined behavior.
+
+<li>
+Made <tt>NTL_NO_INIT_TRANS=on</tt> the default. 
+This means that functions returning class objects
+now rely exclusively on the "named return value optimization".
+Many years ago, one could not rely on this optimization,
+but nowadays, this optimization is essentially universal.
+
+</ul>
+
+<p>
+<li>
+<b>Performance improvements:</b>
+<ul>
+<li>
+Thread boosted all cubic-time operations in 
+<tt>mat_ZZ_pE</tt>,
+<tt>mat_lzz_pE</tt>, 
+and
+<tt>mat_GF2E</tt>. 
+This includes:
+matrix multiplication, inversion, determinant,
+kernel, image, and solving linear systems.
+
+<li>
+Thread boosted <tt>RandomPrime</tt>, <tt>GenPrime</tt>,
+and <tt>GenGermainPrime</tt>.
+Care has been taken so that
+on a given platform,
+you will always get the same prime if you run the algorithm
+with the same <tt>RandomStream</tt>. In particular, even though
+these routines are thread boosted, their behavior is independent
+of the number of available threads and any indeterminacy
+arising from concurrent computation.
+Also, care has been taken to ensure that the new algorithms
+are no slower than the old ones in a single-threaded environment.
+
+</ul>
+
+<p>
+<li>
+<b>New functionality:</b>
+<ul>
+<li>
+Added a new function <tt>GetWallTime</tt>.
+See <a href="tools.cpp.html">tools.txt</a> for details.
+<li>
+Added a new function <tt>VectorRandomWord</tt>.
+See <a href="ZZ.cpp.html">ZZ.txt</a> for details.
+<li>
+Added support for true variadic templates in various smart pointer
+routines.
+See <a href="SmartPtr.cpp.html">SmartPtr.txt</a> for details.
+</ul>
+
+<p>
+<li>
+<b>Fixes and improvements to the Windows distribution:</b>
+<ul>
+<li>
+The Windows distribution has the new default settings as described above.
+In particular, the new distribution is thread safe
+and thread boosted by default.
+<li>
+The distribution has been fixed so that certain linker errors
+no longer arise.
+<li>
+If the compiler is <tt>MSVC++</tt>, use of a <tt>long long</tt> type is
+enabled in certain settings for better performance.
+<li>
+Some basic testing was done using <tt>MSVC++</tt> 2017 to ensure
+that the library works with the new default settings.
+</ul>
+
+</ul>
+
+
+<p><hr><p>
+<h3>
 2017.07.07: Changes between NTL 10.4.0 and 10.5.0
 </h3>
 
