@@ -11,16 +11,16 @@ aux:
 
 clean:
 	$(RM) *.done
-	$(NTL_CLEAN.cmd)
+	$(call cmd.NTL_CLEAN)
 
 check:
-	$(NTL_CHECK.cmd)
+	$(call cmd.NTL_CHECK)
 
 install:
 	$(MAKE) -C $(NTL_SRC) install
 
 config.done:
-	$(NTL_CONFIG.cmd)
+	$(call cmd.NTL_CONFIG)
 	touch $@
 
 patch.done:

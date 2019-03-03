@@ -4,7 +4,16 @@ NTL_ALL = $(NTL_SRC)/all
 
 NTL_BUILD_TARGET = $(NTL_ALL)
 
-NTL_CONFIG.cmd = cd $(NTL_SRC) && ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)" NTL_GMP_LIP=off
+ifeq (Darwin,$(shell uname -s))
+  $(info Detected OS name: Darwin.)
+  $(info Current NTL does not work on non-official toolchains, e.g., GCC in MacPorts.)
+  CXX=/usr/bin/clang++
+endif
+
+define cmd.NTL_CONFIG
+cd $(NTL_SRC) \
+&& ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)" NTL_GMP_LIP=off
+endef
 
 ifeq (1,$(USE_THREAD))
   NTL_CONFIG.cmd += NTL_THREADS=on
@@ -25,5 +34,10 @@ ifneq (,$(findstring CYGWIN_NT,$(KERNEL_NAME)))
   $(info Use thread.)
 endif
 
-NTL_CHECK.cmd = $(MAKE) -C $(NTL_SRC) check
-NTL_CLEAN.cmd = $(MAKE) -C $(NTL_SRC) clean; $(RM) $(NTL_ALL)
+define cmd.NTL_CHECK.cmd
+$(MAKE) -C $(NTL_SRC) check
+endef
+
+define cmd.NTL_CLEAN
+$(MAKE) -C $(NTL_SRC) clean; $(RM) $(NTL_ALL)
+endef
