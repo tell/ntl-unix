@@ -24,8 +24,7 @@ matrix:
 
 before_install:
 - if [[ ! -z "$MY_CXX" ]]; then export CXX=$MY_CXX; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull $MY_TARGET_DIST; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker run --name $MY_NAME -v $TRAVIS_BUILD_DIR:$MY_TARGET_MOUNT -td $MY_TARGET_DIST /bin/bash; fi
+- ./travis-ci/before_install_$TRAVIS_OS_NAME.bash
 
 install:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "apt update" > /dev/null; fi
