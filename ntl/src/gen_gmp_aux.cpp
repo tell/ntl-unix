@@ -103,6 +103,8 @@ int main()
    if (nail_bits > 0)
       fprintf(stderr, "WARNING: GMP_NAIL_BITS > 0: this has not been well tested\n");
 
+   if (__GNU_MP_VERSION < 5) 
+      Error("GMP version 5.0.0 or later required");
 
    // check that GMP_LIMB_BITS == mp_bits_per_limb as a consistency check
    if (GMP_LIMB_BITS != mp_bits_per_limb) 

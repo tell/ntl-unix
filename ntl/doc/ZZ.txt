@@ -263,6 +263,11 @@ void XGCD(ZZ& d, ZZ& s, ZZ& t, const ZZ& a, const ZZ& b);
 // but the coefficients a and t are always computed as if 
 // it did.
 
+// In particular, the following inequalties should hold:
+//    |s| <= 1   OR   |s| < |b|/(2*d)
+//    |t| <= 1   OR   |t| < |a|/(2*d)
+
+
 
 // special-purpose single-precision variants:
 

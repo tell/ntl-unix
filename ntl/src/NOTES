@@ -28,6 +28,8 @@ make winpack
 
 =====================================
 
+TODO: add a runtime flag that makes GetTime call GetWallTime
+
 FIXME: maybe it would make more sense to take the +1/-1 logic
 out of [cg]_lip_impl block_construct routines and just put it in
 the caller: the ZZ_p and ZZVec BlockConstruct stuff: add 1 there...

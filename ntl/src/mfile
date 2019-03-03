@@ -187,8 +187,9 @@ TD=BerlekampTestIn BerlekampTestOut CanZassTestIn CanZassTestOut   \
 
 
 # test source files
-TS=QuickTest.cpp ZZTest.cpp BerlekampTest.cpp CanZassTest.cpp ZZXFacTest.cpp  \
-	MoreFacTest.cpp LLLTest.cpp subset.cpp MatrixTest.cpp mat_lzz_pTest.cpp  \
+TS=QuickTest.cpp ZZTest.cpp ZZ_pXTest.cpp lzz_pXTest.cpp BerlekampTest.cpp \
+	CanZassTest.cpp ZZXFacTest.cpp  MoreFacTest.cpp \
+	LLLTest.cpp subset.cpp MatrixTest.cpp mat_lzz_pTest.cpp  \
 	CharPolyTest.cpp RRTest.cpp QuadTest.cpp GF2XTest.cpp GF2EXTest.cpp  \
 	BitMatTest.cpp ZZ_pEXTest.cpp lzz_pEXTest.cpp Timing.cpp ThreadTest.cpp  \
 	ExceptionTest.cpp
@@ -267,12 +268,13 @@ DOC = $(DFILES) $(HTFILES)
 
 
 # test program executables
-PROGS=QuickTest ZZTest BerlekampTest CanZassTest ZZXFacTest MoreFacTest LLLTest  \
+PROGS=QuickTest ZZTest ZZ_pXTest lzz_pXTest BerlekampTest CanZassTest \
+	ZZXFacTest MoreFacTest LLLTest  \
 	BitMatTest MatrixTest mat_lzz_pTest CharPolyTest RRTest QuadTest GF2XTest  \
 	GF2EXTest subset ZZ_pEXTest lzz_pEXTest Timing ThreadTest
 
 # things to save to a tar file
-SFILES=makefile $(SRC) $(SCRIPTS) $(MD) $(GT) $(GP) $(CH) $(TS) $(TD) mach_desc.win   \
+SFILES=$(SRC) $(SCRIPTS) $(MD) $(GT) $(GP) $(CH) $(TS) $(TD) mach_desc.win   \
 	Poly1TimeTest.cpp Poly2TimeTest.cpp Poly3TimeTest.cpp GF2XTimeTest.cpp    \
 	InitSettings.cpp DispSettings.cpp  WizardAux Wizard 
 

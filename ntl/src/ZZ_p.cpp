@@ -185,7 +185,6 @@ void ZZ_pContext::save()
    ptr = ZZ_pInfo_stg; 
 }
 
-
 void ZZ_pContext::restore() const
 {
    if (ZZ_pInfo == ptr.get()) return; 

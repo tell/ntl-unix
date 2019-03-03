@@ -433,6 +433,7 @@ void PrintTime(NTL_SNS ostream& s, double t);
 // on relative modern versions of gcc, we can 
 // decalare "restricted" pointers in C++
 
+
 #define NTL_RESTRICT __restrict
 
 #else
@@ -978,7 +979,7 @@ ll_mul_hi(unsigned long a, unsigned long b)
 #define NTL_DECLARE_RELOCATABLE_WHEN(x) \
 constexpr bool DeclareRelocatableType x
 
-#if (defined(NTL_HAVE_COPY_TRAITS1) || defined(_MSC_VER))
+#if (defined(NTL_HAVE_COPY_TRAITS1) || defined(NTL_WINPACK))
 
 
 // This strategy is used on compilers that fully support C++11 type traits.
@@ -988,6 +989,9 @@ constexpr bool DeclareRelocatableType x
 // Just to be on the safe side, I check for a trivial destructor.
 
 // This strategy is checked in the CheckCOPY_TRAITS1.cpp program.
+
+// We also use this strategy for the WINPACK distribution. 
+// It should work on Windows with any compiler that properly supports C++11
 
 
 template<class T>

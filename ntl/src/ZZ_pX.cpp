@@ -13,6 +13,7 @@
 
 #endif
 
+NTL_START_IMPL
 
 
 #if (defined(NTL_GMP_LIP))
@@ -21,10 +22,20 @@
 #define KARX 80
 #endif
 
+#define PAR_THRESH (4000.0)
 
+#define PAR_THRESH1 (20000.0)
+// Higher threshold for cheaper operations
 
-NTL_START_IMPL
+static inline bool BelowThresh(long n)
+{
+   return double(n)*double(ZZ_p::ModulusSize()) < PAR_THRESH;
+}
 
+static inline bool BelowThresh1(long n)
+{
+   return double(n)*double(ZZ_p::ModulusSize()) < PAR_THRESH1;
+}
 
 
 
@@ -1020,7 +1031,7 @@ static void MulAux(ZZ_p* xp, const ZZ_p* ap, const ZZ_p& t, long n)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh(n)) {
       basic_MulAux(xp, ap, t, n);
       return;
    }
@@ -1239,7 +1250,7 @@ static void MulByXModAux1(long n, ZZ_p *hh, const ZZ_p* aa, const ZZ_p *ff, cons
 
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1 || hh == aa) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || hh == aa || BelowThresh(n)) {
       // Careful! can't parallelize if hh == aa
       basic_MulByXModAux1(n, hh, aa, ff, z);
       return;
@@ -1383,16 +1394,17 @@ FFTRep& FFTRep::operator=(const FFTRep& R)
 
    if (R.k < 0) {
       k = -1;
+      len = 0;
       return *this;
    }
 
    DoSetSize(R.k, R.NumPrimes);
-   long i, j, n;
+   len = R.len;
 
-   n = 1L << k;
+   long i, j;
 
    for (i = 0; i < NumPrimes; i++)
-      for (j = 0; j < n; j++)
+      for (j = 0; j < len; j++)
          tbl[i][j] = R.tbl[i][j];
 
    return *this;
@@ -1483,7 +1495,7 @@ void FromModularRep(ZZ_p& x, vec_long& avec, const ZZ_pFFTInfoT *FFTInfo,
 
 
 
-NTL_TBDECL(ToFFTRep)(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
+NTL_TBDECL(ToFFTRep_trunc)(FFTRep& y, const ZZ_pX& x, long k, long len, long lo, long hi)
 // computes an n = 2^k point convolution.
 // if deg(x) >= 2^k, then x is first reduced modulo X^n-1.
 {
@@ -1507,10 +1519,12 @@ NTL_TBDECL(ToFFTRep)(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
    hi = min(hi, deg(x));
 
    y.SetSize(k);
-
    n = 1L << k;
 
+   y.len = len = FFTRoundUp(len, k);
+
    m = max(hi-lo + 1, 0);
+   long ilen = FFTRoundUp(m, k);
 
    const ZZ_p *xx = x.rep.elts();
 
@@ -1522,10 +1536,10 @@ NTL_TBDECL(ToFFTRep)(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
          }
       }
 
-      if (n > m) {
+      if (ilen > m) {
          for (i = 0; i < nprimes; i++) {
             long *yp = &y.tbl[i][0];
-            for (j = m; j < n; j++) {
+            for (j = m; j < ilen; j++) {
                yp[j] = 0;
             }
          }
@@ -1550,21 +1564,21 @@ NTL_TBDECL(ToFFTRep)(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
 
    for (i = 0; i < nprimes; i++) {
       long *yp = &y.tbl[i][0];
-      FFTFwd(yp, yp, k, i);
+      FFTFwd_trunc(yp, yp, k, i, len, ilen);
    }
 }
 
 
 #ifdef NTL_THREAD_BOOST
 
-void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
+void ToFFTRep_trunc(FFTRep& y, const ZZ_pX& x, long k, long len, long lo, long hi)
 // computes an n = 2^k point convolution.
 // if deg(x) >= 2^k, then x is first reduced modulo X^n-1.
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
-      basic_ToFFTRep(y, x, k, lo, hi);
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh(1L << k)) {
+      basic_ToFFTRep_trunc(y, x, k, len, lo, hi);
       return;
    }
 
@@ -1586,10 +1600,12 @@ void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
    hi = min(hi, deg(x));
 
    y.SetSize(k);
-
    n = 1L << k;
 
+   y.len = len = FFTRoundUp(len, k);
+
    m = max(hi-lo + 1, 0);
+   long ilen = FFTRoundUp(m, k);
 
    const ZZ_p *xx = x.rep.elts();
 
@@ -1646,11 +1662,11 @@ void ToFFTRep(FFTRep& y, const ZZ_pX& x, long k, long lo, long hi)
    // cache performance.  I don't really know if that is an issue.
 
    pool->exec_range(nprimes, 
-   [&y, m, n, k](long first, long last) {
+   [&y, m, n, k, len, ilen](long first, long last) {
      for (long i = first; i < last; i++) {
         long *yp = &y.tbl[i][0];
-        for (long j = m; j < n; j++) yp[j] = 0;
-        FFTFwd(yp, yp, k, i);
+        for (long j = m; j < ilen; j++) yp[j] = 0;
+        FFTFwd_trunc(yp, yp, k, i, len, ilen);
      }
    } );
 }
@@ -1687,6 +1703,7 @@ NTL_TBDECL(RevToFFTRep)(FFTRep& y, const vec_ZZ_p& x,
    y.SetSize(k);
 
    n = 1L << k;
+   y.len = n;
 
    m = max(hi-lo + 1, 0);
 
@@ -1716,7 +1733,7 @@ NTL_TBDECL(RevToFFTRep)(FFTRep& y, const vec_ZZ_p& x,
 
    for (i = 0; i < nprimes; i++) {
       long *yp = &y.tbl[i][0];
-      FFTRev1(yp, yp, k, i);
+      FFTRev1_trans(yp, yp, k, i);
    }
 
 }
@@ -1733,7 +1750,7 @@ void RevToFFTRep(FFTRep& y, const vec_ZZ_p& x,
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh(1L << k)) {
       basic_RevToFFTRep(y, x, k, lo, hi, offset);
       return;
    }
@@ -1755,6 +1772,7 @@ void RevToFFTRep(FFTRep& y, const vec_ZZ_p& x,
    y.SetSize(k);
 
    n = 1L << k;
+   y.len = n;
 
    m = max(hi-lo + 1, 0);
 
@@ -1804,7 +1822,7 @@ void RevToFFTRep(FFTRep& y, const vec_ZZ_p& x,
    [&y, k](long first, long last) {
      for (long i = first; i < last; i++) {
         long *yp = &y.tbl[i][0];
-        FFTRev1(yp, yp, k, i);
+        FFTRev1_trans(yp, yp, k, i);
      }
    } );
 
@@ -1838,16 +1856,21 @@ NTL_TBDECL(FromFFTRep)(ZZ_pX& x, FFTRep& y, long lo, long hi)
    k = y.k;
    n = (1L << k);
 
-
-   for (i = 0; i < nprimes; i++) {
-      long *yp = &y.tbl[i][0];
-      FFTRev1(yp, yp, k, i);
-   }
-
    hi = min(hi, n-1);
    l = hi-lo+1;
    l = max(l, 0);
+
+   long len = y.len;
+   if (len <= hi) LogicError("FromFFTRep: bad len");
+
+
+   for (i = 0; i < nprimes; i++) {
+      long *yp = &y.tbl[i][0];
+      FFTRev1_trunc(yp, yp, k, i, len);
+   }
+
    x.rep.SetLength(l);
+
 
    for (j = 0; j < l; j++) {
       for (i = 0; i < nprimes; i++) 
@@ -1870,7 +1893,7 @@ void FromFFTRep(ZZ_pX& x, FFTRep& y, long lo, long hi)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh(1L << y.k)) {
       basic_FromFFTRep(x, y, lo, hi);
       return;
    }
@@ -1883,18 +1906,22 @@ void FromFFTRep(ZZ_pX& x, FFTRep& y, long lo, long hi)
    k = y.k;
    n = (1L << k);
 
-
-   pool->exec_range(nprimes,
-   [&y, k](long first, long last) {
-      for (long i = first; i < last; i++) {
-         long *yp = &y.tbl[i][0];
-         FFTRev1(yp, yp, k, i);
-      }
-   } );
-
    hi = min(hi, n-1);
    l = hi-lo+1;
    l = max(l, 0);
+
+   long len = y.len;
+   if (len <= hi) LogicError("FromFFTRep: bad len");
+
+   pool->exec_range(nprimes,
+   [&y, k, len](long first, long last) {
+      for (long i = first; i < last; i++) {
+         long *yp = &y.tbl[i][0];
+         FFTRev1_trunc(yp, yp, k, i, len);
+      }
+   } );
+
+
    x.rep.SetLength(l);
    ZZ_p *xx = x.rep.elts();
 
@@ -1951,12 +1978,15 @@ NTL_TBDECL(RevFromFFTRep)(vec_ZZ_p& x, FFTRep& y, long lo, long hi)
    k = y.k;
    n = (1L << k);
 
+   if (y.len != n) LogicError("RevFromFFTRep: bad len");
+
+
    long nprimes = FFTInfo->NumPrimes;
    t.SetLength(nprimes);
 
    for (i = 0; i < nprimes; i++) {
       long *yp = &y.tbl[i][0];
-      FFTFwd(yp, yp, k, i);
+      FFTFwd_trans(yp, yp, k, i);
    }
 
    hi = min(hi, n-1);
@@ -1979,7 +2009,7 @@ void RevFromFFTRep(vec_ZZ_p& x, FFTRep& y, long lo, long hi)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh(1L << y.k)) {
       basic_RevFromFFTRep(x, y, lo, hi);
       return;
    }
@@ -1992,12 +2022,14 @@ void RevFromFFTRep(vec_ZZ_p& x, FFTRep& y, long lo, long hi)
    k = y.k;
    n = (1L << k);
 
+   if (y.len != n) LogicError("RevFromFFTRep: bad len");
+
 
    pool->exec_range(nprimes,
    [&y, k](long first, long last) {
       for (long i = first; i < last; i++) {
          long *yp = &y.tbl[i][0];
-         FFTFwd(yp, yp, k, i);
+         FFTFwd_trans(yp, yp, k, i);
       }
    } );
 
@@ -2057,18 +2089,22 @@ NTL_TBDECL(NDFromFFTRep)(ZZ_pX& x, const FFTRep& y, long lo, long hi, FFTRep& z)
    k = y.k;
    n = (1L << k);
 
+   hi = min(hi, n-1);
+   l = hi-lo+1;
+   l = max(l, 0);
+
+   long len = y.len;
+   if (len <= hi) LogicError("FromFFTRep: bad len");
+
    z.SetSize(k);
 
    for (i = 0; i < nprimes; i++) {
       long *zp = &z.tbl[i][0];
       const long *yp = &y.tbl[i][0];
 
-      FFTRev1(zp, yp, k, i);
+      FFTRev1_trunc(zp, yp, k, i, len);
    }
 
-   hi = min(hi, n-1);
-   l = hi-lo+1;
-   l = max(l, 0);
    x.rep.SetLength(l);
 
    for (j = 0; j < l; j++) {
@@ -2092,7 +2128,7 @@ void NDFromFFTRep(ZZ_pX& x, const FFTRep& y, long lo, long hi, FFTRep& z)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh(1L << y.k)) {
       basic_NDFromFFTRep(x, y, lo, hi, z);
       return;
    }
@@ -2105,20 +2141,24 @@ void NDFromFFTRep(ZZ_pX& x, const FFTRep& y, long lo, long hi, FFTRep& z)
    k = y.k;
    n = (1L << k);
 
-   z.SetSize(k);
-
-   pool->exec_range(nprimes,
-   [&y, &z, k](long first, long last) {
-      for (long i = first; i < last; i++) {
-         long *zp = &z.tbl[i][0];
-         const long *yp = &y.tbl[i][0];
-         FFTRev1(zp, yp, k, i);
-      }
-   } );
-
    hi = min(hi, n-1);
    l = hi-lo+1;
    l = max(l, 0);
+
+   long len = y.len;
+   if (len <= hi) LogicError("FromFFTRep: bad len");
+
+   z.SetSize(k);
+
+   pool->exec_range(nprimes,
+   [&y, &z, k, len](long first, long last) {
+      for (long i = first; i < last; i++) {
+         long *zp = &z.tbl[i][0];
+         const long *yp = &y.tbl[i][0];
+         FFTRev1_trunc(zp, yp, k, i, len);
+      }
+   } );
+
    x.rep.SetLength(l);
    ZZ_p *xx = x.rep.elts();
 
@@ -2157,6 +2197,8 @@ void NDFromFFTRep(ZZ_pX& x, FFTRep& y, long lo, long hi)
    NDFromFFTRep(x, y, lo, hi, z);
 }
 
+
+
 NTL_TBDECL(FromFFTRep)(ZZ_p* x, FFTRep& y, long lo, long hi)
 
    // converts from FFT-representation to coefficient representation
@@ -2174,6 +2216,9 @@ NTL_TBDECL(FromFFTRep)(ZZ_p* x, FFTRep& y, long lo, long hi)
 
    k = y.k;
    n = (1L << k);
+
+   //if (y.len <= min(hi, n-1)) LogicError("FromFFTRep: bad len");
+   if (y.len != n) LogicError("FromFFTRep: bad len");
 
    long nprimes = FFTInfo->NumPrimes;
    t.SetLength(nprimes);
@@ -2207,7 +2252,7 @@ void FromFFTRep(ZZ_p* x, FFTRep& y, long lo, long hi)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh(1L << y.k)) {
       basic_FromFFTRep(x, y, lo, hi);
       return;
    }
@@ -2219,6 +2264,9 @@ void FromFFTRep(ZZ_p* x, FFTRep& y, long lo, long hi)
 
    k = y.k;
    n = (1L << k);
+
+   //if (y.len <= min(hi, n-1)) LogicError("FromFFTRep: bad len");
+   if (y.len != n) LogicError("FromFFTRep: bad len");
 
    long nprimes = FFTInfo->NumPrimes;
 
@@ -2264,18 +2312,20 @@ void FromFFTRep(ZZ_p* x, FFTRep& y, long lo, long hi)
 #endif
 
 
+
 NTL_TBDECL(mul)(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
    const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
-   long k, n, i, j;
+   long k, i, j;
 
    if (x.k != y.k) LogicError("FFT rep mismatch");
 
    k = x.k;
-   n = 1L << k;
 
    z.SetSize(k);
+
+   long len = z.len = min(x.len, y.len);
 
    long nprimes = FFTInfo->NumPrimes;
 
@@ -2286,7 +2336,7 @@ NTL_TBDECL(mul)(FFTRep& z, const FFTRep& x, const FFTRep& y)
       long q = GetFFTPrime(i);
       mulmod_t qinv = GetFFTPrimeInv(i);
 
-      for (j = 0; j < n; j++)
+      for (j = 0; j < len; j++)
          zp[j] = NormalizedMulMod(xp[j], yp[j], q, qinv);
    }
 
@@ -2299,25 +2349,26 @@ void mul(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh1(1L << x.k)) {
       basic_mul(z, x, y);
       return;
    }
    const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
-   long k, n;
+   long k;
 
    if (x.k != y.k) LogicError("FFT rep mismatch");
 
    k = x.k;
-   n = 1L << k;
 
    z.SetSize(k);
+
+   long len = z.len = min(x.len, y.len);
 
    long nprimes = FFTInfo->NumPrimes;
 
    pool->exec_range(nprimes,
-   [&x, &y, &z, n](long first, long last) {
+   [&x, &y, &z, len](long first, long last) {
       for (long i  = first; i < last; i++) {
          long *zp = &z.tbl[i][0];
          const long *xp = &x.tbl[i][0];
@@ -2325,7 +2376,7 @@ void mul(FFTRep& z, const FFTRep& x, const FFTRep& y)
          long q = GetFFTPrime(i);
          mulmod_t qinv = GetFFTPrimeInv(i);
    
-         for (long j = 0; j < n; j++)
+         for (long j = 0; j < len; j++)
             zp[j] = NormalizedMulMod(xp[j], yp[j], q, qinv);
       }
    } );
@@ -2340,14 +2391,15 @@ NTL_TBDECL(sub)(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
    const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
-   long k, n, i, j;
+   long k, i, j;
 
    if (x.k != y.k) LogicError("FFT rep mismatch");
 
    k = x.k;
-   n = 1L << k;
 
    z.SetSize(k);
+
+   long len = z.len = min(x.len, y.len);
 
    long nprimes = FFTInfo->NumPrimes;
 
@@ -2357,7 +2409,7 @@ NTL_TBDECL(sub)(FFTRep& z, const FFTRep& x, const FFTRep& y)
       const long *yp = &y.tbl[i][0];
       long q = GetFFTPrime(i);
 
-      for (j = 0; j < n; j++)
+      for (j = 0; j < len; j++)
          zp[j] = SubMod(xp[j], yp[j], q);
    }
 
@@ -2370,32 +2422,33 @@ void sub(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh1(1L << x.k)) {
       basic_sub(z, x, y);
       return;
    }
    const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
-   long k, n;
+   long k;
 
    if (x.k != y.k) LogicError("FFT rep mismatch");
 
    k = x.k;
-   n = 1L << k;
 
    z.SetSize(k);
+
+   long len = z.len = min(x.len, y.len);
 
    long nprimes = FFTInfo->NumPrimes;
 
    pool->exec_range(nprimes,
-   [&x, &y, &z, n](long first, long last) {
+   [&x, &y, &z, len](long first, long last) {
       for (long i  = first; i < last; i++) {
          long *zp = &z.tbl[i][0];
          const long *xp = &x.tbl[i][0];
          const long *yp = &y.tbl[i][0];
          long q = GetFFTPrime(i);
    
-         for (long j = 0; j < n; j++)
+         for (long j = 0; j < len; j++)
             zp[j] = SubMod(xp[j], yp[j], q);
       }
    } );
@@ -2410,14 +2463,15 @@ NTL_TBDECL(add)(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
    const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
-   long k, n, i, j;
+   long k, i, j;
 
    if (x.k != y.k) LogicError("FFT rep mismatch");
 
    k = x.k;
-   n = 1L << k;
 
    z.SetSize(k);
+
+   long len = z.len = min(x.len, y.len);
 
    long nprimes = FFTInfo->NumPrimes;
 
@@ -2427,7 +2481,7 @@ NTL_TBDECL(add)(FFTRep& z, const FFTRep& x, const FFTRep& y)
       const long *yp = &y.tbl[i][0];
       long q = GetFFTPrime(i);
 
-      for (j = 0; j < n; j++)
+      for (j = 0; j < len; j++)
          zp[j] = AddMod(xp[j], yp[j], q);
    }
 
@@ -2440,32 +2494,33 @@ void add(FFTRep& z, const FFTRep& x, const FFTRep& y)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh1(1L << x.k)) {
       basic_add(z, x, y);
       return;
    }
    const ZZ_pFFTInfoT *FFTInfo = ZZ_p::GetFFTInfo();
 
-   long k, n;
+   long k;
 
    if (x.k != y.k) LogicError("FFT rep mismatch");
 
    k = x.k;
-   n = 1L << k;
 
    z.SetSize(k);
+
+   long len = z.len = min(x.len, y.len);
 
    long nprimes = FFTInfo->NumPrimes;
 
    pool->exec_range(nprimes,
-   [&x, &y, &z, n](long first, long last) {
+   [&x, &y, &z, len](long first, long last) {
       for (long i  = first; i < last; i++) {
          long *zp = &z.tbl[i][0];
          const long *xp = &x.tbl[i][0];
          const long *yp = &y.tbl[i][0];
          long q = GetFFTPrime(i);
    
-         for (long j = 0; j < n; j++)
+         for (long j = 0; j < len; j++)
             zp[j] = AddMod(xp[j], yp[j], q);
       }
    } );
@@ -2473,7 +2528,6 @@ void add(FFTRep& z, const FFTRep& x, const FFTRep& y)
 }
 
 #endif
-
 
 
 
@@ -2493,9 +2547,12 @@ NTL_TBDECL(reduce)(FFTRep& x, const FFTRep& a, long k)
    n = 1L << k;
 
    if (l < k) LogicError("reduce: bad operands");
+   if (a.len < n) LogicError("reduce: bad len");
 
    x.SetSize(k);
+   x.len = n;
 
+   if (&x == &a) return;
 
    long nprimes = FFTInfo->NumPrimes;
 
@@ -2503,7 +2560,7 @@ NTL_TBDECL(reduce)(FFTRep& x, const FFTRep& a, long k)
       ap = &a.tbl[i][0];   
       xp = &x.tbl[i][0];
       for (j = 0; j < n; j++) 
-         xp[j] = ap[j << (l-k)];
+         xp[j] = ap[j];
    }
 }
 
@@ -2516,7 +2573,7 @@ void reduce(FFTRep& x, const FFTRep& a, long k)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (&x == &a || !pool || pool->active() || pool->NumThreads() == 1 || BelowThresh1(1L << k)) {
       basic_reduce(x, a, k);
       return;
    }
@@ -2529,8 +2586,10 @@ void reduce(FFTRep& x, const FFTRep& a, long k)
    n = 1L << k;
 
    if (l < k) LogicError("reduce: bad operands");
+   if (a.len < n) LogicError("reduce: bad len");
 
    x.SetSize(k);
+   x.len = n;
 
 
    long nprimes = FFTInfo->NumPrimes;
@@ -2541,12 +2600,14 @@ void reduce(FFTRep& x, const FFTRep& a, long k)
          const long *ap = &a.tbl[i][0];   
          long *xp = &x.tbl[i][0];
          for (long j = 0; j < n; j++) 
-            xp[j] = ap[j << (l-k)];
+            xp[j] = ap[j];
       }
    } );
 }
 
+
 #endif
+
 
 
 
@@ -2564,6 +2625,9 @@ NTL_TBDECL(AddExpand)(FFTRep& x, const FFTRep& a)
 
    if (l < k) LogicError("AddExpand: bad args");
 
+   if (a.len != n) LogicError("AddExpand: bad len");
+   if (x.len < n) LogicError("AddExpand: bad len");
+
 
    long nprimes = FFTInfo->NumPrimes;
 
@@ -2572,8 +2636,7 @@ NTL_TBDECL(AddExpand)(FFTRep& x, const FFTRep& a)
       const long *ap = &a.tbl[i][0];
       long *xp = &x.tbl[i][0];
       for (j = 0; j < n; j++) {
-         long j1 = j << (l-k);
-         xp[j1] = AddMod(xp[j1], ap[j], q);
+         xp[j] = AddMod(xp[j], ap[j], q);
       }
    }
 }
@@ -2585,7 +2648,7 @@ void AddExpand(FFTRep& x, const FFTRep& a)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh1(1L << a.k)) {
       basic_AddExpand(x, a);
       return;
    }
@@ -2599,6 +2662,9 @@ void AddExpand(FFTRep& x, const FFTRep& a)
 
    if (l < k) LogicError("AddExpand: bad args");
 
+   if (a.len != n) LogicError("AddExpand: bad len");
+   if (x.len < n) LogicError("AddExpand: bad len");
+
 
    long nprimes = FFTInfo->NumPrimes;
 
@@ -2609,15 +2675,16 @@ void AddExpand(FFTRep& x, const FFTRep& a)
          const long *ap = &a.tbl[i][0];
          long *xp = &x.tbl[i][0];
          for (long j = 0; j < n; j++) {
-            long j1 = j << (l-k);
-            xp[j1] = AddMod(xp[j1], ap[j], q);
+            xp[j] = AddMod(xp[j], ap[j], q);
          }
       }
    } );
 }
 
-
 #endif
+
+
+
 
 
 
@@ -2657,7 +2724,7 @@ void ToZZ_pXModRep(ZZ_pXModRep& y, const ZZ_pX& x, long lo, long hi)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh(max(hi-lo+1,0))) {
       basic_ToZZ_pXModRep(y, x, lo, hi);
       return;
    }
@@ -2728,6 +2795,7 @@ NTL_TBDECL(ToFFTRep)(FFTRep& x, const ZZ_pXModRep& a, long k, long lo, long hi)
 
 
    x.SetSize(k);
+   x.len = n;
 
    long nprimes = FFTInfo->NumPrimes;
 
@@ -2757,7 +2825,7 @@ void ToFFTRep(FFTRep& x, const ZZ_pXModRep& a, long k, long lo, long hi)
 {
    BasicThreadPool *pool = GetThreadPool();
 
-   if (!pool || pool->active() || pool->NumThreads() == 1) {
+   if (!pool || pool->active() || pool->NumThreads() == 1 || BelowThresh(1L << k)) {
       basic_ToFFTRep(x, a, k, lo, hi);
       return;
    }
@@ -2779,6 +2847,7 @@ void ToFFTRep(FFTRep& x, const ZZ_pXModRep& a, long k, long lo, long hi)
 
 
    x.SetSize(k);
+   x.len = n;
 
    long nprimes = FFTInfo->NumPrimes;
 
@@ -2819,6 +2888,8 @@ void FromFFTRep(ZZ_pXModRep& x, const FFTRep& a)
    long k = a.k;
    long n = 1L << k;
 
+   if (a.len != n) LogicError("FromFFTRep: bad len");
+
    x.SetSize(n);
    for (long i = 0; i < nprimes; i++) {
       long *xp = &x.tbl[i][0];
@@ -2855,49 +2926,44 @@ void FromZZ_pXModRep(ZZ_pX& x, const ZZ_pXModRep& a, long lo, long hi)
 
 
 
-
-
-
-
-
 void FFTMul(ZZ_pX& x, const ZZ_pX& a, const ZZ_pX& b)
 {
-   long k, d;
-
    if (IsZero(a) || IsZero(b)) {
       clear(x);
       return;
    }
 
-   d = deg(a) + deg(b);
-   k = NextPowerOfTwo(d+1);
+   long da = deg(a);
+   long db = deg(b);
+   long d = da+db;
+   long k = NextPowerOfTwo(d+1);
 
    FFTRep R1(INIT_SIZE, k), R2(INIT_SIZE, k);
 
-   ToFFTRep(R1, a, k);
-   ToFFTRep(R2, b, k);
+   ToFFTRep_trunc(R1, a, k, d+1);
+   ToFFTRep_trunc(R2, b, k, d+1);
    mul(R1, R1, R2);
    FromFFTRep(x, R1, 0, d);
 }
 
 void FFTSqr(ZZ_pX& x, const ZZ_pX& a)
 {
-   long k, d;
-
    if (IsZero(a)) {
       clear(x);
       return;
    }
 
-   d = 2*deg(a);
-   k = NextPowerOfTwo(d+1);
+   long da = deg(a);
+   long d = 2*da;
+   long k = NextPowerOfTwo(d+1);
 
    FFTRep R1(INIT_SIZE, k);
 
-   ToFFTRep(R1, a, k);
+   ToFFTRep_trunc(R1, a, k, d+1);
    mul(R1, R1, R1);
    FromFFTRep(x, R1, 0, d);
 }
+
 
 
 void CopyReverse(ZZ_pX& x, const ZZ_pX& a, long lo, long hi)
@@ -2979,7 +3045,7 @@ void rem21(ZZ_pX& x, const ZZ_pX& a, const ZZ_pXModulus& F)
    FFTRep R1(INIT_SIZE, F.l);
    ZZ_pX P1(INIT_SIZE, n);
 
-   ToFFTRep(R1, a, F.l, n, 2*(n-1));
+   ToFFTRep_trunc(R1, a, F.l, 2*n-3, n, 2*(n-1));
    mul(R1, R1, F.HRep);
    FromFFTRep(P1, R1, n-2, 2*n-4);
 
@@ -3034,7 +3100,7 @@ void DivRem21(ZZ_pX& q, ZZ_pX& x, const ZZ_pX& a, const ZZ_pXModulus& F)
    FFTRep R1(INIT_SIZE, F.l);
    ZZ_pX P1(INIT_SIZE, n), qq;
 
-   ToFFTRep(R1, a, F.l, n, 2*(n-1));
+   ToFFTRep_trunc(R1, a, F.l, 2*n-3, n, 2*(n-1));
    mul(R1, R1, F.HRep);
    FromFFTRep(P1, R1, n-2, 2*n-4);
    qq = P1;
@@ -3090,7 +3156,7 @@ void div21(ZZ_pX& x, const ZZ_pX& a, const ZZ_pXModulus& F)
    FFTRep R1(INIT_SIZE, F.l);
    ZZ_pX P1(INIT_SIZE, n);
 
-   ToFFTRep(R1, a, F.l, n, 2*(n-1));
+   ToFFTRep_trunc(R1, a, F.l, 2*n-3, n, 2*(n-1));
    mul(R1, R1, F.HRep);
    FromFFTRep(x, R1, n-2, 2*n-4);
 }
@@ -3291,12 +3357,12 @@ void MulMod(ZZ_pX& x, const ZZ_pX& a, const ZZ_pX& b, const ZZ_pXModulus& F)
    FFTRep R1(INIT_SIZE, k), R2(INIT_SIZE, F.l);
    ZZ_pX P1(INIT_SIZE, n);
 
-   ToFFTRep(R1, a, k);
-   ToFFTRep(R2, b, k);
+   ToFFTRep_trunc(R1, a, k, max(1L << F.k, d));
+   ToFFTRep_trunc(R2, b, k, max(1L << F.k, d));
    mul(R1, R1, R2);
    NDFromFFTRep(P1, R1, n, d-1, R2); // save R1 for future use
    
-   ToFFTRep(R2, P1, F.l);
+   ToFFTRep_trunc(R2, P1, F.l, 2*n-3);
    mul(R2, R2, F.HRep);
    FromFFTRep(P1, R2, n-2, 2*n-4);
 
@@ -3335,11 +3401,11 @@ void SqrMod(ZZ_pX& x, const ZZ_pX& a, const ZZ_pXModulus& F)
    FFTRep R1(INIT_SIZE, k), R2(INIT_SIZE, F.l);
    ZZ_pX P1(INIT_SIZE, n);
 
-   ToFFTRep(R1, a, k);
+   ToFFTRep_trunc(R1, a, k, max(1L << F.k, d));
    mul(R1, R1, R1);
    NDFromFFTRep(P1, R1, n, d-1, R2);  // save R1 for future use
    
-   ToFFTRep(R2, P1, F.l);
+   ToFFTRep_trunc(R2, P1, F.l, 2*n-3);
    mul(R2, R2, F.HRep);
    FromFFTRep(P1, R2, n-2, 2*n-4);
 
@@ -3555,11 +3621,15 @@ void build(ZZ_pXMultiplier& x, const ZZ_pX& b,
    ZZ_pX P1(INIT_SIZE, n);
    
 
-   ToFFTRep(R1, b, F.l);
+   ToFFTRep_trunc(R1, b, F.l, 2*n-2);
    reduce(x.B2, R1, F.k);
    mul(R1, R1, F.HRep);
    FromFFTRep(P1, R1, n-1, 2*n-3); 
+
    ToFFTRep(x.B1, P1, F.l);
+   // could be truncated to length max(1L << F.k, 2*n-2), except
+   // for the usage in UpdateMap, where we would have to investigate
+   // further
 }
 
 
@@ -3590,7 +3660,7 @@ void MulMod(ZZ_pX& x, const ZZ_pX& a, const ZZ_pXMultiplier& B,
    ZZ_pX P1(INIT_SIZE, n), P2(INIT_SIZE, n);
    FFTRep R1(INIT_SIZE, F.l), R2(INIT_SIZE, F.l);
 
-   ToFFTRep(R1, a, F.l);
+   ToFFTRep_trunc(R1, a, F.l, max(1L << F.k, 2*n-2));
    mul(R2, R1, B.B1);
    FromFFTRep(P1, R2, n-1, 2*n-3);
 

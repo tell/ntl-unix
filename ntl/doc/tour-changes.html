@@ -16,6 +16,66 @@ A Tour of NTL: Summary of Changes
 </p>
 </h1>
 
+<p><hr><p>
+<h3>
+2018.06.07: Changes between NTL 11.0.0 and 11.1.0
+</h3>
+
+<ul>
+<li>
+<b>Complete re-write of the low-level "small-prime" FFT (a.k.a., NTT).</b>
+
+<ul>
+<li> This implements a "truncated" FFT, which can speed up
+polynomial multiplication by a factor of two, and which 
+mainly eliminates "jumps" in the running time at powers of two.
+The new FFT routines are in fact a bit faster even at powers of two.
+
+<li> Some low-level interfaces have changed, but these are 
+all <i>undocumented</i>, so should not cause
+any problems for clients that don't inappropriately 
+use such interfaces.
+
+
+<li>
+Here is some timing data comparing the new (truncated) FFT to 
+the old (plain) FFT. <i>x</i>-axis is degree bound, 
+<i>y</i>-axis is time (in seconds), shown on a log/log scale.
+This is the time to multiply two polynomials modulo
+a single-precision "FFT" prime (60 bits).
+
+<p>
+
+<img src="TFT-time.jpg" width="38%" height="38%">
+
+</ul>
+
+<p>
+<li>
+<b>Improved performance of ZZ mul and sqr on small inputs</b>
+<ul>
+<li>mul speedup: 1 limb: 2.5x; 2 limbs: 1.4x; 3 limbs: 1.3x.
+<li>NTL now makes explicit calls to <tt>mpn_sqr</tt> and 
+requires GMP version 5.0 or later.
+</ul>
+
+<p>
+<li>
+<b>Other changes:</b>
+<ul>
+<li>
+Changed header files to make Windows installation more reliable,
+especially for IDE's like Code Blocks
+
+<li>
+Added documentation for the <tt>GCD</tt> routine in the <tt>ZZ</tt> module
+
+<li>
+Fixed a bit of UB in the <tt>lip.h</tt> interface  (<tt>_ntl_gbigint_body</tt>)
+</ul>
+
+</ul>
+
 
 <p><hr><p>
 <h3>

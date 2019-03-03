@@ -572,15 +572,16 @@ class fftRep {
 public:
    long k;                // a 2^k point representation
    long MaxK;             // maximum space allocated
+   long len;              // length of truncated FFT
    long NumPrimes;
    UniqueArray<long> tbl[4];
 
-   fftRep() : k(-1), MaxK(-1), NumPrimes(0) { }
+   fftRep() : k(-1), MaxK(-1), len(0), NumPrimes(0) { }
 
-   fftRep(const fftRep& R) : k(-1), MaxK(-1), NumPrimes(0)
+   fftRep(const fftRep& R) : k(-1), MaxK(-1), len(0), NumPrimes(0)
    { *this = R; }
 
-   fftRep(INIT_SIZE_TYPE, long InitK) : k(-1), MaxK(-1), NumPrimes(0)
+   fftRep(INIT_SIZE_TYPE, long InitK) : k(-1), MaxK(-1), len(0), NumPrimes(0)
    { SetSize(InitK); }
 
    fftRep& operator=(const fftRep&); 
@@ -589,8 +590,18 @@ public:
 };
 
 
-void TofftRep(fftRep& y, const zz_pX& x, long k, long lo, long hi);
+
+
+void TofftRep_trunc(fftRep& y, const zz_pX& x, long k, long len,
+                    long lo, long hi);
+
+inline void TofftRep_trunc(fftRep& y, const zz_pX& x, long k, long len)
+{ TofftRep_trunc(y, x, k, len, 0, deg(x)); }
+
+inline
+void TofftRep(fftRep& y, const zz_pX& x, long k, long lo, long hi)
 // computes an n = 2^k point convolution of x[lo..hi].
+{ TofftRep_trunc(y, x, k, 0, lo, hi); }
 
 inline void TofftRep(fftRep& y, const zz_pX& x, long k)
 

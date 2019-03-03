@@ -36,12 +36,20 @@
 
 #ifdef NTL_GMP_LIP
 #include <gmp.h>
+
+#if (__GNU_MP_VERSION < 5)
+#error "GMP version 5.0.0 or later required"
+#endif 
+
 #endif
 
 NTL_IMPORT_FROM_STD
 NTL_USE_NNS
 
 
+#if (defined(NTL_HAVE_LL_TYPE) && NTL_BITS_PER_LIMB_T == NTL_BITS_PER_LONG)
+#define NTL_VIABLE_LL
+#endif
 
 
 #ifdef NTL_GMP_LIP
@@ -825,6 +833,8 @@ _ntl_mpn_sqr(_ntl_limb_t *c, const _ntl_limb_t *a, long sa)
   _ntl_mpn_base_sqr(c, a, sa);
 }
 
+
+// Like the corresponding GMP routine, this assumes un >= vn >= 1
 _ntl_limb_t
 _ntl_mpn_mul (_ntl_limb_t* rp, const _ntl_limb_t* up, long un, const _ntl_limb_t* vp, long vn)
 {
@@ -988,38 +998,6 @@ _ntl_mpn_tdiv_qr (_ntl_limb_t *q, _ntl_limb_t *r,long  /* qxn */,
 }
 
 
-#else
-
-
-
-#if (__GNU_MP_VERSION < 3)
-
-#error "You have to use GMP version >= 3.1"
-
-#endif
-
-#if ((__GNU_MP_VERSION == 3) && (__GNU_MP_VERSION_MINOR < 1))
-
-#error "You have to use GMP version >= 3.1"
-
-#endif
-
-
-
-/* v 3.1 is supposed  mpn_tdiv_qr defined, but it doesn't.
-   Here's a workaround */
-
-#if ((__GNU_MP_VERSION == 3) && (__GNU_MP_VERSION_MINOR == 1) && (__GNU_MP_VERSION_PATCHLEVEL == 0))
-
-#define mpn_tdiv_qr __MPN(tdiv_qr)
-
-
-extern "C" 
-void mpn_tdiv_qr(mp_ptr, mp_ptr, mp_size_t, mp_srcptr, mp_size_t, 
-                 mp_srcptr, mp_size_t);
-
-#endif
-
 #endif
 
 
@@ -1079,19 +1057,19 @@ void mpn_tdiv_qr(mp_ptr, mp_ptr, mp_size_t, mp_srcptr, mp_size_t,
 
 static
 inline long& ALLOC(_ntl_gbigint p) 
-   { return (((long *) p)[0]); }
+   { return p->alloc_; }
 
 static
 inline long& SIZE(_ntl_gbigint p) 
-   { return (((long *) p)[1]); }
+   { return p->size_; }
 
 static
 inline _ntl_limb_t * DATA(_ntl_gbigint p) 
-   { return ((_ntl_limb_t *) (((long *) (p)) + 2)); }
+   { return (_ntl_limb_t *) (p+1); }
 
 static
 inline long STORAGE(long len)
-   { return ((long)(2*sizeof(long) + (len)*sizeof(_ntl_limb_t))); }
+   { return ((long)(sizeof(_ntl_gbigint_body) + (len)*sizeof(_ntl_limb_t))); }
 
 static
 inline long MustAlloc(_ntl_gbigint c, long len)  
@@ -1178,9 +1156,6 @@ static void DUMP(_ntl_gbigint a)
 
 
 
-#if (defined(NTL_HAVE_LL_TYPE) && NTL_BITS_PER_LIMB_T == NTL_BITS_PER_LONG)
-#define NTL_VIABLE_LL
-#endif
 
 #if (defined(NTL_CRT_ALTCODE) || defined(NTL_CRT_ALTCODE_SMALL))
 
@@ -2669,6 +2644,183 @@ _ntl_gsubpos(_ntl_gbigint a, _ntl_gbigint b, _ntl_gbigint *cc)
    SIZE(c) = sc;
 }
 
+#if 1
+
+// This version is faster for small inputs.
+// It avoids some overheads incurred only when dealing with
+// aliased outputs.
+// It also makes direct calls to lower-level mpn functions
+// for smaller inputs (and for one limb inputs, it avoids
+// function calls altogether (usually)).
+
+// Speedup: 2.5x 1 limb
+//          1.4x 2 limb
+//          1.3x 3 limb
+
+static inline _ntl_limb_t
+base_mul (_ntl_limb_t* rp, const _ntl_limb_t* up, long un, const _ntl_limb_t* vp, long vn)
+{
+  rp[un] = NTL_MPN(mul_1) (rp, up, un, vp[0]);
+
+  while (--vn >= 1)
+    {
+      rp += 1, vp += 1;
+      rp[un] = NTL_MPN(addmul_1) (rp, up, un, vp[0]);
+    }
+  return rp[un];
+}
+
+void _ntl_gmul(_ntl_gbigint a, _ntl_gbigint b, _ntl_gbigint *cc)
+{
+   long sa, aneg, sb, bneg, alias, sc;
+   _ntl_limb_t *adata, *bdata, *cdata, msl;
+   _ntl_gbigint c;
+
+   if (ZEROP(a) || ZEROP(b)) {
+      _ntl_gzero(cc);
+      return;
+   }
+
+   GET_SIZE_NEG(sa, aneg, a);
+   GET_SIZE_NEG(sb, bneg, b);
+
+   if (a != *cc && b != *cc) {
+      // no aliasing
+
+      c = *cc;
+
+      sc = sa + sb;
+      if (MustAlloc(c, sc)) {
+	 _ntl_gsetlength(&c, sc);
+         *cc = c;
+      }
+
+      adata = DATA(a);
+      bdata = DATA(b);
+      cdata = DATA(c);
+
+      if (adata == bdata) {
+#if (1 && defined(NTL_VIABLE_LL) && NTL_NAIL_BITS==0)
+         if (sa == 1) {
+            ll_type prod;
+            ll_mul(prod, adata[0], adata[0]);
+            cdata[0] = ll_get_lo(prod);
+            msl = cdata[1] = ll_get_hi(prod);
+         } else
+#endif
+         {
+            NTL_MPN(sqr)(cdata, adata, sa);
+            msl = cdata[2*sa-1];
+         }
+      }
+      else {
+#if 1
+	 if (sa >= sb) {
+#if (1 && defined(NTL_VIABLE_LL) && NTL_NAIL_BITS==0)
+	    if (sa == 1) {
+	       ll_type prod;
+	       ll_mul(prod, adata[0], bdata[0]);
+	       cdata[0] = ll_get_lo(prod);
+	       msl = cdata[1] = ll_get_hi(prod);
+	    } else
+#endif
+	    if (sa <= 4)
+	       msl = base_mul(cdata, adata, sa, bdata, sb);
+	    else
+	       msl = NTL_MPN(mul)(cdata, adata, sa, bdata, sb);
+	 }
+	 else {
+	    if (sb <= 4)
+	       msl = base_mul(cdata, bdata, sb, adata, sa);
+	    else
+	       msl = NTL_MPN(mul)(cdata, bdata, sb, adata, sa);
+	 }
+#else
+	 if (sa >= sb) {
+	    msl = NTL_MPN(mul)(cdata, adata, sa, bdata, sb);
+	 }
+	 else {
+	    msl = NTL_MPN(mul)(cdata, bdata, sb, adata, sa);
+	 }
+#endif
+      }
+
+      if (!msl) sc--;
+      if (aneg != bneg) sc = -sc;
+      SIZE(c) = sc;
+   }
+   else {
+      // aliasing
+      GRegister(mem);
+
+      c = mem;
+
+      sc = sa + sb;
+      if (MustAlloc(c, sc)) {
+	 _ntl_gsetlength(&c, sc);
+         mem = c;
+      }
+
+      adata = DATA(a);
+      bdata = DATA(b);
+      cdata = DATA(c);
+
+      if (adata == bdata) {
+#if (1 && defined(NTL_VIABLE_LL) && NTL_NAIL_BITS==0)
+         if (sa == 1) {
+            ll_type prod;
+            ll_mul(prod, adata[0], adata[0]);
+            cdata[0] = ll_get_lo(prod);
+            msl = cdata[1] = ll_get_hi(prod);
+         } else
+#endif
+         {
+            NTL_MPN(sqr)(cdata, adata, sa);
+            msl = cdata[2*sa-1];
+         }
+      }
+      else {
+#if 1
+	 if (sa >= sb) {
+#if (1 && defined(NTL_VIABLE_LL) && NTL_NAIL_BITS==0)
+	    if (sa == 1) {
+	       ll_type prod;
+	       ll_mul(prod, adata[0], bdata[0]);
+	       cdata[0] = ll_get_lo(prod);
+	       msl = cdata[1] = ll_get_hi(prod);
+	    } else
+#endif
+	    if (sa <= 4)
+	       msl = base_mul(cdata, adata, sa, bdata, sb);
+	    else
+	       msl = NTL_MPN(mul)(cdata, adata, sa, bdata, sb);
+	 }
+	 else {
+	    if (sb <= 4)
+	       msl = base_mul(cdata, bdata, sb, adata, sa);
+	    else
+	       msl = NTL_MPN(mul)(cdata, bdata, sb, adata, sa);
+	 }
+#else
+	 if (sa >= sb) {
+	    msl = NTL_MPN(mul)(cdata, adata, sa, bdata, sb);
+	 }
+	 else {
+	    msl = NTL_MPN(mul)(cdata, bdata, sb, adata, sa);
+	 }
+#endif
+      }
+
+      if (!msl) sc--;
+      if (aneg != bneg) sc = -sc;
+      SIZE(c) = sc;
+
+      _ntl_gcopy(mem, cc);
+   }
+
+}
+
+#else
 void _ntl_gmul(_ntl_gbigint a, _ntl_gbigint b, _ntl_gbigint *cc)
 {
    GRegister(mem);
@@ -2718,11 +2870,85 @@ void _ntl_gmul(_ntl_gbigint a, _ntl_gbigint b, _ntl_gbigint *cc)
 
    if (alias) _ntl_gcopy(mem, cc);
 }
+#endif
 
 void _ntl_gsq(_ntl_gbigint a, _ntl_gbigint *cc)
 {
-   _ntl_gmul(a, a, cc);
-   /* this is good enough...eventually, mpn_sqr_n will be called */
+   long sa, aneg, alias, sc;
+   _ntl_limb_t *adata, *cdata, msl;
+   _ntl_gbigint c;
+
+   if (ZEROP(a)) {
+      _ntl_gzero(cc);
+      return;
+   }
+
+   GET_SIZE_NEG(sa, aneg, a);
+
+   if (a != *cc) {
+      // no aliasing
+
+      c = *cc;
+
+      sc = sa + sa;
+      if (MustAlloc(c, sc)) {
+	 _ntl_gsetlength(&c, sc);
+         *cc = c;
+      }
+
+      adata = DATA(a);
+      cdata = DATA(c);
+
+#if (1 && defined(NTL_VIABLE_LL) && NTL_NAIL_BITS==0)
+      if (sa == 1) {
+	 ll_type prod;
+	 ll_mul(prod, adata[0], adata[0]);
+	 cdata[0] = ll_get_lo(prod);
+	 msl = cdata[1] = ll_get_hi(prod);
+      } else
+#endif
+      {
+	 NTL_MPN(sqr)(cdata, adata, sa);
+	 msl = cdata[2*sa-1];
+      }
+
+      if (!msl) sc--;
+      SIZE(c) = sc;
+   }
+   else {
+      // aliasing
+      GRegister(mem);
+
+      c = mem;
+
+      sc = sa + sa;
+      if (MustAlloc(c, sc)) {
+	 _ntl_gsetlength(&c, sc);
+         mem = c;
+      }
+
+      adata = DATA(a);
+      cdata = DATA(c);
+
+#if (1 && defined(NTL_VIABLE_LL) && NTL_NAIL_BITS==0)
+      if (sa == 1) {
+	 ll_type prod;
+	 ll_mul(prod, adata[0], adata[0]);
+	 cdata[0] = ll_get_lo(prod);
+	 msl = cdata[1] = ll_get_hi(prod);
+      } else
+#endif
+      {
+	 NTL_MPN(sqr)(cdata, adata, sa);
+	 msl = cdata[2*sa-1];
+      }
+
+      if (!msl) sc--;
+      SIZE(c) = sc;
+
+      _ntl_gcopy(mem, cc);
+   }
+
 }
 
 
@@ -3743,7 +3969,11 @@ _ntl_gexteucl(
       SIZE(d) = sd;
       SIZE(xa) = sxa;
 
-      /* Thes two ForceNormal's are work-arounds for GMP bugs 
+#if 0
+      // since we're now requiring GMP version 5.0.0 or later,
+      // these workarounds are no longer required
+
+      /* These two ForceNormal's are work-arounds for GMP bugs 
          in GMP 4.3.0 */
       ForceNormal(d);
       ForceNormal(xa);
@@ -3788,6 +4018,7 @@ _ntl_gexteucl(
       }
 
       /* end normalize */
+#endif
     
 
       if (aneg) _ntl_gnegate(&xa);
@@ -3859,10 +4090,15 @@ long _ntl_ginv(_ntl_gbigint ain, _ntl_gbigint nin, _ntl_gbigint *invv)
    SIZE(d) = sd;
    SIZE(u) = su;
 
+#if 0
+   // since we're now requiring GMP version 5.0.0 or later,
+   // these workarounds are no longer required
+
    /* Thes two ForceNormal's are work-arounds for GMP bugs 
       in GMP 4.3.0 */
    ForceNormal(d);
    ForceNormal(u);
+#endif
 
    if (ONEP(d)) {
 
@@ -3871,6 +4107,9 @@ long _ntl_ginv(_ntl_gbigint ain, _ntl_gbigint nin, _ntl_gbigint *invv)
        * GMP is sloppy.
        */
 
+#if 0
+      // since we're now requiring GMP version 5.0.0 or later,
+      // these workarounds are no longer required
 
       if (_ntl_gsign(u) < 0) {
          _ntl_gadd(u, nin, &u);
@@ -3884,6 +4123,12 @@ long _ntl_ginv(_ntl_gbigint ain, _ntl_gbigint nin, _ntl_gbigint *invv)
              _ntl_gmod(u, nin, &u);
          }
       }
+#else
+      if (_ntl_gsign(u) < 0) {
+         _ntl_gadd(u, nin, &u);
+      }
+
+#endif
 
       _ntl_gcopy(u, invv);
       return 0;

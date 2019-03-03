@@ -9,9 +9,14 @@
 
 #include <NTL/PackageInfo.h>
 
+#if (defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)))
+#define NTL_GNUC_INTEL
+#endif
 
-#if (!defined(NTL_HAVE_LL_TYPE) && defined(_MSC_VER) && defined(NTL_WINPACK))
-// for the windows distribution, for MSVC++ we assume LL_TYPE works
+#if (!defined(NTL_HAVE_LL_TYPE) && defined(NTL_WINPACK) &&  (defined(_MSC_VER) || defined(NTL_GNUC_INTEL)))
+// for the windows distribution, 
+//   we assume LL_TYPE works for MSVC++ (which is true for both x86 and ARM)
+//   and for GNUC/Intel platforms (e.g., Code Blocks)
 #define NTL_HAVE_LL_TYPE
 #endif
 

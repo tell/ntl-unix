@@ -14,7 +14,11 @@
  * but better for debugging.
  */
 
-struct _ntl_gbigint_body;
+struct _ntl_gbigint_body {
+   long alloc_;
+   long size_;
+};
+
 typedef _ntl_gbigint_body *_ntl_gbigint;
 
 
@@ -143,10 +147,10 @@ long _ntl_gdigit(_ntl_gbigint a, long i);
 // DIRT: These are copied from lip.cpp file
 
 inline long& _ntl_ALLOC(_ntl_gbigint p)
-   { return (((long *) p)[0]); }
+   { return p->alloc_; }
 
 inline long& _ntl_SIZE(_ntl_gbigint p)
-   { return (((long *) p)[1]); }
+   { return p->size_; }
 
 inline long _ntl_ZEROP(_ntl_gbigint p)
 {

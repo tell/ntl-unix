@@ -621,7 +621,7 @@ my ($compiler_name, $language_standard, $cpu_type);
    ($config_info =~ /\((.*?),(.*?),(.*?)\)/) or die "Error: GenConfigInfo failed";
 
 # convert to number
-$language_standard += 0 or die "Error: GenConfigInfo failed";
+$language_standard += 0 or Warning("__cplusplus not correctly defined");
 
 print("compiler_name=$compiler_name\n");
 print("language_standard=$language_standard\n");

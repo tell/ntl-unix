@@ -203,6 +203,8 @@ static long PrimeCnt() { return zz_pInfo->PrimeCnt; }
 
 static long storage() { return sizeof(long); }
 
+static bool IsFFTPrime() { return zz_pInfo->p_info != 0; }
+
 zz_p(long a, INIT_LOOP_HOLE_TYPE) { _zz_p__rep = a; }
 
 // for consistency

@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-<title>~/ntl-10.5.0test/doc/ZZ.cpp.html</title>
+<title>~/ntl-staging/ntl-11.0.0updated/doc/ZZ.cpp.html</title>
 <meta name="Generator" content="Vim/8.0">
 <meta name="plugin-version" content="vim7.4_v2">
 <meta name="syntax" content="cpp">
@@ -294,6 +294,11 @@ ZZ GCD(<span class="Type">const</span> ZZ&amp; a, <span class="Type">const</span
 <span class="Comment">// The implementation may or may not Euclid's algorithm,</span>
 <span class="Comment">// but the coefficients a and t are always computed as if </span>
 <span class="Comment">// it did.</span>
+
+<span class="Comment">// In particular, the following inequalties should hold:</span>
+<span class="Comment">//    |s| &lt;= 1   OR   |s| &lt; |b|/(2*d)</span>
+<span class="Comment">//    |t| &lt;= 1   OR   |t| &lt; |a|/(2*d)</span>
+
 
 
 <span class="Comment">// special-purpose single-precision variants:</span>

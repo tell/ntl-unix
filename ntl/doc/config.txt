@@ -629,7 +629,7 @@ NTL_SPMM_ULL=off
 NTL_FFT_BIGTAB=off
 
 # Precomputed tables are used to store all the roots of unity
-# used in FFT computations.
+# used in FFT computations. 
 
 
 NTL_FFT_LAZYMUL=off

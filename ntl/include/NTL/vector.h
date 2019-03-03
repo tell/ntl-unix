@@ -113,23 +113,9 @@ void default_BlockConstructFromVec(T* p, long n, const T* q)
    guard.relax();
 }  
 
-template<class T>
-void BlockMoveConstructFromVec(T* p, long n, const T* q)  
-{  
-   long i;
-
-   NTL_SCOPE(guard) { default_BlockDestroy(p, i); };
-
-   for (i = 0; i < n; i++)  
-      (void) new(&p[i]) T(q[i]);  
-
-   guard.relax();
-}  
-
 
 template<class T>
 void BlockConstructFromVec(T* p, long n, const T* q) { default_BlockConstructFromVec(p, n, q); }
-
 
 
 
