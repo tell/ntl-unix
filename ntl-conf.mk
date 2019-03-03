@@ -1,7 +1,11 @@
-NTL_DIR = $(ROOT)/ntl
+NTL_ORIGINAL_DIR = $(ROOT)/ntl
+NTL_DIR = $(ROOT)/ntl-build
+define cmd.COPY_SRC
+cp -r $(NTL_ORIGINAL_DIR) $(NTL_DIR)
+endef
+
 NTL_SRC = $(NTL_DIR)/src
 NTL_ALL = $(NTL_SRC)/all
-
 NTL_BUILD_TARGET = $(NTL_ALL)
 
 ifeq (Darwin,$(shell uname -s))

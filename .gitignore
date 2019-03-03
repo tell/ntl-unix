@@ -1,5 +1,3 @@
 *.done
-ntl/**/*.o
-ntl/**/*.a
-ntl/**/*.dSYM/
+ntl-build/
 prefix/

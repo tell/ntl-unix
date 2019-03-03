@@ -19,7 +19,11 @@ check:
 install:
 	$(MAKE) -C $(NTL_SRC) install
 
-config.done:
+copy.done:
+	$(call cmd.COPY_SRC)
+	touch $@
+
+config.done: copy.done
 	$(call cmd.NTL_CONFIG)
 	touch $@
 
