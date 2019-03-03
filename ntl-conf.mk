@@ -34,7 +34,7 @@ ifneq (,$(findstring CYGWIN_NT,$(KERNEL_NAME)))
   $(info Use thread.)
 endif
 
-define cmd.NTL_CHECK.cmd
+define cmd.NTL_CHECK
 $(MAKE) -C $(NTL_SRC) check
 endef
 
