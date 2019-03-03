@@ -12,7 +12,7 @@ env:
 matrix:
   include:
   - os: linux
-    dist: trusty
+    dist: xenial
     compiler: gcc
     env:
     - MY_TARGET_DIST=ubuntu:18.04
