@@ -27,8 +27,8 @@ config.done: copy.done
 	$(call cmd.NTL_CONFIG)
 	touch $@
 
-patch.done:
-	./patch-script.sh
+patch.done: patch.done
+	env NTL_DIR=$(NTL_DIR) ./patch-script.sh
 	touch $@
 
 include ntl-dep.mk
