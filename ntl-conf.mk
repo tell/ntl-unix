@@ -45,3 +45,6 @@ endef
 define cmd.NTL_CLEAN
 $(MAKE) -C $(NTL_SRC) clean; $(RM) $(NTL_ALL)
 endef
+
+$(NTL_SRC)/all:
+	$(MAKE) -C $(NTL_SRC)
