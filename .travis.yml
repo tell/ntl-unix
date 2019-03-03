@@ -30,16 +30,20 @@ before_install:
 install:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "apt update" > /dev/null; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "apt install -y build-essential libgmp-dev" > /dev/null; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install make gnu-sed; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update | head; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install make gnu-sed > /dev/null; fi
 
 before_script:
-- docker exec -ti $MY_NAME bash -c "echo $CC; $CC --version"
-- docker exec -ti $MY_NAME bash -c "echo $CXX; $CXX --version"
+- echo $CC; $CC --version
+- echo $CXX; $CXX --version
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "echo $CC; $CC --version"; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "echo $CXX; $CXX --version"; fi
 
 script:
-- docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT; make" | cat -n | awk '{ print $1 }' | sed -n -e 's/[05]00$/*/p'
-- docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT; make check"
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT; make" | cat -n | awk '{ print $1 }' | sed -n -e 's/[05]00$/*/p'; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT; make check"; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then make fi;
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then make check fi;
 
 # after_failure:
 # - tail -n 1000 make.log
