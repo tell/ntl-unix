@@ -43,9 +43,13 @@ typedef _ntl_gbigint_body *_ntl_gbigint;
 #endif
 
 
+#if (defined(NTL_ENABLE_AVX_FFT) && (NTL_SP_NBITS > 50))
+#undef NTL_SP_NBITS
+#define NTL_SP_NBITS (50)
+#endif
 
 
-#elif (NTL_LONGDOUBLE_OK && !defined(NTL_LEGACY_SP_MULMOD) && !defined(NTL_DISABLE_LONGDOUBLE))
+#elif (NTL_LONGDOUBLE_OK && !defined(NTL_LEGACY_SP_MULMOD) && !defined(NTL_DISABLE_LONGDOUBLE) && !defined(NTL_ENABLE_AVX_FFT))
 
 #define NTL_LONGDOUBLE_SP_MULMOD
 

@@ -40,12 +40,6 @@ union _ntl_AlignedVectorHeader {
 #define NTL_VectorMinAlloc (4)
 #endif
 
-// vectors are always expanded by at least this ratio
-
-#ifndef NTL_VectorExpansionRatio
-#define NTL_VectorExpansionRatio (1.4)
-#endif
-
 // controls initialization during input
 
 #ifndef NTL_VectorInputBlock
@@ -668,7 +662,7 @@ void Vec<T>::AllocateTo(long n)
       NTL_VEC_HEAD(_vec__rep)->fixed = 0;  
    }  
    else if (n > NTL_VEC_HEAD(_vec__rep)->alloc) {  
-      m = max(n, long(NTL_VectorExpansionRatio*NTL_VEC_HEAD(_vec__rep)->alloc));  
+      m = max(n, _ntl_vec_grow(NTL_VEC_HEAD(_vec__rep)->alloc));  
       m = ((m+NTL_VectorMinAlloc-1)/NTL_VectorMinAlloc) * NTL_VectorMinAlloc; 
 
       ReAllocate(m, VecStrategy<NTL_RELOC_TAG>());

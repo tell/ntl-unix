@@ -257,6 +257,14 @@ int main()
    cerr << "NTL_SAFE_VECTORS\n";
 #endif
 
+#ifdef NTL_ENABLE_AVX_FFT
+   cerr << "NTL_ENABLE_AVX_FFT\n";
+#endif
+
+#ifdef NTL_AVOID_AVX512
+   cerr << "NTL_AVOID_AVX512\n";
+#endif
+
 #ifdef NTL_RANGE_CHECK
    cerr << "NTL_RANGE_CHECK\n";
 #endif

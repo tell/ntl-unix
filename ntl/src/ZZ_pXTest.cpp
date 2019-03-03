@@ -14,18 +14,21 @@ void multest()
    for (long iter = 0; iter < ITER; iter++) {
       if (iter % 100 == 0) cerr << ".";
 
-      long da = RandomBnd(5000) + 100;
-      long db = RandomBnd(5000) + 100;
+      long da, db;
+
+      if (RandomBnd(2)) {
+         da = RandomBnd(5000) + 100;
+         db = RandomBnd(5000) + 100;
+      }
+      else {
+         da = RandomBnd(200) + 1;
+         db = RandomBnd(200) + 1;
+      }
 
       ZZ_pX a, b, c1, c2;
 
       random(a, da);
       random(b, db);
-
-      if (deg(a) < 80 || deg(b) < 80) {
-         cerr << "*";
-         continue;
-      }
 
       FFTMul(c1, a, b);
 

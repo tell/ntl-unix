@@ -7,6 +7,7 @@
 #include <NTL/HAVE_PCLMUL.h>
 #include <NTL/HAVE_AVX2.h>
 #include <NTL/HAVE_FMA.h>
+#include <NTL/HAVE_AVX512F.h>
 #include <NTL/HAVE_COPY_TRAITS1.h>
 #include <NTL/HAVE_COPY_TRAITS2.h>
 #include <NTL/HAVE_CHRONO_TIME.h>

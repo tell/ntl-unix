@@ -433,14 +433,22 @@ void PrintTime(NTL_SNS ostream& s, double t);
 // on relative modern versions of gcc, we can 
 // decalare "restricted" pointers in C++
 
+// we also can use __attribute__((always_inline))
+
 
 #define NTL_RESTRICT __restrict
+#define NTL_ALWAYS_INLINE __attribute__((always_inline))
 
 #else
 
 #define NTL_RESTRICT
+#define NTL_ALWAYS_INLINE 
 
 #endif
+
+
+
+
 
 // A very lightly wrapped pointer than does nothing more than provide
 // auto cleanup in a destructor.  Use the UniquePtr class (in SmartPtr.h) 
@@ -810,6 +818,19 @@ ll_add(ll_type& x, unsigned long a)
    );
 }
 
+inline void
+ll_add(ll_type& x, const ll_type& a)
+{
+   __asm__ (
+   "addq %[alo],%[xlo] \n\t"
+   "adcq %[ahi],%[xhi]" :
+   [xhi] "+r" (x.hi), [xlo] "+r" (x.lo) :
+   [ahi] "rm" (a.hi), [alo] "rm" (a.lo) :
+   "cc"
+   );
+}
+
+
 
 
 // NOTE: an optimizing compiler will remove the conditional.
@@ -924,6 +945,13 @@ ll_add(ll_type& x, unsigned long a)
 {
    x += a;
 }
+
+inline void
+ll_add(ll_type& x, const ll_type& a)
+{
+   x += a;
+}
+
 
 // NOTE: shamt must be in the range 0..NTL_BITS_PER_LONG-1
 template<long shamt>

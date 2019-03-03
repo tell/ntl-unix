@@ -1,5 +1,6 @@
 
 #include <NTL/lzz_pX.h>
+#include <NTL/FFT_impl.h>
 
 
 NTL_START_IMPL

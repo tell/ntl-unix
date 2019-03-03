@@ -55,7 +55,7 @@ void WordVector::DoSetLength(long n)
 
    if (frozen) LogicError("Cannot grow this WordVector");
       
-   m = max(n, long(NTL_WordVectorExpansionRatio*max_length));
+   m = max(n, _ntl_vec_grow(max_length));
 
    m = ((m+NTL_WordVectorMinAlloc-1)/NTL_WordVectorMinAlloc)*NTL_WordVectorMinAlloc; 
    _ntl_ulong *p = rep - 2;

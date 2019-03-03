@@ -1,5 +1,6 @@
 #include <NTL/ZZ_pX.h>
 #include <NTL/BasicThreadPool.h>
+#include <NTL/FFT_impl.h>
 
 
 // The mul & sqr routines use routines from ZZX, 

@@ -40,6 +40,12 @@ NTL_STD_CXX11=on     # Build assuming C++11 features
 
 NTL_SAFE_VECTORS=on  # build in "safe vector" mode 
 
+NTL_ENABLE_AVX_FFT=off # implement the small-prime FFT using AVX
+                       # instructions...this is experimental at 
+                       # moment, and may lead to worse performance
+
+NTL_AVOID_AVX512=off # avoid using 512-bit AVX registers
+
 
 ########## Here are more detailed description of these variables.
 
@@ -224,6 +230,30 @@ NTL_SAFE_VECTORS=on  # Build in "safe vector mode"
 # NTL_STD_CXX14 is already set).  See vector documentation file for more
 # details.
 
+
+############ AVX FFT
+
+NTL_ENABLE_AVX_FFT=off # implement the small-prime FFT using AVX
+                       # instructions...this is experimental at 
+                       # moment, and may lead to worse performance
+
+On machines with AVX2/FMA or AVX512, this will implement the small-prime FFT
+using AVX code.  This is still quite experimental, and may lead to worse
+performance.  While the FFT itself can run 2-3 times faster, this comes at the
+cost of (1) restriction to 50-bit primes (so NTL_SP_NBITS will be set to 50
+instead of 60), and (2) the CPU speed may be throttled, slowing down other
+operations.  So far, it seems that the only operations that are faster are
+arithmetic operations in zz_pX, and only for certain choices of modulus.
+Arithmetic operations in ZZ_pX, with large modulus, can run slower with AVX
+than without.
+
+
+########### Avoid 512-bit AVX registers
+
+NTL_AVOID_AVX512=off # avoid using 512-bit AVX registers
+
+Even if available, this will avoid the use of 512-bit AVX registers.  This
+affects both Mat<zz_p> operations, as well as the AVX-based FFT (see above).
 
 
 

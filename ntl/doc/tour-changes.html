@@ -16,6 +16,99 @@ A Tour of NTL: Summary of Changes
 </p>
 </h1>
 
+
+<p><hr><p>
+<h3>
+2018.08.17: Changes between NTL 11.2.1 and 11.3.0
+</h3>
+
+<ul>
+<li>
+<b>Implemented an AVX-based small-prime FFT</b> (which works with
+both AVX2 and AVX512)
+<ul>
+<li>
+This can give a 2-3x speedup for the FFT.
+<li>
+However, it is not enabled by default, because it reduces
+that small-prime size bound from 60 bits to 50 bits,
+and may slow down certain computations.
+<li>
+The reasons for this unfortunate slowdown are that some CRT-based computations
+may slow down because of the smaller prime size, and because
+Intel CPUs may slow themselves down when executing AVX 
+instructions.
+<li>
+To enable this feature, configure with <tt>NTL_ENABLE_AVX_FFT=on</tt>.
+<li>
+Here are some running times on a Skylake Xeon machine
+(<tt>Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz</tt>).
+For various values of <i>n</i>,
+we measure the time to compute <i>a<sup>e</sup>&nbsp;</i>mod<i>&nbsp;f</i>,
+where <i>f</i> is a random monic polynomial of degree <i>n</i>
+over <i>Z<sub>17</sub></i>,
+<i>a</i> is a random polynomial of degree less than <i>n</i>,
+and <i>e=2<sup>n</sup>-1</i>.
+<pre>
+   n           1024    2048    4096    8192   16384
+   non-AVX    0.171   0.741   3.192  14.348  60.812
+   AVX512     0.089   0.372   1.648   7.740  35.588
+</pre>
+</ul>
+
+<p>
+<li>
+<b>Implemented AVX512 instruction sequences</b>
+<ul>
+<li>
+This affects <tt>Mat&lt;zz_p&gt;</tt> arithmetic and the small-prime FFT.
+<li>
+Becuause AVX512 instructions can in certain situations
+lead to slower computations (because of CPU "throttling"),
+this feature can be disabled by configuring with
+<tt>NTL_AVOID_AVX512=on</tt>.
+</ul>
+
+<p>
+<li>
+<b>Performance tuned <tt>GF2EX</tt> arithmetic</b>
+<ul>
+<li>
+Tuned crossovers for various algorithms.
+</ul>
+
+<p>
+<li>
+<b>Implemented asymptotocially fast GCD and XGCD for 
+<tt>GF2EX</tt>, <tt>zz_pEX</tt>, and <tt>ZZ_pEX</tt></b>
+<ul>
+<li>
+Some work may still need to be done to fine tune
+the crossovers, but they should be pretty good as is.
+<li>
+Many thanks to 
+<a href="http://personales.unican.es/taberalf/">Luis Felipe Tabera Alonso</a> for porting the code,
+as well as testing and tuning it.
+</ul>
+
+<p>
+<li>
+<b>Other small changes</b>
+<ul>
+<li>
+Restructured <tt>quad_float</tt> implemenation to isolate better
+the parts that are dependent on correct FP rounding.
+<li>
+Standardized vector growth rate to 1.5 via the function <tt>_ntl_vec_grow</tt>.
+<li>
+Got rid of most uses of <tt>__restrict</tt> in <tt>mat_lzz_p.cpp</tt>,
+some of which were technically UB.
+<li>
+Got rid of some uses of <tt>#warning</tt>, which are not portable.
+</ul>
+
+</ul>
+
 <p><hr><p>
 <h3>
 2018.07.15: Changes between NTL 11.2.0 and 11.2.1

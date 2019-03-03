@@ -134,7 +134,8 @@ long _ntl_IsFinite(double *p)
 /*
  * On machines with wide floating point registers, the routine _ntl_ForceToMem
  * is used to force a floating point double to a memory location.
- *
+ * I've checked with GCC, and even with LTO, this will work.
+ * That said, I wouln't really recommend applying LTO to NTL...
  */
 
 void _ntl_ForceToMem(double *p)
@@ -164,6 +165,8 @@ volatile double _ntl_ldexp_zero = 0.0;
 
 double _ntl_ldexp(double x, long e)
 {
+   if (x == 0.0) return x;
+
    if (e > NTL_MAX_INT)
       return x/_ntl_ldexp_zero;
    else if (e < NTL_MIN_INT)

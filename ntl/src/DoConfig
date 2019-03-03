@@ -78,6 +78,8 @@ system("echo '*** CompilerOutput.log ***' > CompilerOutput.log");
 'NTL_CLEAN_PTR'           => 'on',
 'NTL_SAFE_VECTORS'        => 'on',
 'NTL_RANGE_CHECK'         => 'off',
+'NTL_ENABLE_AVX_FFT'      => 'off',
+'NTL_AVOID_AVX512'        => 'off',
 
 
 'NTL_SPMM_ULL'            => 'off',

@@ -1383,7 +1383,7 @@ void _ntl_gsetlength(_ntl_gbigint *v, long len)
 
       len++;  /* always allocate at least one more than requested */
 
-      oldlen = (long) (oldlen * 1.4); /* always increase by at least 40% */
+      oldlen = _ntl_vec_grow(oldlen);
       if (len < oldlen)
          len = oldlen;
 
@@ -6762,6 +6762,44 @@ void _ntl_crt_struct_tbl::eval(_ntl_gbigint *x, const long *b, _ntl_tmp_vec *gen
          case 3: ll_mul_add(acc, row[3-1], b[3-1]);
          case 2: ll_mul_add(acc, row[2-1], b[2-1]);
          }
+#elif (CRT_ALTCODE_UNROLL)
+         long j = n;
+         for (; j > 16; j -= 16) {
+            ll_mul_add(acc, row[j-1], b[j-1]);
+            ll_mul_add(acc, row[j-2], b[j-2]);
+            ll_mul_add(acc, row[j-3], b[j-3]);
+            ll_mul_add(acc, row[j-4], b[j-4]);
+            ll_mul_add(acc, row[j-5], b[j-5]);
+            ll_mul_add(acc, row[j-6], b[j-6]);
+            ll_mul_add(acc, row[j-7], b[j-7]);
+            ll_mul_add(acc, row[j-8], b[j-8]);
+            ll_mul_add(acc, row[j-9], b[j-9]);
+            ll_mul_add(acc, row[j-10], b[j-10]);
+            ll_mul_add(acc, row[j-11], b[j-11]);
+            ll_mul_add(acc, row[j-12], b[j-12]);
+            ll_mul_add(acc, row[j-13], b[j-13]);
+            ll_mul_add(acc, row[j-14], b[j-14]);
+            ll_mul_add(acc, row[j-15], b[j-15]);
+            ll_mul_add(acc, row[j-16], b[j-16]);
+         }
+         switch (j) {
+         case 16:  ll_mul_add(acc, row[16-1], b[16-1]);
+         case 15:  ll_mul_add(acc, row[15-1], b[15-1]);
+         case 14:  ll_mul_add(acc, row[14-1], b[14-1]);
+         case 13:  ll_mul_add(acc, row[13-1], b[13-1]);
+         case 12:  ll_mul_add(acc, row[12-1], b[12-1]);
+         case 11:  ll_mul_add(acc, row[11-1], b[11-1]);
+         case 10:  ll_mul_add(acc, row[10-1], b[10-1]);
+         case 9:  ll_mul_add(acc, row[9-1], b[9-1]);
+         case 8:  ll_mul_add(acc, row[8-1], b[8-1]);
+         case 7:  ll_mul_add(acc, row[7-1], b[7-1]);
+         case 6:  ll_mul_add(acc, row[6-1], b[6-1]);
+         case 5:  ll_mul_add(acc, row[5-1], b[5-1]);
+         case 4:  ll_mul_add(acc, row[4-1], b[4-1]);
+         case 3:  ll_mul_add(acc, row[3-1], b[3-1]);
+         case 2:  ll_mul_add(acc, row[2-1], b[2-1]);
+         }
+
 #else
          for (j = 1; j < n; j++) 
             ll_mul_add(acc, row[j], b[j]);
@@ -7622,6 +7660,44 @@ void _ntl_rem_struct_tbl::eval(long *x, _ntl_gbigint a,
 
 #if (TBL_UNROLL && NTL_GAP_BITS == 4)
          switch (sa) {
+         case 16:  ll_mul_add(acc, adata[16-1], tp[16-1]);
+         case 15:  ll_mul_add(acc, adata[15-1], tp[15-1]);
+         case 14:  ll_mul_add(acc, adata[14-1], tp[14-1]);
+         case 13:  ll_mul_add(acc, adata[13-1], tp[13-1]);
+         case 12:  ll_mul_add(acc, adata[12-1], tp[12-1]);
+         case 11:  ll_mul_add(acc, adata[11-1], tp[11-1]);
+         case 10:  ll_mul_add(acc, adata[10-1], tp[10-1]);
+         case 9:  ll_mul_add(acc, adata[9-1], tp[9-1]);
+         case 8:  ll_mul_add(acc, adata[8-1], tp[8-1]);
+         case 7:  ll_mul_add(acc, adata[7-1], tp[7-1]);
+         case 6:  ll_mul_add(acc, adata[6-1], tp[6-1]);
+         case 5:  ll_mul_add(acc, adata[5-1], tp[5-1]);
+         case 4:  ll_mul_add(acc, adata[4-1], tp[4-1]);
+         case 3:  ll_mul_add(acc, adata[3-1], tp[3-1]);
+         case 2:  ll_mul_add(acc, adata[2-1], tp[2-1]);
+         }
+
+#elif (TBL_UNROLL)
+         long j = sa;
+         for (; j > 16; j -= 16) {
+            ll_mul_add(acc, adata[j-1], tp[j-1]);
+            ll_mul_add(acc, adata[j-2], tp[j-2]);
+            ll_mul_add(acc, adata[j-3], tp[j-3]);
+            ll_mul_add(acc, adata[j-4], tp[j-4]);
+            ll_mul_add(acc, adata[j-5], tp[j-5]);
+            ll_mul_add(acc, adata[j-6], tp[j-6]);
+            ll_mul_add(acc, adata[j-7], tp[j-7]);
+            ll_mul_add(acc, adata[j-8], tp[j-8]);
+            ll_mul_add(acc, adata[j-9], tp[j-9]);
+            ll_mul_add(acc, adata[j-10], tp[j-10]);
+            ll_mul_add(acc, adata[j-11], tp[j-11]);
+            ll_mul_add(acc, adata[j-12], tp[j-12]);
+            ll_mul_add(acc, adata[j-13], tp[j-13]);
+            ll_mul_add(acc, adata[j-14], tp[j-14]);
+            ll_mul_add(acc, adata[j-15], tp[j-15]);
+            ll_mul_add(acc, adata[j-16], tp[j-16]);
+         }
+         switch (j) {
          case 16:  ll_mul_add(acc, adata[16-1], tp[16-1]);
          case 15:  ll_mul_add(acc, adata[15-1], tp[15-1]);
          case 14:  ll_mul_add(acc, adata[14-1], tp[14-1]);

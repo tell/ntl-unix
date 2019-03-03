@@ -31,6 +31,10 @@
    std::cerr << "NTL_HAVE_FMA\n";
 #endif
 
+#ifdef NTL_HAVE_AVX512F
+   std::cerr << "NTL_HAVE_AVX512F\n";
+#endif
+
 #ifdef NTL_HAVE_COPY_TRAITS1
    std::cerr << "NTL_HAVE_COPY_TRAITS1\n";
 #endif

@@ -509,6 +509,11 @@ char *_ntl_make_aligned(char *p, long align)
 
 #define NTL_AVX_LOCAL_ARRAY(x, type, n) NTL_ALIGNED_LOCAL_ARRAY(NTL_AVX_BYTE_ALIGN, x, type, n)
 
+#define NTL_AVX512_BYTE_ALIGN (64)
+
+#define NTL_AVX512_LOCAL_ARRAY(x, type, n) NTL_ALIGNED_LOCAL_ARRAY(NTL_AVX512_BYTE_ALIGN, x, type, n)
+
+
 #define NTL_DEFAULT_ALIGN (64)
 // this should be big enough to satisfy any SIMD instructions,
 // and it should also be as big as a cache line
@@ -578,6 +583,10 @@ _ntl_bpl_divrem(unsigned long a, long& q, long& r)
 }
 
 
+// vectors are grown by a factor of 1.5
+inline long _ntl_vec_grow(long n)
+{ return n + n/2; }
+
 
 template <class T>
 struct _ntl_is_char_pointer
@@ -605,7 +614,6 @@ template <typename T>
 struct _ntl_enable_if<true, T> {
   typedef T type;
 };
-
 
 
 

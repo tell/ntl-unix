@@ -166,6 +166,18 @@ int main()
    cout << "NTL_SAFE_VECTORS=0\n";
 #endif
 
+#ifdef NTL_ENABLE_AVX_FFT
+   cout << "NTL_ENABLE_AVX_FFT=1\n";
+#else
+   cout << "NTL_ENABLE_AVX_FFT=0\n";
+#endif
+
+#ifdef NTL_AVOID_AVX512
+   cout << "NTL_AVOID_AVX512=1\n";
+#else
+   cout << "NTL_AVOID_AVX512=0\n";
+#endif
+
 #ifdef NTL_RANGE_CHECK
    cout << "NTL_RANGE_CHECK=1\n";
 #else

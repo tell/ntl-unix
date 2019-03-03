@@ -225,6 +225,26 @@ to be defined.  Of course,  to unset a flag, just replace the
 
 #endif
 
+#if 1
+#define NTL_ENABLE_AVX_FFT
+
+/*
+ * This will compile NTL in a way that enables an AVX implemention
+ * of the small-prime FFT.
+ */
+
+#endif
+
+
+#if 0
+#define NTL_AVOID_AVX512
+
+/*
+ * This will compile NTL in a way that avoids 512-bit operations,
+ * even if AVX512 is available.
+ */
+
+#endif
  
 #if 0
 #define NTL_RANGE_CHECK

@@ -1,5 +1,11 @@
 
 #include <NTL/FFT.h>
+#include <NTL/FFT_impl.h>
+
+#ifdef NTL_ENABLE_AVX_FFT
+#include <NTL/SmartPtr.h>
+#include <NTL/pd_FFT.h>
+#endif
 
 
 /********************************************************************
@@ -232,16 +238,9 @@ I've partially implemented this, and have gotten mixed results.
 For smallish FFT's (below k=10 or 11), this code is somewhat slower.
 For larger FFT's (say, k=17), I see a speedup of 3-10%.
 
-* I plan to work on AVX implementations to speed things up.  However,
-this will re-introduce a limit of 50-bits on the moduli, which will slow other
-things down, so this probably won't be the default.
-
-
 
 ********************************************************************/
 
-
-//#define NTL_EXP_FFT
 
 
 #define NTL_FFT_BIGTAB_LIMIT (180)
@@ -283,15 +282,26 @@ public:
 typedef LazyTable<FFTVectorPair, NTL_FFTMaxRoot+1> FFTMultipliers;
 
 
+#ifdef NTL_ENABLE_AVX_FFT
+class pd_FFTVectorPair {
+public:
+   AlignedArray<double> wtab_precomp;
+   AlignedArray<double> wqinvtab_precomp;
+};
+
+typedef LazyTable<pd_FFTVectorPair, NTL_FFTMaxRoot+1> pd_FFTMultipliers;
+#endif
+
+
 
 class FFTMulTabs {
 public:
 
+#ifndef NTL_ENABLE_AVX_FFT
    long bound;
    FFTMultipliers MulTab;
-
-#ifdef NTL_EXP_FFT
-   FFTMultipliers exp_MulTab[2];
+#else
+   pd_FFTMultipliers pd_MulTab[2];
 #endif
 
 };
@@ -1294,7 +1304,6 @@ struct new_mod_t {
 
 
 
-
 // requires size divisible by 8
 static void
 new_fft_layer(umint_t* xp, long blocks, long size,
@@ -2224,7 +2233,7 @@ void new_ifft_short2(umint_t* xp, long yn, long lgN, const new_mod_t& mod)
 
 // HIGH LEVEL ROUTINES
 
-//=========== FFT ===========
+//=========== FFT without tables ===========
 
 
 NTL_TLS_GLOBAL_DECL(Vec<umint_t>, AA_store)
@@ -2312,7 +2321,7 @@ void new_fft_flipped_notab(mint_t* A, const mint_t* a, long k,
 // Both A and a should point to arrays of size 2^k,
 // and should either be the same or not overlap at all.
 // This version is "flipped" -- it uses inverted roots, 
-// multiples by 2^{-k}, and performs no truncations.
+// multiplies by 2^{-k}, and performs no truncations.
 // This version does not use precomputed tables.
 
 {
@@ -2388,174 +2397,7 @@ void new_fft_flipped_notab(mint_t* A, const mint_t* a, long k,
 }
 
 
-
-
-void new_fft(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info, 
-             long yn, long xn)
-
-// Performs a high-level FFT.  Inputs and outputs are in the range [0,q). 
-// xn and yn are as described above in the truncated FFT interface.
-// Both A and a should point to arrays of size 2^k,
-// and should either be the same or not overlap at all.
-
-{
-   if (!info.bigtab || k > info.bigtab->bound) {
-      new_fft_notab(A, a, k, info, yn, xn);
-      return;
-   }
-
-   mint_t q = info.q;
-
-   if (k <= 1) {
-      if (k == 0) {
-	 A[0] = a[0];
-	 return;
-      }
-      if (k == 1) {
-         mint_t A0 = AddMod(a[0], a[1], q);
-         mint_t A1 = SubMod(a[0], a[1], q);
-         A[0] = A0;
-         A[1] = A1;
-	 return;
-      }
-   }
-
-   // assume k > 1
-   const mint_t *root = info.RootTable[0].elts();
-   mulmod_t qinv = info.qinv;
-   const FFTMultipliers& tab = info.bigtab->MulTab;
-
-   if (k >= tab.length()) LazyPrecompFFTMultipliers(k, q, qinv, root, tab);
-
-
-   long n = 1L << k;
-
-
-   const mint_t *wtab[NTL_FFTMaxRoot+1];
-   for (long s = 1; s <= k; s++) wtab[s] = tab[s]->wtab_precomp.elts();
-
-   const mulmod_precon_t *wqinvtab[NTL_FFTMaxRoot+1];
-   for (long s = 1; s <= k; s++) wqinvtab[s] = tab[s]->wqinvtab_precomp.elts();
-
-   new_mod_t mod;
-   mod.q = q;
-   mod.wtab = &wtab[0];
-   mod.wqinvtab = &wqinvtab[0];
-
-
-
-#ifdef NTL_FFT_USEBUF
-   NTL_TLS_GLOBAL_ACCESS(AA_store);
-   AA_store.SetLength(1L << k);
-   umint_t *AA = AA_store.elts();
-
-   for (long i = 0; i < xn; i++) AA[i] = a[i];
-
-   new_fft_short(AA, yn, xn, k, mod);
-
-   for (long i = 0; i < yn; i++) {
-      A[i] = LazyReduce1(AA[i], q);
-   }
-#else
-   umint_t *AA = (umint_t *) A;
-   if (a != A) for (long i = 0; i < xn; i++) AA[i] = a[i];
-
-   new_fft_short(AA, yn, xn, k, mod);
-
-   for (long i = 0; i < yn; i++) {
-      AA[i] = LazyReduce1(AA[i], q);
-   }
-#endif
-
-}
-
-void new_fft_flipped(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info)
-
-// Performs a high-level FFT.  Inputs and outputs are in the range [0,q). 
-// Both A and a should point to arrays of size 2^k,
-// and should either be the same or not overlap at all.
-// This version is "flipped" -- it uses inverted roots, 
-// multiples by 2^{-k}, and performs no truncations.
-
-{
-   if (!info.bigtab || k > info.bigtab->bound) {
-      new_fft_flipped_notab(A, a, k, info);
-      return;
-   }
-
-   mint_t q = info.q;
-
-   if (k <= 1) {
-      if (k == 0) {
-	 A[0] = a[0];
-	 return;
-      }
-      if (k == 1) {
-         mint_t two_inv = info.TwoInvTable[1];
-         mulmod_precon_t two_inv_aux = info.TwoInvPreconTable[1];
-         mint_t A0 = AddMod(a[0], a[1], q);
-         mint_t A1 = SubMod(a[0], a[1], q);
-         A[0] = LazyReduce1(LazyMulModPrecon(A0, two_inv, q, two_inv_aux), q);
-         A[1] = LazyReduce1(LazyMulModPrecon(A1, two_inv, q, two_inv_aux), q);
-	 return;
-      }
-   }
-
-   // assume k > 1
-   const mint_t *root = info.RootTable[0].elts();
-   mulmod_t qinv = info.qinv;
-   const FFTMultipliers& tab = info.bigtab->MulTab;
-
-   if (k >= tab.length()) LazyPrecompFFTMultipliers(k, q, qinv, root, tab);
-
-
-   long n = 1L << k;
-
-
-   const mint_t *wtab[NTL_FFTMaxRoot+1];
-   for (long s = 1; s <= k; s++) wtab[s] = tab[s]->wtab_precomp.elts();
-
-   const mulmod_precon_t *wqinvtab[NTL_FFTMaxRoot+1];
-   for (long s = 1; s <= k; s++) wqinvtab[s] = tab[s]->wqinvtab_precomp.elts();
-
-   new_mod_t mod;
-   mod.q = q;
-   mod.wtab = &wtab[0];
-   mod.wqinvtab = &wqinvtab[0];
-
-   mint_t two_inv = info.TwoInvTable[k];
-   mulmod_precon_t two_inv_aux = info.TwoInvPreconTable[k];
-
-
-#ifdef NTL_FFT_USEBUF
-   NTL_TLS_GLOBAL_ACCESS(AA_store);
-   AA_store.SetLength(1L << k);
-   umint_t *AA = AA_store.elts();
-
-   for (long i = 0; i < n; i++) AA[i] = a[i];
-
-   new_fft_short_flipped(AA, k, mod);
-
-   for (long i = 0; i < n; i++) {
-      umint_t tmp = LazyMulModPrecon(AA[i], two_inv, q, two_inv_aux); 
-      A[i] = LazyReduce1(tmp, q);
-   }
-#else
-   umint_t *AA = (umint_t *) A;
-   if (a != A) for (long i = 0; i < n; i++) AA[i] = a[i];
-
-   new_fft_short_flipped(AA, k, mod);
-
-   for (long i = 0; i < n; i++) {
-      umint_t tmp = LazyMulModPrecon(AA[i], two_inv, q, two_inv_aux); 
-      AA[i] = LazyReduce1(tmp, q);
-   }
-#endif
-}
-
-
-
-//=========== Inverse FFT ===========
+//=========== Inverse FFT without tables  ===========
 
 void new_ifft_notab(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info,
               long yn)
@@ -2564,7 +2406,7 @@ void new_ifft_notab(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info
 // yn==xn are as described above in the truncated FFT interface.
 // Both A and a should point to arrays of size 2^k,
 // and should either be the same or not overlap at all.
-// Multiples by 2^{-k}.
+// Multiplies by 2^{-k}.
 // This version does not use precomputed tables.
 
 {
@@ -2723,6 +2565,177 @@ void new_ifft_flipped_notab(mint_t* A, const mint_t* a, long k,
    }
 #endif
 }
+
+
+#ifndef NTL_ENABLE_AVX_FFT
+
+//================ FFT with tables ==============
+
+
+void new_fft(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info, 
+             long yn, long xn)
+
+// Performs a high-level FFT.  Inputs and outputs are in the range [0,q). 
+// xn and yn are as described above in the truncated FFT interface.
+// Both A and a should point to arrays of size 2^k,
+// and should either be the same or not overlap at all.
+
+{
+   if (!info.bigtab || k > info.bigtab->bound) {
+      new_fft_notab(A, a, k, info, yn, xn);
+      return;
+   }
+
+   mint_t q = info.q;
+
+   if (k <= 1) {
+      if (k == 0) {
+	 A[0] = a[0];
+	 return;
+      }
+      if (k == 1) {
+         mint_t A0 = AddMod(a[0], a[1], q);
+         mint_t A1 = SubMod(a[0], a[1], q);
+         A[0] = A0;
+         A[1] = A1;
+	 return;
+      }
+   }
+
+   // assume k > 1
+   const mint_t *root = info.RootTable[0].elts();
+   mulmod_t qinv = info.qinv;
+   const FFTMultipliers& tab = info.bigtab->MulTab;
+
+   if (k >= tab.length()) LazyPrecompFFTMultipliers(k, q, qinv, root, tab);
+
+
+   long n = 1L << k;
+
+
+   const mint_t *wtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wtab[s] = tab[s]->wtab_precomp.elts();
+
+   const mulmod_precon_t *wqinvtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wqinvtab[s] = tab[s]->wqinvtab_precomp.elts();
+
+   new_mod_t mod;
+   mod.q = q;
+   mod.wtab = &wtab[0];
+   mod.wqinvtab = &wqinvtab[0];
+
+
+
+#ifdef NTL_FFT_USEBUF
+   NTL_TLS_GLOBAL_ACCESS(AA_store);
+   AA_store.SetLength(1L << k);
+   umint_t *AA = AA_store.elts();
+
+   for (long i = 0; i < xn; i++) AA[i] = a[i];
+
+   new_fft_short(AA, yn, xn, k, mod);
+
+   for (long i = 0; i < yn; i++) {
+      A[i] = LazyReduce1(AA[i], q);
+   }
+#else
+   umint_t *AA = (umint_t *) A;
+   if (a != A) for (long i = 0; i < xn; i++) AA[i] = a[i];
+
+   new_fft_short(AA, yn, xn, k, mod);
+
+   for (long i = 0; i < yn; i++) {
+      AA[i] = LazyReduce1(AA[i], q);
+   }
+#endif
+
+}
+
+void new_fft_flipped(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info)
+
+// Performs a high-level FFT.  Inputs and outputs are in the range [0,q). 
+// Both A and a should point to arrays of size 2^k,
+// and should either be the same or not overlap at all.
+// This version is "flipped" -- it uses inverted roots, 
+// multiplies by 2^{-k}, and performs no truncations.
+
+{
+   if (!info.bigtab || k > info.bigtab->bound) {
+      new_fft_flipped_notab(A, a, k, info);
+      return;
+   }
+
+   mint_t q = info.q;
+
+   if (k <= 1) {
+      if (k == 0) {
+	 A[0] = a[0];
+	 return;
+      }
+      if (k == 1) {
+         mint_t two_inv = info.TwoInvTable[1];
+         mulmod_precon_t two_inv_aux = info.TwoInvPreconTable[1];
+         mint_t A0 = AddMod(a[0], a[1], q);
+         mint_t A1 = SubMod(a[0], a[1], q);
+         A[0] = LazyReduce1(LazyMulModPrecon(A0, two_inv, q, two_inv_aux), q);
+         A[1] = LazyReduce1(LazyMulModPrecon(A1, two_inv, q, two_inv_aux), q);
+	 return;
+      }
+   }
+
+   // assume k > 1
+   const mint_t *root = info.RootTable[0].elts();
+   mulmod_t qinv = info.qinv;
+   const FFTMultipliers& tab = info.bigtab->MulTab;
+
+   if (k >= tab.length()) LazyPrecompFFTMultipliers(k, q, qinv, root, tab);
+
+
+   long n = 1L << k;
+
+
+   const mint_t *wtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wtab[s] = tab[s]->wtab_precomp.elts();
+
+   const mulmod_precon_t *wqinvtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wqinvtab[s] = tab[s]->wqinvtab_precomp.elts();
+
+   new_mod_t mod;
+   mod.q = q;
+   mod.wtab = &wtab[0];
+   mod.wqinvtab = &wqinvtab[0];
+
+   mint_t two_inv = info.TwoInvTable[k];
+   mulmod_precon_t two_inv_aux = info.TwoInvPreconTable[k];
+
+
+#ifdef NTL_FFT_USEBUF
+   NTL_TLS_GLOBAL_ACCESS(AA_store);
+   AA_store.SetLength(1L << k);
+   umint_t *AA = AA_store.elts();
+
+   for (long i = 0; i < n; i++) AA[i] = a[i];
+
+   new_fft_short_flipped(AA, k, mod);
+
+   for (long i = 0; i < n; i++) {
+      umint_t tmp = LazyMulModPrecon(AA[i], two_inv, q, two_inv_aux); 
+      A[i] = LazyReduce1(tmp, q);
+   }
+#else
+   umint_t *AA = (umint_t *) A;
+   if (a != A) for (long i = 0; i < n; i++) AA[i] = a[i];
+
+   new_fft_short_flipped(AA, k, mod);
+
+   for (long i = 0; i < n; i++) {
+      umint_t tmp = LazyMulModPrecon(AA[i], two_inv, q, two_inv_aux); 
+      AA[i] = LazyReduce1(tmp, q);
+   }
+#endif
+}
+
+//=======  Inverse FFT with tables ==============
 
 
 void new_ifft(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info, 
@@ -2891,6 +2904,8 @@ void new_ifft_flipped(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& in
 #endif
 }
 
+#endif
+
 //===============================================
 
 void InitFFTPrimeInfo(FFTPrimeInfo& info, long q, long w, long bigtab_index)
@@ -2934,6 +2949,7 @@ void InitFFTPrimeInfo(FFTPrimeInfo& info, long q, long w, long bigtab_index)
    for (j = 0; j <= mr; j++)
       tipt[j] = LazyPrepMulModPrecon(tit[j], q, qinv);
 
+#ifndef NTL_ENABLE_AVX_FFT
    if (bigtab_index != -1) {
       long bound = NTL_FFT_BIGTAB_MAXROOT-bigtab_index/NTL_FFT_BIGTAB_LIMIT;
       if (bound > NTL_FFT_BIGTAB_MINROOT) {
@@ -2941,33 +2957,31 @@ void InitFFTPrimeInfo(FFTPrimeInfo& info, long q, long w, long bigtab_index)
          info.bigtab->bound = bound;
       }
    }
+#else
+   // with the AVX implementation, we unconditionally use tables
+   info.bigtab.make();
+#endif
 }
 
-//==================== experimental stuff ====================
 
-#ifdef NTL_EXP_FFT
+//===================================================================
 
-#define exp_inv_butterfly fwd_butterfly
-#define exp_inv_butterfly0 fwd_butterfly0
+#ifdef NTL_ENABLE_AVX_FFT
 
-#define exp_fwd_butterfly inv_butterfly
-#define exp_fwd_butterfly0 inv_butterfly0
-
-struct exp_new_mod_t {
-   mint_t q;
-   const mint_t *wtab[2];;
-   const mulmod_precon_t *wqinvtab[2];;
-};
-
+static void
+pd_LazyPrepMulModPrecon(double *bninv, const double *b, double n, long len)
+{
+   CSRPush push;
+   pd_LazyPrepMulModPrecon_impl(bninv, b, n, len);
+}
 
 static
-void exp_LazyPrecompFFTMultipliers(long k, mint_t q, 
-   mulmod_t qinv, const mint_t *root, const FFTMultipliers& tab)
+void LazyPrecompFFTMultipliers(long k, mint_t q, mulmod_t qinv, const mint_t *root, const pd_FFTMultipliers& tab)
 {
    if (k < 1) LogicError("LazyPrecompFFTMultipliers: bad input");
 
    do { // NOTE: thread safe lazy init
-      FFTMultipliers::Builder bld(tab, k+1);
+      pd_FFTMultipliers::Builder bld(tab, k+1);
       long amt = bld.amt();
       if (!amt) break;
 
@@ -2976,946 +2990,223 @@ void exp_LazyPrecompFFTMultipliers(long k, mint_t q,
 
 
       for (long s = first; s <= k; s++) {
-         UniquePtr<FFTVectorPair> item;
+         UniquePtr<pd_FFTVectorPair> item;
 
          if (s == 0) {
             bld.move(item); // position 0 not used
             continue;
          }
 
-         if (s == 1) {
-            item.make();
-            item->wtab_precomp.SetLength(1);
-            item->wqinvtab_precomp.SetLength(1);
-            item->wtab_precomp[0] = 1;
-            item->wqinvtab_precomp[0] = LazyPrepMulModPrecon(1, q, qinv);
-            bld.move(item);
-            continue;
-         }
-
          long m = 1L << s;
          long m_half = 1L << (s-1);
-         long m_fourth = 1L << (s-2);
 
          item.make();
          item->wtab_precomp.SetLength(m_half);
          item->wqinvtab_precomp.SetLength(m_half);
 
+         double *wtab = item->wtab_precomp.elts();
+         double *wqinvtab = item->wqinvtab_precomp.elts();
+
          mint_t w = root[s];
-         mulmod_precon_t wqinv = LazyPrepMulModPrecon(w, q, qinv);
+         mulmod_precon_t wqinv = PrepMulModPrecon(w, q, qinv);
 
-         const mint_t *wtab_last = tab[s-1]->wtab_precomp.elts();
-         const mulmod_precon_t *wqinvtab_last = tab[s-1]->wqinvtab_precomp.elts();
-
-         mint_t *wtab = item->wtab_precomp.elts();
-         mulmod_precon_t *wqinvtab = item->wqinvtab_precomp.elts();
-
-         for (long i = 0; i < m_fourth; i++) {
-            wtab[i] = wtab_last[i];
-            wqinvtab[i] = wqinvtab_last[i];
-         } 
-
-         for (long i = 0; i < m_fourth; i++) {
-            mint_t w1 = LazyReduce1(LazyMulModPrecon(wtab[i], w, q, wqinv), q);
-            wtab[i+m_fourth] = w1;
-            wqinvtab[i+m_fourth] = LazyPrepMulModPrecon(w1, q, qinv);
+         mint_t wi = 1;
+         wtab[0] = wi;
+         for (long i = 1; i < m_half; i++) {
+            wi = MulModPrecon(wi, w, q, wqinv);
+            wtab[i] = wi;
          }
+         pd_LazyPrepMulModPrecon(wqinvtab, wtab, q, m_half);
 
          bld.move(item);
       }
    } while (0);
 }
 
-static void
-exp_new_ifft_layer(umint_t* xp, long blocks, long size,
-              const mint_t* NTL_RESTRICT wtab, 
-              const mulmod_precon_t* NTL_RESTRICT wqinvtab, 
-              mint_t q)
+NTL_TLS_GLOBAL_DECL(AlignedArray<double>, pd_AA_store)
+static NTL_CHEAP_THREAD_LOCAL long pd_AA_store_len = 0;
+
+
+#define PD_MIN_K (NTL_LG2_PDSZ+3)
+// k must be at least PD_MIN_K
+
+void new_fft(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info,
+            long yn, long xn)
 {
-  size /= 2;
-
-  for (long i = 0; i < blocks; i++) {
-    umint_t* NTL_RESTRICT xp0 = xp;
-    umint_t* NTL_RESTRICT xp1 = xp + size;
-
-    mint_t w = wtab[i];
-    mulmod_precon_t wqinv = wqinvtab[i];
-
-    for (long j = 0; j < size; j+=4) {
-      exp_inv_butterfly(xp0[j+0], xp1[j+0], w, q, wqinv);
-      exp_inv_butterfly(xp0[j+1], xp1[j+1], w, q, wqinv);
-      exp_inv_butterfly(xp0[j+2], xp1[j+2], w, q, wqinv);
-      exp_inv_butterfly(xp0[j+3], xp1[j+3], w, q, wqinv);
-    }
-
-    xp += 2 * size;
-  }
-}
-
-static void
-exp_new_ifft_layer0(umint_t* xp, long blocks, long size,
-              const mint_t* NTL_RESTRICT wtab, 
-              const mulmod_precon_t* NTL_RESTRICT wqinvtab, 
-              mint_t q)
-{
-  size /= 2;
-
-  {
-    umint_t* NTL_RESTRICT xp0 = xp;
-    umint_t* NTL_RESTRICT xp1 = xp + size;
-
-    for (long j = 0; j < size; j+=4) {
-      exp_inv_butterfly0(xp0[j+0], xp1[j+0], q);
-      exp_inv_butterfly0(xp0[j+1], xp1[j+1], q);
-      exp_inv_butterfly0(xp0[j+2], xp1[j+2], q);
-      exp_inv_butterfly0(xp0[j+3], xp1[j+3], q);
-    }
-
-    xp += 2 * size;
-  }
-
-  for (long i = 1; i < blocks; i++) {
-    umint_t* NTL_RESTRICT xp0 = xp;
-    umint_t* NTL_RESTRICT xp1 = xp + size;
-
-    mint_t w = wtab[i];
-    mulmod_precon_t wqinv = wqinvtab[i];
-
-    for (long j = 0; j < size; j+=4) {
-      exp_inv_butterfly(xp0[j+0], xp1[j+0], w, q, wqinv);
-      exp_inv_butterfly(xp0[j+1], xp1[j+1], w, q, wqinv);
-      exp_inv_butterfly(xp0[j+2], xp1[j+2], w, q, wqinv);
-      exp_inv_butterfly(xp0[j+3], xp1[j+3], w, q, wqinv);
-    }
-
-    xp += 2 * size;
-  }
-}
-
-
-static void
-exp_new_ifft_first_two_layers(umint_t* xp, long blocks, 
-              const mint_t* NTL_RESTRICT wtab0, 
-              const mulmod_precon_t* NTL_RESTRICT wqinvtab0, 
-              const mint_t* NTL_RESTRICT wtab1, 
-              const mulmod_precon_t* NTL_RESTRICT wqinvtab1, 
-              mint_t q)
-{
-   for (long i = 0; i < blocks; i++) {
-       umint_t x0 = xp[0];
-       umint_t x1 = xp[1];
-       umint_t x2 = xp[2];
-       umint_t x3 = xp[3];
-
-       exp_inv_butterfly(x0, x1, wtab0[0], q, wqinvtab0[0]);
-       exp_inv_butterfly(x2, x3, wtab0[1], q, wqinvtab0[1]);
-       exp_inv_butterfly(x0, x2, wtab1[0], q, wqinvtab1[0]);
-       exp_inv_butterfly(x1, x3, wtab1[0], q, wqinvtab1[0]);
-
-       xp[0] = x0;
-       xp[1] = x1;
-       xp[2] = x2;
-       xp[3] = x3;
-
-       xp += 4;
-       wtab0 += 2;
-       wqinvtab0 += 2;
-       wtab1 += 1;
-       wqinvtab1 += 1;
-   }
-}
-
-
-
-
-#define NTL_EXP_NEW_FFT_THRESH (11)
-
-void exp_new_ifft_base(umint_t* xp, long lgN, 
-       const mint_t* wtab, const mulmod_precon_t* wqinvtab, mint_t q) 
-{
-  long N = 1L << lgN;
-
-  for (long j = lgN, size = 2, blocks = N/2; 
-       j > 0; j--, blocks >>= 1, size <<= 1)
-    exp_new_ifft_layer(xp, blocks, size, wtab, wqinvtab, q);
-
-}
-
-void exp_new_ifft_base(umint_t* xp, long lgN, long offset, const exp_new_mod_t& mod)
-{
-  mint_t q = mod.q;
-  const mint_t* wtab = mod.wtab[1];
-  const mulmod_precon_t* wqinvtab = mod.wqinvtab[1];
-
-
-  xp += (offset << lgN);
-
-  if (lgN == 1) {
-    exp_inv_butterfly(xp[0], xp[1], wtab[offset], q, wqinvtab[offset]);
-    return;
-  }
-
-  long N = 1L << lgN;
-
-  exp_new_ifft_first_two_layers(xp, N/4,
-                                    wtab + (offset << (lgN-1)),
-                                    wqinvtab + (offset << (lgN-1)),
-                                    wtab + (offset << (lgN-2)),
-                                    wqinvtab + (offset << (lgN-2)),
-                                    q);
-
-  for (long j = lgN-2, size = 8, blocks = N/8; 
-       j > 0; j--, blocks >>= 1, size <<= 1)
-    exp_new_ifft_layer(xp, blocks, size, wtab + (offset << (j-1)), 
-                      wqinvtab + (offset << (j-1)), q);
-
-}
-
-void exp_new_ifft_base0(umint_t* xp, long lgN, const exp_new_mod_t& mod)
-{
-  mint_t q = mod.q;
-  const mint_t* wtab = mod.wtab[1];
-  const mulmod_precon_t* wqinvtab = mod.wqinvtab[1];
-
-  if (lgN == 1) {
-    exp_inv_butterfly0(xp[0], xp[1], q);
-    return;
-  }
-
-  long N = 1L << lgN;
-
-  exp_new_ifft_first_two_layers(xp, N/4, wtab, wqinvtab, wtab, wqinvtab, q);
-
-  for (long j = lgN-2, size = 8, blocks = N/8; 
-       j > 0; j--, blocks >>= 1, size <<= 1)
-    exp_new_ifft_layer0(xp, blocks, size, wtab, wqinvtab, q);
-
-}
-
-void exp_new_ifft_rec(umint_t* xp, long lgN, long offset, const exp_new_mod_t& mod) 
-{
-
-  if (lgN <= NTL_EXP_NEW_FFT_THRESH) {
-    exp_new_ifft_base(xp, lgN, offset, mod);
-    return;
-  }
-
-  mint_t q = mod.q;
-  const mint_t* wtab = mod.wtab[1];
-  const mulmod_precon_t* wqinvtab = mod.wqinvtab[1];
-
-  long N = 1L << lgN;
-  long size = N/2;
-
-  exp_new_ifft_rec(xp, lgN-1, 2*offset, mod);
-  exp_new_ifft_rec(xp, lgN-1, 2*offset+1, mod);
-
-  mint_t w = wtab[offset];
-  mulmod_precon_t wqinv = wqinvtab[offset];
-
-  umint_t* NTL_RESTRICT xp0 = xp + (offset << lgN);
-  umint_t* NTL_RESTRICT xp1 = xp + (offset << lgN) + size;
-
-  for (long j = 0; j < size; j++) {
-    exp_inv_butterfly(xp0[j+0], xp1[j+0], w, q, wqinv);
-  }
-
-}
-
-void exp_new_ifft_rec1(umint_t* xp, long yn, long lgN, long offset, 
-                       const exp_new_mod_t& mod) 
-{
-  long N = 1L << lgN;
-
-  if (yn == N && lgN <= NTL_EXP_NEW_FFT_THRESH) {
-    exp_new_ifft_base(xp, lgN, offset, mod);
-    return;
-  }
-
-  mint_t q = mod.q;
-
-  mint_t w = mod.wtab[0][offset];
-  mulmod_precon_t wqinv = mod.wqinvtab[0][offset];
-
-  mint_t w1 = mod.wtab[1][offset];
-  mulmod_precon_t w1qinv = mod.wqinvtab[1][offset];
-
-  long half = N/2;
-
-  if (yn <= half) {
-    {
-      umint_t* NTL_RESTRICT xp0 = xp + (offset << lgN);
-      umint_t* NTL_RESTRICT xp1 = xp + (offset << lgN) + half;
-
-      // X := 2*X
-      for (long j = 0; j < yn; j++)
-        xp0[j] = LazyDoubleMod2(xp0[j], q);
-
-      // X := X + w*Y
-      for (long j = yn; j < half; j++) {
-        umint_t t = LazyMulModPrecon(xp1[j], w, q, wqinv);
-        xp0[j] = LazyAddMod2(xp0[j], t, q);
-      }
-    }
-
-    exp_new_ifft_rec1(xp, yn, lgN-1, 2*offset, mod);
-
-    {
-      umint_t* NTL_RESTRICT xp0 = xp + (offset << lgN);
-      umint_t* NTL_RESTRICT xp1 = xp + (offset << lgN) + half;
-
-      // X := X - w*Y
-      for (long j = 0; j < yn; j++) {
-        umint_t t = LazyMulModPrecon(xp1[j], w, q, wqinv);
-        xp0[j] = LazySubMod2(xp0[j], t, q);
-      }
-    }
-  }
-  else {
-
-    exp_new_ifft_rec1(xp, half, lgN-1, 2*offset, mod);
-
-    yn -= half;
-
-    if (yn < half) {
-      umint_t* NTL_RESTRICT xp0 = xp + (offset << lgN);
-      umint_t* NTL_RESTRICT xp1 = xp + (offset << lgN) + half;
-
-      // (X, Y) := (2*X - w*Y, X - w*Y)
-      for (long j = yn; j < half; j++) {
-        umint_t X = xp0[j];
-        umint_t Y = xp1[j];
-        umint_t wY = LazyMulModPrecon(Y, w, q, wqinv);
-        Y = LazySubMod2(X, wY, q);
-        X = LazyAddMod2(X, Y, q);
-        xp0[j] = X;
-        xp1[j] = Y;
-      }
-    }
-
-    exp_new_ifft_rec1(xp, yn, lgN-1, 2*offset + 1, mod);
-
-    {
-      umint_t* NTL_RESTRICT xp0 = xp + (offset << lgN);
-      umint_t* NTL_RESTRICT xp1 = xp + (offset << lgN) + half;
-
-      // (X, Y) := (X + Y, w^{-1}*(X - Y))
-      for (long j = 0; j < yn; j+=4) {
-        exp_inv_butterfly(xp0[j+0], xp1[j+0], w1, q, w1qinv);
-        exp_inv_butterfly(xp0[j+1], xp1[j+1], w1, q, w1qinv);
-        exp_inv_butterfly(xp0[j+2], xp1[j+2], w1, q, w1qinv);
-        exp_inv_butterfly(xp0[j+3], xp1[j+3], w1, q, w1qinv);
-      }
-    }
-  }
-}
-
-void exp_new_ifft_rec0(umint_t* xp, long yn, long lgN, 
-                       const exp_new_mod_t& mod) 
-{
-  long N = 1L << lgN;
-
-  if (yn == N && lgN <= NTL_EXP_NEW_FFT_THRESH) {
-    exp_new_ifft_base0(xp, lgN, mod);
-    return;
-  }
-
-  mint_t q = mod.q;
-
-  long half = N/2;
-
-  if (yn <= half) {
-    {
-      umint_t* NTL_RESTRICT xp0 = xp;
-      umint_t* NTL_RESTRICT xp1 = xp + half;
-
-      // X := 2*X
-      for (long j = 0; j < yn; j++)
-        xp0[j] = LazyDoubleMod2(xp0[j], q);
-    }
-
-    exp_new_ifft_rec0(xp, yn, lgN-1, mod);
-  }
-  else {
-
-    exp_new_ifft_rec0(xp, half, lgN-1, mod);
-
-    yn -= half;
-
-    if (yn < half) {
-      umint_t* NTL_RESTRICT xp0 = xp;
-      umint_t* NTL_RESTRICT xp1 = xp + half;
-
-      // (X, Y) := (2*X, X)
-      for (long j = yn; j < half; j++) {
-        umint_t X = xp0[j];
-        xp0[j] = LazyDoubleMod2(X, q);
-        xp1[j] = X;
-      }
-    }
-
-    exp_new_ifft_rec1(xp, yn, lgN-1, 1, mod);
-
-    {
-      umint_t* NTL_RESTRICT xp0 = xp;
-      umint_t* NTL_RESTRICT xp1 = xp + half;
-
-      // (X, Y) := (X + Y, X - Y)
-      for (long j = 0; j < yn; j+=4) {
-        exp_inv_butterfly0(xp0[j+0], xp1[j+0], q);
-        exp_inv_butterfly0(xp0[j+1], xp1[j+1], q);
-        exp_inv_butterfly0(xp0[j+2], xp1[j+2], q);
-        exp_inv_butterfly0(xp0[j+3], xp1[j+3], q);
-      }
-    }
-  }
-}
-
-
-//=======================
-
-static void
-exp_new_fft_last_two_layers(umint_t* xp, long blocks, 
-              const mint_t* NTL_RESTRICT wtab0, 
-              const mulmod_precon_t* NTL_RESTRICT wqinvtab0, 
-              const mint_t* NTL_RESTRICT wtab1, 
-              const mulmod_precon_t* NTL_RESTRICT wqinvtab1, 
-              mint_t q)
-{
-   for (long i = 0; i < blocks; i++) {
-       umint_t x0 = xp[0];
-       umint_t x1 = xp[1];
-       umint_t x2 = xp[2];
-       umint_t x3 = xp[3];
-
-       exp_fwd_butterfly(x0, x2, wtab1[0], q, wqinvtab1[0]);
-       exp_fwd_butterfly(x1, x3, wtab1[0], q, wqinvtab1[0]);
-       exp_fwd_butterfly(x0, x1, wtab0[0], q, wqinvtab0[0]);
-       exp_fwd_butterfly(x2, x3, wtab0[1], q, wqinvtab0[1]);
-
-       xp[0] = x0;
-       xp[1] = x1;
-       xp[2] = x2;
-       xp[3] = x3;
-
-       xp += 4;
-       wtab0 += 2;
-       wqinvtab0 += 2;
-       wtab1 += 1;
-       wqinvtab1 += 1;
-   }
-}
-
-
-static void
-exp_new_fft_layer(umint_t* xp, long blocks, long size,
-              const mint_t* NTL_RESTRICT wtab, 
-              const mulmod_precon_t* NTL_RESTRICT wqinvtab, 
-              mint_t q)
-{
-  size /= 2;
-
-  for (long i = 0; i < blocks; i++) {
-    umint_t* NTL_RESTRICT xp0 = xp;
-    umint_t* NTL_RESTRICT xp1 = xp + size;
-
-    mint_t w = wtab[i];
-    mulmod_precon_t wqinv = wqinvtab[i];
-
-    for (long j = 0; j < size; j+=4) {
-      exp_fwd_butterfly(xp0[j+0], xp1[j+0], w, q, wqinv);
-      exp_fwd_butterfly(xp0[j+1], xp1[j+1], w, q, wqinv);
-      exp_fwd_butterfly(xp0[j+2], xp1[j+2], w, q, wqinv);
-      exp_fwd_butterfly(xp0[j+3], xp1[j+3], w, q, wqinv);
-    }
-
-    xp += 2 * size;
-  }
-}
-
-
-static void
-exp_new_fft_layer0(umint_t* xp, long blocks, long size,
-              const mint_t* NTL_RESTRICT wtab, 
-              const mulmod_precon_t* NTL_RESTRICT wqinvtab, 
-              mint_t q)
-{
-  size /= 2;
-
-  {
-    umint_t* NTL_RESTRICT xp0 = xp;
-    umint_t* NTL_RESTRICT xp1 = xp + size;
-
-    for (long j = 0; j < size; j+=4) {
-      exp_fwd_butterfly0(xp0[j+0], xp1[j+0], q);
-      exp_fwd_butterfly0(xp0[j+1], xp1[j+1], q);
-      exp_fwd_butterfly0(xp0[j+2], xp1[j+2], q);
-      exp_fwd_butterfly0(xp0[j+3], xp1[j+3], q);
-    }
-
-    xp += 2 * size;
-  }
-
-  for (long i = 1; i < blocks; i++) {
-    umint_t* NTL_RESTRICT xp0 = xp;
-    umint_t* NTL_RESTRICT xp1 = xp + size;
-
-    mint_t w = wtab[i];
-    mulmod_precon_t wqinv = wqinvtab[i];
-
-    for (long j = 0; j < size; j+=4) {
-      exp_fwd_butterfly(xp0[j+0], xp1[j+0], w, q, wqinv);
-      exp_fwd_butterfly(xp0[j+1], xp1[j+1], w, q, wqinv);
-      exp_fwd_butterfly(xp0[j+2], xp1[j+2], w, q, wqinv);
-      exp_fwd_butterfly(xp0[j+3], xp1[j+3], w, q, wqinv);
-    }
-
-    xp += 2 * size;
-  }
-}
-
-
-void exp_new_fft_base(umint_t* xp, long lgN, long offset, const exp_new_mod_t& mod)
-{
-  mint_t q = mod.q;
-  const mint_t* wtab = mod.wtab[0];
-  const mulmod_precon_t* wqinvtab = mod.wqinvtab[0];
-
-
-  xp += (offset << lgN);
-
-  if (lgN == 1) {
-    exp_fwd_butterfly(xp[0], xp[1], wtab[offset], q, wqinvtab[offset]);
-    return;
-  }
-
-  long N = 1L << lgN;
-
-  for (long j = 1, size = N, blocks = 1; 
-       j < lgN-1; j++, blocks <<= 1, size >>= 1)
-    exp_new_fft_layer(xp, blocks, size, wtab + (offset << (j-1)), 
-                      wqinvtab + (offset << (j-1)), q);
-
-  exp_new_fft_last_two_layers(xp, N/4,
-                                    wtab + (offset << (lgN-1)),
-                                    wqinvtab + (offset << (lgN-1)),
-                                    wtab + (offset << (lgN-2)),
-                                    wqinvtab + (offset << (lgN-2)),
-                                    q);
-
-}
-
-
-void exp_new_fft_base0(umint_t* xp, long lgN, const exp_new_mod_t& mod)
-{
-  mint_t q = mod.q;
-  const mint_t* wtab = mod.wtab[0];
-  const mulmod_precon_t* wqinvtab = mod.wqinvtab[0];
-
-  if (lgN == 1) {
-    exp_fwd_butterfly0(xp[0], xp[1], q);
-    return;
-  }
-
-  long N = 1L << lgN;
-
-
-  for (long j = 1, size = N, blocks = 1; 
-       j < lgN-1; j++, blocks <<= 1, size >>= 1)
-    exp_new_fft_layer0(xp, blocks, size, wtab, wqinvtab, q);
-
-  exp_new_fft_last_two_layers(xp, N/4, wtab, wqinvtab, wtab, wqinvtab, q);
-}
-
-static
-void exp_new_fft_rec1(umint_t* xp, long yn, long xn, long lgN, long offset, 
-                   const exp_new_mod_t& mod)
-{
-  long N = 1L << lgN;
-
-  if (yn == N)
-    {
-      if (xn == N && lgN <= NTL_EXP_NEW_FFT_THRESH)
-	{
-	  // no truncation
-	  exp_new_fft_base(xp, lgN, offset, mod);
-	  return;
-	}
-    }
-
-  // divide-and-conquer algorithm
-
-  long half = N >> 1;
-  mint_t q = mod.q;
-  mint_t w = mod.wtab[0][offset];
-  mulmod_precon_t wqinv = mod.wqinvtab[0][offset];
-
-  if (yn <= half)
-    {
-      if (xn <= half)
-	{
-	  exp_new_fft_rec1(xp, yn, xn, lgN-1, 2*offset, mod);
-	}
-      else
-	{
-	  xn -= half;
-
-          {
-            umint_t* NTL_RESTRICT xp0 = xp + (offset << lgN);
-            umint_t* NTL_RESTRICT xp1 = xp + (offset << lgN) + half;
-
-            // X := X + w*Y
-            for (long j = 0; j < xn; j++) {
-              umint_t X = LazyReduce1(xp0[j], q);
-              umint_t Y = xp1[j];
-              umint_t wY = LazyMulModPrecon(Y, w, q, wqinv);
-              xp0[j] = LazyAddMod(X, wY, q);
-            }
-          }
-
-	  exp_new_fft_rec1(xp, yn, half, lgN-1, 2*offset, mod);
-	}
-    }
-  else
-    {
-      yn -= half;
-      
-      if (xn <= half)
-	{
-
-          {
-            umint_t* NTL_RESTRICT xp0 = xp + (offset << lgN);
-            umint_t* NTL_RESTRICT xp1 = xp + (offset << lgN) + half;
-
-            // (X, Y) := (X, X)
-            for (long j = 0; j < xn; j++)
-              xp1[j] = xp0[j];
-          }
-
-	  exp_new_fft_rec1(xp, half, xn, lgN-1, 2*offset, mod);
-	  exp_new_fft_rec1(xp, yn, xn, lgN-1, 2*offset+1, mod);
-	}
-      else
-	{
-	  xn -= half;
-
-          {
-            umint_t* NTL_RESTRICT xp0 = xp + (offset << lgN);
-            umint_t* NTL_RESTRICT xp1 = xp + (offset << lgN) + half;
-
-            // (X, Y) := (X + wY, X-wY)
-            exp_fwd_butterfly(xp0[0], xp1[0], w, q, wqinv);
-            exp_fwd_butterfly(xp0[1], xp1[1], w, q, wqinv);
-            exp_fwd_butterfly(xp0[2], xp1[2], w, q, wqinv);
-            exp_fwd_butterfly(xp0[3], xp1[3], w, q, wqinv);
-	    for (long j = 4; j < xn; j+=4) {
-              exp_fwd_butterfly(xp0[j+0], xp1[j+0], w, q, wqinv);
-              exp_fwd_butterfly(xp0[j+1], xp1[j+1], w, q, wqinv);
-              exp_fwd_butterfly(xp0[j+2], xp1[j+2], w, q, wqinv);
-              exp_fwd_butterfly(xp0[j+3], xp1[j+3], w, q, wqinv);
-            }
-
-            // (X, Y) := X
-            for (long j = xn; j < half; j++)
-              xp1[j] = xp0[j];
-          }
-
-	  exp_new_fft_rec1(xp, half, half, lgN-1, 2*offset, mod);
-	  exp_new_fft_rec1(xp, yn, half, lgN-1, 2*offset+1, mod);
-	}
-    }
-}
-
-static
-void exp_new_fft_rec0(umint_t* xp, long yn, long xn, long lgN, 
-                   const exp_new_mod_t& mod)
-{
-  long N = 1L << lgN;
-
-  if (yn == N)
-    {
-      if (xn == N && lgN <= NTL_EXP_NEW_FFT_THRESH)
-	{
-	  // no truncation
-	  exp_new_fft_base0(xp, lgN, mod);
-	  return;
-	}
-    }
-
-  // divide-and-conquer algorithm
-
-  long half = N >> 1;
-  mint_t q = mod.q;
-
-  if (yn <= half)
-    {
-      if (xn <= half)
-	{
-	  exp_new_fft_rec0(xp, yn, xn, lgN-1, mod);
-	}
-      else
-	{
-	  xn -= half;
-
-          {
-            umint_t* NTL_RESTRICT xp0 = xp;
-            umint_t* NTL_RESTRICT xp1 = xp + half;
-
-            // X := X + Y
-            for (long j = 0; j < xn; j++) {
-              xp0[j] = LazyAddMod4(xp0[j], xp1[j], q);
-            }
-          }
-
-	  exp_new_fft_rec0(xp, yn, half, lgN-1, mod);
-	}
-    }
-  else
-    {
-      yn -= half;
-      
-      if (xn <= half)
-	{
-
-          {
-            umint_t* NTL_RESTRICT xp0 = xp;
-            umint_t* NTL_RESTRICT xp1 = xp + half;
-
-            // (X, Y) := (X, X)
-            for (long j = 0; j < xn; j++)
-              xp1[j] = xp0[j];
-          }
-
-	  exp_new_fft_rec0(xp, half, xn, lgN-1, mod);
-	  exp_new_fft_rec1(xp, yn, xn, lgN-1, 1, mod);
-	}
-      else
-	{
-	  xn -= half;
-
-          {
-            umint_t* NTL_RESTRICT xp0 = xp;
-            umint_t* NTL_RESTRICT xp1 = xp + half;
-
-            // (X, Y) := (X + Y, X - Y)
-            exp_fwd_butterfly0(xp0[0], xp1[0], q);
-            exp_fwd_butterfly0(xp0[1], xp1[1], q);
-            exp_fwd_butterfly0(xp0[2], xp1[2], q);
-            exp_fwd_butterfly0(xp0[3], xp1[3], q);
-	    for (long j = 4; j < xn; j+=4) {
-              exp_fwd_butterfly0(xp0[j+0], xp1[j+0], q);
-              exp_fwd_butterfly0(xp0[j+1], xp1[j+1], q);
-              exp_fwd_butterfly0(xp0[j+2], xp1[j+2], q);
-              exp_fwd_butterfly0(xp0[j+3], xp1[j+3], q);
-            }
-
-            // (X, Y) := X
-            for (long j = xn; j < half; j++)
-              xp1[j] = xp0[j];
-          }
-
-	  exp_new_fft_rec0(xp, half, half, lgN-1, mod);
-	  exp_new_fft_rec1(xp, yn, half, lgN-1, 1, mod);
-	}
-    }
-}
-
-
-
-//=======================
-
-
-
-
-
-void exp_new_ifft(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info, 
-              long yn)
-
-// Performs a high-level IFFT.  Inputs and outputs are in the range [0,q). 
-// yn==xn are as described above in the truncated FFT interface.
-// Both A and a should point to arrays of size 2^k,
-// and should either be the same or not overlap at all.
-// Multiples by 2^{-k}.
-
-{
-// FIXME
-#if 0
-   if (!info.bigtab || k > info.bigtab->bound) {
-      new_ifft_notab(A, a, k, info, yn);
+   if (k < PD_MIN_K) {
+      new_fft_notab(A, a, k, info, yn, xn);
       return;
    }
-#endif
+
+   long dir = 0;
 
    mint_t q = info.q;
-
-   if (k <= 1) {
-      if (k == 0) {
-	 A[0] = a[0];
-	 return;
-      }
-      if (k == 1) {
-         mint_t two_inv = info.TwoInvTable[1];
-         mulmod_precon_t two_inv_aux = info.TwoInvPreconTable[1];
-         mint_t A0 = AddMod(a[0], a[1], q);
-         mint_t A1 = SubMod(a[0], a[1], q);
-         A[0] = LazyReduce1(LazyMulModPrecon(A0, two_inv, q, two_inv_aux), q);
-         A[1] = LazyReduce1(LazyMulModPrecon(A1, two_inv, q, two_inv_aux), q);
-	 return;
-      }
-   }
-
-   // assume k > 1
-   const mint_t *root0 = info.RootTable[0].elts();
-   const mint_t *root1 = info.RootTable[1].elts();
+   const mint_t *root = info.RootTable[dir].elts();
    mulmod_t qinv = info.qinv;
-   const FFTMultipliers& tab0 = info.bigtab->exp_MulTab[0];
-   const FFTMultipliers& tab1 = info.bigtab->exp_MulTab[1];
+   const pd_FFTMultipliers& tab = info.bigtab->pd_MulTab[dir];
 
-   long maxk0 = tab0.length()-1;
-   if (k > maxk0) {
-      exp_LazyPrecompFFTMultipliers(k, q, qinv, root0, tab0);
-      maxk0 = tab0.length()-1;
-   }
+   if (k >= tab.length()) LazyPrecompFFTMultipliers(k, q, qinv, root, tab);
 
-   long maxk1 = tab1.length()-1;
-   if (k > maxk1) {
-      exp_LazyPrecompFFTMultipliers(k, q, qinv, root1, tab1);
-      maxk1 = tab1.length()-1;
-   }
+   const double *wtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wtab[s] = tab[s]->wtab_precomp.elts();
 
+   const double *wqinvtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wqinvtab[s] = tab[s]->wqinvtab_precomp.elts();
+
+   pd_mod_t mod;
+   mod.q = q;
+   mod.wtab = &wtab[0];
+   mod.wqinvtab = &wqinvtab[0];
 
    long n = 1L << k;
 
+   NTL_TLS_GLOBAL_ACCESS(pd_AA_store);
+   if (pd_AA_store_len < n) pd_AA_store.SetLength(n);
+   double *AA = pd_AA_store.elts();
 
-   exp_new_mod_t mod;
-   mod.q = q;
-   mod.wtab[0] = tab0[maxk0]->wtab_precomp.elts();
-   mod.wqinvtab[0] = tab0[maxk0]->wqinvtab_precomp.elts();
-   mod.wtab[1] = tab1[maxk1]->wtab_precomp.elts();
-   mod.wqinvtab[1] = tab1[maxk1]->wqinvtab_precomp.elts();
-
-   mint_t two_inv = info.TwoInvTable[k];
-   mulmod_precon_t two_inv_aux = info.TwoInvPreconTable[k];
-
-#ifdef NTL_FFT_USEBUF
-   NTL_TLS_GLOBAL_ACCESS(AA_store);
-   AA_store.SetLength(1L << k);
-   umint_t *AA = AA_store.elts();
-
-   for (long i = 0; i < yn; i++) AA[i] = a[i];
-
-   exp_new_ifft_rec0(AA, yn, k, mod);
-
-   for (long i = 0; i < yn; i++) {
-      umint_t tmp = LazyMulModPrecon(AA[i], two_inv, q, two_inv_aux); 
-      A[i] = LazyReduce1(tmp, q);
-   }
-#else
-   umint_t *AA = (umint_t *) A;
-   if (a != A) for (long i = 0; i < yn; i++) AA[i] = a[i];
-
-   exp_new_ifft_rec0(AA, yn, k, mod);
-
-   for (long i = 0; i < yn; i++) {
-      umint_t tmp = LazyMulModPrecon(AA[i], two_inv, q, two_inv_aux); 
-      AA[i] = LazyReduce1(tmp, q);
-   }
-#endif
+   CSRPush push;
+   pd_fft_trunc_impl(A, a, AA, k, mod, yn, xn);
 }
 
 
-void exp_new_fft(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info, 
-              long yn, long xn)
 
-// Performs a high-level FFT.  Inputs and outputs are in the range [0,q). 
-// xn and yn are as described above in the truncated FFT interface.
-// Both A and a should point to arrays of size 2^k,
-// and should either be the same or not overlap at all.
-
+void new_fft_flipped(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info)
 {
-// FIXME
-#if 0
-   if (!info.bigtab || k > info.bigtab->bound) {
-      new_ifft_notab(A, a, k, info, yn);
+   if (k < PD_MIN_K) {
+      new_fft_flipped_notab(A, a, k, info);
       return;
    }
-#endif
+
+   long dir = 1;
 
    mint_t q = info.q;
-
-   if (k <= 1) {
-      if (k == 0) {
-	 A[0] = a[0];
-	 return;
-      }
-      if (k == 1) {
-         mint_t A0 = AddMod(a[0], a[1], q);
-         mint_t A1 = SubMod(a[0], a[1], q);
-         A[0] = A0;
-         A[1] = A1;
-	 return;
-      }
-   }
-
-   // assume k > 1
-   const mint_t *root0 = info.RootTable[0].elts();
-   const mint_t *root1 = info.RootTable[1].elts();
+   const mint_t *root = info.RootTable[dir].elts();
    mulmod_t qinv = info.qinv;
-   const FFTMultipliers& tab0 = info.bigtab->exp_MulTab[0];
-   const FFTMultipliers& tab1 = info.bigtab->exp_MulTab[1];
+   const pd_FFTMultipliers& tab = info.bigtab->pd_MulTab[dir];
 
-   long maxk0 = tab0.length()-1;
-   if (k > maxk0) {
-      exp_LazyPrecompFFTMultipliers(k, q, qinv, root0, tab0);
-      maxk0 = tab0.length()-1;
-   }
+   if (k >= tab.length()) LazyPrecompFFTMultipliers(k, q, qinv, root, tab);
 
-   long maxk1 = tab1.length()-1;
-   if (k > maxk1) {
-      exp_LazyPrecompFFTMultipliers(k, q, qinv, root1, tab1);
-      maxk1 = tab1.length()-1;
-   }
+   const double *wtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wtab[s] = tab[s]->wtab_precomp.elts();
 
+   const double *wqinvtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wqinvtab[s] = tab[s]->wqinvtab_precomp.elts();
+
+   pd_mod_t mod;
+   mod.q = q;
+   mod.wtab = &wtab[0];
+   mod.wqinvtab = &wqinvtab[0];
 
    long n = 1L << k;
 
+   NTL_TLS_GLOBAL_ACCESS(pd_AA_store);
+   if (pd_AA_store_len < n) pd_AA_store.SetLength(n);
+   double *AA = pd_AA_store.elts();
 
-   exp_new_mod_t mod;
+   CSRPush push;
+   pd_fft_trunc_impl(A, a, AA, k, mod, n, n, info.TwoInvTable[k]);
+}
+
+
+void new_ifft(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info,
+            long yn)
+{
+   if (k < PD_MIN_K) {
+      new_ifft_notab(A, a, k, info, yn);
+      return;
+   }
+
+   long dir = 0;
+
+   mint_t q = info.q;
+   const mint_t *root = info.RootTable[1-dir].elts();
+   const mint_t *root1 = info.RootTable[dir].elts();
+   mulmod_t qinv = info.qinv;
+   const pd_FFTMultipliers& tab = info.bigtab->pd_MulTab[1-dir];
+   const pd_FFTMultipliers& tab1 = info.bigtab->pd_MulTab[dir];
+
+   if (k >= tab.length()) LazyPrecompFFTMultipliers(k, q, qinv, root, tab);
+   if (k >= tab1.length()) LazyPrecompFFTMultipliers(k, q, qinv, root1, tab1);
+
+   const double *wtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wtab[s] = tab[s]->wtab_precomp.elts();
+
+   const double *wqinvtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wqinvtab[s] = tab[s]->wqinvtab_precomp.elts();
+
+   const double *wtab1[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wtab1[s] = tab1[s]->wtab_precomp.elts();
+
+   const double *wqinvtab1[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wqinvtab1[s] = tab1[s]->wqinvtab_precomp.elts();
+
+   pd_mod_t mod;
    mod.q = q;
-   mod.wtab[0] = tab0[maxk0]->wtab_precomp.elts();
-   mod.wqinvtab[0] = tab0[maxk0]->wqinvtab_precomp.elts();
-   mod.wtab[1] = tab1[maxk1]->wtab_precomp.elts();
-   mod.wqinvtab[1] = tab1[maxk1]->wqinvtab_precomp.elts();
+   mod.wtab = &wtab[0];
+   mod.wqinvtab = &wqinvtab[0];
+   mod.wtab1 = &wtab1[0];
+   mod.wqinvtab1 = &wqinvtab1[0];
+
+   long n = 1L << k;
+
+   NTL_TLS_GLOBAL_ACCESS(pd_AA_store);
+   if (pd_AA_store_len < n) pd_AA_store.SetLength(n);
+   double *AA = pd_AA_store.elts();
+
+   CSRPush push;
+   pd_ifft_trunc_impl(A, a, AA, k, mod, yn, info.TwoInvTable[k]);
+}
 
 
-#ifdef NTL_FFT_USEBUF
-   NTL_TLS_GLOBAL_ACCESS(AA_store);
-   AA_store.SetLength(1L << k);
-   umint_t *AA = AA_store.elts();
-
-   for (long i = 0; i < xn; i++) AA[i] = a[i];
-
-   exp_new_fft_rec0(AA, yn, xn, k, mod);
-
-   for (long i = 0; i < yn; i++) {
-      umint_t tmp = LazyReduce2(AA[i], q);
-      A[i] = LazyReduce1(tmp, q);
+void new_ifft_flipped(mint_t* A, const mint_t* a, long k, const FFTPrimeInfo& info)
+{
+   if (k < PD_MIN_K) {
+      new_ifft_flipped_notab(A, a, k, info);
+      return;
    }
-#else
-   umint_t *AA = (umint_t *) A;
-   if (a != A) for (long i = 0; i < xn; i++) AA[i] = a[i];
 
-   exp_new_fft_rec0(AA, yn, xn, k, mod);
+   long dir = 1;
 
-   for (long i = 0; i < yn; i++) {
-      umint_t tmp = LazyReduce2(AA[i], q);
-      AA[i] = LazyReduce1(tmp, q);
-   }
-#endif
+   mint_t q = info.q;
+   const mint_t *root = info.RootTable[1-dir].elts();
+   const mint_t *root1 = info.RootTable[dir].elts();
+   mulmod_t qinv = info.qinv;
+   const pd_FFTMultipliers& tab = info.bigtab->pd_MulTab[1-dir];
+   const pd_FFTMultipliers& tab1 = info.bigtab->pd_MulTab[dir];
+
+   if (k >= tab.length()) LazyPrecompFFTMultipliers(k, q, qinv, root, tab);
+   if (k >= tab1.length()) LazyPrecompFFTMultipliers(k, q, qinv, root1, tab1);
+
+   const double *wtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wtab[s] = tab[s]->wtab_precomp.elts();
+
+   const double *wqinvtab[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wqinvtab[s] = tab[s]->wqinvtab_precomp.elts();
+
+   const double *wtab1[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wtab1[s] = tab1[s]->wtab_precomp.elts();
+
+   const double *wqinvtab1[NTL_FFTMaxRoot+1];
+   for (long s = 1; s <= k; s++) wqinvtab1[s] = tab1[s]->wqinvtab_precomp.elts();
+
+   pd_mod_t mod;
+   mod.q = q;
+   mod.wtab = &wtab[0];
+   mod.wqinvtab = &wqinvtab[0];
+   mod.wtab1 = &wtab1[0];
+   mod.wqinvtab1 = &wqinvtab1[0];
+
+   long n = 1L << k;
+
+   NTL_TLS_GLOBAL_ACCESS(pd_AA_store);
+   if (pd_AA_store_len < n) pd_AA_store.SetLength(n);
+   double *AA = pd_AA_store.elts();
+
+   CSRPush push;
+   pd_ifft_trunc_impl(A, a, AA, k, mod, n);
 }
 
 #endif
-
 
 
 NTL_END_IMPL

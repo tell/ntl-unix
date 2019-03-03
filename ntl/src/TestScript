@@ -103,6 +103,14 @@ sh RemoveProg GF2EXTest
 
 echo
 echo "---------------------------------"
+echo "making GF2EXGCDTest"
+$MAKE_PROG GF2EXGCDTest
+echo "running GF2EXGCDTest"
+./GF2EXGCDTest
+sh RemoveProg GF2EXGCDTest
+
+echo
+echo "---------------------------------"
 echo "making MatrixTest"
 $MAKE_PROG MatrixTest
 echo "running MatrixTest"
@@ -214,6 +222,15 @@ echo "running ZZ_pEXTest"
 ./ZZ_pEXTest 
 sh RemoveProg ZZ_pEXTest
 
+echo
+echo "---------------------------------"
+echo "making ZZ_pEXGCDTest"
+$MAKE_PROG ZZ_pEXGCDTest
+echo "running ZZ_pEXGCDTest"
+./ZZ_pEXGCDTest 
+sh RemoveProg ZZ_pEXGCDTest
+
+
 
 echo
 echo "---------------------------------"
@@ -222,6 +239,15 @@ $MAKE_PROG lzz_pEXTest
 echo "running lzz_pEXTest"
 ./lzz_pEXTest 
 sh RemoveProg lzz_pEXTest
+
+
+echo
+echo "---------------------------------"
+echo "making lzz_pEXGCDTest"
+$MAKE_PROG lzz_pEXGCDTest
+echo "running lzz_pEXGCDTest"
+./lzz_pEXGCDTest 
+sh RemoveProg lzz_pEXGCDTest
 
 
 echo

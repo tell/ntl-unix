@@ -32,7 +32,6 @@ void ResourceError(const char *msg) { TerminalError(msg); }
 
 #if (defined(NTL_THREADS) && defined(NTL_TLS_HACK)) 
 
-#warning "TLS_HACK=on"
 
 namespace details_pthread {
 

@@ -1930,7 +1930,7 @@ old_RandomStream::old_RandomStream(const unsigned char *key)
 }
 
 
-void old_RandomStream::do_get(unsigned char *NTL_RESTRICT res, long n)
+void old_RandomStream::do_get(unsigned char *res, long n)
 {
    if (n < 0) LogicError("RandomStream::get: bad args");
 
