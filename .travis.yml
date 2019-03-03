@@ -27,13 +27,8 @@ before_install:
 - ./travis-ci/before_install_$TRAVIS_OS_NAME.bash
 install:
 - ./travis-ci/install_$TRAVIS_OS_NAME.bash
-
 before_script:
-- echo $CC; $CC --version
-- echo $CXX; $CXX --version
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "echo $CC; $CC --version"; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "echo $CXX; $CXX --version"; fi
-
+- ./travis-ci/before_script_$TRAVIS_OS_NAME.bash
 script:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT; make" | cat -n | awk '{ print $1 }' | sed -n -e 's/[05]00$/*/p'; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT; make check"; fi
