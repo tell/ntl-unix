@@ -16,23 +16,28 @@ matrix:
     compiler: gcc
     env:
     - MY_TARGET_DIST=ubuntu:18.04
+#   - os: osx
+#     osx_image: xcode10.1
+#     compiler: clang
+#     env:
+#     - MY_CXX=clang++
 
 before_install:
+- export CXX=$MY_CXX
 - docker pull $MY_TARGET_DIST
 - docker run --name $MY_NAME -v $TRAVIS_BUILD_DIR:$MY_TARGET_MOUNT -td $MY_TARGET_DIST /bin/bash
 
 install:
-- docker exec -ti $MY_NAME bash -c "apt update" > /dev/null
-- docker exec -ti $MY_NAME bash -c "apt install -y build-essential" > /dev/null
-- docker exec -ti $MY_NAME bash -c "apt install -y libgmp-dev" > /dev/null
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "apt update" > /dev/null; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "apt install -y build-essential libgmp-dev" > /dev/null; fi
 
 before_script:
-- docker exec -ti $MY_NAME bash -c "$CC --version"
-- docker exec -ti $MY_NAME bash -c "$CXX --version"
+- docker exec -ti $MY_NAME bash -c "echo $CC; $CC --version"
+- docker exec -ti $MY_NAME bash -c "echo $CXX; $CXX --version"
 
 script:
-- docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT ; make" | cat -n | awk '{ print $1 }' | sed -n -e 's/[05]00$/*/p'
-- docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT ; make check"
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT; make" | cat -n | awk '{ print $1 }' | sed -n -e 's/[05]00$/*/p'; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT; make check"; fi
 
 # after_failure:
 # - tail -n 1000 make.log
