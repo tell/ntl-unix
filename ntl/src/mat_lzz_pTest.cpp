@@ -18,16 +18,31 @@ void FillRandom1(Mat<zz_p>& A)
 {
    long n = A.NumRows();
    long m = A.NumCols();
-   for (long j = 0; j < m; j++) {
-      if (j > 0 && RandomBnd(2)) {
-	 for (long i = 0; i < n; i++)
-            A[i][j] = A[i][j-1];
-      }
-      else {
-	 for (long i = 0; i < n; i++)
-	    random(A[i][j]);
-      }
+
+   long r;
+   long choice = RandomBnd(5);
+   
+   if (choice == 0 || n == 0) {
+      r = 0;
    }
+   else if (choice == 1) {
+      r = min(n, 1+RandomBnd(10));
+   }
+   else {
+      r = 1+RandomBnd(n);
+   }
+
+   Mat<zz_p> B, C;
+
+   B.SetDims(n, n);
+   FillRandom(B);
+
+   C.SetDims(n, m);
+   for (long i = 0; i < r; i++)
+      for (long j = 0; j < m; j++)
+         random(C[i][j]);
+
+   mul(A, B, C);
 }
 
 void FillRandom(Vec<zz_p>& A)
@@ -123,7 +138,7 @@ int main(int argc, char **argv)
    SetSeed(seed);
    cerr << "\nseed=" << seed << "\n";
 
-   long iters = 100;
+   long iters = 100; 
 
 
 #if 1
@@ -239,7 +254,7 @@ int main(int argc, char **argv)
 
 #if 1
    cerr << "\ntesting image and kernel";
-   for (long cnt = 0; cnt < iters; cnt++) {
+   for (long cnt = 0; cnt < 4*iters; cnt++) {
       cerr << ".";
       long bnd = (cnt%2) ? 25 : 1500;
  
@@ -260,6 +275,8 @@ int main(int argc, char **argv)
       old_image(im, A);
       image(im1, A);
       kernel(ker1, A);
+
+      //cerr << n << ":" << ":" << m << ":" << im.NumRows() << "||";
 
 
       if (im != im1 || !IsZero(ker1*A) || im1.NumRows() + ker1.NumRows() != n) {

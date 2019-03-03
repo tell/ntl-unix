@@ -6948,6 +6948,11 @@ long elim_blk_DD(const mat_zz_p& A, mat_zz_p *im, mat_zz_p *ker,
    }
 
    if (ker) {
+      if (r == 0) {
+         ident(*ker, n);
+         return 0;
+      }
+
       mat_zz_p& Ker = *ker;
       Ker.SetDims(n-r, n);
       if (r < n) {
@@ -7445,6 +7450,11 @@ long elim_blk_L(const mat_zz_p& A, mat_zz_p *im, mat_zz_p *ker,
    }
 
    if (ker) {
+      if (r == 0) {
+         ident(*ker, n);
+         return 0;
+      }
+
       mat_zz_p& Ker = *ker;
       Ker.SetDims(n-r, n);
       if (r < n) {
@@ -7910,6 +7920,11 @@ long elim_blk_LL(const mat_zz_p& A, mat_zz_p *im, mat_zz_p *ker,
    }
 
    if (ker) {
+      if (r == 0) {
+         ident(*ker, n);
+         return 0;
+      }
+
       mat_zz_p& Ker = *ker;
       Ker.SetDims(n-r, n);
       if (r < n) {
