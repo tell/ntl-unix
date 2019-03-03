@@ -25,12 +25,8 @@ matrix:
 before_install:
 - if [[ ! -z "$MY_CXX" ]]; then export CXX=$MY_CXX; fi
 - ./travis-ci/before_install_$TRAVIS_OS_NAME.bash
-
 install:
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "apt update" > /dev/null; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "apt install -y build-essential libgmp-dev" > /dev/null; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update | head; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install make gnu-sed > /dev/null; fi
+- ./travis-ci/install_$TRAVIS_OS_NAME.bash
 
 before_script:
 - echo $CC; $CC --version
