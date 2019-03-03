@@ -129,6 +129,8 @@ void UseFFTPrime(long index);
 
 
 #define NTL_FFT_RDUP (4)
+// Currently, this should be at least 2 to support
+// loop unrolling in the FFT implementation
 
 inline
 long FFTRoundUp(long xn, long k)
@@ -138,10 +140,19 @@ long FFTRoundUp(long xn, long k)
    // default truncation value of 0 gets converted to n
 
    xn = ((xn+((1L << NTL_FFT_RDUP)-1)) >> NTL_FFT_RDUP) << NTL_FFT_RDUP; 
-   if (xn > n - (n >> 3)) xn = n;
+
+   if (k >= 10) {
+      if (xn > n - (n >> 4)) xn = n;
+   }
+   else {
+      if (xn > n - (n >> 3)) xn = n;
+   }
    // truncation just a bit below n does not really help
-   // at all, and can sometimes slow things down, so round up 
-   // to n
+   // at all, and can sometimes slow things down slightly, so round up 
+   // to n.  This also takes care of cases where xn > n.
+   // Actually, for smallish n, we should round up sooner,
+   // at n-n/8, and for larger n, we should round up later,
+   // at n-m/16.  At least, experimentally, this is what I see.
 
    return xn;
 }

@@ -18,6 +18,102 @@ A Tour of NTL: Summary of Changes
 
 <p><hr><p>
 <h3>
+2018.07.15: Changes between NTL 11.2.0 and 11.2.1
+</h3>
+
+<ul>
+<li>
+Fixed an embarrassing bug, introduced in NTL 11.2.0, 
+in which <tt>add(ZZ,ZZ,long)</tt>
+and <tt>sub(ZZ,ZZ,long)</tt> would give incorrect result
+if third argument was zero.
+<li>
+Fixed incorrect libtool version number in NTL 11.2.0.
+</ul>
+
+<p><hr><p>
+<h3>
+2018.07.07: Changes between NTL 11.1.0 and 11.2.0
+</h3>
+
+<ul>
+<li>
+<b>Complete re-write of the
+Schoenhage-Strassen FFT for <tt>ZZX</tt> arithmetic.</b>
+
+<ul>
+<li>
+Implementation of "truncated" FFT 
+<li>
+Implementaion of "sqrt 2" trick
+<li>
+More efficient implementation of low-level butterfly operations
+<li>
+Here is some timing data comparing <tt>ZZX</tt> multiplication times
+of NTL 11.0 and 11.2.
+The entries are the ratio of the  11.0-time over the 11.2-time (so
+the bigger the number, the bigger the improvement).
+The rows are labeled by the bit-length <i>k</i> of the coefficient,
+the column by the degree bound <i>n</i>.
+Unlabeled columns represent degree bounds half-way between the labeled
+ones.
+
+
+<p>
+
+<img src="zmulrat.jpg" border="0" style="display: block; width: 60%; height: auto;">
+
+<p>
+<li>
+For multiplication in <tt>ZZX</tt>, NTL and 
+<a href="http://www.flintlib.org">FLINT</a>
+now have comparable performance across a wide range
+of parameter sizes, with NTL being 2x faster for some parameters,
+and FLITNt being 1.5x faster in others.
+Here is a chart showing the ratio of FLINT time
+over NTL time (so the bigger the number, the faster NTL is relative to FLINT)
+<p>
+
+<img src="flintrat.jpg" border="0" style="display: block; width: 60%; height: auto;">
+
+<p>
+<li>
+See also this report on 
+<a href="http://www.shoup.net/ntl/benchmarks.pdf">NTL vs FLINT</a>
+for detailed benchmarks that compare the performance NTL and FLINT
+on a number of operations and parameter settings.
+
+<li>
+Future plans for NTL's Schoenhage-Strassen code:
+<ul>
+<li>
+Implement something like Bailey's 4-step variant
+(which should yield better cache behavior)
+<li>
+Thread boosting (built on top of the 4-step variant)
+</ul>
+</ul>
+
+<li>
+Some fine tuning of the new small-prime 
+truncated-FFT implementation introduced in version 11.0.
+<li>
+Fixed obscure bug in new small-prime FFT code: this only affects
+users who call low-level, undocumented FFT routines 
+on transforms of size 2, so it is unlikely to have affected
+any real code.
+
+<li>
+Performance improvements to <tt>ZZ+long</tt> and <tt>ZZ-long</tt>
+routines (and by extension <tt>ZZ+=long</tt>, <tt>ZZ-=long</tt>, 
+<tt>ZZ++</tt>, and <tt>ZZ--</tt>)
+
+
+
+</ul>
+
+<p><hr><p>
+<h3>
 2018.06.07: Changes between NTL 11.0.0 and 11.1.0
 </h3>
 
@@ -46,7 +142,7 @@ a single-precision "FFT" prime (60 bits).
 
 <p>
 
-<img src="TFT-time.jpg" width="38%" height="38%">
+<img src="TFT-time.jpg"  border="0" style="display: block; width: 40%; height: auto;">
 
 </ul>
 
@@ -730,7 +826,7 @@ compilers and other software development tools.
 
 
 </ul>
-
+</ul>
 
 
 <p><hr><p>

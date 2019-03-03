@@ -187,7 +187,7 @@ TD=BerlekampTestIn BerlekampTestOut CanZassTestIn CanZassTestOut   \
 
 
 # test source files
-TS=QuickTest.cpp ZZTest.cpp ZZ_pXTest.cpp lzz_pXTest.cpp BerlekampTest.cpp \
+TS=QuickTest.cpp ZZTest.cpp SSMulTest.cpp ZZ_pXTest.cpp lzz_pXTest.cpp BerlekampTest.cpp \
 	CanZassTest.cpp ZZXFacTest.cpp  MoreFacTest.cpp \
 	LLLTest.cpp subset.cpp MatrixTest.cpp mat_lzz_pTest.cpp  \
 	CharPolyTest.cpp RRTest.cpp QuadTest.cpp GF2XTest.cpp GF2EXTest.cpp  \
@@ -264,11 +264,11 @@ HTFILES=GF2.cpp.html GF2E.cpp.html GF2EX.cpp.html GF2EXFactoring.cpp.html  \
 
 
 
-DOC = $(DFILES) $(HTFILES)
+DOC = $(DFILES) $(HTFILES) TFT-time.jpg zmulrat.jpg flintrat.jpg
 
 
 # test program executables
-PROGS=QuickTest ZZTest ZZ_pXTest lzz_pXTest BerlekampTest CanZassTest \
+PROGS=QuickTest ZZTest SSMulTest ZZ_pXTest lzz_pXTest BerlekampTest CanZassTest \
 	ZZXFacTest MoreFacTest LLLTest  \
 	BitMatTest MatrixTest mat_lzz_pTest CharPolyTest RRTest QuadTest GF2XTest  \
 	GF2EXTest subset ZZ_pEXTest lzz_pEXTest Timing ThreadTest
@@ -527,8 +527,8 @@ winpack:
 	rm -f `cat WINDIR`.zip 
 	mv dos `cat WINDIR`
 	chmod -R a+rX `cat WINDIR`
-	find ./`cat WINDIR` '!' -name '*.gif' -print | zip -l `cat WINDIR` -@
-	find ./`cat WINDIR` -name '*.gif' -print | zip -u `cat WINDIR` -@
+	find ./`cat WINDIR` '!' '(' -name '*.gif' -o -name '*.jpg' ')'  -print | zip -l `cat WINDIR` -@
+	find ./`cat WINDIR` -name '*.gif' -o -name '*.jpg' -print | zip -u `cat WINDIR` -@
 	rm -rf `cat WINDIR`
 
 

@@ -487,7 +487,7 @@ void mul(ZZ_pX& c, const ZZ_pX& a, const ZZ_pX& b)
 
       if ( nt == 1 && (
 
-         (k >= 106 && rat < 1.30) || 
+         (k >= 106 && rat < 1.50) || 
          (k >= 212 && rat < 1.75) 
 
       )) {
@@ -544,7 +544,7 @@ void sqr(ZZ_pX& c, const ZZ_pX& a)
 
       if ( nt == 1 && (
 
-         (k >= 53  && rat < 1.10) || 
+         (k >= 53  && rat < 1.20) || 
          (k >= 106 && rat < 1.30) || 
          (k >= 212 && rat < 1.75) 
 

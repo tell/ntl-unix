@@ -1446,13 +1446,6 @@ long CRT(ZZ& gg, ZZ& a, const ZZ& G, const ZZ& p)
 
 
 
-void sub(ZZ& x, const ZZ& a, long b)
-{
-   NTL_ZZRegister(B);
-   conv(B, b);
-   sub(x, a, B);
-}
-
 void sub(ZZ& x, long a, const ZZ& b)
 {
    NTL_ZZRegister(A);

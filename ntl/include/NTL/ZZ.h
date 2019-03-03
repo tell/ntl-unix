@@ -392,8 +392,11 @@ inline void add(ZZ& x, const ZZ& a, long b)
 inline void add(ZZ& x, long a, const ZZ& b) { add(x, b, a); }
 
 
-void sub(ZZ& x, const ZZ& a, long b);
+inline void sub(ZZ& x, const ZZ& a, long b)
+   { _ntl_gssub(a.rep, b, &x.rep); }
+
 void sub(ZZ& x, long a, const ZZ& b);
+// defined in ZZ.cpp
 
 /* operator/function notation */
 
@@ -1756,6 +1759,39 @@ public:
 
 
 void InvModError(const char *s, const ZZ& a, const ZZ& n); 
+
+#ifdef NTL_PROVIDES_SS_LIP_IMPL
+
+inline void 
+LeftRotate_lip_impl(ZZ& a, const ZZ& b, long e, const ZZ& p, long n, ZZ& scratch)
+// Compute a = b * 2^e mod p, where p = 2^n+1. 0<=e<n and 0<b<p 
+// a may not alias p
+// scratch may not alias a, b, or p
+{
+   _ntl_leftrotate(&a.rep, &b.rep, e, p.rep, n, &scratch.rep);
+}
+
+inline void
+SS_AddMod_lip_impl(ZZ& x, const ZZ& a, const ZZ& b, const ZZ& p, long n)
+// x = a + b mod p, where p = 2^n+1,  a, b in [0, p).
+// x may not alias p.
+{
+   _ntl_ss_addmod(&x.rep, &a.rep, &b.rep, p.rep, n);
+}
+
+inline void
+SS_SubMod_lip_impl(ZZ& x, const ZZ& a, const ZZ& b, const ZZ& p, long n)
+// x = a + b mod p, where p = 2^n+1,  a, b in [0, p).
+// x may not alias b or p.
+{
+   _ntl_ss_submod(&x.rep, &a.rep, &b.rep, p.rep, n);
+}
+
+#endif
+
+
+
+
 
 NTL_CLOSE_NNS
 

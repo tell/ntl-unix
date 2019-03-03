@@ -234,16 +234,31 @@ _ntl_mpn_add_1 (_ntl_limb_t *rp, const _ntl_limb_t *ap, long  n, _ntl_limb_t b)
 {
   long i;
 
-  i = 0;
-  do
-    {
-      _ntl_limb_t r = ap[i] + b;
-      rp[i] = CLIP(r);
-      b = r >> NTL_ZZ_NBITS;
-    }
-  while (++i < n);
+  if (rp != ap) {
+    i = 0;
+    do
+      {
+	_ntl_limb_t r = ap[i] + b;
+	rp[i] = CLIP(r);
+	b = r >> NTL_ZZ_NBITS;
+      }
+    while (++i < n);
 
-  return b;
+    return b;
+  }
+  else {
+    i = 0;
+    do
+      {
+        if (!b) return 0;
+	_ntl_limb_t r = ap[i] + b;
+	rp[i] = CLIP(r);
+	b = r >> NTL_ZZ_NBITS;
+      }
+    while (++i < n);
+
+    return b;
+  }
 }
 
 
@@ -281,16 +296,32 @@ _ntl_mpn_sub_1 (_ntl_limb_t *rp, const _ntl_limb_t *ap, long  n, _ntl_limb_t b)
 {
   long i;
 
-  i = 0;
-  do
-    {
-      _ntl_limb_t r = ap[i] - b;
-      rp[i] = CLIP(r);
-      b = (r >> NTL_ZZ_NBITS) & 1;
-    }
-  while (++i < n);
+  if (rp != ap) {
+     i = 0;
+     do
+       {
+	 _ntl_limb_t r = ap[i] - b;
+	 rp[i] = CLIP(r);
+	 b = (r >> NTL_ZZ_NBITS) & 1;
+       }
+     while (++i < n);
 
-  return b;
+     return b;
+  }
+  else {
+     i = 0;
+     do
+       {
+         if (!b) return 0;
+	 _ntl_limb_t r = ap[i] - b;
+	 rp[i] = CLIP(r);
+	 b = (r >> NTL_ZZ_NBITS) & 1;
+       }
+     while (++i < n);
+
+     return b;
+  }
+
 }
 
 
@@ -1610,16 +1641,13 @@ long _ntl_gsetbit(_ntl_gbigint *a, long b)
 
    if (b<0) LogicError("_ntl_gsetbit: negative index");
 
-   if (ZEROP(*a)) {
-      _ntl_gintoz(1, a);
-      _ntl_glshift(*a, b, a);
-      return 0;
-   }
-
    bl = (b/NTL_ZZ_NBITS);
    wh = ((_ntl_limb_t) 1) << (b - NTL_ZZ_NBITS*bl);
 
-   GET_SIZE_NEG(sa, aneg, *a);
+   if (!*a) 
+      sa = aneg = 0;
+   else
+      GET_SIZE_NEG(sa, aneg, *a);
 
    if (sa > bl) {
       adata = DATA(*a);
@@ -1651,17 +1679,13 @@ long _ntl_gswitchbit(_ntl_gbigint *a, long b)
 
    if (b<0) LogicError("_ntl_gswitchbit: negative index");
 
-
-   if (ZEROP(*a)) {
-      _ntl_gintoz(1, a);
-      _ntl_glshift(*a, b, a);
-      return 0;
-   }
-
    bl = (b/NTL_ZZ_NBITS);
    wh = ((_ntl_limb_t) 1) << (b - NTL_ZZ_NBITS*bl);
 
-   GET_SIZE_NEG(sa, aneg, *a);
+   if (!*a) 
+      sa = aneg = 0;
+   else
+      GET_SIZE_NEG(sa, aneg, *a);
 
    if (sa > bl) {
       adata = DATA(*a);
@@ -2490,14 +2514,205 @@ _ntl_gadd(_ntl_gbigint a, _ntl_gbigint b, _ntl_gbigint *cc)
    }
 }
 
+
 void
 _ntl_gsadd(_ntl_gbigint a, long b, _ntl_gbigint *cc)
 {
-   // FIXME: this is really inefficient...too much overhead
-   GRegister(B);
-   _ntl_gintoz(b, &B);
-   _ntl_gadd(a, B, cc);
+   if (b == 0) {
+      _ntl_gcopy(a, cc);
+      return;
+   }
+
+   _ntl_limb_t abs_b = ABS(b);
+
+   if (XCLIP(abs_b)) {
+      GRegister(xb);
+      _ntl_gintoz(b,&xb);
+      _ntl_gadd(a, xb, cc);
+      return;
+   }
+
+   long bneg = b < 0;
+
+
+   if (ZEROP(a)) {
+      if (!*cc) _ntl_gsetlength(cc, 1);
+      SIZE(*cc) = 1 - 2*bneg;
+      DATA(*cc)[0] = abs_b;
+      return;
+   }
+
+   long sa, aneg;
+
+   GET_SIZE_NEG(sa, aneg, a);
+
+   if (aneg == bneg) {
+      // signs equal: addition
+
+      if (a == *cc) {
+         // a aliases c
+
+         _ntl_limb_t *adata = DATA(a);
+         _ntl_limb_t carry = NTL_MPN(add_1)(adata, adata, sa, abs_b);
+
+         if (carry) {
+            if (MustAlloc(a, sa+1)) {
+               _ntl_gsetlength(cc, sa+1);
+               a = *cc;
+               adata = DATA(a);
+            } 
+            adata[sa] = 1;
+            sa++;
+            if (aneg) sa = -sa;
+            SIZE(a) = sa;
+         }
+      }
+      else {
+         // a and c do not alias
+         if (MustAlloc(*cc, sa+1)) _ntl_gsetlength(cc, sa+1);
+         _ntl_limb_t *adata = DATA(a);
+         _ntl_limb_t *cdata = DATA(*cc);
+         _ntl_limb_t carry = NTL_MPN(add_1)(cdata, adata, sa, abs_b);
+         if (carry) {
+            cdata[sa] = 1;
+            sa++;
+         }
+         if (aneg) sa = -sa;
+         SIZE(*cc) = sa;
+      }
+   }
+   else {
+      // opposite sign: subtraction
+
+      if (sa == 1) {
+         _ntl_limb_t abs_a = DATA(a)[0];
+         if (abs_a == abs_b) 
+            _ntl_gzero(cc);
+         else if (abs_a > abs_b) {
+            if (MustAlloc(*cc, 1)) _ntl_gsetlength(cc, 1);
+            DATA(*cc)[0] = abs_a - abs_b;
+            SIZE(*cc) = 1-2*aneg;
+         }
+         else {
+            if (MustAlloc(*cc, 1)) _ntl_gsetlength(cc, 1);
+            DATA(*cc)[0] = abs_b - abs_a;
+            SIZE(*cc) = -1+2*aneg;
+         }
+      }
+      else {
+         if (MustAlloc(*cc, sa)) _ntl_gsetlength(cc, sa);
+         _ntl_limb_t *adata = DATA(a);
+         _ntl_limb_t *cdata = DATA(*cc);
+         NTL_MPN(sub_1)(cdata, adata, sa, abs_b);
+         if (cdata[sa-1] == 0) sa--;
+         if (aneg) sa = -sa;
+         SIZE(*cc) = sa;
+      }
+   }
+
 }
+
+void
+_ntl_gssub(_ntl_gbigint a, long b, _ntl_gbigint *cc)
+{
+   if (b == 0) {
+      _ntl_gcopy(a, cc);
+      return;
+   }
+
+   _ntl_limb_t abs_b = ABS(b);
+
+   if (XCLIP(abs_b)) {
+      GRegister(xb);
+      _ntl_gintoz(b,&xb);
+      _ntl_gsub(a, xb, cc);
+      return;
+   }
+
+   // the rest of this routine is precisely the same
+   // as gsadd, except for the following line,
+   // which has the sense of the test reversed
+   long bneg = b >= 0;
+
+
+   if (ZEROP(a)) {
+      if (!*cc) _ntl_gsetlength(cc, 1);
+      SIZE(*cc) = 1 - 2*bneg;
+      DATA(*cc)[0] = abs_b;
+      return;
+   }
+
+   long sa, aneg;
+
+   GET_SIZE_NEG(sa, aneg, a);
+
+   if (aneg == bneg) {
+      // signs equal: addition
+
+      if (a == *cc) {
+         // a aliases c
+
+         _ntl_limb_t *adata = DATA(a);
+         _ntl_limb_t carry = NTL_MPN(add_1)(adata, adata, sa, abs_b);
+
+         if (carry) {
+            if (MustAlloc(a, sa+1)) {
+               _ntl_gsetlength(cc, sa+1);
+               a = *cc;
+               adata = DATA(a);
+            } 
+            adata[sa] = 1;
+            sa++;
+            if (aneg) sa = -sa;
+            SIZE(a) = sa;
+         }
+      }
+      else {
+         // a and c do not alias
+         if (MustAlloc(*cc, sa+1)) _ntl_gsetlength(cc, sa+1);
+         _ntl_limb_t *adata = DATA(a);
+         _ntl_limb_t *cdata = DATA(*cc);
+         _ntl_limb_t carry = NTL_MPN(add_1)(cdata, adata, sa, abs_b);
+         if (carry) {
+            cdata[sa] = 1;
+            sa++;
+         }
+         if (aneg) sa = -sa;
+         SIZE(*cc) = sa;
+      }
+   }
+   else {
+      // opposite sign: subtraction
+
+      if (sa == 1) {
+         _ntl_limb_t abs_a = DATA(a)[0];
+         if (abs_a == abs_b) 
+            _ntl_gzero(cc);
+         else if (abs_a > abs_b) {
+            if (MustAlloc(*cc, 1)) _ntl_gsetlength(cc, 1);
+            DATA(*cc)[0] = abs_a - abs_b;
+            SIZE(*cc) = 1-2*aneg;
+         }
+         else {
+            if (MustAlloc(*cc, 1)) _ntl_gsetlength(cc, 1);
+            DATA(*cc)[0] = abs_b - abs_a;
+            SIZE(*cc) = -1+2*aneg;
+         }
+      }
+      else {
+         if (MustAlloc(*cc, sa)) _ntl_gsetlength(cc, sa);
+         _ntl_limb_t *adata = DATA(a);
+         _ntl_limb_t *cdata = DATA(*cc);
+         NTL_MPN(sub_1)(cdata, adata, sa, abs_b);
+         if (cdata[sa-1] == 0) sa--;
+         if (aneg) sa = -sa;
+         SIZE(*cc) = sa;
+      }
+   }
+
+}
+
+
 
 void
 _ntl_gsub(_ntl_gbigint a, _ntl_gbigint b, _ntl_gbigint *cc)
@@ -8704,5 +8919,247 @@ _ntl_quick_accum_end(_ntl_gbigint x)
    STRIP(sx, xx);
    SIZE(x) = sx;
 }
+
+
+#ifdef NTL_PROVIDES_SS_LIP_IMPL
+
+void
+_ntl_leftrotate(_ntl_gbigint *a, const _ntl_gbigint *b, long e,
+                _ntl_gbigint p, long n, _ntl_gbigint *scratch)
+{
+   if (e == 0 || ZEROP(*b)) {
+      _ntl_gcopy(*b, a);
+      return;
+   }
+
+   long sb, nwords;
+
+   if (a == b || ((unsigned long) n) % NTL_ZZ_NBITS != 0 ||
+       (sb = SIZE(*b)) == 1 + (nwords = ((unsigned long) n) / NTL_ZZ_NBITS)) {
+
+      _ntl_grshift(*b, n-e, scratch);
+      _ntl_glowbits(*b, n-e, a);
+      _ntl_glshift(*a, e, a);
+
+      if (_ntl_gcompare(*a, *scratch) < 0) {
+         _ntl_gswitchbit(a, n);
+         _ntl_gsadd(*a, 1, a);
+         _ntl_gsubpos(*a, *scratch, a);
+      }
+      else {
+         _ntl_gsubpos(*a, *scratch, a);
+      }
+
+      return;
+   }
+
+   long ewords = ((unsigned long) e) / NTL_ZZ_NBITS;
+   long ebits  = ((unsigned long) e) % NTL_ZZ_NBITS;
+
+   if (MustAlloc(*a, nwords+1)) _ntl_gsetlength(a, nwords+1);
+
+   _ntl_limb_t *adata = DATA(*a);
+   _ntl_limb_t *bdata = DATA(*b);
+
+
+   long special_carry = 0;
+   long sa = 0;
+
+   if (ewords) {
+      long hiwords = sb - (nwords-ewords);
+      if (hiwords > 0) {
+
+         _ntl_limb_t borrow = NTL_MPN(neg)(adata, bdata + (nwords-ewords),
+                                           hiwords); 
+         if (hiwords < ewords) {
+            if (borrow) {
+               for (long i = hiwords; i < ewords; i++) 
+                  adata[i] = _ntl_limb_t(-1); 
+            }
+            else {
+               for (long i = hiwords; i < ewords; i++) 
+                  adata[i] = 0;
+            }
+         }
+
+         if (borrow) {
+            borrow = NTL_MPN(sub_1)(adata + ewords, bdata, nwords-ewords, 1);
+            if (borrow) {
+               special_carry = NTL_MPN(add_1)(adata, adata, nwords, 1);
+               // special case: result so far is 2^n
+            }
+         }
+         else {
+            for (long i = 0; i < nwords-ewords; i++) adata[i+ewords] = bdata[i];
+         }
+
+         sa = nwords;         
+      }
+      else {
+         for (long i = 0; i < ewords; i++) adata[i] = 0;
+         for (long i = 0; i < sb; i++) adata[i+ewords] = bdata[i];
+
+         sa = ewords + sb;
+      }
+   }
+   else {
+      for (long i = 0; i < sb; i++) adata[i] = bdata[i];
+      sa = sb;
+   }
+
+   long here = 0;
+
+   if (ebits) {
+      if (special_carry) {
+         NTL_MPN(sub_1)(adata, adata, nwords, (1L << ebits) - 1L);
+      }
+      else if (sa == nwords) {
+         _ntl_limb_t shout = NTL_MPN(lshift)(adata, adata, sa, ebits);
+         if (shout) {
+            _ntl_limb_t borrow = NTL_MPN(sub_1)(adata, adata, sa, shout);
+            if (borrow) {
+               _ntl_limb_t carry = NTL_MPN(add_1)(adata, adata, sa, 1);
+               if (carry) {
+                  adata[sa] = 1;
+                  sa++;
+               }
+            }
+         }
+      }
+      else { // sa < nwords
+         _ntl_limb_t shout = NTL_MPN(lshift)(adata, adata, sa, ebits);
+         if (shout) {
+            adata[sa] = shout;
+            sa++;
+         }
+      }
+   }
+   else {
+      if (special_carry) {
+         adata[sa] = 1;
+         sa++;
+      }
+   }
+
+   STRIP(sa, adata);
+   SIZE(*a) = sa;
+
+}
+
+void 
+_ntl_ss_addmod(_ntl_gbigint *x, const _ntl_gbigint *a,
+               const _ntl_gbigint *b, _ntl_gbigint p, long n)
+{
+   if (((unsigned long) n) % NTL_ZZ_NBITS != 0) { 
+      _ntl_gadd(*a, *b, x);
+      if (_ntl_gcompare(*x, p) >= 0) {
+         _ntl_gsadd(*x, -1, x);
+         _ntl_gswitchbit(x, n);
+      }
+   }
+   else {
+      _ntl_gadd(*a, *b, x);
+      long sx, nwords;
+      if (!*x ||
+          (sx = SIZE(*x)) <= (nwords = ((unsigned long) n) / NTL_ZZ_NBITS))
+         return;
+
+      _ntl_limb_t *xdata = DATA(*x);
+      if (xdata[nwords] == 2) {
+         for (long i = 0; i < nwords; i++) xdata[i] = _ntl_limb_t(-1);
+         SIZE(*x) = nwords;
+         return;
+      }
+
+      long i = nwords-1;
+      while (i >= 0 && xdata[i] == 0) i--;
+      if (i < 0) return;
+
+      NTL_MPN(sub_1)(xdata, xdata, nwords, 1);
+      sx = nwords;
+      STRIP(sx, xdata);
+      SIZE(*x) = sx;
+   }
+}
+
+
+void 
+_ntl_ss_submod(_ntl_gbigint *x, const _ntl_gbigint *a,
+               const _ntl_gbigint *b, _ntl_gbigint p, long n)
+{
+   if (((unsigned long) n) % NTL_ZZ_NBITS != 0) {
+      if (_ntl_gcompare(*a, *b) < 0) {
+         _ntl_gadd(*a, p, x);
+         _ntl_gsubpos(*x, *b, x);
+      }
+      else {
+         _ntl_gsubpos(*a, *b, x);
+      }
+   }
+   else {
+      if (ZEROP(*b)) {
+         _ntl_gcopy(*a, x);
+         return;
+      }
+
+      long sb = SIZE(*b);
+      _ntl_limb_t *bdata = DATA(*b);
+
+      long sa;
+
+      if (!*a) 
+         sa = 0;
+      else
+         sa = SIZE(*a);
+
+      long nwords = ((unsigned long) n) / NTL_ZZ_NBITS;
+      if (MustAlloc(*x, nwords+1)) _ntl_gsetlength(x, nwords+1);
+      _ntl_limb_t *xdata = DATA(*x);
+
+      if (sa >= sb) {
+         _ntl_limb_t *adata = DATA(*a);
+         _ntl_limb_t borrow = NTL_MPN(sub)(xdata, adata, sa, bdata, sb);
+         if (borrow) {
+            for (long i = sa; i < nwords; i++) xdata[i] = _ntl_limb_t(-1);
+            _ntl_limb_t carry = NTL_MPN(add_1)(xdata, xdata, nwords, 1);
+            if (carry) {
+               xdata[nwords] = 1;
+               SIZE(*x) = nwords+1;
+            }
+            else {
+               long sx = nwords;
+               STRIP(sx, xdata);
+               SIZE(*x) = sx;
+            }
+         }
+         else {
+            long sx = sa;
+            STRIP(sx, xdata);
+            SIZE(*x) = sx;
+         }
+      }
+      else {
+         if (sa == 0) {
+            xdata[0] = 1;
+         }
+         else {
+            _ntl_limb_t *adata = DATA(*a); 
+            xdata[sa] = NTL_MPN(add_1)(xdata, adata, sa, 1);
+         }
+         for (long i = sa+1; i <= nwords; i++) xdata[i] = 0;
+         xdata[nwords]++;
+         _ntl_limb_t borrow = NTL_MPN(sub_n)(xdata, xdata, bdata, sb);
+         if (borrow) {
+            NTL_MPN(sub_1)(xdata+sb, xdata+sb, nwords+1-sb, 1);
+         }
+         long sx = nwords+1;
+         STRIP(sx, xdata);
+         SIZE(*x) = sx;
+      }
+   }
+}
+
+#endif
+
 
 

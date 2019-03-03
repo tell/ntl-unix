@@ -297,7 +297,7 @@ void mul(ZZ_pX& U, ZZ_pX& V, const ZZ_pXMatrix& M)
 }
 
 
-void mul(ZZ_pXMatrix& A, ZZ_pXMatrix& B, ZZ_pXMatrix& C)
+void mul(ZZ_pXMatrix& A, ZZ_pXMatrix& B, ZZ_pXMatrix& C) 
 // A = B*C, B and C are destroyed
 {
    long db = deg(B(1,1));

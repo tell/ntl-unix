@@ -172,6 +172,9 @@ inline long _ntl_PINNED(_ntl_gbigint p)
     void _ntl_gsadd(_ntl_gbigint a, long d, _ntl_gbigint *b);
        /* *b = a + d */
 
+    void _ntl_gssub(_ntl_gbigint a, long d, _ntl_gbigint *b);
+       /* *b = a - d */
+
     void _ntl_gadd(_ntl_gbigint a, _ntl_gbigint b, _ntl_gbigint *c);
        /*  *c = a + b */
 
@@ -669,5 +672,26 @@ _ntl_quick_accum_muladd(_ntl_gbigint x, _ntl_gbigint y, long b);
 
 void
 _ntl_quick_accum_end(_ntl_gbigint x);
+
+// special-purpose routines for SSMul in ZZX
+
+#if (defined(NTL_GMP_LIP) && (NTL_ZZ_NBITS & (NTL_ZZ_NBITS-1)) == 0)
+// NOTE: the test (NTL_ZZ_NBITS & (NTL_ZZ_NBITS-1)) == 0
+// effectively checks that NTL_ZZ_NBITS is a power of two
+
+#define NTL_PROVIDES_SS_LIP_IMPL
+
+void
+_ntl_leftrotate(_ntl_gbigint *a, const _ntl_gbigint *b, long e,
+                _ntl_gbigint p, long n, _ntl_gbigint *scratch);
+
+void 
+_ntl_ss_addmod(_ntl_gbigint *x, const _ntl_gbigint *a,
+               const _ntl_gbigint *b, _ntl_gbigint p, long n);
+void 
+_ntl_ss_submod(_ntl_gbigint *x, const _ntl_gbigint *a,
+               const _ntl_gbigint *b, _ntl_gbigint p, long n);
+#endif
+
 
 #endif

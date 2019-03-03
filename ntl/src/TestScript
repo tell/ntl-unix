@@ -10,6 +10,15 @@ sh RemoveProg ZZTest
 
 echo
 echo "---------------------------------"
+echo "making SSMulTest"
+$MAKE_PROG SSMulTest
+echo "running SSMulTest"
+./SSMulTest
+sh RemoveProg SSMulTest
+
+
+echo
+echo "---------------------------------"
 echo "making ZZ_pXTest"
 $MAKE_PROG ZZ_pXTest
 echo "running ZZ_pXTest"

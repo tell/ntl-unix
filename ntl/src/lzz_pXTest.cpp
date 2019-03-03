@@ -2,11 +2,12 @@
 
 NTL_CLIENT
 
+#define ITER (500)
 
 void multest()
 {
    cerr << "mul";
-   for (long iter = 0; iter < 2000; iter++) {
+   for (long iter = 0; iter < ITER; iter++) {
       if (iter % 100 == 0) cerr << ".";
 
       long da = RandomBnd(5000) + 100;
@@ -38,7 +39,7 @@ void multest()
 void sqrtest()
 {
    cerr << "sqr";
-   for (long iter = 0; iter < 2000; iter++) {
+   for (long iter = 0; iter < ITER; iter++) {
       if (iter % 100 == 0) cerr << ".";
 
       long da = RandomBnd(5000) + 100;
@@ -71,7 +72,7 @@ void sqrtest()
 void mulmodtest()
 {
    cerr << "mulmod";
-   for (long iter = 0; iter < 2000; iter++) {
+   for (long iter = 0; iter < ITER; iter++) {
       if (iter % 100 == 0) cerr << ".";
 
       long n = RandomBnd(5000) + 300;
@@ -106,7 +107,7 @@ void mulmodtest()
 void sqrmodtest()
 {
    cerr << "sqrmod";
-   for (long iter = 0; iter < 2000; iter++) {
+   for (long iter = 0; iter < ITER; iter++) {
       if (iter % 100 == 0) cerr << ".";
 
       long n = RandomBnd(5000) + 300;
@@ -143,7 +144,7 @@ void sqrmodtest()
 void mulmod1test()
 {
    cerr << "mulmod1";
-   for (long iter = 0; iter < 2000; iter++) {
+   for (long iter = 0; iter < ITER; iter++) {
       if (iter % 100 == 0) cerr << ".";
 
       long n = RandomBnd(5000) + 300;
@@ -277,7 +278,7 @@ void UpdateMap(vec_zz_p& x, const vec_zz_p& a,
 void updatetest()
 {
    cerr << "update";
-   for (long iter = 0; iter < 2000; iter++) {
+   for (long iter = 0; iter < ITER; iter++) {
       if (iter % 100 == 0) cerr << ".";
 
       long n = RandomBnd(5000) + 300;
@@ -319,7 +320,7 @@ void updatetest()
 void divremtest()
 {
    cerr << "divrem";
-   for (long iter = 0; iter < 2000; iter++) {
+   for (long iter = 0; iter < ITER; iter++) {
       if (iter % 100 == 0) cerr << ".";
 
       long n = RandomBnd(5000) + 300;
