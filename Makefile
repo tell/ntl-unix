@@ -30,5 +30,3 @@ config.done: copy.done
 patch.done: patch.done
 	env NTL_DIR=$(NTL_DIR) ./patch-script.sh
 	touch $@
-
-include ntl-dep.mk
