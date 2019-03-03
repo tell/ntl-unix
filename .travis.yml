@@ -1,10 +1,7 @@
-# vim: set expandtab shiftwidth=2 softtabstop=2 :
-
 language: cpp
 sudo: required
 service:
 - docker
-
 env:
   global:
   - MY_NAME=travis-ci
@@ -21,7 +18,6 @@ matrix:
     compiler: clang
     env:
     - MY_CXX=clang++
-
 before_install:
 - if [[ ! -z "$MY_CXX" ]]; then export CXX=$MY_CXX; fi
 - ./travis-ci/before_install_$TRAVIS_OS_NAME.bash
@@ -30,14 +26,10 @@ install:
 before_script:
 - ./travis-ci/before_script_$TRAVIS_OS_NAME.bash
 script:
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT; make" | cat -n | awk '{ print $1 }' | sed -n -e 's/[05]00$/*/p'; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker exec -ti $MY_NAME bash -c "cd $MY_TARGET_MOUNT; make check"; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then make | cat -n | awk '{ print $1 }' | sed -n -e 's/[05]00$/*/p'; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then make check; fi
-
+- ./travis-ci/script_$TRAVIS_OS_NAME.bash
 # after_failure:
 # - tail -n 1000 make.log
-
 notifications:
   on_success: change
   on_failure: always
+# vim: set expandtab shiftwidth=2 softtabstop=2 :
