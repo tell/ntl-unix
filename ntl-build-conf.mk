@@ -1,3 +1,12 @@
+# Configurations for compilers:
+CXXFLAGS = -std=c++11 -O2 -g3 -Wall -Wextra
+# -fsanitize=address -fsanitize=leak -fsanitize=undefined
+ifeq (Linux,$(shell uname -s))
+CXXFLAGS += -pthread
+endif
+CC = $(CXX)
+CFLAGS = $(CXXFLAGS)
+
 NTL_ORIGINAL_DIR = $(ROOT)/ntl
 NTL_DIR = $(ROOT)/ntl-build
 define cmd.COPY_SRC
@@ -16,7 +25,7 @@ endif
 
 define cmd.NTL_CONFIG
 cd $(NTL_SRC) \
-&& ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(PREFIX)" NTL_GMP_LIP=off
+  && ./configure CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" PREFIX="$(NTL_ENV_DIR)" NTL_GMP_LIP=off
 endef
 
 ifeq (1,$(USE_THREAD))

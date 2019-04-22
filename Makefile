@@ -1,10 +1,13 @@
 include common.mk
-include $(ROOT)/ntl-conf.mk
+include $(ROOT)/ntl-build-conf.mk
 
 .PHONY: all aux clean check install
 .DEFAULT_GOAL := all
 
-all: config.done patch.done $(NTL_BUILD_TARGET)
+all:
+	$(MAKE) config.done
+	$(MAKE) patch.done
+	$(MAKE) $(NTL_BUILD_TARGET)
 
 aux:
 	$(MAKE) -C $@
@@ -27,6 +30,7 @@ config.done: copy.done
 	$(call cmd.NTL_CONFIG)
 	touch $@
 
-patch.done: patch.done
+FORCE:
+patch.done: FORCE
 	env NTL_DIR=$(NTL_DIR) ./patch-script.sh
 	touch $@
