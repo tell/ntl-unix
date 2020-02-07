@@ -117,7 +117,7 @@ to be defined.  Of course,  to unset a flag, just replace the
 
 #endif
 
-#if 0
+#if 1
 #define NTL_GF2X_LIB
 
 /* 
