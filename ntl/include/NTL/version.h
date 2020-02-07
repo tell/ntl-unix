@@ -6,7 +6,7 @@
 
 #define NTL_MAJOR_VERSION  (11)
 #define NTL_MINOR_VERSION  (3)
-#define NTL_REVISION       (3)
+#define NTL_REVISION       (4)
 
 #endif
 

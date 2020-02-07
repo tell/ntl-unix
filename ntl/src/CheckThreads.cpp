@@ -153,14 +153,15 @@ _ntl_hidden_typedef_tls_access_ ## var & var = _ntl_hidden_function_tls_access_ 
 
 //=======================
 
-std::atomic_long count(0);
+std::atomic_long count_con(0);
+std::atomic_long count_des(0);
 std::atomic_long count1(0);
 
 struct X {
    long d;
 
-   X() { d = count1++; count++; }
-   ~X() { count--; }
+   X() { d = count1++; count_con++; }
+   ~X() { count_des++; }
 };
 
 NTL_TLS_GLOBAL_DECL(X,x)
@@ -186,7 +187,8 @@ int main()
    t2.join();
    t3.join();
 
-   //std::cout << count << "\n";
+   //std::cout << count_con << "\n";
+   //std::cout << count_des << "\n";
    //std::cout << v1 << " " << v2 << " " << v3 << "\n";
 
    long s1, s2, s3;
@@ -194,7 +196,7 @@ int main()
    s3 = MAX(MAX(v1,v2),v3);
    s2 = v1+v2+v3-s1-s3;
 
-   if (count != 0 || s1 != 0 || s2 != 1 || s3 != 2) {
+   if (count_con != 3 || count_des != 3 || s1 != 0 || s2 != 1 || s3 != 2) {
       return -1;
    }
    return 0;

@@ -361,6 +361,7 @@ LDLIBS=-lm
 CPPFLAGS=
 LIBTOOL=undefined
 LIBTOOL_LINK_FLAGS=
+LIBTOOL_LINK_LIBS=undefined
 
 LIBDIR=$(PREFIX)/lib
 INCLUDEDIR=$(PREFIX)/include
@@ -455,6 +456,16 @@ LIBTOOL_LINK_FLAGS=
 
 # flags to add to command line when building a shared library
 # mainly used to pass the argument "-no-undefined" on cygwin
+
+LIBTOOL_LINK_LIBS=undefined
+
+# libraries to add to the command line when building a shared library.
+# mainly used to pass the argument "-lpthread", which NTL's
+# configure script will do automatically if SHARED=on and NTL_THREADS=on,
+# unless user explicitly provides a value for LIBTOOL_LINK_LIBS.
+# the purpose of this is to prevent so-called "underlinking".
+# specifically, it allows NTL clients to not pass "-pthread" to the
+# compiler when linking their own programs.
 
 
 ########### Details of the compilation process (when SHARED=off)
