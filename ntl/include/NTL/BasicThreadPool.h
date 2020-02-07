@@ -791,7 +791,7 @@ inline long AvailableThreads() { return 1; }
 struct RecursiveThreadPool;
 
 struct RecursiveThreadPoolDummyHelper {
-   bool concurrent() { false; }
+   bool concurrent() { return false; }
    RecursiveThreadPool* subpool(long i) { return 0; }
 };
 

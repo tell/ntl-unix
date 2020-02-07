@@ -18,6 +18,22 @@ A Tour of NTL: Summary of Changes
 
 <p><hr><p>
 <h3>
+2019.10.08: Changes between NTL 11.4.0 and 11.4.1
+</h3>
+
+<ul>
+<li>
+Fixed bug in new <tt>NTL_EXEC_DIVIDE</tt> that 
+could manifest itself when <tt>NTL_THREAD_BOOST=off</tt>.
+Existing code that does not explicitly use this feature
+should not be affected by this bug.
+<li>
+Fixed some namespace visibility issues in the TLS hack macros.
+</ul>
+
+
+<p><hr><p>
+<h3>
 2019.09.24: Changes between NTL 11.3.4 and 11.4.0
 </h3>
 
