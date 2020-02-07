@@ -18,6 +18,27 @@ A Tour of NTL: Summary of Changes
 
 <p><hr><p>
 <h3>
+2019.09.02: Changes between NTL 11.3.2 and 11.3.3
+</h3>
+
+<ul>
+<li>
+Changed "TLS hack" implementation to use fewer pthread keys
+(I did not realize these were a "scarce resource").
+
+<li>
+Implemented <tt>xdouble</tt> to <tt>double</tt> conversion to be more
+efficient for exponents of large magnitude.
+
+<li>
+Changed some internal interfaces (for <tt>FFTRoundUp</tt>) to
+be simpler and (in rare circumstances) to yield somewhat
+more efficient code.
+</ul>
+
+
+<p><hr><p>
+<h3>
 2018.11.15: Changes between NTL 11.3.1 and 11.3.2
 </h3>
 
