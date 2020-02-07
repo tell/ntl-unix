@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <NTL/config.h>
+#include <gf2x.h>
 
 using namespace std;
 
