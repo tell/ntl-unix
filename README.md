@@ -1,4 +1,4 @@
-# NTL: A Library for doing Number Theory
+# A mirror of "NTL: A Library for doing Number Theory"
 
 [![Build Status](https://travis-ci.org/tell/ntl-unix.svg?branch=master)](https://travis-ci.org/tell/ntl-unix)
 
