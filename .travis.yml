@@ -14,7 +14,7 @@ matrix:
     env:
     - MY_TARGET_DIST=ubuntu:18.04
   - os: osx
-    osx_image: xcode10.1
+    osx_image: xcode11．0
     compiler: clang
     env:
     - MY_CXX=clang++
