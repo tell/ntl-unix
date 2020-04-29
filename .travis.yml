@@ -12,7 +12,7 @@ matrix:
     dist: xenial
     compiler: gcc
     env:
-    - MY_TARGET_DIST=ubuntu:18.04
+    - MY_TARGET_DIST=ubuntu:20.04
   - os: osx
     osx_image: xcode11.0
     compiler: clang
