@@ -6,6 +6,8 @@ This is a Git repository of a mirror of [NTL](http://www.shoup.net/ntl/) and sev
 
 # Note
 
+[A Git repository made by the original author](https://github.com/libntl/ntl) is available, so this mirror repository will be removed.
+
 ## Versioning
 
 We follow [Semantic Versioning](http://semver.org/) to make version numbers as much as possible.
